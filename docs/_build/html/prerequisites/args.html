@@ -1,0 +1,957 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ancestral Recombination Graphs &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Hidden Markov Models" href="hmms.html" />
+    <link rel="prev" title="Coalescent Theory" href="coalescent_theory.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The Workbench (Prerequisites)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../timepieces/index.html">Timepieces</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The Workbench (Prerequisites)</a></li>
+      <li class="breadcrumb-item active">Ancestral Recombination Graphs</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="coalescent_theory.html" class="btn btn-neutral float-left" title="Coalescent Theory" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hmms.html" class="btn btn-neutral float-right" title="Hidden Markov Models" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ancestral-recombination-graphs">
+<span id="args"></span><h1>Ancestral Recombination Graphs<a class="headerlink" href="#ancestral-recombination-graphs" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>A single tree tells one story. An ARG tells the whole history.</em></p>
+</div></blockquote>
+<section id="why-trees-aren-t-enough">
+<h2>Why Trees Aren’t Enough<a class="headerlink" href="#why-trees-aren-t-enough" title="Link to this heading"></a></h2>
+<p>In the <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter, we built genealogical trees – the
+escapement mechanism that drives every Timepiece in this book. We derived the
+exponential waiting times, the coalescence rates <span class="math notranslate nohighlight">\(\binom{k}{2}\)</span>, and the
+mutation model. But we made one critical simplifying assumption: <strong>no
+recombination</strong>.</p>
+<p>That assumption is like describing a watch movement by tracing a single gear
+train from mainspring to hands. It gives a correct picture of <em>one</em> pathway of
+force transmission, but a real movement has many interacting gear trains –
+the going train for timekeeping, the keyless works for winding, perhaps a
+chronograph train for elapsed timing. The complete mechanical drawing must show
+all of these, along with every point where one train’s output becomes another
+train’s input.</p>
+<p>An <strong>Ancestral Recombination Graph (ARG)</strong> is that complete mechanical drawing
+for a genome’s history. It captures <em>every</em> coalescence event and <em>every</em>
+recombination event across the entire sequence. Where a single coalescent tree
+shows one gear train, the ARG shows all of them, plus the couplings between
+them.</p>
+<p>But before we can understand the ARG, we need to understand what recombination
+is and why it matters.</p>
+</section>
+<section id="what-is-recombination">
+<h2>What Is Recombination?<a class="headerlink" href="#what-is-recombination" title="Link to this heading"></a></h2>
+<p>Recombination is a biological process that occurs during <strong>meiosis</strong> – the
+special cell division that produces sperm and egg cells (gametes). In meiosis,
+an organism that carries two copies of each chromosome (one from each parent)
+produces cells with just one copy. But before that division happens, something
+remarkable occurs: the maternal and paternal copies of each chromosome
+physically align, and segments are swapped between them.</p>
+<div class="admonition-biology-aside-why-does-recombination-exist admonition">
+<p class="admonition-title">Biology aside: why does recombination exist?</p>
+<p>Recombination shuffles genetic material between the two copies of a
+chromosome you inherited from your parents. The result is that the
+chromosome you pass on to <em>your</em> child is a mosaic – some segments came
+from your mother’s chromosome, others from your father’s.</p>
+<p>Why would evolution favor this shuffling? There are several theories, but
+the dominant one is that recombination breaks up linkage between
+deleterious mutations, allowing natural selection to act more efficiently.
+Without recombination, a bad mutation on a chromosome is permanently
+linked to every other variant on that chromosome. With recombination,
+good and bad variants can be separated, giving selection a clearer target.</p>
+<p>For our purposes, the key consequence is simple: <strong>different positions
+along your genome have different genealogical histories.</strong> The stretch of
+DNA near the beginning of chromosome 1 traces back through a different
+sequence of ancestors than the stretch near the end.</p>
+</div>
+<p>Here’s the concrete implication. Consider three individuals – Alice, Bob, and
+Carol – and look at two positions on the same chromosome, position 1 and
+position 1000. At position 1, perhaps Alice and Bob share a recent common
+ancestor (their great-great-grandmother), while Carol’s lineage diverged much
+earlier. At position 1000, the situation might be reversed: Alice and Carol
+share a recent ancestor, while Bob’s lineage is the outlier. Both genealogies
+are correct – they just reflect different parts of the genome’s history, shaped
+by recombination events in the intervening generations.</p>
+<p>This is the fundamental reason we need ARGs rather than single trees.</p>
+<section id="what-we-ve-established-so-far">
+<h3>What We’ve Established So Far<a class="headerlink" href="#what-we-ve-established-so-far" title="Link to this heading"></a></h3>
+<p>From the coalescent theory chapter, we have these tools:</p>
+<ul class="simple">
+<li><p>Coalescence times are exponential with rate <span class="math notranslate nohighlight">\(\binom{k}{2}\)</span> when there
+are <span class="math notranslate nohighlight">\(k\)</span> lineages (measured in coalescent time units – multiples of
+<span class="math notranslate nohighlight">\(2N_e\)</span> generations)</p></li>
+<li><p>Mutations arise as a Poisson process at rate <span class="math notranslate nohighlight">\(\theta/2\)</span> per coalescent
+time unit per base pair</p></li>
+<li><p>The expected time to the most recent common ancestor is
+<span class="math notranslate nohighlight">\(2(1 - 1/n)\)</span> coalescent time units</p></li>
+</ul>
+<p>Now we need to extend this framework to handle recombination.</p>
+</section>
+</section>
+<section id="recombination-in-the-coalescent">
+<h2>Recombination in the Coalescent<a class="headerlink" href="#recombination-in-the-coalescent" title="Link to this heading"></a></h2>
+<p>In the coalescent with recombination, we still trace lineages backwards in time,
+but now two types of events can happen:</p>
+<ol class="arabic simple">
+<li><p><strong>Coalescence</strong>: Two lineages merge (as before). Rate <span class="math notranslate nohighlight">\(\binom{k}{2}\)</span>
+when there are <span class="math notranslate nohighlight">\(k\)</span> lineages. This is the same mechanism we derived in
+the <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter.</p></li>
+<li><p><strong>Recombination</strong>: A single lineage <strong>splits</strong> into two at a random
+breakpoint. Each of the <span class="math notranslate nohighlight">\(k\)</span> lineages recombines at rate
+<span class="math notranslate nohighlight">\(\rho/2\)</span>, where <span class="math notranslate nohighlight">\(\rho = 4N_e r\)</span> and <span class="math notranslate nohighlight">\(r\)</span> is the
+per-generation recombination probability across the region.</p></li>
+</ol>
+<div class="admonition-where-does-math-rho-4n-e-r-come-from admonition">
+<p class="admonition-title">Where does <span class="math notranslate nohighlight">\(\rho = 4N_e r\)</span> come from?</p>
+<p>This follows the same logic as <span class="math notranslate nohighlight">\(\theta = 4N_e\mu\)</span> for mutation (derived
+in the <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter). In the Wright-Fisher model, a
+recombination event occurs with probability <span class="math notranslate nohighlight">\(r\)</span> per generation per
+lineage. A branch of length <span class="math notranslate nohighlight">\(\ell\)</span> in coalescent time units spans
+<span class="math notranslate nohighlight">\(2N_e \cdot \ell\)</span> generations. The expected number of recombination
+events on this branch is:</p>
+<div class="math notranslate nohighlight">
+\[r \times 2N_e \ell = \frac{4N_e r}{2} \cdot \ell = \frac{\rho}{2} \cdot \ell\]</div>
+<p>So the recombination rate <strong>per coalescent time unit per lineage</strong> is
+<span class="math notranslate nohighlight">\(\rho/2\)</span>, exactly paralleling the mutation rate <span class="math notranslate nohighlight">\(\theta/2\)</span>.</p>
+</div>
+<div class="admonition-what-is-a-breakpoint admonition">
+<p class="admonition-title">What is a “breakpoint”?</p>
+<p>A breakpoint is the position along the genome where a recombination event
+cuts a lineage in two. Think of the genome as a long strip of paper
+representing the sequence from position 0 to position <span class="math notranslate nohighlight">\(S\)</span>. A
+recombination event at breakpoint <span class="math notranslate nohighlight">\(x\)</span> tears the strip at position
+<span class="math notranslate nohighlight">\(x\)</span>: the left piece (positions <span class="math notranslate nohighlight">\([0, x)\)</span>) traces back through
+one ancestor, and the right piece (positions <span class="math notranslate nohighlight">\([x, S)\)</span>) traces back
+through a different ancestor. Before the breakpoint, the genealogy is one
+tree; after it, the genealogy may be a different tree.</p>
+<p>In the watchmaking metaphor, a breakpoint is like a point where one gear
+train hands off to another – the same shaft, but driven by different
+mechanisms on either side.</p>
+</div>
+<p>Going backwards in time, these two event types have opposite effects:</p>
+<ul class="simple">
+<li><p><strong>Coalescence</strong> reduces the number of lineages by 1 (two become one)</p></li>
+<li><p><strong>Recombination</strong> increases the number of lineages by 1 (one becomes two)</p></li>
+</ul>
+<p>This creates a competition. Coalescence simplifies the history; recombination
+complicates it. The total rate at which <em>something</em> happens when there are
+<span class="math notranslate nohighlight">\(k\)</span> lineages is:</p>
+<div class="math notranslate nohighlight">
+\[\text{Rate of next event} = \underbrace{\binom{k}{2}}_{\text{coalescence}} +
+\underbrace{\frac{k\rho}{2}}_{\text{recombination}}\]</div>
+<div class="admonition-probability-aside-competing-exponential-processes admonition">
+<p class="admonition-title">Probability aside: competing exponential processes</p>
+<p>As we established in the <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter, when multiple
+independent exponential processes are racing, the time to the first event
+is exponential with rate equal to the <strong>sum</strong> of the individual rates. Here,
+the coalescence rate is <span class="math notranslate nohighlight">\(\binom{k}{2}\)</span> and the recombination rate is
+<span class="math notranslate nohighlight">\(k\rho/2\)</span>, so the next event – whichever type it is – occurs after
+an exponential waiting time with rate <span class="math notranslate nohighlight">\(\binom{k}{2} + k\rho/2\)</span>.</p>
+<p>The probability that the event is a coalescence (rather than a
+recombination) is proportional to its rate:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{coalescence}) = \frac{\binom{k}{2}}{\binom{k}{2} + k\rho/2}\]</div>
+<p>This is a general property of competing Poisson processes: the probability
+that a particular process “wins” is its rate divided by the total rate.</p>
+</div>
+<p>Let’s simulate this process. The code below builds an ARG by tracing lineages
+backwards, allowing both coalescence and recombination events.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">simulate_arg</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">seq_length</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate an Ancestral Recombination Graph.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of samples.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Population-scaled recombination rate (4*Ne*r) for the whole region.</span>
+<span class="sd">    seq_length : float</span>
+<span class="sd">        Length of the genomic region.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coal_events : list of (time, child1, child2, parent)</span>
+<span class="sd">    recomb_events : list of (time, lineage, breakpoint, left_lineage, right_lineage)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Each lineage carries an interval [left, right) of ancestral material.</span>
+    <span class="c1"># This tracks which segment of the genome each lineage is responsible for.</span>
+    <span class="n">next_label</span> <span class="o">=</span> <span class="n">n</span>
+    <span class="c1"># dict: lineage_label -&gt; list of (left, right) intervals.</span>
+    <span class="c1"># Initially, each of the n samples covers the full sequence.</span>
+    <span class="n">lineages</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">lineages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">seq_length</span><span class="p">)]</span>  <span class="c1"># full sequence</span>
+
+    <span class="n">coal_events</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">recomb_events</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">current_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Continue until only one lineage remains (the MRCA for the whole genome)</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">lineages</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lineages</span><span class="p">)</span>
+        <span class="n">coal_rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>      <span class="c1"># binom(k, 2)</span>
+        <span class="n">recomb_rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">rho</span> <span class="o">/</span> <span class="mi">2</span>          <span class="c1"># each lineage recombines at rate rho/2</span>
+        <span class="n">total_rate</span> <span class="o">=</span> <span class="n">coal_rate</span> <span class="o">+</span> <span class="n">recomb_rate</span>
+
+        <span class="c1"># Sample waiting time from Exp(total_rate).</span>
+        <span class="c1"># np.random.exponential takes the *scale* (= 1/rate), not the rate.</span>
+        <span class="n">wait</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">total_rate</span><span class="p">)</span>
+        <span class="n">current_time</span> <span class="o">+=</span> <span class="n">wait</span>
+
+        <span class="c1"># Decide which event occurs: coalescence or recombination.</span>
+        <span class="c1"># np.random.random() draws a uniform random number in [0, 1).</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">coal_rate</span> <span class="o">/</span> <span class="n">total_rate</span><span class="p">:</span>
+            <span class="c1"># --- Coalescence event ---</span>
+            <span class="c1"># Convert dict keys to a list so we can index into them.</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">lineages</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="c1"># Pick two distinct lineages at random.</span>
+            <span class="c1"># np.random.choice(n, size=2, replace=False) picks 2 distinct</span>
+            <span class="c1"># indices from {0, 1, ..., n-1}.</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">labels</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">next_label</span>
+            <span class="n">next_label</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Merge ancestral material: the parent inherits all intervals</span>
+            <span class="c1"># from both children. The &#39;+&#39; operator concatenates two lists.</span>
+            <span class="n">merged</span> <span class="o">=</span> <span class="n">lineages</span><span class="p">[</span><span class="n">c1</span><span class="p">]</span> <span class="o">+</span> <span class="n">lineages</span><span class="p">[</span><span class="n">c2</span><span class="p">]</span>
+            <span class="n">lineages</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span>
+            <span class="c1"># &#39;del&#39; removes a key from the dictionary, since these lineages</span>
+            <span class="c1"># no longer exist as separate entities after merging.</span>
+            <span class="k">del</span> <span class="n">lineages</span><span class="p">[</span><span class="n">c1</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">lineages</span><span class="p">[</span><span class="n">c2</span><span class="p">]</span>
+
+            <span class="n">coal_events</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">current_time</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">parent</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># --- Recombination event ---</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">lineages</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="c1"># np.random.randint(0, k) picks a random integer in {0, ..., k-1}</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+            <span class="n">lineage</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+            <span class="c1"># Choose a breakpoint uniformly on [0, seq_length]</span>
+            <span class="nb">breakpoint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">seq_length</span><span class="p">)</span>
+
+            <span class="c1"># Split ancestral material at the breakpoint.</span>
+            <span class="c1"># These are list comprehensions: concise ways to build a new list</span>
+            <span class="c1"># by filtering and transforming elements of an existing list.</span>
+            <span class="c1">#</span>
+            <span class="c1"># left_material: keep intervals (or parts of intervals) that fall</span>
+            <span class="c1"># to the LEFT of the breakpoint.</span>
+            <span class="n">left_material</span> <span class="o">=</span> <span class="p">[(</span><span class="n">l</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">breakpoint</span><span class="p">))</span>
+                             <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">lineages</span><span class="p">[</span><span class="n">lineage</span><span class="p">]</span> <span class="k">if</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="nb">breakpoint</span><span class="p">]</span>
+            <span class="c1"># right_material: keep intervals (or parts of intervals) that fall</span>
+            <span class="c1"># to the RIGHT of the breakpoint.</span>
+            <span class="n">right_material</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">max</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="nb">breakpoint</span><span class="p">),</span> <span class="n">r</span><span class="p">)</span>
+                              <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">lineages</span><span class="p">[</span><span class="n">lineage</span><span class="p">]</span> <span class="k">if</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="nb">breakpoint</span><span class="p">]</span>
+
+            <span class="c1"># Only create new lineages if both sides have material.</span>
+            <span class="c1"># (If the breakpoint falls outside all intervals, one side is empty</span>
+            <span class="c1"># and the split has no effect.)</span>
+            <span class="k">if</span> <span class="n">left_material</span> <span class="ow">and</span> <span class="n">right_material</span><span class="p">:</span>
+                <span class="n">left_label</span> <span class="o">=</span> <span class="n">next_label</span>
+                <span class="n">right_label</span> <span class="o">=</span> <span class="n">next_label</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">next_label</span> <span class="o">+=</span> <span class="mi">2</span>
+
+                <span class="n">lineages</span><span class="p">[</span><span class="n">left_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">left_material</span>
+                <span class="n">lineages</span><span class="p">[</span><span class="n">right_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">right_material</span>
+                <span class="k">del</span> <span class="n">lineages</span><span class="p">[</span><span class="n">lineage</span><span class="p">]</span>
+
+                <span class="n">recomb_events</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">current_time</span><span class="p">,</span> <span class="n">lineage</span><span class="p">,</span> <span class="nb">breakpoint</span><span class="p">,</span>
+                                     <span class="n">left_label</span><span class="p">,</span> <span class="n">right_label</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">coal_events</span><span class="p">,</span> <span class="n">recomb_events</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">coal_events</span><span class="p">,</span> <span class="n">recomb_events</span> <span class="o">=</span> <span class="n">simulate_arg</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Coalescence events: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">coal_events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recombination events: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">recomb_events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">coal_events</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Coal at t=</span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">c1</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">c2</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">lin</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">recomb_events</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Recomb at t=</span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">lin</span><span class="si">}</span><span class="s2"> splits at </span><span class="si">{</span><span class="n">bp</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Notice how recombination events increase the number of active lineages. With
+<span class="math notranslate nohighlight">\(\rho = 5\)</span>, recombination is fairly frequent – you should see several
+recombination events interspersed with the coalescences. If you increase
+<span class="math notranslate nohighlight">\(\rho\)</span>, recombination events become more common relative to coalescences,
+and the ARG becomes more complex. If you set <span class="math notranslate nohighlight">\(\rho = 0\)</span>, no
+recombination occurs and you recover the simple coalescent tree from the
+previous chapter.</p>
+</section>
+<section id="the-structure-of-an-arg-a-directed-acyclic-graph">
+<h2>The Structure of an ARG: A Directed Acyclic Graph<a class="headerlink" href="#the-structure-of-an-arg-a-directed-acyclic-graph" title="Link to this heading"></a></h2>
+<p>A coalescent tree is, mathematically, a <strong>tree</strong>: each node has exactly one
+parent (except the root, which has none). But an ARG is something more complex.
+Recombination events create nodes with <strong>two parents</strong> – one for the left side
+of the breakpoint, one for the right side. This means the ARG is not a tree but
+a <strong>directed acyclic graph (DAG)</strong>.</p>
+<div class="admonition-what-is-a-directed-acyclic-graph admonition">
+<p class="admonition-title">What is a directed acyclic graph?</p>
+<p>A <strong>directed graph</strong> is a collection of nodes connected by arrows (directed
+edges). “Directed” means each edge has a direction: from child to parent,
+in our case. “Acyclic” means there are no cycles – you can never follow
+arrows and return to where you started. In the ARG, edges always point
+backwards in time (from descendant to ancestor), and time only flows one
+way, so cycles are impossible.</p>
+<p>A tree is a special case of a DAG where every node has at most one parent.
+In an ARG, recombination nodes have two parents (one for each side of the
+breakpoint), making it a DAG but not a tree. Coalescence nodes still have
+one parent but two children, just as in a tree.</p>
+</div>
+<p>In the watchmaking metaphor, a tree is like a simple gear train – force flows
+in one direction from mainspring to escapement with no branching. An ARG is
+like the full movement, where a wheel might receive force from two different
+sources (one driving the hours, another driving the minutes), and where the
+same barrel might power multiple complication trains simultaneously.</p>
+</section>
+<section id="marginal-trees">
+<h2>Marginal Trees<a class="headerlink" href="#marginal-trees" title="Link to this heading"></a></h2>
+<p>An ARG encodes a <strong>marginal tree</strong> at every position along the genome. The
+marginal tree at position <span class="math notranslate nohighlight">\(x\)</span> is the genealogical tree for that specific
+position, constructed by taking the ARG and ignoring all recombination events
+that don’t affect position <span class="math notranslate nohighlight">\(x\)</span>.</p>
+<p>Here’s the key intuition: as you slide a pointer from left to right along the
+genome, the genealogical tree changes. At each recombination breakpoint, some
+branch in the tree detaches and reattaches elsewhere (or a new branch appears,
+or one disappears). Between breakpoints, the tree is constant.</p>
+<p>This is like examining different cross-sections of a watch movement. At one
+cross-section, you see a particular arrangement of gears. Slide to a different
+cross-section, and some gears have been swapped – a different train is visible.
+But between the swap points, the arrangement stays the same.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">extract_marginal_trees</span><span class="p">(</span><span class="n">coal_events</span><span class="p">,</span> <span class="n">recomb_events</span><span class="p">,</span> <span class="n">seq_length</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract the breakpoints where marginal trees change.</span>
+
+<span class="sd">    Returns the breakpoints that partition the genome into segments</span>
+<span class="sd">    with constant tree topology.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Build a sorted list of unique breakpoints.</span>
+    <span class="c1"># set() removes duplicates, sorted() puts them in order.</span>
+    <span class="c1"># The list comprehension [bp for _, _, bp, _, _ in recomb_events]</span>
+    <span class="c1"># extracts the third element (the breakpoint position) from each</span>
+    <span class="c1"># recombination event tuple, ignoring the other fields (marked _).</span>
+    <span class="n">breakpoints</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">seq_length</span><span class="p">]</span> <span class="o">+</span>
+                             <span class="p">[</span><span class="n">bp</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">recomb_events</span><span class="p">]))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of distinct trees: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">breakpoints</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Breakpoints: </span><span class="si">{</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">breakpoints</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">breakpoints</span>
+
+<span class="n">breakpoints</span> <span class="o">=</span> <span class="n">extract_marginal_trees</span><span class="p">(</span><span class="n">coal_events</span><span class="p">,</span> <span class="n">recomb_events</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The number of distinct marginal trees equals the number of recombination events
+plus one (the original tree, plus one new tree for each recombination). For our
+simulation with <span class="math notranslate nohighlight">\(\rho = 5\)</span>, you should see several distinct trees.</p>
+<p>The key property that connects all of this:</p>
+<div class="math notranslate nohighlight">
+\[\text{ARG} = \text{sequence of marginal trees} + \text{recombination events connecting them}\]</div>
+<p>This is the data structure that SINGER infers from sequence data. The marginal
+trees tell us the genealogy at each position; the recombination events tell us
+how the genealogy changes as we move along the genome.</p>
+</section>
+<section id="the-tree-sequence-representation">
+<h2>The Tree Sequence Representation<a class="headerlink" href="#the-tree-sequence-representation" title="Link to this heading"></a></h2>
+<p>Storing an explicit tree for every base pair along the genome would be enormously
+wasteful – a human chromosome has hundreds of millions of base pairs but
+typically only thousands to tens of thousands of distinct marginal trees. Modern
+tools represent ARGs as <strong>tree sequences</strong> (Kelleher et al., 2016): an ordered
+list of marginal trees along the genome, stored efficiently by recording only
+the <strong>changes</strong> (which branches are removed and added) at each recombination
+breakpoint.</p>
+<p>This is a form of <strong>differential encoding</strong> – rather than writing out each
+tree in full, we store the first tree completely and then, at each breakpoint,
+record only what changed. This is analogous to how a watchmaker’s technical
+manual might describe the base caliber in full, then describe each complication
+variant by listing only the modified components.</p>
+<p>The fundamental data structure has two tables:</p>
+<ul class="simple">
+<li><p><strong>Nodes</strong>: Each node has a time (0 for samples, positive for ancestors) and a
+flag indicating whether it’s a sample</p></li>
+<li><p><strong>Edges</strong>: Each edge has a genomic interval <span class="math notranslate nohighlight">\([\text{left}, \text{right})\)</span>
+and connects a child to a parent. The edge is “active” only within its
+genomic interval.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SimpleTreeSequence</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A minimal tree sequence representation for educational purposes.</span>
+
+<span class="sd">    Nodes are stored as (time, is_sample) tuples.</span>
+<span class="sd">    Edges are stored as (left, right, parent, child) tuples, where</span>
+<span class="sd">    [left, right) is the genomic interval where this parent-child</span>
+<span class="sd">    relationship holds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>   <span class="c1"># list of (time, is_sample) tuples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>   <span class="c1"># list of (left, right, parent, child) tuples</span>
+
+    <span class="k">def</span> <span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">is_sample</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a node and return its integer ID (0-indexed).&quot;&quot;&quot;</span>
+        <span class="n">node_id</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">time</span><span class="p">,</span> <span class="n">is_sample</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">node_id</span>
+
+    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an edge active over the genomic interval [left, right).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">trees</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq_length</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over marginal trees.</span>
+
+<span class="sd">        Yields (left, right, active_edges) for each genomic interval</span>
+<span class="sd">        where the tree topology is constant.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Collect all breakpoints from edge boundaries.</span>
+        <span class="c1"># The set comprehension gathers every left and right coordinate,</span>
+        <span class="c1"># plus the sequence endpoints, then sorts them.</span>
+        <span class="n">breakpoints</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span>
+            <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">seq_length</span><span class="p">]</span> <span class="o">+</span>
+            <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">]</span> <span class="o">+</span>
+            <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">]</span>
+        <span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">breakpoints</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Check which edges are active at the midpoint of this interval.</span>
+            <span class="c1"># Using the midpoint avoids boundary ambiguity.</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="p">(</span><span class="n">breakpoints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">breakpoints</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="c1"># List comprehension: keep only edges whose interval contains pos.</span>
+            <span class="n">active</span> <span class="o">=</span> <span class="p">[(</span><span class="n">p</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span>
+                      <span class="k">if</span> <span class="n">l</span> <span class="o">&lt;=</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="n">r</span><span class="p">]</span>
+            <span class="k">yield</span> <span class="n">breakpoints</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">breakpoints</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="n">active</span>
+
+<span class="c1"># Example: two marginal trees for 4 samples</span>
+<span class="n">ts</span> <span class="o">=</span> <span class="n">SimpleTreeSequence</span><span class="p">()</span>
+<span class="c1"># Samples at time 0 (the present)</span>
+<span class="c1"># The underscore _ is a Python convention for a variable we don&#39;t need --</span>
+<span class="c1"># here we don&#39;t use the loop variable because add_node tracks IDs internally.</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">ts</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">is_sample</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># Internal (ancestor) nodes at various times in the past</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>  <span class="c1"># node 4</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mf">0.8</span><span class="p">)</span>  <span class="c1"># node 5</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mf">1.2</span><span class="p">)</span>  <span class="c1"># node 6</span>
+
+<span class="c1"># First tree (positions 0.0 to 0.6): topology ((0,1), (2,3))</span>
+<span class="c1"># Nodes 0 and 1 coalesce into node 4; nodes 2 and 3 into node 5;</span>
+<span class="c1"># then nodes 4 and 5 into node 6.</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>   <span class="c1"># 0 -&gt; 4 for positions [0.0, 0.6)</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>   <span class="c1"># 1 -&gt; 4 for positions [0.0, 1.0)</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>   <span class="c1"># 2 -&gt; 5 for positions [0.0, 1.0)</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>   <span class="c1"># 3 -&gt; 5 for positions [0.0, 1.0)</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>   <span class="c1"># 4 -&gt; 6 for positions [0.0, 0.6)</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>   <span class="c1"># 5 -&gt; 6 for positions [0.0, 1.0)</span>
+
+<span class="c1"># After recombination at position 0.6, node 0 moves:</span>
+<span class="c1"># Instead of joining node 4 (with node 1), node 0 now joins node 5</span>
+<span class="c1"># (with nodes 2 and 3). This represents a change in genealogy.</span>
+<span class="n">ts</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>   <span class="c1"># 0 -&gt; 5 for positions [0.6, 1.0)</span>
+
+<span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">edges</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">trees</span><span class="p">(</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Tree at [</span><span class="si">{</span><span class="n">left</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">right</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Examine the output: in the first tree (positions 0.0 to 0.6), nodes 0 and 1 are
+siblings (both children of node 4). In the second tree (positions 0.6 to 1.0),
+node 0 has moved to become a child of node 5, joining nodes 2 and 3. Only one
+edge changed – this is the efficiency of the tree sequence representation.</p>
+</section>
+<section id="branch-lengths-and-the-arg">
+<h2>Branch Lengths and the ARG<a class="headerlink" href="#branch-lengths-and-the-arg" title="Link to this heading"></a></h2>
+<p>A crucial concept for SINGER: the <strong>total branch length</strong> of a marginal tree.
+This quantity determines how many mutations we expect to see, and it connects
+the genealogy (which is hidden) to the sequence data (which we observe).</p>
+<p>For a marginal tree <span class="math notranslate nohighlight">\(\Psi\)</span> at position <span class="math notranslate nohighlight">\(x\)</span>, the total branch length
+is the sum of all branch lengths in the tree:</p>
+<div class="math notranslate nohighlight">
+\[L(\Psi) = \sum_{\text{branch } b \in \Psi} \ell(b)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\ell(b)\)</span> is the length (in coalescent time units) of branch
+<span class="math notranslate nohighlight">\(b\)</span>. Recall from the <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter that branch lengths
+are measured in coalescent time units (multiples of <span class="math notranslate nohighlight">\(2N_e\)</span> generations).</p>
+<p>The total branch length of the entire ARG across the genome is obtained by
+<strong>integrating</strong> the branch length of each marginal tree over the positions it
+covers:</p>
+<div class="math notranslate nohighlight">
+\[L(\mathcal{G}) = \int_0^{S} L(\Psi_x) \, dx\]</div>
+<p>where <span class="math notranslate nohighlight">\(S\)</span> is the sequence length and <span class="math notranslate nohighlight">\(\Psi_x\)</span> is the marginal tree
+at position <span class="math notranslate nohighlight">\(x\)</span>.</p>
+<div class="admonition-calculus-aside-why-integrate admonition">
+<p class="admonition-title">Calculus aside: why integrate?</p>
+<p>Each base pair has its own marginal tree, and mutations at each base pair
+arise on the branches of that specific tree. So the total “opportunity” for
+mutations is the sum of all branch lengths across all positions. Since the
+marginal tree is constant within each genomic interval between breakpoints,
+the integral simplifies to a sum:</p>
+<div class="math notranslate nohighlight">
+\[L(\mathcal{G}) = \sum_{i=1}^{T} (\text{right}_i - \text{left}_i) \times L(\Psi_i)\]</div>
+<p>where the sum runs over the <span class="math notranslate nohighlight">\(T\)</span> distinct marginal trees and
+<span class="math notranslate nohighlight">\([\text{left}_i, \text{right}_i)\)</span> is the genomic interval where tree
+<span class="math notranslate nohighlight">\(\Psi_i\)</span> applies. Each tree’s branch length is weighted by how many
+base pairs it covers (its “span”).</p>
+</div>
+<p>This total branch length determines the expected number of mutations across the
+entire ARG:</p>
+<div class="math notranslate nohighlight">
+\[\mathbb{E}[\text{number of mutations}] = \frac{\theta}{2} L(\mathcal{G})\]</div>
+<div class="admonition-probability-aside-why-math-theta-2-times-l admonition">
+<p class="admonition-title">Probability aside: why <span class="math notranslate nohighlight">\(\theta/2 \times L\)</span>?</p>
+<p>This follows from the Poisson mutation model we established in the
+<a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter. Each unit of branch length (in coalescent
+time) at each base pair independently produces mutations at rate
+<span class="math notranslate nohighlight">\(\theta/2\)</span>. Since the Poisson distribution has the property that the
+mean of a sum of independent Poissons equals the sum of the means, the
+expected total number of mutations is simply <span class="math notranslate nohighlight">\(\theta/2\)</span> times the
+total branch-length-times-span across the entire ARG. This is a
+consequence of the <strong>additivity property</strong> of Poisson processes.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">total_branch_length</span><span class="p">(</span><span class="n">node_times</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">position</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute total branch length of the marginal tree at a given position.</span>
+
+<span class="sd">    For each edge active at &#39;position&#39;, the branch length is the difference</span>
+<span class="sd">    between the parent&#39;s time and the child&#39;s time.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    node_times : dict</span>
+<span class="sd">        Mapping from node ID to time (in coalescent units).</span>
+<span class="sd">    edges : list of (left, right, parent, child)</span>
+<span class="sd">        Tree sequence edges.</span>
+<span class="sd">    position : float</span>
+<span class="sd">        Genomic position to query.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Total branch length at the given position.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="c1"># Check if this edge is active at the query position</span>
+        <span class="k">if</span> <span class="n">left</span> <span class="o">&lt;=</span> <span class="n">position</span> <span class="o">&lt;</span> <span class="n">right</span><span class="p">:</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="n">node_times</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">-</span> <span class="n">node_times</span><span class="p">[</span><span class="n">child</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">total</span>
+</pre></div>
+</div>
+</section>
+<section id="why-arg-inference-is-hard">
+<h2>Why ARG Inference Is Hard<a class="headerlink" href="#why-arg-inference-is-hard" title="Link to this heading"></a></h2>
+<p>We’ve now seen what an ARG is and how to represent one. The challenge that
+motivates the rest of this book is the <strong>inverse problem</strong>: given observed DNA
+sequences, can we reconstruct the ARG that produced them?</p>
+<p>This turns out to be extraordinarily difficult, for several reinforcing reasons:</p>
+<ol class="arabic simple">
+<li><p><strong>Enormous state space.</strong> The number of possible ARGs grows
+super-exponentially with sample size. Even for a handful of samples and a
+short genomic region, the space of possible histories is vast beyond
+enumeration. It is as if a watchmaker had to deduce the complete history of a
+movement’s assembly – every gear placed, every screw turned, in exact order
+– by examining only the finished watch.</p></li>
+<li><p><strong>Recombination creates reticulations.</strong> Unlike trees, ARGs are directed
+acyclic graphs with <strong>reticulation nodes</strong> – nodes that have two parents
+(one from each side of a recombination breakpoint). This makes the
+combinatorial structure far richer than for trees, where each node has
+exactly one parent.</p></li>
+<li><p><strong>Data is sparse.</strong> We only observe the <em>leaves</em> of the ARG (the sampled
+sequences at the present), and we only see positions where mutations happened
+to fall. The vast majority of the tree’s branches carry no mutations at all
+(recall from the coalescent chapter that mutation probabilities per site are
+tiny: <span class="math notranslate nohighlight">\(\theta\ell/2 \approx 10^{-4}\)</span> for typical human parameters).
+Reconstructing a complex structure from such sparse observations is inherently
+underdetermined.</p></li>
+<li><p><strong>Identifiability.</strong> Many different ARGs can produce the same pattern of
+mutations. Two different genealogical histories might yield identical sequence
+data, making it impossible to distinguish them even in principle.</p></li>
+</ol>
+<div class="admonition-probability-aside-the-curse-of-dimensionality admonition">
+<p class="admonition-title">Probability aside: the curse of dimensionality</p>
+<p>The space of possible ARGs is a high-dimensional combinatorial object. For
+<span class="math notranslate nohighlight">\(n\)</span> samples and a genome of length <span class="math notranslate nohighlight">\(S\)</span> with recombination rate
+<span class="math notranslate nohighlight">\(\rho\)</span>, the expected number of recombination events is
+<span class="math notranslate nohighlight">\(O(n \rho S)\)</span>, and each one creates a branching point in the space of
+possible histories. Exhaustive enumeration is out of the question. This is
+why Bayesian methods that <em>sample</em> from the posterior distribution of ARGs
+– rather than searching for a single best ARG – are essential.</p>
+</div>
+<p>This is why methods like SINGER exist. Rather than attempting to search the
+full space of ARGs, SINGER uses two powerful mathematical tools to make
+inference tractable:</p>
+<ul class="simple">
+<li><p>The <strong>Sequentially Markov Coalescent (SMC)</strong>, which approximates the ARG as a
+Markov chain of marginal trees along the genome (covered in <a class="reference internal" href="smc.html#smc"><span class="std std-ref">The Sequentially Markov Coalescent</span></a>)</p></li>
+<li><p><strong>Hidden Markov Models (HMMs)</strong>, which provide efficient algorithms for
+inference in Markov chains (covered in <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a>)</p></li>
+</ul>
+<p>Together, these tools reduce an impossible combinatorial problem to a sequence
+of manageable probabilistic calculations.</p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>We’ve moved from the single-tree world of the coalescent to the richer landscape
+of ARGs – from tracing one gear train to reading the complete mechanical
+drawing. Here is what we’ve established:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 50.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Concept</p></th>
+<th class="head"><p>Key Idea</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Recombination</p></td>
+<td><p>Different genome positions can have different trees (shuffling during meiosis)</p></td>
+</tr>
+<tr class="row-odd"><td><p>ARG</p></td>
+<td><p>Complete genealogical history: all trees + recombinations (a directed acyclic graph)</p></td>
+</tr>
+<tr class="row-even"><td><p>Marginal tree</p></td>
+<td><p>The genealogy at a single genome position; constant between breakpoints</p></td>
+</tr>
+<tr class="row-odd"><td><p>Breakpoint</p></td>
+<td><p>A genomic position where recombination changes the marginal tree</p></td>
+</tr>
+<tr class="row-even"><td><p>Tree sequence</p></td>
+<td><p>Efficient storage: record only the changes between adjacent marginal trees</p></td>
+</tr>
+<tr class="row-odd"><td><p>Total branch length</p></td>
+<td><p>Determines expected mutation count: <span class="math notranslate nohighlight">\(\mathbb{E}[\text{muts}] = \frac{\theta}{2}L(\mathcal{G})\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Event rates</p></td>
+<td><p>Coalescence at <span class="math notranslate nohighlight">\(\binom{k}{2}\)</span>, recombination at <span class="math notranslate nohighlight">\(k\rho/2\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>The ARG is the object we ultimately want to infer – it is the master blueprint
+of the genome’s history. But as we’ve seen, direct inference is intractable.
+The next two chapters introduce the mathematical machinery that makes it
+possible: Hidden Markov Models and the Sequentially Markov Coalescent.</p>
+<p>Next: <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a> – the computational engine that makes ARG inference tractable.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="coalescent_theory.html" class="btn btn-neutral float-left" title="Coalescent Theory" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hmms.html" class="btn btn-neutral float-right" title="Hidden Markov Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,925 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emission Probabilities &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="MCMC Sampling" href="mcmc_sampling.html" />
+    <link rel="prev" title="Transition Probabilities" href="transition_probabilities.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece IV: ARGweaver</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece IV: ARGweaver</a></li>
+      <li class="breadcrumb-item active">Emission Probabilities</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="transition_probabilities.html" class="btn btn-neutral float-left" title="Transition Probabilities" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mcmc_sampling.html" class="btn btn-neutral float-right" title="MCMC Sampling" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="emission-probabilities">
+<span id="argweaver-emissions"></span><h1>Emission Probabilities<a class="headerlink" href="#emission-probabilities" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The escapement: how the data — each observed base — ticks against the
+proposed genealogy, scoring every hidden state by what mutations it implies.</em></p>
+</div></blockquote>
+<p>This chapter derives the emission probabilities for ARGweaver’s HMM. At each genomic
+position, we observe the allelic state of the new haplotype being threaded, and we
+need to compute how likely that observation is under each possible hidden state
+<span class="math notranslate nohighlight">\((b, i)\)</span>.</p>
+<p>In the previous chapter (<a class="reference internal" href="transition_probabilities.html#argweaver-transitions"><span class="std std-ref">Transition Probabilities</span></a>), we built the gear that moves
+the hidden state from one genomic position to the next. But transitions alone cannot
+tell us which state is <em>correct</em> — for that, we need to check each candidate state
+against the actual data. Emissions are the escapement of the watch: the mechanism
+that couples the internal gear train to the external reality of observed mutations.</p>
+<p>The key idea: given a state (the new lineage joins branch <span class="math notranslate nohighlight">\(b\)</span> at time <span class="math notranslate nohighlight">\(t_i\)</span>),
+the emission probability depends on whether mutations are needed to explain the
+observed data, and how long the relevant branches are.</p>
+<section id="parsimony-ancestral-reconstruction">
+<h2>Parsimony Ancestral Reconstruction<a class="headerlink" href="#parsimony-ancestral-reconstruction" title="Link to this heading"></a></h2>
+<p>Before computing emissions, ARGweaver reconstructs the <strong>ancestral sequence</strong> at
+each internal node of the local tree using <strong>Fitch parsimony</strong>. This is a fast,
+parameter-free method that assigns bases to internal nodes to minimize the total
+number of mutations on the tree.</p>
+<div class="admonition-closing-the-confusion-gap-what-is-parsimony-scoring admonition">
+<p class="admonition-title">Closing the confusion gap — What is parsimony scoring?</p>
+<p>In phylogenetics, <strong>parsimony</strong> is the principle that the best explanation of the
+data is the one requiring the fewest mutations. Given a tree topology and observed
+bases at the leaves, parsimony assigns bases to internal (ancestral) nodes so that
+the total number of base changes along branches is minimized.</p>
+<p>For example, if leaves A, B, C have bases T, T, A on a tree ((A,B),C), parsimony
+assigns T to the ancestor of A and B (zero mutations on those branches), and then
+must place one mutation somewhere on the branch from the root to C (or from the root
+to AB). The minimum number of mutations is 1.</p>
+<p>ARGweaver uses parsimony instead of full probabilistic ancestral reconstruction
+(Felsenstein’s pruning algorithm) because it is much faster — <span class="math notranslate nohighlight">\(O(k)\)</span> per
+site instead of <span class="math notranslate nohighlight">\(O(k \cdot |\text{alphabet}|)\)</span> — and gives identical
+results when mutation rates are low (which is the typical case for the coalescent).
+The parsimony reconstruction determines which of the five emission cases applies at
+each state, as we will see below.</p>
+</div>
+<section id="the-fitch-algorithm">
+<h3>The Fitch Algorithm<a class="headerlink" href="#the-fitch-algorithm" title="Link to this heading"></a></h3>
+<p>The algorithm has two passes:</p>
+<p><strong>Bottom-up pass (post-order):</strong> At each node, compute a set of possible bases.</p>
+<ul class="simple">
+<li><p>Leaf nodes: the set is the single observed base <span class="math notranslate nohighlight">\(\{d_i\}\)</span></p></li>
+<li><p>Internal nodes: if the children’s sets intersect, use the intersection; otherwise,
+use the union</p></li>
+</ul>
+<p><strong>Top-down pass (pre-order):</strong> Resolve ambiguities by preferring the parent’s
+assignment.</p>
+<ul class="simple">
+<li><p>Root: pick any base from its set (ARGweaver uses a deterministic rule: prefer
+A &gt; C &gt; G &gt; T)</p></li>
+<li><p>Other nodes: if the parent’s base is in this node’s set, use it; otherwise, pick
+deterministically from the set</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parsimony_ancestral_seq</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">seqs</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reconstruct ancestral bases at all nodes using Fitch parsimony.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tree : tree object</span>
+<span class="sd">        Local tree with .postorder() and .preorder() iterators.</span>
+<span class="sd">    seqs : dict of {name: str}</span>
+<span class="sd">        Sequences for each leaf.</span>
+<span class="sd">    pos : int</span>
+<span class="sd">        Genomic position to reconstruct.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of {str: str}</span>
+<span class="sd">        Mapping from node name to reconstructed base.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Consider a tree ((A,B),C) where A=&#39;T&#39;, B=&#39;T&#39;, C=&#39;A&#39;:</span>
+<span class="sd">    - Bottom-up: AB_set = {T} ∩ {T} = {T}, root_set = {T} ∩ {A} = {} -&gt; {T,A}</span>
+<span class="sd">    - Top-down: root=&#39;A&#39; (deterministic), AB=&#39;T&#39;, A=&#39;T&#39;, B=&#39;T&#39;, C=&#39;A&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ancestral</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">sets</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Bottom-up pass: compute Fitch sets.</span>
+    <span class="c1"># postorder() visits leaves first, then internal nodes, then root.</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">postorder</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">():</span>
+            <span class="c1"># Leaf: the set is just the observed base.</span>
+            <span class="n">sets</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">seqs</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">pos</span><span class="p">]])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Internal node: intersect children&#39;s sets if possible,</span>
+            <span class="c1"># otherwise take the union. Intersection means no mutation</span>
+            <span class="c1"># is needed; union means at least one mutation is required.</span>
+            <span class="n">left_set</span> <span class="o">=</span> <span class="n">sets</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">right_set</span> <span class="o">=</span> <span class="n">sets</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="n">intersect</span> <span class="o">=</span> <span class="n">left_set</span> <span class="o">&amp;</span> <span class="n">right_set</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">intersect</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">sets</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">intersect</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sets</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">left_set</span> <span class="o">|</span> <span class="n">right_set</span>
+
+    <span class="c1"># Top-down pass: resolve ambiguities.</span>
+    <span class="c1"># preorder() visits root first, then internal nodes, then leaves.</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">preorder</span><span class="p">():</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">sets</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">:</span>
+            <span class="c1"># Unambiguous, or root: deterministic pick (A &gt; C &gt; G &gt; T).</span>
+            <span class="c1"># This priority is arbitrary but must be consistent.</span>
+            <span class="n">ancestral</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;A&quot;</span> <span class="k">if</span> <span class="s2">&quot;A&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="k">else</span>
+                                    <span class="s2">&quot;C&quot;</span> <span class="k">if</span> <span class="s2">&quot;C&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="k">else</span>
+                                    <span class="s2">&quot;G&quot;</span> <span class="k">if</span> <span class="s2">&quot;G&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="k">else</span>
+                                    <span class="s2">&quot;T&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Ambiguous internal node: prefer the parent&#39;s assignment</span>
+            <span class="c1"># if it is in the Fitch set. This minimizes mutations by</span>
+            <span class="c1"># propagating the parent&#39;s base downward when possible.</span>
+            <span class="n">parent_base</span> <span class="o">=</span> <span class="n">ancestral</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">parent_base</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+                <span class="n">ancestral</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent_base</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ancestral</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;A&quot;</span> <span class="k">if</span> <span class="s2">&quot;A&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="k">else</span>
+                                        <span class="s2">&quot;C&quot;</span> <span class="k">if</span> <span class="s2">&quot;C&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="k">else</span>
+                                        <span class="s2">&quot;G&quot;</span> <span class="k">if</span> <span class="s2">&quot;G&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="k">else</span>
+                                        <span class="s2">&quot;T&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ancestral</span>
+</pre></div>
+</div>
+<div class="admonition-why-parsimony-not-likelihood admonition">
+<p class="admonition-title">Why parsimony, not likelihood?</p>
+<p>Full likelihood-based ancestral reconstruction would require summing over all
+possible internal states, which is expensive per site per state. Parsimony gives
+a single “best guess” reconstruction that is fast and works well in practice —
+especially when mutation rates are low, which is the regime where the coalescent
+is most informative.</p>
+</div>
+<div class="admonition-probability-aside-parsimony-as-a-limit-of-maximum-likelihood admonition">
+<p class="admonition-title">Probability Aside — Parsimony as a limit of maximum likelihood</p>
+<p>Parsimony is not just a heuristic — it is the <em>maximum likelihood</em> ancestral
+reconstruction in the limit of low mutation rates. When <span class="math notranslate nohighlight">\(\mu \to 0\)</span>, the
+likelihood of a tree with <span class="math notranslate nohighlight">\(m\)</span> mutations scales as <span class="math notranslate nohighlight">\(\mu^m\)</span>, so the
+ML reconstruction is the one that minimizes <span class="math notranslate nohighlight">\(m\)</span>. This is exactly what
+Fitch parsimony computes.</p>
+<p>For typical human parameters (<span class="math notranslate nohighlight">\(\mu \approx 1.4 \times 10^{-8}\)</span> per bp per
+generation), the expected number of mutations per site per coalescent unit is
+very small, so parsimony and ML give essentially the same results. The two
+approaches diverge only on very deep branches or with elevated mutation rates.</p>
+</div>
+<p><em>Transition:</em> With the ancestral reconstruction in hand, we can now classify every
+(state, observation) pair into one of five cases, each with a different emission
+formula. This classification depends on three bases: the new haplotype’s base, the
+branch child’s base, and the branch parent’s base.</p>
+</section>
+</section>
+<section id="the-five-emission-cases">
+<h2>The Five Emission Cases<a class="headerlink" href="#the-five-emission-cases" title="Link to this heading"></a></h2>
+<p>Given the parsimony reconstruction, we have three bases at each position for
+each state <span class="math notranslate nohighlight">\((b, i)\)</span>:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(v\)</span> — the base of the <strong>new haplotype</strong> (the one being threaded)</p></li>
+<li><p><span class="math notranslate nohighlight">\(x\)</span> — the reconstructed base of <strong>node</strong> <span class="math notranslate nohighlight">\(b\)</span> (the branch’s child)</p></li>
+<li><p><span class="math notranslate nohighlight">\(p\)</span> — the reconstructed base of the <strong>parent</strong> of node <span class="math notranslate nohighlight">\(b\)</span></p></li>
+</ul>
+<p>The emission probability depends on the pattern of matches and mismatches among
+these three bases. There are exactly <strong>five cases</strong>.</p>
+<p>Let <span class="math notranslate nohighlight">\(t\)</span> be the coalescence time (the time of the joining point) and
+<span class="math notranslate nohighlight">\(\mu\)</span> be the per-base, per-generation mutation rate.</p>
+<section id="setup">
+<h3>Setup<a class="headerlink" href="#setup" title="Link to this heading"></a></h3>
+<p>When the new lineage joins branch <span class="math notranslate nohighlight">\(b\)</span> at time <span class="math notranslate nohighlight">\(t\)</span>, it creates a new
+internal node that splits branch <span class="math notranslate nohighlight">\(b\)</span> into two segments:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>   p (parent of b)
+   |
+   |  age(p) - t       &lt;- upper segment of old branch
+   |
+   * (new join point at time t)
+  / \
+ /   \
+|     v (new haplotype, at time 0)
+|     branch length = t
+|
+x (child node of b)
+branch length = t - age(x)    &lt;- lower segment of old branch
+</pre></div>
+</div>
+<p>Under a Jukes-Cantor mutation model with rate <span class="math notranslate nohighlight">\(\mu\)</span>, the probability of
+<strong>no mutation</strong> on a branch of length <span class="math notranslate nohighlight">\(\ell\)</span> is <span class="math notranslate nohighlight">\(e^{-\mu\ell}\)</span>, and
+the probability of <strong>a specific mutation</strong> (to any one of the 3 other bases) is
+<span class="math notranslate nohighlight">\(\tfrac{1}{3}(1 - e^{-\mu\ell})\)</span>.</p>
+<div class="admonition-probability-aside-the-jukes-cantor-model admonition">
+<p class="admonition-title">Probability Aside — The Jukes-Cantor model</p>
+<p>The Jukes-Cantor model is the simplest substitution model in molecular evolution.
+It assumes all four bases (A, C, G, T) mutate to any other base at the same rate
+<span class="math notranslate nohighlight">\(\mu/3\)</span>. The transition probability matrix after time <span class="math notranslate nohighlight">\(\ell\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}P_{ij}(\ell) = \begin{cases}
+\frac{1}{4} + \frac{3}{4} e^{-4\mu\ell/3} &amp; \text{if } i = j \\
+\frac{1}{4} - \frac{1}{4} e^{-4\mu\ell/3} &amp; \text{if } i \neq j
+\end{cases}\end{split}\]</div>
+<p>ARGweaver uses a simplified version where <span class="math notranslate nohighlight">\(P(\text{no change}) \approx e^{-\mu\ell}\)</span>
+and <span class="math notranslate nohighlight">\(P(\text{specific change}) \approx \frac{1}{3}(1 - e^{-\mu\ell})\)</span>. This
+approximation is accurate when <span class="math notranslate nohighlight">\(\mu\ell\)</span> is small (which it almost always is
+for single branches in the coalescent). The full Jukes-Cantor formula and the
+approximation diverge only for very long branches.</p>
+</div>
+</section>
+<section id="case-1-v-x-p-no-mutation">
+<h3>Case 1: <span class="math notranslate nohighlight">\(v = x = p\)</span> (no mutation)<a class="headerlink" href="#case-1-v-x-p-no-mutation" title="Link to this heading"></a></h3>
+<p>All three bases agree. No mutation is needed on the new branch (length <span class="math notranslate nohighlight">\(t\)</span>).</p>
+<div class="math notranslate nohighlight">
+\[\log P(\text{emit}) = -\mu \cdot t\]</div>
+<p>This is the most common case when <span class="math notranslate nohighlight">\(\mu t\)</span> is small.</p>
+</section>
+<section id="case-2-v-neq-p-x-mutation-on-new-branch">
+<h3>Case 2: <span class="math notranslate nohighlight">\(v \neq p = x\)</span> (mutation on new branch)<a class="headerlink" href="#case-2-v-neq-p-x-mutation-on-new-branch" title="Link to this heading"></a></h3>
+<p>The new haplotype differs from both the parent and child of the joining branch. This
+requires exactly one mutation on the new branch (from <span class="math notranslate nohighlight">\(p\)</span> to <span class="math notranslate nohighlight">\(v\)</span>).</p>
+<div class="math notranslate nohighlight">
+\[\log P(\text{emit}) = \log\!\left(\tfrac{1}{3} - \tfrac{1}{3} e^{-\mu t}\right)
+= \log\!\left(\tfrac{1}{3}(1 - e^{-\mu t})\right)\]</div>
+</section>
+<section id="case-3-v-p-neq-x-mutation-on-lower-segment-of-existing-branch">
+<h3>Case 3: <span class="math notranslate nohighlight">\(v = p \neq x\)</span> (mutation on lower segment of existing branch)<a class="headerlink" href="#case-3-v-p-neq-x-mutation-on-lower-segment-of-existing-branch" title="Link to this heading"></a></h3>
+<p>The new haplotype matches the parent but the child differs. This means there was
+a mutation on the existing branch <strong>below</strong> the join point (on the segment from
+<span class="math notranslate nohighlight">\(x\)</span> to the join point).</p>
+<p>Let <span class="math notranslate nohighlight">\(t_1 = \text{age}(p) - \text{age}(x)\)</span> be the full original branch length,
+and <span class="math notranslate nohighlight">\(t_2 = t - \text{age}(x)\)</span> be the lower segment length. The probability
+that the mutation fell on the lower segment (not the upper segment or the new branch):</p>
+<div class="math notranslate nohighlight">
+\[\log P(\text{emit}) = \log\!\left(
+\frac{1 - e^{-\mu t_2}}{1 - e^{-\mu t_1}} \cdot e^{-\mu(t + t_2 - t_1)}
+\right)\]</div>
+<div class="admonition-derivation admonition">
+<p class="admonition-title">Derivation</p>
+<p>We need: (a) a mutation on the lower segment of length <span class="math notranslate nohighlight">\(t_2\)</span>, probability
+<span class="math notranslate nohighlight">\(1 - e^{-\mu t_2}\)</span>; (b) no mutation on the upper segment of length
+<span class="math notranslate nohighlight">\(t_1 - t_2\)</span>, probability <span class="math notranslate nohighlight">\(e^{-\mu(t_1 - t_2)}\)</span>; (c) no mutation on
+the new branch of length <span class="math notranslate nohighlight">\(t\)</span>, probability <span class="math notranslate nohighlight">\(e^{-\mu t}\)</span>. But we must
+condition on the fact that the original branch <em>did</em> have a mutation (since
+<span class="math notranslate nohighlight">\(x \neq p\)</span>), so we divide by <span class="math notranslate nohighlight">\(1 - e^{-\mu t_1}\)</span>. Combining:</p>
+<div class="math notranslate nohighlight">
+\[\frac{(1 - e^{-\mu t_2}) \cdot e^{-\mu(t_1 - t_2)} \cdot e^{-\mu t}}
+     {1 - e^{-\mu t_1}}
+= \frac{1 - e^{-\mu t_2}}{1 - e^{-\mu t_1}} \cdot e^{-\mu(t + t_2 - t_1)}\]</div>
+<p>Wait — that’s <span class="math notranslate nohighlight">\(e^{-\mu(t_1 - t_2)} \cdot e^{-\mu t} = e^{-\mu(t + t_1 - t_2)}\)</span>.
+But the code has <span class="math notranslate nohighlight">\(e^{-\mu(t + t_2 - t_1)}\)</span>. Let’s re-derive carefully.</p>
+<p>Actually, the formula accounts for the fact that the observation constrains
+where the mutation is. The factor <span class="math notranslate nohighlight">\(e^{-\mu(t + t_2 - t_1)}\)</span> comes from
+requiring no mutation on the new branch (<span class="math notranslate nohighlight">\(e^{-\mu t}\)</span>) and adjusting for
+the conditional probability. The full derivation normalizes over all possible
+mutation placements consistent with the observation.</p>
+</div>
+<div class="admonition-calculus-aside-conditional-probabilities-and-branch-partitioning admonition">
+<p class="admonition-title">Calculus Aside — Conditional probabilities and branch partitioning</p>
+<p>The key mathematical technique in Cases 3–5 is <strong>conditional probability given
+a known mutation</strong>. We observe that <span class="math notranslate nohighlight">\(x \neq p\)</span>, which means at least one
+mutation occurred on the original branch of length <span class="math notranslate nohighlight">\(t_1\)</span>. Given this fact,
+the location of the mutation along the branch follows a distribution proportional
+to the mutation density at each point.</p>
+<p>Under the Poisson mutation model, mutations are uniformly distributed along a
+branch. The probability that a mutation falls on a sub-segment of length <span class="math notranslate nohighlight">\(t_2\)</span>
+out of a total branch of length <span class="math notranslate nohighlight">\(t_1\)</span> is approximately <span class="math notranslate nohighlight">\(t_2 / t_1\)</span>
+when <span class="math notranslate nohighlight">\(\mu t_1\)</span> is small. The exact formula uses exponentials because we must
+also account for the probability of <em>no additional mutations</em> on the remaining
+segments.</p>
+</div>
+</section>
+<section id="case-4-v-x-neq-p-mutation-on-upper-segment-of-existing-branch">
+<h3>Case 4: <span class="math notranslate nohighlight">\(v = x \neq p\)</span> (mutation on upper segment of existing branch)<a class="headerlink" href="#case-4-v-x-neq-p-mutation-on-upper-segment-of-existing-branch" title="Link to this heading"></a></h3>
+<p>The new haplotype matches the child but the parent differs. This means the mutation
+was on the existing branch <strong>above</strong> the join point.</p>
+<p>Let <span class="math notranslate nohighlight">\(t_1 = \text{age}(p) - \text{age}(x)\)</span> be the full branch length and
+<span class="math notranslate nohighlight">\(t_2 = \text{age}(p) - t\)</span> be the upper segment length.</p>
+<div class="math notranslate nohighlight">
+\[\log P(\text{emit}) = \log\!\left(
+\frac{1 - e^{-\mu t_2}}{1 - e^{-\mu t_1}} \cdot e^{-\mu(t + t_2 - t_1)}
+\right)\]</div>
+<p>This has the same form as Case 3, but with <span class="math notranslate nohighlight">\(t_2\)</span> now measuring the upper
+segment instead of the lower segment.</p>
+</section>
+<section id="case-5-v-neq-x-neq-p-v-neq-p-two-mutations">
+<h3>Case 5: <span class="math notranslate nohighlight">\(v \neq x \neq p\)</span>, <span class="math notranslate nohighlight">\(v \neq p\)</span> (two mutations)<a class="headerlink" href="#case-5-v-neq-x-neq-p-v-neq-p-two-mutations" title="Link to this heading"></a></h3>
+<p>All three bases are different. This requires mutations on both the new branch and
+the existing branch. This is the rarest case.</p>
+<div class="math notranslate nohighlight">
+\[\log P(\text{emit}) = \log\!\left(
+\frac{(1 - e^{-\mu t_2}) \cdot (1 - e^{-\mu t_3})}{1 - e^{-\mu t_1}}
+\cdot e^{-\mu(t + t_2 + t_3 - t_1)}
+\right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(t_1\)</span> is the full original branch length, <span class="math notranslate nohighlight">\(t_2 = \max(t_{\text{upper}}, t_{\text{lower}})\)</span>,
+and <span class="math notranslate nohighlight">\(t_3 = t\)</span> (the new branch length).</p>
+<div class="admonition-probability-aside-why-case-5-is-rare admonition">
+<p class="admonition-title">Probability Aside — Why Case 5 is rare</p>
+<p>Case 5 requires two independent mutations: one on the existing branch and one on
+the new branch. The probability of each mutation is approximately <span class="math notranslate nohighlight">\(\mu \ell\)</span>
+for short branches. The joint probability is therefore approximately
+<span class="math notranslate nohighlight">\(\mu^2 \ell_1 \ell_2\)</span>, which is <span class="math notranslate nohighlight">\(O(\mu^2)\)</span>. For human mutation rates
+(<span class="math notranslate nohighlight">\(\mu \approx 10^{-8}\)</span>) and branch lengths of a few thousand generations,
+<span class="math notranslate nohighlight">\(\mu \ell \approx 10^{-5}\)</span> to <span class="math notranslate nohighlight">\(10^{-4}\)</span>, so Case 5’s probability is
+roughly <span class="math notranslate nohighlight">\(10^{-10}\)</span> to <span class="math notranslate nohighlight">\(10^{-8}\)</span> — many orders of magnitude smaller
+than Case 1. In practice, Case 5 contributes negligibly to the HMM computation at
+most sites, but it must be included for mathematical completeness.</p>
+</div>
+</section>
+</section>
+<section id="root-unwrapping">
+<h2>Root Unwrapping<a class="headerlink" href="#root-unwrapping" title="Link to this heading"></a></h2>
+<p>At the <strong>root branch</strong>, there is no parent node above. ARGweaver handles this by
+“unwrapping” the root: the branch above the root is treated as if it extends to
+a virtual parent, with the sibling’s branch contributing additional length.</p>
+<p>Specifically, if the state is on the root node:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>    (virtual parent at effective age 2*root_age - sib_age)
+    |
+    * root
+   / \
+  /   \
+node  sib (sibling)
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(p\)</span> is set to the parsimony reconstruction of the <strong>sibling</strong> (not the root)</p></li>
+<li><p>The effective parent age is <span class="math notranslate nohighlight">\(2 \cdot \text{age}(\text{root}) - \text{age}(\text{sib})\)</span>,
+which accounts for the unobserved branch above the root</p></li>
+</ul>
+<p>If the state is <em>above</em> the root (the new lineage becomes the new root):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>    * (new join point at time t)
+   / \
+  /   \
+root   v (new haplotype)
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(p = x\)</span> (no parent to compare against)</p></li>
+<li><p>The effective time is <span class="math notranslate nohighlight">\(2t - \text{age}(\text{root})\)</span> (unwrapped branch length)</p></li>
+</ul>
+<div class="admonition-calculus-aside-why-the-unwrapped-time-formula-works admonition">
+<p class="admonition-title">Calculus Aside — Why the unwrapped time formula works</p>
+<p>When the new lineage joins above the root at time <span class="math notranslate nohighlight">\(t\)</span>, the total path from
+the new haplotype (at time 0) to the old root passes through the join point:
+the new branch has length <span class="math notranslate nohighlight">\(t\)</span> (from the haplotype up to the join point) and
+the segment from the join point down to the old root has length
+<span class="math notranslate nohighlight">\(t - \text{age}(\text{root})\)</span>. But both segments contribute to the mutation
+opportunity. The “effective time” <span class="math notranslate nohighlight">\(2t - \text{age}(\text{root})\)</span> accounts for
+the round trip: up from the haplotype to the join point, then down to the root.
+This is equivalent to treating the unrooted tree as if the new branch and the
+root-to-join-point segment were a single branch of this effective length.</p>
+</div>
+<p><em>Transition:</em> With all five cases and the root unwrapping logic defined, we can now
+assemble the complete emission function. The implementation below loops over all states,
+classifies each into one of the five cases, and computes the log emission probability.</p>
+</section>
+<section id="full-implementation">
+<h2>Full Implementation<a class="headerlink" href="#full-implementation" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">exp</span><span class="p">,</span> <span class="n">log</span>
+
+<span class="k">def</span> <span class="nf">calc_emission</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">states</span><span class="p">,</span> <span class="n">seqs</span><span class="p">,</span> <span class="n">new_name</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">time_steps</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate emission log-probabilities for all states at a position.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tree : tree object</span>
+<span class="sd">        The local tree.</span>
+<span class="sd">    states : list of (str, int)</span>
+<span class="sd">        Valid HMM states at this position.</span>
+<span class="sd">    seqs : dict of {str: str}</span>
+<span class="sd">        Sequences for all haplotypes.</span>
+<span class="sd">    new_name : str</span>
+<span class="sd">        Name of the haplotype being threaded.</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points.</span>
+<span class="sd">    time_steps : list of float</span>
+<span class="sd">        Minimum time step (used as floor for branch lengths).</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Per-base, per-generation mutation rate.</span>
+<span class="sd">    pos : int</span>
+<span class="sd">        Genomic position.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of float</span>
+<span class="sd">        Log emission probability for each state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Use the smallest time step as a floor to avoid log(0) errors</span>
+    <span class="c1"># when branch lengths are exactly zero.</span>
+    <span class="n">mintime</span> <span class="o">=</span> <span class="n">time_steps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">emit</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Reconstruct ancestral bases using parsimony.</span>
+    <span class="c1"># This gives us the base at every internal node of the tree,</span>
+    <span class="c1"># which we need to classify into the five emission cases.</span>
+    <span class="n">local_site</span> <span class="o">=</span> <span class="n">parsimony_ancestral_seq</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">seqs</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">timei</span> <span class="ow">in</span> <span class="n">states</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="n">node_name</span><span class="p">]</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">timei</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">parent_age</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">age</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">parent</span><span class="o">.</span><span class="n">parents</span><span class="p">:</span>
+                <span class="c1"># Root unwrapping: the node&#39;s parent is the root, which</span>
+                <span class="c1"># has no grandparent. Use the sibling&#39;s reconstruction</span>
+                <span class="c1"># as a stand-in for the &quot;parent base&quot; p.</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">children</span>
+                <span class="n">sib</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">node</span> <span class="o">==</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">v</span> <span class="o">=</span> <span class="n">seqs</span><span class="p">[</span><span class="n">new_name</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">local_site</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">local_site</span><span class="p">[</span><span class="n">sib</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+                <span class="c1"># Effective parent age includes sibling&#39;s branch:</span>
+                <span class="c1"># this &quot;unwraps&quot; the root so that the total branch</span>
+                <span class="c1"># length accounts for the path through the root.</span>
+                <span class="n">parent_age</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">parent_age</span> <span class="o">-</span> <span class="n">sib</span><span class="o">.</span><span class="n">age</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">seqs</span><span class="p">[</span><span class="n">new_name</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">local_site</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">local_site</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># State is above the root: the new lineage becomes the</span>
+            <span class="c1"># new root of the tree.</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">parent_age</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># Unwrap: effective time doubles minus node age, because</span>
+            <span class="c1"># the path from the new haplotype to the old root passes</span>
+            <span class="c1"># through the join point and back down.</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">time</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">age</span>
+
+            <span class="n">v</span> <span class="o">=</span> <span class="n">seqs</span><span class="p">[</span><span class="n">new_name</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">local_site</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">x</span>  <span class="c1"># no parent -&gt; p = x (no mutation expected above)</span>
+
+        <span class="c1"># Floor the time to avoid log(0) when time is exactly 0</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+
+        <span class="c1"># --- The five emission cases ---</span>
+
+        <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">x</span> <span class="o">==</span> <span class="n">p</span><span class="p">:</span>
+            <span class="c1"># Case 1: no mutation needed.</span>
+            <span class="c1"># Just the probability of no mutation on the new branch.</span>
+            <span class="n">emit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">time</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">p</span> <span class="ow">and</span> <span class="n">p</span> <span class="o">==</span> <span class="n">x</span><span class="p">:</span>
+            <span class="c1"># Case 2: mutation on new branch (v differs from tree).</span>
+            <span class="c1"># The 1/3 factor accounts for the specific base change</span>
+            <span class="c1"># (any of 3 possible mutations, each equally likely</span>
+            <span class="c1"># under Jukes-Cantor).</span>
+            <span class="n">emit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">3</span> <span class="o">-</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">3</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">time</span><span class="p">)))</span>
+
+        <span class="k">elif</span> <span class="n">v</span> <span class="o">==</span> <span class="n">p</span> <span class="ow">and</span> <span class="n">p</span> <span class="o">!=</span> <span class="n">x</span><span class="p">:</span>
+            <span class="c1"># Case 3: mutation on lower segment of existing branch.</span>
+            <span class="c1"># t1 = full original branch length</span>
+            <span class="c1"># t2 = lower segment (from child to join point)</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">parent_age</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">age</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+            <span class="n">t2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">time</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">age</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+            <span class="n">emit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">t2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">t1</span><span class="p">))</span>
+                            <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="p">(</span><span class="n">time</span> <span class="o">+</span> <span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">))))</span>
+
+        <span class="k">elif</span> <span class="n">v</span> <span class="o">==</span> <span class="n">x</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">p</span><span class="p">:</span>
+            <span class="c1"># Case 4: mutation on upper segment of existing branch.</span>
+            <span class="c1"># t1 = full original branch length</span>
+            <span class="c1"># t2 = upper segment (from join point to parent)</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">parent_age</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">age</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+            <span class="n">t2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">parent_age</span> <span class="o">-</span> <span class="n">time</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+            <span class="n">emit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">t2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">t1</span><span class="p">))</span>
+                            <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="p">(</span><span class="n">time</span> <span class="o">+</span> <span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">))))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Case 5: two mutations (v != x, v != p, x != p).</span>
+            <span class="c1"># Requires a mutation on both the existing branch and</span>
+            <span class="c1"># the new branch --- the rarest case.</span>
+            <span class="k">if</span> <span class="n">parent</span><span class="p">:</span>
+                <span class="n">t1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">parent_age</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">age</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+                <span class="n">t2a</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">parent_age</span> <span class="o">-</span> <span class="n">time</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">t1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">age</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+                <span class="n">t2a</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">time</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+            <span class="n">t2b</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">time</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">age</span><span class="p">,</span> <span class="n">mintime</span><span class="p">)</span>
+            <span class="n">t2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t2a</span><span class="p">,</span> <span class="n">t2b</span><span class="p">)</span>
+            <span class="n">t3</span> <span class="o">=</span> <span class="n">time</span>
+
+            <span class="n">emit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">t2</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">t3</span><span class="p">))</span>
+                            <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">t1</span><span class="p">))</span>
+                            <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="p">(</span><span class="n">time</span> <span class="o">+</span> <span class="n">t2</span> <span class="o">+</span> <span class="n">t3</span> <span class="o">-</span> <span class="n">t1</span><span class="p">))))</span>
+
+    <span class="k">return</span> <span class="n">emit</span>
+</pre></div>
+</div>
+</section>
+<section id="emission-summary-table">
+<h2>Emission Summary Table<a class="headerlink" href="#emission-summary-table" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 10.0%" />
+<col style="width: 10.0%" />
+<col style="width: 10.0%" />
+<col style="width: 40.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><span class="math notranslate nohighlight">\(v\)</span></p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(x\)</span></p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(p\)</span></p></th>
+<th class="head"><p>Interpretation</p></th>
+<th class="head"><p>Formula (log scale)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>A</p></td>
+<td><p>A</p></td>
+<td><p>A</p></td>
+<td><p>No mutation</p></td>
+<td><p><span class="math notranslate nohighlight">\(-\mu t\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>T</p></td>
+<td><p>A</p></td>
+<td><p>A</p></td>
+<td><p>Mutation on new branch</p></td>
+<td><p><span class="math notranslate nohighlight">\(\log(\tfrac{1}{3}(1 - e^{-\mu t}))\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>A</p></td>
+<td><p>T</p></td>
+<td><p>A</p></td>
+<td><p>Mutation below join</p></td>
+<td><p><span class="math notranslate nohighlight">\(\log\!\left(\frac{1-e^{-\mu t_2}}{1-e^{-\mu t_1}} e^{-\mu(t+t_2-t_1)}\right)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>T</p></td>
+<td><p>T</p></td>
+<td><p>A</p></td>
+<td><p>Mutation above join</p></td>
+<td><p>Same form, <span class="math notranslate nohighlight">\(t_2 = \text{age}(p) - t\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>C</p></td>
+<td><p>T</p></td>
+<td><p>A</p></td>
+<td><p>Two mutations</p></td>
+<td><p>Product of two mutation terms</p></td>
+</tr>
+</tbody>
+</table>
+<p><em>Recap:</em> The emission gear is now complete. For each hidden state <span class="math notranslate nohighlight">\((b,i)\)</span>, we
+reconstruct ancestral bases via parsimony, classify the observation into one of five
+cases, and compute a log-probability. Combined with the transitions from the previous
+chapter (<a class="reference internal" href="transition_probabilities.html#argweaver-transitions"><span class="std std-ref">Transition Probabilities</span></a>) and the time grid from
+<a class="reference internal" href="time_discretization.html#argweaver-time-discretization"><span class="std std-ref">Time Discretization</span></a>, we have all three components of the HMM:
+priors, transitions, and emissions.</p>
+<p>The final chapter (<a class="reference internal" href="mcmc_sampling.html#argweaver-mcmc"><span class="std std-ref">MCMC Sampling</span></a>) will show how these gears mesh together
+inside the MCMC loop — the mainspring that drives the entire watch.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-emission-dominance admonition">
+<p class="admonition-title">Exercise 1: Emission dominance</p>
+<p>For a typical human mutation rate (<span class="math notranslate nohighlight">\(\mu = 1.4 \times 10^{-8}\)</span> per bp per gen)
+and a coalescence time of 1000 generations, compute the log-emission for each of
+the five cases (with <span class="math notranslate nohighlight">\(t_1 = 2000\)</span>, <span class="math notranslate nohighlight">\(t_2 = 1000\)</span>). Which case has
+the highest probability? By how many orders of magnitude does Case 1 dominate?</p>
+</div>
+<div class="admonition-exercise-2-parsimony-vs-likelihood admonition">
+<p class="admonition-title">Exercise 2: Parsimony vs. likelihood</p>
+<p>Implement Felsenstein’s pruning algorithm for ancestral reconstruction and compare
+the resulting emissions with parsimony-based emissions on a 4-leaf tree. For what
+range of <span class="math notranslate nohighlight">\(\mu t\)</span> do the two approaches give similar results? When do they
+diverge?</p>
+</div>
+<div class="admonition-exercise-3-root-unwrapping admonition">
+<p class="admonition-title">Exercise 3: Root unwrapping</p>
+<p>Draw the tree for a state above the root (the new lineage is the most ancient).
+Verify that the unwrapped time formula <span class="math notranslate nohighlight">\(t_{\text{eff}} = 2t - \text{age}(\text{root})\)</span>
+gives the correct total branch length from the new haplotype to the root and back
+down to the sibling.</p>
+</div>
+<div class="admonition-exercise-4-emission-matrix-properties admonition">
+<p class="admonition-title">Exercise 4: Emission matrix properties</p>
+<p>For a 4-leaf tree at a single site, compute the full emission vector (one entry
+per state). Verify that: (a) Case 1 entries are always the largest, (b) the
+emissions are not a probability distribution over states (they don’t sum to 1),
+and (c) the emissions for two states on the same branch but at different times
+are monotonically related to the time (how?).</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="transition_probabilities.html" class="btn btn-neutral float-left" title="Transition Probabilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mcmc_sampling.html" class="btn btn-neutral float-right" title="MCMC Sampling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

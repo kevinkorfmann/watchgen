@@ -1,0 +1,1309 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Copying Model &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Haploid LS HMM Algorithms" href="haploid_algorithms.html" />
+    <link rel="prev" title="Overview of the Li &amp; Stephens HMM" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece II: The Li &amp; Stephens HMM</a></li>
+      <li class="breadcrumb-item active">The Copying Model</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of the Li &amp; Stephens HMM" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="haploid_algorithms.html" class="btn btn-neutral float-right" title="Haploid LS HMM Algorithms" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-copying-model">
+<span id="copying-model"></span><h1>The Copying Model<a class="headerlink" href="#the-copying-model" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The biggest gear in the mechanism: how haplotypes copy from each other.</em></p>
+</div></blockquote>
+<p>In the <a class="reference internal" href="overview.html#lshmm-overview"><span class="std std-ref">overview</span></a>, we described the Li &amp; Stephens HMM as
+a versatile gear that appears in many movements. Now we open the case and
+examine the largest gear inside: the <strong>copying model</strong> itself. This is the
+template mechanism that defines what it means for one haplotype to be an
+“imperfect mosaic” of others.</p>
+<p>The Li &amp; Stephens copying model answers two questions at every site along the
+genome:</p>
+<ol class="arabic simple">
+<li><p><strong>Did a recombination happen?</strong> If so, the copying source switches.</p></li>
+<li><p><strong>Did a mutation happen?</strong> If so, the query allele differs from the source.</p></li>
+</ol>
+<p>These two questions define the <strong>transition</strong> and <strong>emission</strong> probabilities of
+the HMM. We derive both from first principles.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Prerequisites.</strong> This chapter assumes you have read the
+<a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>, where transition and emission probabilities
+were introduced in their general form, and the <a class="reference internal" href="overview.html#lshmm-overview"><span class="std std-ref">overview</span></a>,
+which motivates the copying model biologically. We also reference concepts
+from coalescent theory (genealogical trees, recombination); see the
+coalescent theory chapter or Wakeley’s <em>Introduction to Coalescent Theory</em>
+for background.</p>
+</div>
+<section id="step-1-the-biological-picture">
+<h2>Step 1: The Biological Picture<a class="headerlink" href="#step-1-the-biological-picture" title="Link to this heading"></a></h2>
+<p>Imagine you have <span class="math notranslate nohighlight">\(n\)</span> haplotypes that share a common ancestor. When you add
+a new haplotype (the query), its ancestry traces back through a genealogical
+tree at each genomic position. Due to recombination, the tree changes along the
+genome, and the query’s closest relative in the reference panel changes too.</p>
+<p>Li and Stephens modeled this as follows:</p>
+<ul class="simple">
+<li><p>At each site, the query <strong>copies</strong> its allele from one of the <span class="math notranslate nohighlight">\(n\)</span>
+reference haplotypes</p></li>
+<li><p>Between adjacent sites, there is a small probability <span class="math notranslate nohighlight">\(r\)</span> that a
+<strong>recombination</strong> occurs, switching the copying source</p></li>
+<li><p>At each site, there is a small probability <span class="math notranslate nohighlight">\(\mu\)</span> that a <strong>mutation</strong>
+occurs, so the query allele differs from the copied allele</p></li>
+</ul>
+<p>The key insight is that this process is <strong>Markov</strong>: the copying source at site
+<span class="math notranslate nohighlight">\(\ell\)</span> depends only on the source at site <span class="math notranslate nohighlight">\(\ell - 1\)</span> (and the
+recombination probability), not on any earlier sites. This makes it an HMM.</p>
+<div class="admonition-probability-aside-the-markov-property admonition">
+<p class="admonition-title">Probability Aside: The Markov Property</p>
+<p>The Markov property – that the future depends on the past only through the
+present – is what makes HMMs computationally tractable. For the LS model,
+this means that the copying source at site <span class="math notranslate nohighlight">\(\ell\)</span> depends only on the
+source at site <span class="math notranslate nohighlight">\(\ell - 1\)</span>. Biologically, this is an approximation:
+the true genealogical process has long-range correlations (e.g., the tree
+at site <span class="math notranslate nohighlight">\(\ell\)</span> is correlated with the tree at site <span class="math notranslate nohighlight">\(\ell - 10\)</span>
+even after conditioning on site <span class="math notranslate nohighlight">\(\ell - 1\)</span>). The Markov approximation
+works well because nearby sites have highly correlated trees, and the
+errors from ignoring long-range correlations are small in practice.</p>
+</div>
+<p>This biological picture gives us the template mechanism. Now let us formalize
+each component, starting with the simplest: the initial distribution.</p>
+</section>
+<section id="step-2-the-initial-distribution">
+<h2>Step 2: The Initial Distribution<a class="headerlink" href="#step-2-the-initial-distribution" title="Link to this heading"></a></h2>
+<p>At the first site, we have no prior information about which reference haplotype
+the query is copying. So we assign a <strong>uniform</strong> initial distribution:</p>
+<div class="math notranslate nohighlight">
+\[\pi_j = P(Z_1 = j) = \frac{1}{n}, \quad j = 1, 2, \ldots, n\]</div>
+<p>This says: before seeing any data, every reference haplotype is equally likely
+to be the copying source.</p>
+<p><strong>Why uniform?</strong> Under the coalescent, the query is equally likely to be most
+closely related to any of the <span class="math notranslate nohighlight">\(n\)</span> reference haplotypes (by exchangeability
+of lineages). A more sophisticated model could use the coalescent prior, but
+the uniform prior works well in practice and keeps things simple.</p>
+<div class="admonition-terminology-exchangeability admonition">
+<p class="admonition-title">Terminology: Exchangeability</p>
+<p><strong>Exchangeability</strong> means that the joint distribution of a collection of
+random variables is invariant to permutations. In the coalescent,
+exchangeability of lineages means that before observing any data, any
+labeling of the <span class="math notranslate nohighlight">\(n\)</span> haplotypes is equally likely. This justifies the
+uniform prior <span class="math notranslate nohighlight">\(\pi_j = 1/n\)</span>. Exchangeability breaks down when there
+is population structure (e.g., the query is known to come from a specific
+subpopulation), but the uniform prior remains the standard choice in the
+LS model.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">initial_distribution</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uniform initial distribution over n reference haplotypes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of reference haplotypes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pi : ndarray of shape (n,)</span>
+<span class="sd">        Initial state probabilities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Each of the n reference haplotypes is equally likely</span>
+    <span class="c1"># to be the copying source at the first site.</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span>
+
+<span class="c1"># Example</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">pi</span> <span class="o">=</span> <span class="n">initial_distribution</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial distribution (n=</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">pi</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sum: </span><span class="si">{</span><span class="n">pi</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Should be 1.0</span>
+</pre></div>
+</div>
+<p>With the initial distribution in hand, we move to the most important component
+of the model: the transition probabilities.</p>
+</section>
+<section id="step-3-transition-probabilities">
+<h2>Step 3: Transition Probabilities<a class="headerlink" href="#step-3-transition-probabilities" title="Link to this heading"></a></h2>
+<p>The transition probability <span class="math notranslate nohighlight">\(A_{ij}\)</span> answers: given that we were copying
+from haplotype <span class="math notranslate nohighlight">\(i\)</span> at site <span class="math notranslate nohighlight">\(\ell - 1\)</span>, what is the probability of
+copying from haplotype <span class="math notranslate nohighlight">\(j\)</span> at site <span class="math notranslate nohighlight">\(\ell\)</span>?</p>
+<p>Li and Stephens proposed:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}A_{ij} = P(Z_\ell = j \mid Z_{\ell-1} = i) =
+\begin{cases}
+(1 - r) + r/n &amp; \text{if } i = j \\
+r/n &amp; \text{if } i \neq j
+\end{cases}\end{split}\]</div>
+<p>Or more compactly:</p>
+<div class="math notranslate nohighlight">
+\[A_{ij} = (1 - r)\delta_{ij} + \frac{r}{n}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\delta_{ij}\)</span> is the Kronecker delta (1 if <span class="math notranslate nohighlight">\(i = j\)</span>, 0
+otherwise) and <span class="math notranslate nohighlight">\(r\)</span> is the recombination probability.</p>
+<div class="admonition-terminology-kronecker-delta admonition">
+<p class="admonition-title">Terminology: Kronecker Delta</p>
+<p>The <strong>Kronecker delta</strong> <span class="math notranslate nohighlight">\(\delta_{ij}\)</span> is a notational shorthand
+that equals 1 when <span class="math notranslate nohighlight">\(i = j\)</span> and 0 when <span class="math notranslate nohighlight">\(i \neq j\)</span>. It appears
+throughout HMM derivations as a compact way to write “same state” vs.
+“different state” in a single formula. In Python, it is simply
+<code class="docutils literal notranslate"><span class="pre">int(i</span> <span class="pre">==</span> <span class="pre">j)</span></code>.</p>
+</div>
+<section id="deriving-the-transition">
+<h3>Deriving the transition<a class="headerlink" href="#deriving-the-transition" title="Link to this heading"></a></h3>
+<p>Let’s unpack this formula piece by piece.</p>
+<p><strong>The two things that can happen between adjacent sites:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>No recombination</strong> (probability <span class="math notranslate nohighlight">\(1 - r\)</span>): The copying source stays
+the same. If we were copying from haplotype <span class="math notranslate nohighlight">\(i\)</span>, we continue copying
+from haplotype <span class="math notranslate nohighlight">\(i\)</span>.</p></li>
+<li><p><strong>Recombination</strong> (probability <span class="math notranslate nohighlight">\(r\)</span>): The copying source switches to a
+randomly chosen haplotype. Since we have no information about which haplotype
+is chosen, we pick uniformly among all <span class="math notranslate nohighlight">\(n\)</span> haplotypes (including the
+current one).</p></li>
+</ol>
+<p>Combining these two cases:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}A_{ij} &amp;= P(\text{no recomb}) \cdot P(\text{copy } j \mid \text{no recomb})
+        + P(\text{recomb}) \cdot P(\text{copy } j \mid \text{recomb}) \\
+&amp;= (1 - r) \cdot \delta_{ij} + r \cdot \frac{1}{n}\end{split}\]</div>
+<p>When <span class="math notranslate nohighlight">\(i = j\)</span> (staying):</p>
+<div class="math notranslate nohighlight">
+\[A_{ii} = (1 - r) + \frac{r}{n}\]</div>
+<p>When <span class="math notranslate nohighlight">\(i \neq j\)</span> (switching):</p>
+<div class="math notranslate nohighlight">
+\[A_{ij} = \frac{r}{n}\]</div>
+<div class="admonition-probability-aside-law-of-total-probability admonition">
+<p class="admonition-title">Probability Aside: Law of Total Probability</p>
+<p>The derivation above uses the <strong>law of total probability</strong>: the probability
+of an event (copying from <span class="math notranslate nohighlight">\(j\)</span>) is the sum over all ways it can
+happen, weighted by the probability of each way. Here the two “ways” are
+“no recombination” and “recombination.” This is the same decomposition
+used in the general HMM forward recursion (see the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>),
+and it appears repeatedly throughout this book.</p>
+</div>
+<p><strong>Verification: rows sum to 1.</strong> For any row <span class="math notranslate nohighlight">\(i\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\sum_{j=1}^n A_{ij} &amp;= A_{ii} + \sum_{j \neq i} A_{ij}
+= \left(1 - r + \frac{r}{n}\right) + (n - 1) \cdot \frac{r}{n} \\
+&amp;= 1 - r + \frac{r}{n} + \frac{(n-1)r}{n}
+= 1 - r + \frac{r}{n} \cdot n = 1 - r + r = 1 \quad \checkmark\end{split}\]</div>
+<p><strong>Why</strong> <span class="math notranslate nohighlight">\(1/n\)</span> <strong>and not</strong> <span class="math notranslate nohighlight">\(1/(n-1)\)</span> <strong>?</strong> After a recombination, the
+new source is drawn uniformly from all <span class="math notranslate nohighlight">\(n\)</span> haplotypes – including the one
+we were already copying. This means a recombination can “switch” us back to the
+same haplotype. This is the correct behavior under the coalescent: the detached
+lineage can re-coalesce with any lineage, including the one it was previously
+closest to.</p>
+<p>If we used <span class="math notranslate nohighlight">\(1/(n-1)\)</span>, we would be forcing a switch away from the current
+source, which would overestimate the recombination signal.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">transition_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the Li-Stephens transition matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of reference haplotypes.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Recombination probability between adjacent sites.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    A : ndarray of shape (n, n)</span>
+<span class="sd">        Transition matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Start with all entries set to the &quot;switch&quot; probability r/n.</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
+    <span class="c1"># The diagonal gets an extra (1 - r) for the &quot;stay&quot; probability.</span>
+    <span class="c1"># So diagonal entries are (1 - r) + r/n.</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">fill_diagonal</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="o">+</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">A</span>
+
+<span class="c1"># Example</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">r</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">transition_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Transition matrix (n=</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">, r=</span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Row sums: </span><span class="si">{</span><span class="n">A</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Should all be 1.0</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Diagonal: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>       <span class="c1"># (1-r) + r/n = 0.925</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Off-diagonal: </span><span class="si">{</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>      <span class="c1"># r/n = 0.025</span>
+</pre></div>
+</div>
+<p>Having established the transition probabilities, let us now connect them to
+the underlying population genetics.</p>
+</section>
+<section id="the-connection-to-population-genetics">
+<h3>The connection to population genetics<a class="headerlink" href="#the-connection-to-population-genetics" title="Link to this heading"></a></h3>
+<p>Where does <span class="math notranslate nohighlight">\(r\)</span> come from? In the coalescent, a recombination occurs
+between two adjacent sites with probability proportional to the genetic distance
+between them. The per-site recombination probability is:</p>
+<div class="math notranslate nohighlight">
+\[r_\ell = 1 - \exp\left(-\frac{\rho_\ell}{n}\right) \approx \frac{\rho_\ell}{n}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\rho_\ell = 4N_e r_{\text{phys}} d_\ell\)</span> is the population-scaled
+recombination rate between sites <span class="math notranslate nohighlight">\(\ell - 1\)</span> and <span class="math notranslate nohighlight">\(\ell\)</span>, with
+<span class="math notranslate nohighlight">\(d_\ell\)</span> being the physical distance in base pairs.</p>
+<div class="admonition-terminology-population-scaled-parameters admonition">
+<p class="admonition-title">Terminology: Population-Scaled Parameters</p>
+<p>In population genetics, rates are often expressed in units of the
+effective population size <span class="math notranslate nohighlight">\(N_e\)</span>:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\rho = 4 N_e r_{\text{phys}}\)</span> is the population-scaled
+recombination rate (per base pair per generation, scaled by <span class="math notranslate nohighlight">\(4N_e\)</span>).</p></li>
+<li><p><span class="math notranslate nohighlight">\(\theta = 4 N_e \mu_{\text{phys}}\)</span> is the population-scaled
+mutation rate.</p></li>
+</ul>
+<p>These scaled parameters absorb the population size, which simplifies the
+math because coalescent theory naturally works in units of <span class="math notranslate nohighlight">\(N_e\)</span>
+generations. The factor of 4 arises from diploid organisms (2 copies per
+individual, and the coalescent rate is <span class="math notranslate nohighlight">\(1/(2N_e)\)</span> per pair per
+generation).</p>
+</div>
+<p><strong>Why divide by</strong> <span class="math notranslate nohighlight">\(n\)</span> <strong>?</strong> The effective recombination rate in the
+Li-Stephens model is scaled by the number of haplotypes. Intuitively: with more
+reference haplotypes, each one represents a smaller fraction of the total
+genealogical diversity, so recombination between adjacent segments is more likely
+to land on a different haplotype. The factor <span class="math notranslate nohighlight">\(1/n\)</span> normalizes for this.</p>
+<p>In practice, <span class="math notranslate nohighlight">\(r_\ell\)</span> varies along the genome (recombination hotspots and
+coldspots). The lshmm library accepts an array of per-site recombination
+probabilities.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_recombination_probs</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute per-site recombination probabilities.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rho : ndarray of shape (m,)</span>
+<span class="sd">        Population-scaled recombination rate at each site.</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of reference haplotypes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    r : ndarray of shape (m,)</span>
+<span class="sd">        Per-site recombination probability (r[0] = 0 by convention).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># The exact formula from the coalescent:</span>
+    <span class="c1"># probability of at least one recombination event in the</span>
+    <span class="c1"># interval, given rate rho/n.</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># No recombination before the first site</span>
+    <span class="k">return</span> <span class="n">r</span>
+
+<span class="c1"># Example: uniform recombination rate</span>
+<span class="n">m</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">)</span>  <span class="c1"># typical per-site value</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">compute_recombination_probs</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recombination probabilities (first 5 sites): </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">r</span><span class="p">[:</span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="mi">6</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="site-specific-recombination">
+<h3>Site-specific recombination<a class="headerlink" href="#site-specific-recombination" title="Link to this heading"></a></h3>
+<p>In the lshmm implementation, the transition probability at site <span class="math notranslate nohighlight">\(\ell\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[A_{ij}^{(\ell)} = (1 - r_\ell)\delta_{ij} + \frac{r_\ell}{n_\ell}\]</div>
+<p>where <span class="math notranslate nohighlight">\(n_\ell\)</span> is the number of <strong>copiable</strong> reference entries at site
+<span class="math notranslate nohighlight">\(\ell\)</span>. Why might <span class="math notranslate nohighlight">\(n_\ell\)</span> differ from <span class="math notranslate nohighlight">\(n\)</span>?</p>
+<p>When the reference panel includes <strong>ancestral haplotypes</strong> (as in tree
+sequence-based panels), some entries at some sites are marked as <code class="docutils literal notranslate"><span class="pre">NONCOPY</span></code>
+(<span class="math notranslate nohighlight">\(-2\)</span>). These represent ancestors that don’t exist at every site. The
+model correctly excludes them from the switching probability at those sites.</p>
+<p>With the transition probabilities fully specified, we turn to the other side of
+the template mechanism: the emission probabilities.</p>
+</section>
+</section>
+<section id="step-4-emission-probabilities">
+<h2>Step 4: Emission Probabilities<a class="headerlink" href="#step-4-emission-probabilities" title="Link to this heading"></a></h2>
+<p>The emission probability answers: given that we are copying from haplotype
+<span class="math notranslate nohighlight">\(j\)</span> at site <span class="math notranslate nohighlight">\(\ell\)</span>, how likely is the observed query allele
+<span class="math notranslate nohighlight">\(s_\ell\)</span>?</p>
+<p>This is the “imperfection” in the template mechanism. Most of the time, the
+stamp produces a faithful copy; occasionally, a mutation introduces a
+discrepancy.</p>
+<section id="the-alleles-match-or-don-t-match">
+<h3>The alleles match or don’t match<a class="headerlink" href="#the-alleles-match-or-don-t-match" title="Link to this heading"></a></h3>
+<p>The simplest version considers biallelic sites (alleles 0 and 1). If the
+reference haplotype <span class="math notranslate nohighlight">\(j\)</span> carries allele <span class="math notranslate nohighlight">\(h_j\)</span> at site <span class="math notranslate nohighlight">\(\ell\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}e_j(s_\ell) = P(X_\ell = s_\ell \mid Z_\ell = j) =
+\begin{cases}
+1 - \mu &amp; \text{if } s_\ell = h_j \text{ (match: no mutation)} \\
+\mu &amp; \text{if } s_\ell \neq h_j \text{ (mismatch: mutation)}
+\end{cases}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mu\)</span> is the per-site mutation probability.</p>
+<p><strong>Intuition</strong>: Most of the time (<span class="math notranslate nohighlight">\(1 - \mu \approx 0.999\)</span>), the query
+carries the same allele as the haplotype it’s copying. Occasionally
+(<span class="math notranslate nohighlight">\(\mu \approx 0.001\)</span>), a mutation occurred, and the alleles differ.</p>
+<div class="admonition-probability-aside-emission-probabilities-as-likelihoods admonition">
+<p class="admonition-title">Probability Aside: Emission Probabilities as Likelihoods</p>
+<p>The emission probability <span class="math notranslate nohighlight">\(e_j(s_\ell)\)</span> can be read two ways:</p>
+<ol class="arabic simple">
+<li><p><strong>Generatively</strong>: if the query copies from haplotype <span class="math notranslate nohighlight">\(j\)</span>, how
+likely is it to produce allele <span class="math notranslate nohighlight">\(s_\ell\)</span>?</p></li>
+<li><p><strong>As a likelihood</strong>: given the observed allele <span class="math notranslate nohighlight">\(s_\ell\)</span>, how much
+evidence does it provide for or against copying from haplotype <span class="math notranslate nohighlight">\(j\)</span>?</p></li>
+</ol>
+<p>When <span class="math notranslate nohighlight">\(s_\ell = h_j\)</span> (match), the likelihood ratio is
+<span class="math notranslate nohighlight">\((1-\mu)/\mu \approx 999\)</span> for typical <span class="math notranslate nohighlight">\(\mu\)</span> – strong evidence
+for copying from <span class="math notranslate nohighlight">\(j\)</span>. When <span class="math notranslate nohighlight">\(s_\ell \neq h_j\)</span> (mismatch),
+the likelihood ratio is <span class="math notranslate nohighlight">\(\mu/(1-\mu) \approx 0.001\)</span> – strong evidence
+against. This is how the HMM “learns” which haplotype the query is copying
+from: mismatches penalize the wrong source, and matches reward the right one.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">emission_probability</span><span class="p">(</span><span class="n">query_allele</span><span class="p">,</span> <span class="n">ref_allele</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute emission probability for one site.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    query_allele : int</span>
+<span class="sd">        Allele in the query haplotype (0 or 1).</span>
+<span class="sd">    ref_allele : int</span>
+<span class="sd">        Allele in the reference haplotype (0 or 1).</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Mutation probability.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    prob : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">query_allele</span> <span class="o">==</span> <span class="n">ref_allele</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span>  <span class="c1"># Match: no mutation needed</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mu</span>       <span class="c1"># Mismatch: mutation needed</span>
+
+<span class="c1"># Example: show emission probabilities for all allele combinations</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="k">for</span> <span class="n">q</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]:</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">emission_probability</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;query=</span><span class="si">{</span><span class="n">q</span><span class="si">}</span><span class="s2">, ref=</span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2">: P = </span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="s1">&#39;match&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">q</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;mismatch&#39;</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="handling-multiallelic-sites">
+<h3>Handling multiallelic sites<a class="headerlink" href="#handling-multiallelic-sites" title="Link to this heading"></a></h3>
+<p>When a site has <span class="math notranslate nohighlight">\(a\)</span> distinct alleles (e.g., A, C, G, T), a mutation could
+change the allele to any of the <span class="math notranslate nohighlight">\(a - 1\)</span> alternatives. The emission
+probabilities become:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}e_j(s_\ell) =
+\begin{cases}
+1 - \mu &amp; \text{if } s_\ell = h_j \text{ (match)} \\
+\frac{\mu}{a - 1} &amp; \text{if } s_\ell \neq h_j \text{ (mismatch)}
+\end{cases}\end{split}\]</div>
+<p><strong>Why divide by</strong> <span class="math notranslate nohighlight">\(a - 1\)</span> <strong>?</strong> The total mutation probability is
+<span class="math notranslate nohighlight">\(\mu\)</span>. If there are <span class="math notranslate nohighlight">\(a\)</span> alleles, a mutation switches to one of the
+<span class="math notranslate nohighlight">\(a - 1\)</span> other alleles. Assuming equal probability for each target allele,
+the probability of mutating to any specific different allele is
+<span class="math notranslate nohighlight">\(\mu / (a - 1)\)</span>.</p>
+<div class="admonition-probability-aside-the-symmetric-mutation-model admonition">
+<p class="admonition-title">Probability Aside: The Symmetric Mutation Model</p>
+<p>The assumption that mutations are equally likely to produce any of the
+<span class="math notranslate nohighlight">\(a - 1\)</span> alternative alleles is called the <strong>symmetric</strong> or
+<strong>Jukes-Cantor</strong> mutation model (for DNA, <span class="math notranslate nohighlight">\(a = 4\)</span>). More realistic
+models allow different rates for transitions (purine-to-purine or
+pyrimidine-to-pyrimidine) vs. transversions, but the symmetric model keeps
+the LS-HMM simple and is adequate for most applications. The key
+requirement is that the emission probabilities sum to 1 over all possible
+query alleles, which we verify below.</p>
+</div>
+<p><strong>Verification</strong>: The emission probabilities should sum to 1 over all possible
+query alleles:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{match}) + (a - 1) \cdot P(\text{mismatch per allele})
+= (1 - \mu) + (a - 1) \cdot \frac{\mu}{a - 1} = 1 - \mu + \mu = 1 \quad \checkmark\]</div>
+<p>The lshmm implementation stores these in an <strong>emission matrix</strong> of shape
+<span class="math notranslate nohighlight">\((m, 2)\)</span> for the haploid case, where column 0 is the mismatch probability
+and column 1 is the match probability:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">emission_matrix_haploid</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">num_sites</span><span class="p">,</span> <span class="n">num_alleles</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the emission probability matrix for the haploid case.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mu : float or ndarray of shape (m,)</span>
+<span class="sd">        Per-site mutation probability.</span>
+<span class="sd">    num_sites : int</span>
+<span class="sd">        Number of sites.</span>
+<span class="sd">    num_alleles : ndarray of shape (m,)</span>
+<span class="sd">        Number of distinct alleles at each site.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    e : ndarray of shape (m, 2)</span>
+<span class="sd">        Column 0 = mismatch probability, column 1 = match probability.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num_sites</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+
+    <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_sites</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_sites</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">num_alleles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Invariant site: only one allele exists, so no mutation</span>
+            <span class="c1"># is possible. The query must carry that allele.</span>
+            <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>       <span class="c1"># mismatch impossible</span>
+            <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>       <span class="c1"># match certain</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Multiallelic site: spread the mutation probability</span>
+            <span class="c1"># equally across the (a-1) alternative alleles.</span>
+            <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">num_alleles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># per-allele mismatch</span>
+            <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>                      <span class="c1"># match</span>
+
+    <span class="k">return</span> <span class="n">e</span>
+
+<span class="c1"># Example: 6 sites, mix of biallelic and invariant</span>
+<span class="n">num_alleles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">e</span> <span class="o">=</span> <span class="n">emission_matrix_haploid</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">num_alleles</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Emission matrix (mismatch | match):&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Site </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">num_alleles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> alleles): &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;mismatch=</span><span class="si">{</span><span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, match=</span><span class="si">{</span><span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="scaled-mutation-rate">
+<h3>Scaled mutation rate<a class="headerlink" href="#scaled-mutation-rate" title="Link to this heading"></a></h3>
+<p>There’s a subtle but important distinction in how <span class="math notranslate nohighlight">\(\mu\)</span> is interpreted.
+The lshmm library supports two conventions, controlled by the
+<code class="docutils literal notranslate"><span class="pre">scale_mutation_rate</span></code> flag:</p>
+<p><strong>Convention 1</strong> (<code class="docutils literal notranslate"><span class="pre">scale_mutation_rate=False</span></code>, default): <span class="math notranslate nohighlight">\(\mu\)</span> is the
+total probability of mutation to <strong>any</strong> different allele. The per-allele
+mismatch probability is <span class="math notranslate nohighlight">\(\mu / (a - 1)\)</span>.</p>
+<p><strong>Convention 2</strong> (<code class="docutils literal notranslate"><span class="pre">scale_mutation_rate=True</span></code>): <span class="math notranslate nohighlight">\(\mu\)</span> is the probability
+of mutation to <strong>one specific</strong> allele. The total mutation probability is
+<span class="math notranslate nohighlight">\((a - 1) \cdot \mu\)</span>, and the match probability is
+<span class="math notranslate nohighlight">\(1 - (a - 1) \cdot \mu\)</span>.</p>
+<p>These are just two ways of parameterizing the same model. Convention 1 is more
+natural for the HMM (the total mutation rate doesn’t depend on the number of
+alleles), while Convention 2 is more natural for molecular evolution (the
+per-allele rate is constant).</p>
+<p>Now that we have specified what happens when the query matches and when it does
+not, we need to handle two special cases that arise in real data.</p>
+</section>
+<section id="handling-noncopy-and-missing">
+<h3>Handling NONCOPY and MISSING<a class="headerlink" href="#handling-noncopy-and-missing" title="Link to this heading"></a></h3>
+<p>The lshmm library handles two special allele values:</p>
+<p><strong>NONCOPY</strong> (<span class="math notranslate nohighlight">\(-2\)</span>): A reference entry marked as NONCOPY at a site means
+“this haplotype cannot be copied at this site.” The emission probability is
+<span class="math notranslate nohighlight">\(0\)</span>, which effectively removes this state from consideration.</p>
+<p><strong>Why NONCOPY?</strong> In tree sequence-based reference panels, ancestral haplotypes
+may not span all sites. A haplotype that doesn’t exist at a site shouldn’t be
+a valid copying source there.</p>
+<p><strong>MISSING</strong> (<span class="math notranslate nohighlight">\(-1\)</span>): A query allele marked as MISSING means “we don’t know
+what allele the query carries here.” The emission probability is <span class="math notranslate nohighlight">\(1\)</span> for
+all states – the observation provides no information.</p>
+<p><strong>Why MISSING?</strong> Missing data is common in real genotype datasets. By setting the
+emission to 1, we effectively skip the site in the HMM computation: the forward
+probabilities pass through unchanged (up to normalization).</p>
+<div class="admonition-probability-aside-missing-data-and-marginalization admonition">
+<p class="admonition-title">Probability Aside: Missing Data and Marginalization</p>
+<p>Setting the emission probability to 1 for missing data is equivalent to
+<strong>marginalizing</strong> over the unknown allele. If we don’t know what allele the
+query carries, we sum over all possibilities:</p>
+<div class="math notranslate nohighlight">
+\[P(X_\ell = \text{?} \mid Z_\ell = j) = \sum_{a} P(X_\ell = a \mid Z_\ell = j) = 1\]</div>
+<p>This follows because the emission probabilities sum to 1 over all alleles
+(as verified above). So “missing data” is not a special case – it is the
+natural consequence of marginalizing over an unobserved variable. This is a
+general technique in probabilistic modeling that appears throughout the
+<a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">emission_prob_with_specials</span><span class="p">(</span><span class="n">ref_allele</span><span class="p">,</span> <span class="n">query_allele</span><span class="p">,</span> <span class="n">site</span><span class="p">,</span> <span class="n">emission_matrix</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute emission probability handling NONCOPY and MISSING.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ref_allele : int</span>
+<span class="sd">        Allele in the reference (-2 = NONCOPY).</span>
+<span class="sd">    query_allele : int</span>
+<span class="sd">        Allele in the query (-1 = MISSING).</span>
+<span class="sd">    site : int</span>
+<span class="sd">        Site index.</span>
+<span class="sd">    emission_matrix : ndarray of shape (m, 2)</span>
+<span class="sd">        Emission probabilities.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    prob : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">NONCOPY</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>  <span class="c1"># Sentinel value: reference haplotype doesn&#39;t exist here</span>
+    <span class="n">MISSING</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>  <span class="c1"># Sentinel value: query allele is unknown</span>
+
+    <span class="k">if</span> <span class="n">ref_allele</span> <span class="o">==</span> <span class="n">NONCOPY</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>  <span class="c1"># Can&#39;t copy from a non-existent haplotype</span>
+    <span class="k">elif</span> <span class="n">query_allele</span> <span class="o">==</span> <span class="n">MISSING</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1.0</span>  <span class="c1"># Missing data: no information (marginalized)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ref_allele</span> <span class="o">==</span> <span class="n">query_allele</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">site</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># Match</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">site</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># Mismatch</span>
+
+<span class="c1"># Example: demonstrate NONCOPY and MISSING</span>
+<span class="n">e</span> <span class="o">=</span> <span class="n">emission_matrix_haploid</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Normal match:    </span><span class="si">{</span><span class="n">emission_prob_with_specials</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Normal mismatch: </span><span class="si">{</span><span class="n">emission_prob_with_specials</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;NONCOPY ref:     </span><span class="si">{</span><span class="n">emission_prob_with_specials</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MISSING query:   </span><span class="si">{</span><span class="n">emission_prob_with_specials</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With the transition and emission probabilities fully defined, we now address a
+practical question: what value should we use for the mutation probability
+<span class="math notranslate nohighlight">\(\mu\)</span>?</p>
+</section>
+</section>
+<section id="step-5-estimating-the-mutation-probability">
+<h2>Step 5: Estimating the Mutation Probability<a class="headerlink" href="#step-5-estimating-the-mutation-probability" title="Link to this heading"></a></h2>
+<p>If you don’t know the mutation probability <span class="math notranslate nohighlight">\(\mu\)</span>, Li and Stephens (2003)
+provide a self-consistent estimator based on the Watterson estimator of
+<span class="math notranslate nohighlight">\(\theta\)</span>.</p>
+<section id="the-watterson-estimator">
+<h3>The Watterson estimator<a class="headerlink" href="#the-watterson-estimator" title="Link to this heading"></a></h3>
+<p>Given <span class="math notranslate nohighlight">\(n\)</span> haplotypes, the population-scaled mutation rate <span class="math notranslate nohighlight">\(\theta\)</span>
+can be estimated as:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\theta} = \frac{S}{\sum_{k=1}^{n-1} 1/k}\]</div>
+<p>where <span class="math notranslate nohighlight">\(S\)</span> is the number of segregating sites. But we don’t need to count
+<span class="math notranslate nohighlight">\(S\)</span> – we just need the denominator to set the mutation probability.</p>
+<div class="admonition-terminology-segregating-sites-and-the-harmonic-number admonition">
+<p class="admonition-title">Terminology: Segregating Sites and the Harmonic Number</p>
+<p>A <strong>segregating site</strong> is a genomic position where at least two haplotypes
+in the sample carry different alleles. The number of segregating sites
+<span class="math notranslate nohighlight">\(S\)</span> is a summary statistic of genetic diversity.</p>
+<p>The sum <span class="math notranslate nohighlight">\(\sum_{k=1}^{n-1} 1/k\)</span> is the <span class="math notranslate nohighlight">\((n-1)\)</span>-th
+<strong>harmonic number</strong>, often written <span class="math notranslate nohighlight">\(H_{n-1}\)</span>. It arises naturally in
+coalescent theory as the expected total branch length of a genealogical
+tree with <span class="math notranslate nohighlight">\(n\)</span> leaves (in units of <span class="math notranslate nohighlight">\(2N_e\)</span> generations). The
+Watterson estimator divides <span class="math notranslate nohighlight">\(S\)</span> by this expected branch length to
+estimate <span class="math notranslate nohighlight">\(\theta\)</span>.</p>
+</div>
+<p>Li and Stephens (2003, equations A2 and A3) define:</p>
+<div class="math notranslate nohighlight">
+\[\tilde{\theta} = \frac{1}{\sum_{k=1}^{n-2} 1/k}\]</div>
+<p>Note the upper limit is <span class="math notranslate nohighlight">\(n - 2\)</span>, not <span class="math notranslate nohighlight">\(n - 1\)</span>. This is because in
+the LS model, we’re conditioning on <span class="math notranslate nohighlight">\(n - 1\)</span> haplotypes and adding a new
+one, so the harmonic number uses <span class="math notranslate nohighlight">\(n - 2\)</span>.</p>
+<p>The mutation probability per site is then:</p>
+<div class="math notranslate nohighlight">
+\[\mu = \frac{\tilde{\theta}}{2(n + \tilde{\theta})} = \frac{1}{2} \cdot \frac{\tilde{\theta}}{n + \tilde{\theta}}\]</div>
+<p><strong>Derivation</strong>: Under the infinite-sites model with <span class="math notranslate nohighlight">\(n\)</span> haplotypes, the
+expected proportion of sites where the query differs from the closest reference
+haplotype is approximately <span class="math notranslate nohighlight">\(\tilde{\theta} / (n + \tilde{\theta})\)</span>. The
+factor of <span class="math notranslate nohighlight">\(1/2\)</span> accounts for the fact that <span class="math notranslate nohighlight">\(\mu\)</span> is the per-branch
+mutation probability (mutation can happen on either the query branch or the
+reference branch).</p>
+<div class="admonition-probability-aside-why-the-factor-of-1-2 admonition">
+<p class="admonition-title">Probability Aside: Why the Factor of 1/2?</p>
+<p>The mutation probability <span class="math notranslate nohighlight">\(\mu\)</span> in the LS model represents the chance
+of a mismatch between the query and its closest reference at a single site.
+A mismatch can arise from a mutation on <em>either</em> the query branch or the
+reference branch of the genealogical tree. If the total expected number of
+mutations between the query and its closest reference is proportional to
+<span class="math notranslate nohighlight">\(\tilde{\theta}/(n + \tilde{\theta})\)</span>, then attributing mutations
+equally to the two branches gives each a rate of half that. This is a
+simplification – in reality, the two branches may have different lengths –
+but it works well as a default estimate.</p>
+</div>
+<p><strong>Intuition</strong>: More reference haplotypes (<span class="math notranslate nohighlight">\(n \uparrow\)</span>) means the query is
+more likely to find a close match, so <span class="math notranslate nohighlight">\(\mu\)</span> decreases. Higher mutation rate
+(<span class="math notranslate nohighlight">\(\tilde{\theta} \uparrow\)</span>) means more mismatches are expected, so
+<span class="math notranslate nohighlight">\(\mu\)</span> increases.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">estimate_mutation_probability</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate mutation probability from the number of haplotypes.</span>
+
+<span class="sd">    Based on Li &amp; Stephens (2003), equations A2 and A3.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of reference haplotypes (must be &gt;= 3).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Estimated per-site mutation probability.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Need at least 3 haplotypes.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Watterson-style estimator with n-2 upper limit.</span>
+    <span class="c1"># The harmonic sum runs from 1 to n-2 because we condition on</span>
+    <span class="c1"># n-1 existing haplotypes and add one more.</span>
+    <span class="n">theta_tilde</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Per-branch mutation probability: half the expected mismatch rate.</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">theta_tilde</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="n">theta_tilde</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mu</span>
+
+<span class="c1"># How does mu change with panel size?</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;n&#39;</span><span class="si">:</span><span class="s2">&gt;5</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;mu&#39;</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;1/mu&#39;</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">]:</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">estimate_mutation_probability</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">&gt;5</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">mu</span><span class="si">:</span><span class="s2">&gt;12.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="mi">1</span><span class="o">/</span><span class="n">mu</span><span class="si">:</span><span class="s2">&gt;12.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The output shows that <span class="math notranslate nohighlight">\(\mu\)</span> decreases as <span class="math notranslate nohighlight">\(n\)</span> grows – with more
+reference haplotypes, the model expects fewer mismatches because there’s always a
+close relative in the panel.</p>
+<p>This completes the specification of the model. But before we move to the
+algorithms, there is one crucial computational insight that makes the whole
+machinery practical.</p>
+</section>
+</section>
+<section id="step-6-the-o-k-trick-making-it-fast">
+<h2>Step 6: The O(K) Trick – Making It Fast<a class="headerlink" href="#step-6-the-o-k-trick-making-it-fast" title="Link to this heading"></a></h2>
+<p>This is the most important computational insight of the Li-Stephens model, and
+it’s worth understanding deeply because it appears in every algorithm that uses
+this model (SINGER included). Think of it as the equivalent of a jeweled
+bearing in watchmaking – a small design choice that dramatically reduces
+friction and makes the entire mechanism viable.</p>
+<section id="the-naive-forward-step">
+<h3>The naive forward step<a class="headerlink" href="#the-naive-forward-step" title="Link to this heading"></a></h3>
+<p>Recall the HMM forward recursion from the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell) = e_j(X_\ell) \sum_{i=1}^n \alpha_i(\ell-1) \cdot A_{ij}\]</div>
+<p>For a general transition matrix, this sum costs <span class="math notranslate nohighlight">\(O(n)\)</span> per state, giving
+<span class="math notranslate nohighlight">\(O(n^2)\)</span> per site and <span class="math notranslate nohighlight">\(O(mn^2)\)</span> total. With <span class="math notranslate nohighlight">\(n = 1000\)</span>
+reference haplotypes and <span class="math notranslate nohighlight">\(m = 10^6\)</span> sites, that’s <span class="math notranslate nohighlight">\(10^{12}\)</span>
+operations – far too slow.</p>
+</section>
+<section id="exploiting-the-structure">
+<h3>Exploiting the structure<a class="headerlink" href="#exploiting-the-structure" title="Link to this heading"></a></h3>
+<p>The Li-Stephens transition matrix has a very special structure:</p>
+<div class="math notranslate nohighlight">
+\[A_{ij} = (1 - r)\delta_{ij} + \frac{r}{n}\]</div>
+<p>Substituting into the forward recursion:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\alpha_j(\ell) &amp;= e_j(X_\ell) \sum_{i=1}^n \alpha_i(\ell-1) \left[(1 - r)\delta_{ij} + \frac{r}{n}\right] \\
+&amp;= e_j(X_\ell) \left[(1 - r)\alpha_j(\ell-1) + \frac{r}{n} \sum_{i=1}^n \alpha_i(\ell-1)\right]\end{split}\]</div>
+<p>In the first term, the Kronecker delta <span class="math notranslate nohighlight">\(\delta_{ij}\)</span> kills all terms
+except <span class="math notranslate nohighlight">\(i = j\)</span>, giving <span class="math notranslate nohighlight">\(\alpha_j(\ell-1)\)</span>.</p>
+<p>In the second term, the factor <span class="math notranslate nohighlight">\(r/n\)</span> doesn’t depend on <span class="math notranslate nohighlight">\(i\)</span>, so it
+factors out. The remaining sum <span class="math notranslate nohighlight">\(\sum_i \alpha_i(\ell-1)\)</span> is just the total
+forward probability at the previous site.</p>
+<p><strong>The key observation</strong>: the sum <span class="math notranslate nohighlight">\(S = \sum_i \alpha_i(\ell-1)\)</span> is computed
+<strong>once</strong> in <span class="math notranslate nohighlight">\(O(n)\)</span> time and reused for all <span class="math notranslate nohighlight">\(n\)</span> states. Each
+individual <span class="math notranslate nohighlight">\(\alpha_j\)</span> then costs <span class="math notranslate nohighlight">\(O(1)\)</span>. Total: <span class="math notranslate nohighlight">\(O(n)\)</span> per
+site instead of <span class="math notranslate nohighlight">\(O(n^2)\)</span>.</p>
+<div class="admonition-probability-aside-why-this-structure-is-special admonition">
+<p class="admonition-title">Probability Aside: Why This Structure is Special</p>
+<p>Not all HMMs have this <span class="math notranslate nohighlight">\(O(n)\)</span> trick. The LS transition matrix is a
+<strong>rank-1 update</strong> of the identity matrix:
+<span class="math notranslate nohighlight">\(A = (1-r)I + (r/n)\mathbf{1}\mathbf{1}^T\)</span>. The rank-1 part
+<span class="math notranslate nohighlight">\((r/n)\mathbf{1}\mathbf{1}^T\)</span> has all entries equal, so its
+contribution to the sum factorizes. Any HMM whose transition matrix can be
+decomposed as “diagonal + low-rank” enjoys a similar speedup. This structure
+arises naturally in the LS model because recombination is “memoryless” –
+after a recombination event, the new source is drawn uniformly, regardless
+of the previous source.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_step_naive</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">emission</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Naive O(n^2) forward step -- for comparison only.</span>
+
+<span class="sd">    For each state j, we sum over all n previous states i,</span>
+<span class="sd">    multiplying by the transition probability A[i, j].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="c1"># Inner loop over all n previous states: this is the O(n^2) part</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">emission</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">alpha_prev</span> <span class="o">*</span> <span class="n">A</span><span class="p">[:,</span> <span class="n">j</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">alpha</span>
+
+<span class="k">def</span> <span class="nf">forward_step_fast</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">r_n</span><span class="p">,</span> <span class="n">emission</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;O(n) forward step using Li-Stephens structure.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha_prev : ndarray of shape (n,)</span>
+<span class="sd">        Forward probabilities at previous site.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Recombination probability at this site.</span>
+<span class="sd">    r_n : float</span>
+<span class="sd">        r / n (or r / n_copiable for NONCOPY support).</span>
+<span class="sd">    emission : ndarray of shape (n,)</span>
+<span class="sd">        Emission probabilities at this site.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha : ndarray of shape (n,)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="c1"># Stay term: probability of staying in state j (no recombination)</span>
+        <span class="c1"># plus the probability of recombining back to j.</span>
+        <span class="c1"># Switch term: probability of recombining to j from any other state,</span>
+        <span class="c1"># which uses the precomputed sum S (implicit when normalized).</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha_prev</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="o">+</span> <span class="n">r_n</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>  <span class="c1"># Multiply by emission probability</span>
+    <span class="k">return</span> <span class="n">alpha</span>
+
+<span class="c1"># Verify they give the same answer</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">r</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">transition_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<span class="n">alpha_prev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">dirichlet</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>  <span class="c1"># Random normalized probs</span>
+<span class="n">emission</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+<span class="n">alpha_naive</span> <span class="o">=</span> <span class="n">forward_step_naive</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">emission</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">alpha_fast</span> <span class="o">=</span> <span class="n">forward_step_fast</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span><span class="p">,</span> <span class="n">emission</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Naive:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">alpha_naive</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fast:   </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">alpha_fast</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Match:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">alpha_naive</span><span class="p">,</span><span class="w"> </span><span class="n">alpha_fast</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Wait – the fast version doesn’t look right. Let’s be more careful.</p>
+<p>In the fast version, the switch term should be <span class="math notranslate nohighlight">\(r_n \cdot S\)</span> where
+<span class="math notranslate nohighlight">\(S = \sum_i \alpha_i(\ell-1)\)</span>. But when we use <strong>scaled</strong> forward
+probabilities (which sum to 1 after normalization), <span class="math notranslate nohighlight">\(S = 1\)</span>, so the switch
+term simplifies to just <span class="math notranslate nohighlight">\(r_n\)</span>. Let’s verify this.</p>
+</section>
+<section id="with-scaling-normalized-forward-probabilities">
+<h3>With scaling (normalized forward probabilities)<a class="headerlink" href="#with-scaling-normalized-forward-probabilities" title="Link to this heading"></a></h3>
+<p>In the lshmm implementation, forward probabilities are normalized at each step.
+After normalization, <span class="math notranslate nohighlight">\(\sum_j \hat{\alpha}_j(\ell-1) = 1\)</span>. Therefore:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\alpha}_j(\ell) \propto e_j(X_\ell) \left[(1 - r)\hat{\alpha}_j(\ell-1) + \frac{r}{n} \cdot \underbrace{\sum_i \hat{\alpha}_i(\ell-1)}_{= 1}\right]\]</div>
+<div class="math notranslate nohighlight">
+\[= e_j(X_\ell) \left[(1 - r)\hat{\alpha}_j(\ell-1) + \frac{r}{n}\right]\]</div>
+<p>This is exactly what the lshmm code computes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From fb_haploid.py, the core forward step (with normalization):</span>
+<span class="c1"># F[l, i] = F[l-1, i] * (1 - r[l]) + r_n[l]   # transition</span>
+<span class="c1"># F[l, i] *= emission_prob                       # emission</span>
+</pre></div>
+</div>
+<p>That’s it. One multiplication, one addition, and one emission multiplication
+per state. <span class="math notranslate nohighlight">\(O(n)\)</span> per site, <span class="math notranslate nohighlight">\(O(mn)\)</span> total. For <span class="math notranslate nohighlight">\(n = 1000\)</span>
+and <span class="math notranslate nohighlight">\(m = 10^6\)</span>, that’s <span class="math notranslate nohighlight">\(10^9\)</span> operations – a thousand times faster
+than naive.</p>
+</section>
+<section id="without-scaling-unnormalized-forward-probabilities">
+<h3>Without scaling (unnormalized forward probabilities)<a class="headerlink" href="#without-scaling-unnormalized-forward-probabilities" title="Link to this heading"></a></h3>
+<p>If you don’t normalize (e.g., for debugging or small problems), you must
+explicitly compute the sum:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From fb_haploid.py, the unnormalized version:</span>
+<span class="c1"># S = np.sum(F[l-1, :])                          # total forward prob (O(n))</span>
+<span class="c1"># F[l, i] = F[l-1, i] * (1 - r[l]) + S * r_n[l] # transition</span>
+<span class="c1"># F[l, i] *= emission_prob                        # emission</span>
+</pre></div>
+</div>
+<p>Here <code class="docutils literal notranslate"><span class="pre">np.sum(F[l-1,</span> <span class="pre">:])</span></code> computes <span class="math notranslate nohighlight">\(S\)</span> once per site, and the total cost
+is still <span class="math notranslate nohighlight">\(O(n)\)</span> per site.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_ls_haploid</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Complete forward algorithm for the haploid Li-Stephens model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    H : ndarray of shape (m, n)</span>
+<span class="sd">        Reference panel (m sites, n haplotypes).</span>
+<span class="sd">    s : ndarray of shape (m,)</span>
+<span class="sd">        Query haplotype.</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Mutation probability.</span>
+<span class="sd">    r : ndarray of shape (m,)</span>
+<span class="sd">        Per-site recombination probability (r[0] should be 0).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    F : ndarray of shape (m, n)</span>
+<span class="sd">        Forward probabilities.</span>
+<span class="sd">    c : ndarray of shape (m,)</span>
+<span class="sd">        Scaling factors (c[l] = sum of unscaled F[l, :]).</span>
+<span class="sd">    ll : float</span>
+<span class="sd">        Log-likelihood (base 10).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">if</span> <span class="n">normalize</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span>  <span class="c1"># Pre-compute r/n for each site</span>
+
+    <span class="c1"># Initialization: uniform prior times emission at site 0</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">H</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">]:</span>
+            <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span>  <span class="c1"># Match: pi * (1 - mu)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu</span>          <span class="c1"># Mismatch: pi * mu</span>
+
+    <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+        <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>       <span class="c1"># Scaling factor = total probability</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/=</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>            <span class="c1"># Normalize so probabilities sum to 1</span>
+
+    <span class="c1"># Forward pass: iterate over sites 1, ..., m-1</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+            <span class="c1"># Scaled: sum of previous F is 1, so switch term = r_n[l]</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">+</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+                <span class="c1"># Emission</span>
+                <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">==</span> <span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j</span><span class="p">]:</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span>  <span class="c1"># Match</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="n">mu</span>        <span class="c1"># Mismatch</span>
+            <span class="n">c</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/=</span> <span class="n">c</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Unscaled: must compute sum explicitly</span>
+            <span class="n">S</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># Total forward prob at previous site</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">+</span> <span class="n">S</span> <span class="o">*</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">==</span> <span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j</span><span class="p">]:</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="n">mu</span>
+
+    <span class="c1"># Recover log-likelihood from scaling factors (or final sum)</span>
+    <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">F</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ll</span>
+
+<span class="c1"># Test: small example</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>  <span class="c1"># site 0</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>  <span class="c1"># site 1</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>  <span class="c1"># site 2</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>  <span class="c1"># site 3</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>  <span class="c1"># site 4</span>
+<span class="p">])</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">])</span>
+
+<span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">forward_ls_haploid</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log-likelihood: </span><span class="si">{</span><span class="n">ll</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Forward probs at last site (posterior):&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  h_</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">F</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This shows the posterior probability of copying from each reference haplotype at
+the last site. The haplotype with the highest probability is the one whose allele
+pattern best matches the query in that region.</p>
+</section>
+</section>
+<section id="step-7-putting-it-all-together">
+<h2>Step 7: Putting It All Together<a class="headerlink" href="#step-7-putting-it-all-together" title="Link to this heading"></a></h2>
+<p>Now that every component of the template mechanism is in place – initial
+distribution, transition probabilities, emission probabilities, mutation
+estimation, and the <span class="math notranslate nohighlight">\(O(n)\)</span> trick – let’s see the complete model in
+action on a larger example.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simulate a reference panel and a mosaic query</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>   <span class="c1"># reference haplotypes</span>
+<span class="n">m</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># sites</span>
+
+<span class="c1"># Random reference panel (biallelic)</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+<span class="c1"># Create a mosaic query: copy from different haplotypes in blocks</span>
+<span class="n">true_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">true_path</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">30</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>    <span class="c1"># Copy from haplotype 2 for sites 0-29</span>
+<span class="n">true_path</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">70</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>   <span class="c1"># Copy from haplotype 5 for sites 30-69</span>
+<span class="n">true_path</span><span class="p">[</span><span class="mi">70</span><span class="p">:</span><span class="mi">100</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c1"># Copy from haplotype 8 for sites 70-99</span>
+
+<span class="c1"># Start with perfect copy, then add mutations</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">true_path</span><span class="p">[</span><span class="n">l</span><span class="p">]]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)])</span>
+<span class="c1"># Add 3 mutations at random positions</span>
+<span class="n">mutation_sites</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">s</span><span class="p">[</span><span class="n">mutation_sites</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">s</span><span class="p">[</span><span class="n">mutation_sites</span><span class="p">]</span>  <span class="c1"># Flip the allele</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True path: copies from h_</span><span class="si">{</span><span class="n">true_path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> (sites 0-29), &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;h_</span><span class="si">{</span><span class="n">true_path</span><span class="p">[</span><span class="mi">30</span><span class="p">]</span><span class="si">}</span><span class="s2"> (30-69), h_</span><span class="si">{</span><span class="n">true_path</span><span class="p">[</span><span class="mi">70</span><span class="p">]</span><span class="si">}</span><span class="s2"> (70-99)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mutations at sites: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">mutation_sites</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Run forward algorithm</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">estimate_mutation_probability</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+<span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">forward_ls_haploid</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Find the most likely state at each site (crude decoding)</span>
+<span class="n">decoded_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Compare to truth</span>
+<span class="n">accuracy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">decoded_path</span> <span class="o">==</span> <span class="n">true_path</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Decoded accuracy (argmax of forward): </span><span class="si">{</span><span class="n">accuracy</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log-likelihood: </span><span class="si">{</span><span class="n">ll</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Show the decoded path vs true path around breakpoints</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Around breakpoint at site 30:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">27</span><span class="p">,</span> <span class="mi">33</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Site </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">: true=h_</span><span class="si">{</span><span class="n">true_path</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;decoded=h_</span><span class="si">{</span><span class="n">decoded_path</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;P(true)=</span><span class="si">{</span><span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="n">true_path</span><span class="p">[</span><span class="n">l</span><span class="p">]]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Formula</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Initial distribution</p></td>
+<td><p><span class="math notranslate nohighlight">\(\pi_j = 1/n\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Transition (same)</p></td>
+<td><p><span class="math notranslate nohighlight">\(A_{ii} = (1 - r) + r/n\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Transition (switch)</p></td>
+<td><p><span class="math notranslate nohighlight">\(A_{ij} = r/n \quad (i \neq j)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Emission (match)</p></td>
+<td><p><span class="math notranslate nohighlight">\(e_j(s_\ell) = 1 - \mu\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Emission (mismatch)</p></td>
+<td><p><span class="math notranslate nohighlight">\(e_j(s_\ell) = \mu / (a-1)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Mutation estimate</p></td>
+<td><p><span class="math notranslate nohighlight">\(\mu = \tilde{\theta} / [2(n + \tilde{\theta})]\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>O(K) trick</p></td>
+<td><p>Factor out <span class="math notranslate nohighlight">\(\sum_i \alpha_i\)</span> for <span class="math notranslate nohighlight">\(O(n)\)</span> per site</p></td>
+</tr>
+</tbody>
+</table>
+<p>These are the fundamental gears of the Li &amp; Stephens template mechanism. We
+have built each gear from first principles, verified it works, and shown how
+the special structure of the transition matrix – a rank-1 update of the
+identity – yields the <span class="math notranslate nohighlight">\(O(n)\)</span> trick that makes the model practical.</p>
+<p>Next, we’ll assemble these gears into the complete algorithms: forward-backward
+and Viterbi – the gear train that turns the model into answers.</p>
+<p>Next: <a class="reference internal" href="haploid_algorithms.html#haploid-algorithms"><span class="std std-ref">Haploid LS HMM Algorithms</span></a> – The complete algorithms for haploid data.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of the Li &amp; Stephens HMM" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="haploid_algorithms.html" class="btn btn-neutral float-right" title="Haploid LS HMM Algorithms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

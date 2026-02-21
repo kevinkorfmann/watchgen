@@ -1,0 +1,1427 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The PSMC HMM and EM Algorithm &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Decoding the Clock" href="decoding.html" />
+    <link rel="prev" title="Discretizing Time" href="discretization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece I: PSMC</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece I: PSMC</a></li>
+      <li class="breadcrumb-item active">The PSMC HMM and EM Algorithm</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="discretization.html" class="btn btn-neutral float-left" title="Discretizing Time" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="decoding.html" class="btn btn-neutral float-right" title="Decoding the Clock" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-psmc-hmm-and-em-algorithm">
+<span id="psmc-hmm"></span><h1>The PSMC HMM and EM Algorithm<a class="headerlink" href="#the-psmc-hmm-and-em-algorithm" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The gear train: turning mathematical insight into a learning machine.</em></p>
+</div></blockquote>
+<p>In the previous chapters, we derived all the HMM parameters as functions of
+<span class="math notranslate nohighlight">\(\theta_0\)</span>, <span class="math notranslate nohighlight">\(\rho_0\)</span>, and <span class="math notranslate nohighlight">\(\lambda_0, \ldots, \lambda_n\)</span>.
+We built the time intervals (<a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>), computed the
+transition matrix, and worked out emission probabilities – all the individual
+gears of the PSMC watch. Now we close the loop: given the observed data
+(the heterozygosity sequence), use the <strong>Expectation-Maximization (EM)
+algorithm</strong> to find the parameters that best explain the data.</p>
+<p>Think of it this way. So far we have been a watchmaker who knows how to cut
+gears of any size. But we have not yet figured out <em>which</em> sizes to cut. The
+data – the sequence of heterozygous and homozygous sites along the genome –
+is the standard clock signal we are trying to match. The EM algorithm is the
+process of iteratively adjusting the gears until the watch keeps time: we
+try a set of gear sizes, see how well the watch matches the signal, adjust,
+and repeat. Each iteration brings the gears closer to the right configuration.</p>
+<p>This chapter has five main sections:</p>
+<ol class="arabic simple">
+<li><p><strong>The complete HMM specification</strong> – collecting everything from earlier
+chapters into one place.</p></li>
+<li><p><strong>The forward-backward algorithm</strong> – the computational engine that asks
+“given these gear sizes, how well does the watch keep time, and which
+configurations are most likely?”</p></li>
+<li><p><strong>The EM algorithm</strong> – the iterative adjustment loop.</p></li>
+<li><p><strong>The full EM loop</strong> – putting it all together for real inference.</p></li>
+<li><p><strong>Multiple sequences and missing data</strong> – handling real genomes.</p></li>
+</ol>
+<p>If any of the HMM concepts feel unfamiliar – forward probabilities, scaling,
+posterior decoding – revisit <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">the HMM prerequisite chapter</span></a>, where
+we built these algorithms from scratch. This chapter assumes you are comfortable
+with the forward algorithm and the idea of hidden states; we will explain the
+backward algorithm and the EM machinery in full detail here.</p>
+<section id="step-1-the-complete-hmm-specification">
+<h2>Step 1: The Complete HMM Specification<a class="headerlink" href="#step-1-the-complete-hmm-specification" title="Link to this heading"></a></h2>
+<p>Before we can learn anything, we need to state precisely what our HMM looks
+like. Let’s collect every piece from the previous chapters into one place.</p>
+<p>The state space is <span class="math notranslate nohighlight">\(\{0, 1, \ldots, n\}\)</span>,
+where state <span class="math notranslate nohighlight">\(k\)</span> means “the coalescence time at this position falls in the
+interval <span class="math notranslate nohighlight">\([t_k, t_{k+1})\)</span>.” In the watch metaphor, each state is a
+possible gear configuration – a hypothesis about how deep in time the two
+haplotypes share their most recent common ancestor at this genomic position.</p>
+<p><strong>Initial distribution:</strong></p>
+<div class="math notranslate nohighlight">
+\[a_0(k) = \sigma_k = \frac{1}{C_\sigma}\left[\frac{\alpha_k - \alpha_{k+1}}{C_\pi \rho} + \frac{\pi_k}{2}\right]\]</div>
+<p>This is the stationary distribution we derived in <a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>.
+It tells us, before looking at any data, how likely each coalescence time
+interval is. The watch starts in its equilibrium state.</p>
+<p><strong>Transition matrix:</strong></p>
+<div class="math notranslate nohighlight">
+\[p_{kl} = \frac{\pi_k}{C_\sigma \sigma_k} q_{kl} + \delta_{kl}\left(1 - \frac{\pi_k}{C_\sigma \sigma_k}\right)\]</div>
+<p>This is the probability of moving from interval <span class="math notranslate nohighlight">\(k\)</span> at one genomic
+position to interval <span class="math notranslate nohighlight">\(l\)</span> at the next. It captures both the possibility of
+recombination (which reshuffles the coalescence time) and no recombination
+(which keeps it the same). This matrix was derived in <a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>,
+Step 4.</p>
+<p><strong>Emission probabilities:</strong></p>
+<div class="math notranslate nohighlight">
+\[e_k(0) = e^{-\theta \bar{t}_k} \quad \text{(homozygous)}\]</div>
+<div class="math notranslate nohighlight">
+\[e_k(1) = 1 - e^{-\theta \bar{t}_k} \quad \text{(heterozygous)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\bar{t}_k = -\frac{1}{\rho}\ln\left(1 - \frac{\pi_k}{C_\sigma \sigma_k}\right)\)</span> is the effective coalescence time in interval <span class="math notranslate nohighlight">\(k\)</span>.</p>
+<p>The intuition: a deeper coalescence time (larger <span class="math notranslate nohighlight">\(\bar{t}_k\)</span>) means the
+two haplotypes have been evolving independently for longer, so there is a higher
+chance of observing a heterozygous site. A shallow coalescence time means
+recent common ancestry and thus more homozygous sites.</p>
+<p><strong>Observation alphabet:</strong> <span class="math notranslate nohighlight">\(\{0, 1\}\)</span> (hom/het). Missing data gets
+<span class="math notranslate nohighlight">\(e_k(\text{missing}) = 1\)</span> for all <span class="math notranslate nohighlight">\(k\)</span>.</p>
+<div class="admonition-why-missing-data-gets-emission-probability-1 admonition">
+<p class="admonition-title">Why missing data gets emission probability 1</p>
+<p>Setting <span class="math notranslate nohighlight">\(e_k(\text{missing}) = 1\)</span> for all states means “this
+observation is equally consistent with every possible coalescence time.”
+Missing data provides zero information – it neither favors nor disfavors
+any state. The HMM simply passes through missing positions, maintaining
+the transition dynamics but learning nothing from them. This is a standard
+HMM technique (see <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a>) and requires no special machinery.</p>
+</div>
+<p>Now let’s implement this complete specification:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">class</span> <span class="nc">PSMC_HMM</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Complete PSMC Hidden Markov Model.</span>
+
+<span class="sd">    This class bundles together all the HMM parameters (transitions,</span>
+<span class="sd">    emissions, initial distribution) and provides methods for computing</span>
+<span class="sd">    likelihoods and running the forward-backward algorithm.</span>
+
+<span class="sd">    Think of this as the fully assembled watch: all the gears from the</span>
+<span class="sd">    discretization chapter are now meshed together into a working mechanism.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        n+1 = number of hidden states (time intervals).</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Mutation rate per bin.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Recombination rate per bin.</span>
+<span class="sd">    lambdas : ndarray of shape (n + 1,)</span>
+<span class="sd">        Relative population sizes.</span>
+<span class="sd">    t_max : float</span>
+<span class="sd">    alpha_param : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">t_max</span><span class="o">=</span><span class="mf">15.0</span><span class="p">,</span> <span class="n">alpha_param</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># number of states (one per time interval)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">rho</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lambdas</span> <span class="o">=</span> <span class="n">lambdas</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># store our own copy to avoid aliasing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_max</span> <span class="o">=</span> <span class="n">t_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha_param</span> <span class="o">=</span> <span class="n">alpha_param</span>
+
+        <span class="c1"># Build all HMM parameters from the population-genetic quantities.</span>
+        <span class="c1"># build_psmc_hmm() was defined in the discretization chapter and</span>
+        <span class="c1"># returns the transition matrix, emission matrix, and initial dist.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transitions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">emissions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial</span> <span class="o">=</span> <span class="n">build_psmc_hmm</span><span class="p">(</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">t_max</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">alpha_param</span><span class="o">=</span><span class="n">alpha_param</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute log-likelihood of an observation sequence.</span>
+
+<span class="sd">        Uses the scaled forward algorithm (see Step 2 below).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seq : ndarray of shape (L,), dtype=int</span>
+<span class="sd">            Observation sequence (0 = hom, 1 = het, 2+ = missing).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ll : float</span>
+<span class="sd">            Log-likelihood log P(X | theta, rho, lambdas).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_scaled</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ll</span>
+
+    <span class="k">def</span> <span class="nf">forward_scaled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scaled forward algorithm.</span>
+
+<span class="sd">        The forward algorithm computes, for each position a and state k,</span>
+<span class="sd">        the joint probability P(X_1, ..., X_a, Z_a = k) -- &quot;the probability</span>
+<span class="sd">        of seeing these observations AND being in state k right now.&quot;</span>
+
+<span class="sd">        We use scaling to prevent numerical underflow. At each position,</span>
+<span class="sd">        we normalize the forward probabilities to sum to 1 and accumulate</span>
+<span class="sd">        the log of the normalization constants. The sum of these logs</span>
+<span class="sd">        gives us the log-likelihood. (This technique is explained in detail</span>
+<span class="sd">        in the HMM prerequisite chapter: see :ref:`hmms`.)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        alpha_hat : ndarray of shape (L, N)</span>
+<span class="sd">            Scaled forward probabilities.</span>
+<span class="sd">        log_likelihood : float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>            <span class="c1"># length of observation sequence</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span>              <span class="c1"># number of hidden states</span>
+        <span class="n">alpha_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>  <span class="c1"># scaled forward probabilities</span>
+        <span class="n">log_likelihood</span> <span class="o">=</span> <span class="mf">0.0</span>         <span class="c1"># accumulator for log P(X)</span>
+
+        <span class="c1"># --- Initialization (position 0) ---</span>
+        <span class="c1"># alpha(0, k) = P(Z_0 = k) * P(X_0 | Z_0 = k)</span>
+        <span class="c1">#             = initial[k] * emission[X_0, k]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>          <span class="c1"># observation at position 0</span>
+            <span class="k">if</span> <span class="n">obs</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>          <span class="c1"># missing data: no information</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">emissions</span><span class="p">[</span><span class="n">obs</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span>  <span class="c1"># P(obs | state k)</span>
+            <span class="n">alpha_hat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">e</span>
+
+        <span class="c1"># Scale: normalize so alpha_hat[0, :] sums to 1</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>    <span class="c1"># c is the scaling constant</span>
+        <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">alpha_hat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/=</span> <span class="n">c</span>     <span class="c1"># now alpha_hat[0] sums to 1</span>
+            <span class="n">log_likelihood</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>  <span class="c1"># accumulate log(c)</span>
+
+        <span class="c1"># --- Recursion (positions 1 through L-1) ---</span>
+        <span class="c1"># alpha(a, k) = P(X_a | Z_a=k) * sum_j[ alpha(a-1, j) * P(k|j) ]</span>
+        <span class="c1"># In words: &quot;probability of arriving in state k at position a&quot;</span>
+        <span class="c1"># = (emission at k) * (sum over all previous states j of:</span>
+        <span class="c1">#    being in j at a-1 times transitioning from j to k)</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+                <span class="n">obs</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">obs</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>      <span class="c1"># missing data</span>
+                    <span class="n">e</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">emissions</span><span class="p">[</span><span class="n">obs</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span>
+
+                <span class="c1"># np.dot computes the sum over all previous states j:</span>
+                <span class="c1"># sum_j alpha_hat[pos-1, j] * transitions[j, k]</span>
+                <span class="n">alpha_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
+                    <span class="n">alpha_hat</span><span class="p">[</span><span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">transitions</span><span class="p">[:,</span> <span class="n">k</span><span class="p">])</span>
+
+            <span class="c1"># Scale this position</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">alpha_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">/=</span> <span class="n">c</span>
+                <span class="n">log_likelihood</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">alpha_hat</span><span class="p">,</span> <span class="n">log_likelihood</span>
+
+    <span class="k">def</span> <span class="nf">backward_scaled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">alpha_hat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scaled backward algorithm.</span>
+
+<span class="sd">        The backward algorithm is the mirror image of the forward algorithm.</span>
+<span class="sd">        Where the forward algorithm answers &quot;what is the probability of the</span>
+<span class="sd">        observations up to position a, given state k at a?&quot;, the backward</span>
+<span class="sd">        algorithm answers &quot;what is the probability of the observations</span>
+<span class="sd">        AFTER position a, given state k at a?&quot;</span>
+
+<span class="sd">        Together, forward and backward give us the posterior: the probability</span>
+<span class="sd">        of each state at each position, given ALL the observations. This is</span>
+<span class="sd">        like looking at a position from both directions -- past and future --</span>
+<span class="sd">        to triangulate which gear configuration is most likely.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seq : ndarray of shape (L,)</span>
+<span class="sd">        alpha_hat : ndarray of shape (L, N)</span>
+<span class="sd">            From forward_scaled (we use its scaling factors for consistency).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        beta_hat : ndarray of shape (L, N)</span>
+<span class="sd">            Scaled backward probabilities.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span>
+        <span class="n">beta_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>
+
+        <span class="c1"># --- Initialization: at the last position, beta = 1 ---</span>
+        <span class="c1"># There are no future observations to account for, so the</span>
+        <span class="c1"># backward probability is 1 for all states.</span>
+        <span class="n">beta_hat</span><span class="p">[</span><span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="c1"># --- Recursion: work backwards from position L-2 to 0 ---</span>
+        <span class="c1"># beta(a, k) = sum_l[ P(l|k) * P(X_{a+1}|l) * beta(a+1, l) ]</span>
+        <span class="c1"># In words: &quot;the probability of the future observations, given</span>
+        <span class="c1"># state k at position a&quot; = sum over all possible next states l of:</span>
+        <span class="c1"># (transition k-&gt;l) * (emission at l) * (future from l onwards)</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>  <span class="c1"># L-2, L-3, ..., 0</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>         <span class="c1"># sum over next states</span>
+                    <span class="n">obs</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>     <span class="c1"># observation at NEXT position</span>
+                    <span class="k">if</span> <span class="n">obs</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>           <span class="c1"># missing data</span>
+                        <span class="n">e</span> <span class="o">=</span> <span class="mf">1.0</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">emissions</span><span class="p">[</span><span class="n">obs</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span>
+                    <span class="n">total</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transitions</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">*</span> <span class="n">e</span> <span class="o">*</span> <span class="n">beta_hat</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span>
+                <span class="n">beta_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">total</span>
+
+            <span class="c1"># Scale to prevent underflow</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">beta_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">beta_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">/=</span> <span class="n">c</span>
+
+        <span class="k">return</span> <span class="n">beta_hat</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-the-forward-backward-algorithm">
+<h2>Step 2: The Forward-Backward Algorithm<a class="headerlink" href="#step-2-the-forward-backward-algorithm" title="Link to this heading"></a></h2>
+<p>With the forward and backward algorithms in hand, we can now compute the
+<strong>posterior probability</strong> of each hidden state at each position. This is the
+central computation of the E-step and the key to the entire EM procedure.</p>
+<p>Recall the watch metaphor: at each genomic position, the hidden state represents
+which time interval the coalescence falls in – which gear configuration the
+watch is using at that position. The forward-backward algorithm figures out,
+for each position, the probability of every possible gear configuration, given
+the <em>entire</em> sequence of observations (not just the observations before or after
+that position, but all of them together).</p>
+<div class="admonition-probability-aside-what-forward-backward-actually-computes admonition">
+<p class="admonition-title">Probability Aside: what forward-backward actually computes</p>
+<p>The forward-backward algorithm computes two fundamental quantities:</p>
+<p><strong>1. Posterior state probabilities</strong> <span class="math notranslate nohighlight">\(\gamma_k(a)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\gamma_k(a) = P(Z_a = k \mid X_1, \ldots, X_L)\]</div>
+<p>This answers: “given everything we observed across the entire genome,
+what is the probability that the coalescence time at position <span class="math notranslate nohighlight">\(a\)</span>
+falls in interval <span class="math notranslate nohighlight">\(k\)</span>?”</p>
+<p><strong>2. Expected transition counts</strong> <span class="math notranslate nohighlight">\(\xi_{kl}(a)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\xi_{kl}(a) = P(Z_a = k, Z_{a+1} = l \mid X_1, \ldots, X_L)\]</div>
+<p>This answers: “what is the probability that the coalescence time was in
+interval <span class="math notranslate nohighlight">\(k\)</span> at position <span class="math notranslate nohighlight">\(a\)</span> AND in interval <span class="math notranslate nohighlight">\(l\)</span> at
+position <span class="math notranslate nohighlight">\(a+1\)</span>?”</p>
+<p>Both are computed by combining the forward and backward variables. The
+forward variable <span class="math notranslate nohighlight">\(f_k(a)\)</span> looks at the data from the left (positions
+1 through <span class="math notranslate nohighlight">\(a\)</span>). The backward variable <span class="math notranslate nohighlight">\(b_k(a)\)</span> looks at the
+data from the right (positions <span class="math notranslate nohighlight">\(a+1\)</span> through <span class="math notranslate nohighlight">\(L\)</span>). Together,
+they see everything.</p>
+</div>
+<p>The posterior is computed as:</p>
+<div class="math notranslate nohighlight">
+\[P(Z_a = k \mid X_1, \ldots, X_L) = \frac{f_k(a) \cdot b_k(a)}{\sum_{l} f_l(a) \cdot b_l(a)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(f_k(a)\)</span> is the forward probability and <span class="math notranslate nohighlight">\(b_k(a)\)</span> is the backward
+probability.</p>
+<p>We’ve already implemented the forward algorithm above. The backward algorithm runs the
+same recursion in reverse:</p>
+<p><strong>Initialization</strong> (<span class="math notranslate nohighlight">\(a = L\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[b_k(L) = 1 \quad \text{for all } k\]</div>
+<p><strong>Recursion</strong> (<span class="math notranslate nohighlight">\(a = L-1, \ldots, 1\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[b_k(a) = \sum_{l=0}^{n} p_{kl} \cdot e_l(X_{a+1}) \cdot b_l(a+1)\]</div>
+<p>The backward initialization says: at the end of the sequence, there are no
+future observations, so the backward probability is 1 regardless of state.
+The recursion says: to compute the backward probability at position <span class="math notranslate nohighlight">\(a\)</span>,
+consider every possible state <span class="math notranslate nohighlight">\(l\)</span> at the <em>next</em> position, weight it by
+the transition probability, the emission at that next state, and the backward
+probability from that next state onwards. Sum over all possibilities.</p>
+<p>Together, forward and backward give us two things:</p>
+<ol class="arabic simple">
+<li><p><strong>Posterior state probabilities</strong> <span class="math notranslate nohighlight">\(\gamma_k(a) = P(Z_a = k \mid X)\)</span> at each position</p></li>
+<li><p><strong>Expected transition counts</strong> <span class="math notranslate nohighlight">\(\xi_{kl}(a) = P(Z_a = k, Z_{a+1} = l \mid X)\)</span> between positions</p></li>
+</ol>
+<p>These are the <strong>expected sufficient statistics</strong> – exactly what EM needs.</p>
+<div class="admonition-probability-aside-what-are-expected-sufficient-statistics admonition">
+<p class="admonition-title">Probability Aside: what are “expected sufficient statistics”?</p>
+<p>The term “sufficient statistics” comes from classical statistics. A
+<strong>sufficient statistic</strong> is a summary of data that captures everything
+the data can tell you about a parameter. For example, the sample mean
+and sample variance are sufficient statistics for a normal distribution –
+once you know them, the individual data points add no further information
+about <span class="math notranslate nohighlight">\(\mu\)</span> and <span class="math notranslate nohighlight">\(\sigma^2\)</span>.</p>
+<p>For an HMM, the sufficient statistics are:</p>
+<ul class="simple">
+<li><p><strong>How often each state is visited</strong> (the <span class="math notranslate nohighlight">\(\gamma_k\)</span> sums)</p></li>
+<li><p><strong>How often each transition occurs</strong> (the <span class="math notranslate nohighlight">\(\xi_{kl}\)</span> sums)</p></li>
+<li><p><strong>How often each observation is emitted from each state</strong> (the emission counts)</p></li>
+</ul>
+<p>If we knew the hidden states, we could compute these directly by counting.
+But the states are hidden, so we compute the <strong>expected</strong> counts – weighted
+averages over all possible state sequences, where the weights come from the
+posterior probabilities. This is why the E-step is called “Expectation”: it
+computes the expected values of the sufficient statistics under the current
+parameter estimates.</p>
+<p>In the watch metaphor: we cannot directly observe which gears are engaged at
+each tick. But by looking at the output (het/hom) from both directions, we can
+estimate <em>how often</em> each gear was probably engaged. These expected gear-usage
+counts are the sufficient statistics.</p>
+</div>
+<div class="admonition-probability-aside-bayes-theorem-in-sequence-form admonition">
+<p class="admonition-title">Probability Aside: Bayes’ theorem in sequence form</p>
+<p>The posterior <span class="math notranslate nohighlight">\(\gamma_k(a)\)</span> is a direct application of Bayes’ theorem.
+The forward variable <span class="math notranslate nohighlight">\(f_k(a)\)</span> captures
+<span class="math notranslate nohighlight">\(P(X_1, \ldots, X_a, Z_a = k)\)</span> – the joint probability of seeing the
+observations up to position <span class="math notranslate nohighlight">\(a\)</span> <strong>and</strong> being in state <span class="math notranslate nohighlight">\(k\)</span>. The
+backward variable <span class="math notranslate nohighlight">\(b_k(a)\)</span> captures
+<span class="math notranslate nohighlight">\(P(X_{a+1}, \ldots, X_L \mid Z_a = k)\)</span> – the probability of the
+remaining observations <strong>given</strong> state <span class="math notranslate nohighlight">\(k\)</span> at position <span class="math notranslate nohighlight">\(a\)</span>.
+Multiplying and normalizing gives:</p>
+<div class="math notranslate nohighlight">
+\[\gamma_k(a) = \frac{f_k(a) \cdot b_k(a)}{\sum_l f_l(a) \cdot b_l(a)}
+= \frac{P(X, Z_a = k)}{P(X)}\]</div>
+<p>This is just Bayes’ rule: posterior = likelihood <span class="math notranslate nohighlight">\(\times\)</span> prior / evidence.
+The forward variable plays the role of “likelihood times prior” (all the
+evidence up to and including position <span class="math notranslate nohighlight">\(a\)</span>), while the backward variable
+completes the picture with the remaining evidence. The denominator
+<span class="math notranslate nohighlight">\(P(X)\)</span> – the total probability of the data – ensures the result is a
+proper probability distribution over states at each position.</p>
+</div>
+<p>Let’s verify that the posteriors behave as expected:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Demonstrate that gamma sums to 1 at each position (it&#39;s a distribution)</span>
+<span class="k">def</span> <span class="nf">check_posteriors</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">n_positions</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify posterior probabilities are valid distributions.</span>
+
+<span class="sd">    At each position, gamma should sum to 1 because we must be in</span>
+<span class="sd">    exactly one state. This is a basic sanity check that the</span>
+<span class="sd">    forward-backward computation is correct.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">alpha_hat</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">forward_scaled</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>     <span class="c1"># forward pass</span>
+    <span class="n">beta_hat</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">backward_scaled</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">alpha_hat</span><span class="p">)</span>  <span class="c1"># backward pass</span>
+
+    <span class="c1"># Check a few representative positions across the sequence</span>
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span><span class="o">//</span><span class="mi">4</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span><span class="o">//</span><span class="mi">4</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="c1"># gamma = element-wise product of forward and backward</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+        <span class="n">gamma</span> <span class="o">/=</span> <span class="n">gamma</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>   <span class="c1"># normalize to get posterior</span>
+        <span class="n">peak_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>  <span class="c1"># most probable state</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  pos=</span><span class="si">{</span><span class="n">pos</span><span class="si">:</span><span class="s2">6d</span><span class="si">}</span><span class="s2">: sum(gamma)=</span><span class="si">{</span><span class="n">gamma</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;peak state=</span><span class="si">{</span><span class="n">peak_state</span><span class="si">}</span><span class="s2">, &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;peak prob=</span><span class="si">{</span><span class="n">gamma</span><span class="p">[</span><span class="n">peak_state</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we compute the expected sufficient statistics. This is the heart of the
+E-step – the computation that extracts from the data everything the M-step
+needs to update the parameters:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_expected_counts</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute expected counts for the E-step of EM.</span>
+
+<span class="sd">    This function runs the forward-backward algorithm and then extracts</span>
+<span class="sd">    three sets of expected counts:</span>
+
+<span class="sd">    1. gamma_sum[k] = sum over all positions a of gamma_k(a)</span>
+<span class="sd">       &quot;How much total time does the HMM spend in state k?&quot;</span>
+
+<span class="sd">    2. xi_sum[k, l] = sum over all adjacent pairs (a, a+1) of xi_{kl}(a)</span>
+<span class="sd">       &quot;How many times does the HMM transition from state k to state l?&quot;</span>
+
+<span class="sd">    3. emission_counts[obs, k] = sum over positions where X_a = obs of gamma_k(a)</span>
+<span class="sd">       &quot;How many times does state k emit observation obs?&quot;</span>
+
+<span class="sd">    These are the expected sufficient statistics. Together, they</span>
+<span class="sd">    summarize everything the data can tell us about the parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hmm : PSMC_HMM</span>
+<span class="sd">    seq : ndarray of shape (L,)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    gamma_sum : ndarray of shape (N,)</span>
+<span class="sd">        Sum of posterior state probabilities over all positions.</span>
+<span class="sd">    xi_sum : ndarray of shape (N, N)</span>
+<span class="sd">        Sum of expected transition counts.</span>
+<span class="sd">    emission_counts : ndarray of shape (2, N)</span>
+<span class="sd">        Expected emission counts: emission_counts[obs, k] =</span>
+<span class="sd">        sum over positions with observation obs of gamma_k(pos).</span>
+<span class="sd">    log_likelihood : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">N</span>
+
+    <span class="c1"># --- Run forward and backward passes ---</span>
+    <span class="n">alpha_hat</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">forward_scaled</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="n">beta_hat</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">backward_scaled</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">alpha_hat</span><span class="p">)</span>
+
+    <span class="c1"># --- Compute posterior state probabilities gamma_k(a) ---</span>
+    <span class="c1"># and accumulate the sufficient statistics</span>
+    <span class="n">gamma_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>          <span class="c1"># total &quot;time spent&quot; in each state</span>
+    <span class="n">emission_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>  <span class="c1"># emission counts per state</span>
+
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span><span class="p">):</span>
+        <span class="c1"># gamma_k(a) = alpha_hat(a,k) * beta_hat(a,k), then normalize</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="n">gamma</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">gamma</span> <span class="o">/=</span> <span class="n">total</span>           <span class="c1"># normalize to a proper distribution</span>
+
+        <span class="n">gamma_sum</span> <span class="o">+=</span> <span class="n">gamma</span>            <span class="c1"># accumulate state occupancy</span>
+
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">obs</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>                   <span class="c1"># not missing data</span>
+            <span class="n">emission_counts</span><span class="p">[</span><span class="n">obs</span><span class="p">]</span> <span class="o">+=</span> <span class="n">gamma</span>  <span class="c1"># attribute this obs to states</span>
+
+    <span class="c1"># --- Compute expected transition counts xi_{kl}(a) ---</span>
+    <span class="c1"># xi_{kl}(a) = alpha_hat(a,k) * P(l|k) * e_l(X_{a+1}) * beta_hat(a+1,l)</span>
+    <span class="c1"># then normalize. This tells us: &quot;given all the data, how probable is</span>
+    <span class="c1"># it that the HMM was in state k at position a and state l at a+1?&quot;</span>
+    <span class="n">xi_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>         <span class="c1"># for each adjacent pair</span>
+        <span class="n">obs_next</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>      <span class="c1"># observation at the next position</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>           <span class="c1"># source state</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>       <span class="c1"># destination state</span>
+                <span class="k">if</span> <span class="n">obs_next</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>    <span class="c1"># missing data at next position</span>
+                    <span class="n">e</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">e</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">emissions</span><span class="p">[</span><span class="n">obs_next</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span>
+
+                <span class="c1"># Unnormalized xi: forward(a,k) * trans(k,l) * emit(l) * backward(a+1,l)</span>
+                <span class="n">xi_sum</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">alpha_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span>
+                                  <span class="n">hmm</span><span class="o">.</span><span class="n">transitions</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">*</span>
+                                  <span class="n">e</span> <span class="o">*</span> <span class="n">beta_hat</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">l</span><span class="p">])</span>
+
+    <span class="c1"># Normalize xi so the total sums to L-1 (one transition per adjacent pair)</span>
+    <span class="n">total_xi</span> <span class="o">=</span> <span class="n">xi_sum</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">total_xi</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">xi_sum</span> <span class="o">/=</span> <span class="n">total_xi</span>
+        <span class="n">xi_sum</span> <span class="o">*=</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># scale to expected number of transitions</span>
+
+    <span class="k">return</span> <span class="n">gamma_sum</span><span class="p">,</span> <span class="n">xi_sum</span><span class="p">,</span> <span class="n">emission_counts</span><span class="p">,</span> <span class="n">ll</span>
+</pre></div>
+</div>
+<p><strong>Recap so far.</strong> We now have a complete forward-backward implementation that,
+given an observation sequence and current HMM parameters, produces three things:
+(1) the posterior probability of each state at each position, (2) the expected
+number of transitions between each pair of states, and (3) the expected emission
+counts. These are everything the EM algorithm needs to update the parameters.
+The next section explains how.</p>
+</section>
+<section id="step-3-the-em-algorithm">
+<h2>Step 3: The EM Algorithm<a class="headerlink" href="#step-3-the-em-algorithm" title="Link to this heading"></a></h2>
+<p>We now arrive at the central algorithm of PSMC inference. The
+<strong>Expectation-Maximization (EM) algorithm</strong> is an iterative procedure that
+alternates between two steps:</p>
+<ol class="arabic simple">
+<li><p><strong>E-step</strong> (Expectation): Given the current parameters, run forward-backward
+to compute the expected sufficient statistics. “Given our current gear sizes,
+figure out how well the watch keeps time and which gear configurations are
+most likely.”</p></li>
+<li><p><strong>M-step</strong> (Maximization): Given the expected sufficient statistics, find new
+parameters that maximize the expected log-likelihood. “Given what we learned
+about gear usage, cut new gears that would make the watch keep better time.”</p></li>
+</ol>
+<p>The algorithm repeats these two steps until convergence. Each iteration is
+guaranteed (by EM theory) to increase the log-likelihood of the data – or at
+least never decrease it. The watch gets more accurate with every iteration,
+converging to a (local) optimum.</p>
+<div class="admonition-probability-aside-the-expectation-step admonition">
+<p class="admonition-title">Probability Aside: the Expectation step</p>
+<p>The “Expectation” in EM refers to computing the <strong>expected value of the
+complete-data log-likelihood</strong> under the posterior distribution of the
+hidden states. Let’s unpack this:</p>
+<ul>
+<li><p>The <strong>complete data</strong> is the observations <span class="math notranslate nohighlight">\(X\)</span> together with the
+hidden states <span class="math notranslate nohighlight">\(Z\)</span>. If we knew both, computing the log-likelihood
+would be straightforward – just count transitions, emissions, etc.</p></li>
+<li><p>But the hidden states are unknown. So instead of counting, we compute
+<strong>expected counts</strong> – weighted averages where the weights are the
+posterior probabilities <span class="math notranslate nohighlight">\(P(Z \mid X, \Theta^{\text{old}})\)</span>.</p></li>
+<li><p>This expected complete-data log-likelihood is called the <strong>Q function</strong>:</p>
+<div class="math notranslate nohighlight">
+\[Q(\Theta \mid \Theta^{\text{old}}) = \mathbb{E}_{Z \mid X, \Theta^{\text{old}}}
+\left[\log P(X, Z \mid \Theta)\right]\]</div>
+</li>
+</ul>
+<p>The E-step computes the expected counts (which are all we need to evaluate
+<span class="math notranslate nohighlight">\(Q\)</span> for any <span class="math notranslate nohighlight">\(\Theta\)</span>). The M-step then maximizes <span class="math notranslate nohighlight">\(Q\)</span>
+over <span class="math notranslate nohighlight">\(\Theta\)</span>.</p>
+</div>
+<div class="admonition-probability-aside-the-q-function-and-why-it-matters admonition">
+<p class="admonition-title">Probability Aside: the Q function and why it matters</p>
+<p>The Q function deserves a closer look, because understanding it makes the
+entire EM algorithm feel natural rather than mysterious.</p>
+<p>For an HMM with transition matrix <span class="math notranslate nohighlight">\(A\)</span>, emissions <span class="math notranslate nohighlight">\(e\)</span>, and
+initial distribution <span class="math notranslate nohighlight">\(a_0\)</span>, the Q function decomposes into three
+independent terms:</p>
+<div class="math notranslate nohighlight">
+\[Q = \underbrace{\sum_k \hat{c}_k^{(0)} \log a_0(k)}_{\text{initial state term}}
+  + \underbrace{\sum_{k,l} \hat{c}_{kl} \log p_{kl}}_{\text{transition term}}
+  + \underbrace{\sum_{k,b} \hat{c}_k^{(b)} \log e_k(b)}_{\text{emission term}}\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\hat{c}_k^{(0)}\)</span> = expected initial state counts (proportional to <span class="math notranslate nohighlight">\(\gamma_k(1)\)</span>)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\hat{c}_{kl}\)</span> = expected transition counts (<span class="math notranslate nohighlight">\(\sum_a \xi_{kl}(a)\)</span>)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\hat{c}_k^{(b)}\)</span> = expected emission counts (<span class="math notranslate nohighlight">\(\sum_{a: X_a = b} \gamma_k(a)\)</span>)</p></li>
+</ul>
+<p>Each term has the form <span class="math notranslate nohighlight">\(\sum (\text{expected count}) \times \log(\text{parameter})\)</span>.
+This is exactly the form of a log-likelihood where the “data” are the
+expected counts. So maximizing <span class="math notranslate nohighlight">\(Q\)</span> is like fitting parameters to
+pseudo-data that summarize what we learned about the hidden states.</p>
+<p>In the watch metaphor: the expected counts are like a logbook recording
+how often each gear was probably engaged and how often each transition
+probably occurred. The M-step reads this logbook and asks: “what gear
+sizes would produce exactly these usage patterns?”</p>
+</div>
+<div class="admonition-probability-aside-why-em-works-the-elbo admonition">
+<p class="admonition-title">Probability Aside: why EM works (the ELBO)</p>
+<p>The EM algorithm is built on a fundamental inequality from information theory.
+For any distribution <span class="math notranslate nohighlight">\(q(Z)\)</span> over hidden states and any parameters
+<span class="math notranslate nohighlight">\(\Theta\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\log P(X \mid \Theta) \geq \sum_Z q(Z) \log \frac{P(X, Z \mid \Theta)}{q(Z)}\]</div>
+<p>This is the <strong>Evidence Lower Bound (ELBO)</strong>. The E-step sets
+<span class="math notranslate nohighlight">\(q(Z) = P(Z \mid X, \Theta^{\text{old}})\)</span> (the posterior under current
+parameters), which makes the bound tight. The M-step then maximizes the
+bound over <span class="math notranslate nohighlight">\(\Theta\)</span>, guaranteeing that the log-likelihood cannot decrease.</p>
+<p>This monotonic improvement is the fundamental guarantee: <strong>each EM iteration
+either improves the fit or leaves it unchanged</strong>. The log-likelihood is a
+non-decreasing sequence, bounded above (since probabilities cannot exceed 1),
+so it must converge. In the watch metaphor: each adjustment of the gears
+brings the watch closer to keeping correct time, and you can never make it
+worse by adjusting.</p>
+<p>One important caveat: EM converges to a <strong>local</strong> optimum, not necessarily
+the global optimum. Different initial gear sizes might lead to different
+final configurations. In practice, PSMC is fairly robust to initialization,
+but running from multiple starting points is sometimes advisable.</p>
+</div>
+<p><strong>The M-step challenge.</strong> For a standard HMM, the M-step has closed-form solutions:
+the optimal transition probabilities are just the normalized expected counts
+(see <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a>). But PSMC’s transition matrix <span class="math notranslate nohighlight">\(p_{kl}\)</span> is a complex
+function of <span class="math notranslate nohighlight">\((\theta, \rho, \lambda_0, \ldots, \lambda_n)\)</span>, not a set of
+independent parameters. The gears are all interconnected – changing one
+population size <span class="math notranslate nohighlight">\(\lambda_k\)</span> affects many entries of the transition matrix
+simultaneously.</p>
+<p>So the M-step requires <strong>numerical optimization</strong>: maximize <span class="math notranslate nohighlight">\(Q\)</span>
+over <span class="math notranslate nohighlight">\((\theta, \rho, t_{\max}, \lambda_0, \ldots, \lambda_n)\)</span> using a
+general-purpose optimizer. PSMC uses the Hooke-Jeeves direct search method – a
+derivative-free optimizer that works well for this kind of constrained problem.
+In our implementation below, we use Nelder-Mead (a similar derivative-free method
+available in scipy) for clarity.</p>
+<div class="admonition-probability-aside-the-maximization-step admonition">
+<p class="admonition-title">Probability Aside: the Maximization step</p>
+<p>The M-step asks: “given the expected counts from the E-step, which
+parameter values <span class="math notranslate nohighlight">\(\Theta\)</span> maximize the Q function?”</p>
+<p>For a standard HMM with independent parameters, the answer has a beautiful
+closed form:</p>
+<div class="math notranslate nohighlight">
+\[\hat{p}_{kl} = \frac{\hat{c}_{kl}}{\sum_m \hat{c}_{km}}\]</div>
+<p>– just the fraction of times state <span class="math notranslate nohighlight">\(k\)</span> transitioned to state <span class="math notranslate nohighlight">\(l\)</span>.
+Similarly for emissions. But PSMC’s parameters are <em>not</em> the individual
+entries of the transition matrix. They are the underlying population-genetic
+quantities <span class="math notranslate nohighlight">\((\theta, \rho, \lambda_0, \ldots, \lambda_n)\)</span> that
+<em>generate</em> the transition matrix through a complex chain of formulas.</p>
+<p>So we must evaluate <span class="math notranslate nohighlight">\(Q(\Theta)\)</span> as a black-box function: for any
+candidate <span class="math notranslate nohighlight">\(\Theta\)</span>, rebuild the HMM (recompute the transition matrix,
+emissions, etc.), then evaluate the Q function using the expected counts
+from the E-step. A numerical optimizer searches over <span class="math notranslate nohighlight">\(\Theta\)</span> to
+find the maximum.</p>
+<p>This is computationally more expensive than the closed-form solution, but
+it is still efficient because the expected counts (from the E-step) are
+fixed during the M-step. We only need to rebuild the HMM and evaluate
+<span class="math notranslate nohighlight">\(Q\)</span> – we do <em>not</em> need to re-run forward-backward.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize</span>
+
+<span class="k">def</span> <span class="nf">psmc_em_step</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">par_map</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One EM iteration for PSMC.</span>
+
+<span class="sd">    This function performs one complete E-step followed by one M-step.</span>
+<span class="sd">    The E-step runs forward-backward to get expected counts.</span>
+<span class="sd">    The M-step numerically optimizes the Q function over the PSMC parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hmm : PSMC_HMM</span>
+<span class="sd">    seq : ndarray</span>
+<span class="sd">    par_map : list, optional</span>
+<span class="sd">        Parameter grouping map (from parse_pattern).</span>
+<span class="sd">        Maps each atomic interval to a free lambda parameter.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_hmm : PSMC_HMM</span>
+<span class="sd">        HMM with updated parameters.</span>
+<span class="sd">    log_likelihood : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">N</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">n</span>
+
+    <span class="c1"># ============================================================</span>
+    <span class="c1"># E-step: compute expected sufficient statistics</span>
+    <span class="c1"># ============================================================</span>
+    <span class="c1"># This runs forward-backward and extracts the three sets of</span>
+    <span class="c1"># expected counts (gamma_sum, xi_sum, emission_counts).</span>
+    <span class="n">gamma_sum</span><span class="p">,</span> <span class="n">xi_sum</span><span class="p">,</span> <span class="n">emission_counts</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">compute_expected_counts</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+
+    <span class="c1"># ============================================================</span>
+    <span class="c1"># M-step: maximize Q over the population-genetic parameters</span>
+    <span class="c1"># ============================================================</span>
+
+    <span class="c1"># Pack the current parameters into a single vector for the optimizer.</span>
+    <span class="c1"># The parameters are: theta, rho, t_max, and the free lambdas.</span>
+    <span class="k">if</span> <span class="n">par_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">par_map</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">))</span>   <span class="c1"># no grouping: each interval is free</span>
+    <span class="n">n_free</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">par_map</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>      <span class="c1"># number of free lambda parameters</span>
+    <span class="n">n_params</span> <span class="o">=</span> <span class="n">n_free</span> <span class="o">+</span> <span class="mi">3</span>          <span class="c1"># total: theta + rho + t_max + lambdas</span>
+
+    <span class="n">params0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_params</span><span class="p">)</span>
+    <span class="n">params0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">theta</span>         <span class="c1"># current mutation rate</span>
+    <span class="n">params0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">rho</span>           <span class="c1"># current recombination rate</span>
+    <span class="n">params0</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">t_max</span>         <span class="c1"># current maximum time</span>
+    <span class="c1"># Extract the free lambdas (one per parameter group)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_free</span><span class="p">):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">par_map</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>     <span class="c1"># first interval using this parameter</span>
+        <span class="n">params0</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">lambdas</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">neg_Q</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Negative Q function (we minimize this to maximize Q).</span>
+
+<span class="sd">        For each candidate parameter vector, we:</span>
+<span class="sd">        1. Rebuild the HMM (recompute transitions, emissions, initial dist)</span>
+<span class="sd">        2. Evaluate Q using the FIXED expected counts from the E-step</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Unpack parameters (use abs to enforce positivity)</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">t_max</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">free_lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+
+        <span class="c1"># Expand the free lambdas to full lambdas using the par_map</span>
+        <span class="n">full_lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">free_lambdas</span><span class="p">[</span><span class="n">par_map</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+
+        <span class="c1"># Rebuild the HMM with these candidate parameters</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">transitions</span><span class="p">,</span> <span class="n">emissions</span><span class="p">,</span> <span class="n">initial</span> <span class="o">=</span> <span class="n">build_psmc_hmm</span><span class="p">(</span>
+                <span class="n">n</span><span class="p">,</span> <span class="n">t_max</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">full_lambdas</span><span class="p">,</span> <span class="n">alpha_param</span><span class="o">=</span><span class="n">hmm</span><span class="o">.</span><span class="n">alpha_param</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">1e30</span>  <span class="c1"># return a large value if parameters are invalid</span>
+
+        <span class="c1"># Evaluate Q = sum of (expected count * log parameter)</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="c1"># Term 1: initial state contribution</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">initial</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">Q</span> <span class="o">+=</span> <span class="n">gamma_sum</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">initial</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-300</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+
+        <span class="c1"># Term 2: transition contribution</span>
+        <span class="c1"># Each expected transition count xi_sum[k,l] is weighted by</span>
+        <span class="c1"># log of the transition probability under the candidate parameters</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">transitions</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">xi_sum</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">Q</span> <span class="o">+=</span> <span class="n">xi_sum</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">transitions</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-300</span><span class="p">)</span>
+
+        <span class="c1"># Term 3: emission contribution</span>
+        <span class="c1"># Each expected emission count is weighted by log of the emission</span>
+        <span class="c1"># probability under the candidate parameters</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>  <span class="c1"># b = 0 (hom) or 1 (het)</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">emissions</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">emission_counts</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">Q</span> <span class="o">+=</span> <span class="n">emission_counts</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">emissions</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-300</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="n">Q</span>  <span class="c1"># negate because scipy minimizes</span>
+
+    <span class="c1"># Run the optimizer to find the parameters that maximize Q</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span><span class="n">neg_Q</span><span class="p">,</span> <span class="n">params0</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;Nelder-Mead&#39;</span><span class="p">,</span>
+                       <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="s1">&#39;xatol&#39;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">})</span>
+
+    <span class="c1"># Unpack the optimized parameters</span>
+    <span class="n">new_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">new_theta</span> <span class="o">=</span> <span class="n">new_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">new_rho</span> <span class="o">=</span> <span class="n">new_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">new_t_max</span> <span class="o">=</span> <span class="n">new_params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">new_free_lambdas</span> <span class="o">=</span> <span class="n">new_params</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>
+    <span class="n">new_full_lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">new_free_lambdas</span><span class="p">[</span><span class="n">par_map</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+
+    <span class="c1"># Build a new HMM with the optimized parameters</span>
+    <span class="n">new_hmm</span> <span class="o">=</span> <span class="n">PSMC_HMM</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">new_theta</span><span class="p">,</span> <span class="n">new_rho</span><span class="p">,</span> <span class="n">new_full_lambdas</span><span class="p">,</span>
+                         <span class="n">new_t_max</span><span class="p">,</span> <span class="n">hmm</span><span class="o">.</span><span class="n">alpha_param</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_hmm</span><span class="p">,</span> <span class="n">ll</span>
+
+<span class="c1"># Demonstrate one EM step</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="mf">0.001</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="mi">5</span>
+<span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">hmm</span> <span class="o">=</span> <span class="n">PSMC_HMM</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">)</span>
+
+<span class="c1"># Simulate a short sequence for testing</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">seq</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">simulate_psmc_input</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial log-likelihood: </span><span class="si">{</span><span class="n">hmm</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial theta: </span><span class="si">{</span><span class="n">hmm</span><span class="o">.</span><span class="n">theta</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Recap.</strong> One EM iteration works as follows: (1) Run forward-backward with the
+current parameters to get expected counts. (2) Numerically optimize the Q
+function over the population-genetic parameters, using the expected counts as
+fixed inputs. (3) Rebuild the HMM with the new parameters. The log-likelihood
+is guaranteed not to decrease. Now let’s see the full loop.</p>
+</section>
+<section id="step-4-the-full-em-loop">
+<h2>Step 4: The Full EM Loop<a class="headerlink" href="#step-4-the-full-em-loop" title="Link to this heading"></a></h2>
+<p>The complete PSMC inference runs EM for a fixed number of iterations (typically
+20–25), printing the parameters after each round. This is the outermost loop
+of the PSMC algorithm – the process of iteratively refining the gear sizes
+until the watch keeps accurate time.</p>
+<div class="admonition-probability-aside-convergence-when-to-stop-adjusting-the-gears admonition">
+<p class="admonition-title">Probability Aside: convergence – when to stop adjusting the gears</p>
+<p>How do we know when the EM algorithm has converged? There are several
+criteria:</p>
+<p><strong>1. Log-likelihood plateau.</strong> The most common criterion: stop when the
+change in log-likelihood between iterations falls below a threshold
+(e.g., <span class="math notranslate nohighlight">\(|\Delta \text{LL}| &lt; 0.01\)</span>). The log-likelihood is a
+non-decreasing sequence (guaranteed by EM theory), so when it stops
+increasing, we have found a (local) optimum.</p>
+<p><strong>2. Parameter stability.</strong> Stop when the parameters themselves stop
+changing: <span class="math notranslate nohighlight">\(\|\Theta^{(t+1)} - \Theta^{(t)}\| &lt; \epsilon\)</span>. This is
+often more meaningful than the log-likelihood criterion because two very
+different log-likelihoods might correspond to nearly identical parameters
+on a flat part of the likelihood surface.</p>
+<p><strong>3. Fixed iteration count.</strong> PSMC simply runs 20–25 iterations. Li and
+Durbin found empirically that this is sufficient for convergence on
+whole-genome data. This has the advantage of predictable running time.</p>
+<p>In practice, PSMC uses approach (3) but monitors the log-likelihood for
+debugging. If the log-likelihood ever <em>decreases</em>, something is wrong –
+either a bug in the implementation or a numerical issue in the optimizer.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">psmc_inference</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">63</span><span class="p">,</span> <span class="n">t_max</span><span class="o">=</span><span class="mf">15.0</span><span class="p">,</span> <span class="n">theta_rho_ratio</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+                    <span class="n">pattern</span><span class="o">=</span><span class="s2">&quot;4+25*2+4+6&quot;</span><span class="p">,</span> <span class="n">n_iters</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">alpha_param</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the full PSMC inference.</span>
+
+<span class="sd">    This is the top-level function that ties everything together:</span>
+<span class="sd">    initialize parameters, then alternate E-step and M-step for</span>
+<span class="sd">    n_iters iterations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seq : ndarray of shape (L,), dtype=int</span>
+<span class="sd">        Observation sequence (0/1/2+).</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of atomic time intervals - 1.</span>
+<span class="sd">    t_max : float</span>
+<span class="sd">        Maximum coalescence time (in coalescent units).</span>
+<span class="sd">    theta_rho_ratio : float</span>
+<span class="sd">        Assumed ratio theta/rho for initialization.</span>
+<span class="sd">    pattern : str</span>
+<span class="sd">        Parameter grouping pattern (see discretization chapter).</span>
+<span class="sd">    n_iters : int</span>
+<span class="sd">        Number of EM iterations.</span>
+<span class="sd">    alpha_param : float</span>
+<span class="sd">        Spacing parameter for time intervals.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    results : list of dict</span>
+<span class="sd">        Parameters at each iteration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># number of hidden states</span>
+
+    <span class="c1"># Parse the grouping pattern (e.g., &quot;4+25*2+4+6&quot;)</span>
+    <span class="c1"># This maps each atomic interval to a free lambda parameter</span>
+    <span class="n">par_map</span><span class="p">,</span> <span class="n">n_free</span><span class="p">,</span> <span class="n">n_intervals</span> <span class="o">=</span> <span class="n">parse_pattern</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">n_intervals</span> <span class="o">==</span> <span class="n">N</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Pattern gives </span><span class="si">{</span><span class="n">n_intervals</span><span class="si">}</span><span class="s2"> intervals, need </span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="c1"># Initialize theta from the observed heterozygosity rate.</span>
+    <span class="c1"># If the fraction of het sites is f, then theta ~ -log(1-f).</span>
+    <span class="c1"># This comes from inverting the emission formula: P(het) = 1 - exp(-theta*t),</span>
+    <span class="c1"># and assuming t ~ 1 (the average coalescence time under constant pop size).</span>
+    <span class="n">frac_het</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="n">seq</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">])</span>  <span class="c1"># fraction of het sites (excluding missing)</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">frac_het</span><span class="p">)</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="n">theta_rho_ratio</span>     <span class="c1"># initialize rho from the assumed ratio</span>
+
+    <span class="c1"># Initialize all lambdas to 1 (constant population size)</span>
+    <span class="c1"># The EM algorithm will adjust them to match the data</span>
+    <span class="n">free_lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_free</span><span class="p">)</span>
+    <span class="n">full_lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">free_lambdas</span><span class="p">[</span><span class="n">par_map</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+
+    <span class="c1"># Build the initial HMM</span>
+    <span class="n">hmm</span> <span class="o">=</span> <span class="n">PSMC_HMM</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">full_lambdas</span><span class="p">,</span> <span class="n">t_max</span><span class="p">,</span> <span class="n">alpha_param</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PSMC inference: </span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="s2"> bins, </span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2"> intervals, </span><span class="si">{</span><span class="n">n_free</span><span class="si">}</span><span class="s2"> free params&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial theta=</span><span class="si">{</span><span class="n">theta</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, rho=</span><span class="si">{</span><span class="n">rho</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iters</span><span class="p">):</span>
+        <span class="c1"># --- E-step ---</span>
+        <span class="c1"># Run forward-backward to compute expected sufficient statistics</span>
+        <span class="n">gamma_sum</span><span class="p">,</span> <span class="n">xi_sum</span><span class="p">,</span> <span class="n">emission_counts</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">compute_expected_counts</span><span class="p">(</span>
+            <span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+
+        <span class="c1"># Record the current state for later analysis</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;iteration&#39;</span><span class="p">:</span> <span class="n">iteration</span><span class="p">,</span>
+            <span class="s1">&#39;log_likelihood&#39;</span><span class="p">:</span> <span class="n">ll</span><span class="p">,</span>
+            <span class="s1">&#39;theta&#39;</span><span class="p">:</span> <span class="n">hmm</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span>
+            <span class="s1">&#39;rho&#39;</span><span class="p">:</span> <span class="n">hmm</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+            <span class="s1">&#39;lambdas&#39;</span><span class="p">:</span> <span class="n">hmm</span><span class="o">.</span><span class="n">lambdas</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+        <span class="p">})</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Iteration </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">: LL = </span><span class="si">{</span><span class="n">ll</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;theta = </span><span class="si">{</span><span class="n">hmm</span><span class="o">.</span><span class="n">theta</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, rho = </span><span class="si">{</span><span class="n">hmm</span><span class="o">.</span><span class="n">rho</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># --- M-step ---</span>
+        <span class="c1"># Update parameters by maximizing the Q function</span>
+        <span class="n">hmm</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">psmc_em_step</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">par_map</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span>
+</pre></div>
+</div>
+<div class="admonition-convergence-in-practice admonition">
+<p class="admonition-title">Convergence in practice</p>
+<p>PSMC typically converges within 20–25 iterations. The log-likelihood should
+increase monotonically – this is guaranteed by EM theory, as we explained
+in the Probability Aside above. If it doesn’t, there’s a bug in the
+implementation.</p>
+<p>You can verify convergence by plotting the log-likelihood across iterations.
+It should rise steeply in the first few iterations (the initial constant-population
+guess is far from the truth) and then plateau as the inferred <span class="math notranslate nohighlight">\(\lambda_k\)</span>
+values settle into their final configuration.</p>
+<p>The Q function value (the expected complete-data log-likelihood under the
+current parameters) should also increase after the M-step. PSMC reports
+both Q values (before and after maximization) at each iteration for debugging.</p>
+</div>
+</section>
+<section id="step-5-multiple-sequences-and-missing-data">
+<h2>Step 5: Multiple Sequences and Missing Data<a class="headerlink" href="#step-5-multiple-sequences-and-missing-data" title="Link to this heading"></a></h2>
+<p>So far we have described the algorithm for a single observation sequence. In
+practice, a diploid genome is split into chromosomes (or even sub-chromosomal
+segments for bootstrapping). PSMC processes each sequence independently in the
+E-step and sums the expected counts before the M-step.</p>
+<p>This works because the sufficient statistics are additive: the expected counts
+from two independent sequences can simply be added together. If sequence 1
+tells us that state <span class="math notranslate nohighlight">\(k\)</span> was visited an expected 500 times, and sequence 2
+tells us 300 times, then the combined estimate is 800 times. The M-step then
+uses these combined counts as if they came from a single long sequence.</p>
+<p>In the watch metaphor: each chromosome is an independent test of the watch’s
+accuracy. By combining the evidence from all chromosomes, we get a more
+reliable picture of which gear sizes are correct.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">psmc_em_multiple_seqs</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">par_map</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;EM step with multiple sequences.</span>
+
+<span class="sd">    Each sequence is processed independently in the E-step (separate</span>
+<span class="sd">    forward-backward runs), and the expected counts are summed before</span>
+<span class="sd">    the M-step. This is mathematically equivalent to treating all</span>
+<span class="sd">    sequences as independent observations of the same underlying HMM.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hmm : PSMC_HMM</span>
+<span class="sd">    sequences : list of ndarray</span>
+<span class="sd">        Each element is an observation sequence for one chromosome.</span>
+<span class="sd">    par_map : list</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_hmm : PSMC_HMM</span>
+<span class="sd">    total_ll : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">N</span>
+
+    <span class="c1"># Accumulate expected counts across all sequences</span>
+    <span class="n">total_gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">total_xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>
+    <span class="n">total_emission</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>
+    <span class="n">total_ll</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">:</span>
+        <span class="c1"># Run forward-backward on this sequence independently</span>
+        <span class="n">gamma</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">emission</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">compute_expected_counts</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+        <span class="c1"># Add this sequence&#39;s expected counts to the running totals</span>
+        <span class="n">total_gamma</span> <span class="o">+=</span> <span class="n">gamma</span>
+        <span class="n">total_xi</span> <span class="o">+=</span> <span class="n">xi</span>
+        <span class="n">total_emission</span> <span class="o">+=</span> <span class="n">emission</span>
+        <span class="n">total_ll</span> <span class="o">+=</span> <span class="n">ll</span>
+
+    <span class="c1"># M-step uses accumulated counts</span>
+    <span class="c1"># (same optimization as single sequence, just with summed counts)</span>
+
+    <span class="k">return</span> <span class="n">total_ll</span>
+</pre></div>
+</div>
+<p><strong>Missing data</strong> is handled elegantly: when <span class="math notranslate nohighlight">\(X_a\)</span> is missing (encoded as
+a value &gt;= 2), the emission probability is set to 1 for all states:</p>
+<div class="math notranslate nohighlight">
+\[e_k(\text{missing}) = 1 \quad \text{for all } k\]</div>
+<p>This means missing positions contribute nothing to the likelihood – the HMM
+simply passes through them, maintaining the transition dynamics but receiving no
+information from the data. The transition structure is preserved (we still model
+the passage of genomic distance, which matters for recombination), but the
+observation at that position provides zero evidence about the hidden state.</p>
+<p>This is a standard HMM technique (covered in <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a>) and requires no
+special code beyond the <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">obs</span> <span class="pre">&gt;=</span> <span class="pre">2:</span> <span class="pre">e</span> <span class="pre">=</span> <span class="pre">1.0</span></code> checks you have already
+seen in the forward, backward, and expected-counts functions above.</p>
+</section>
+<section id="step-6-understanding-what-em-learns">
+<h2>Step 6: Understanding What EM Learns<a class="headerlink" href="#step-6-understanding-what-em-learns" title="Link to this heading"></a></h2>
+<p>After running EM to convergence, we can use the forward-backward algorithm one
+final time to understand what the model has learned. The <strong>posterior decoding</strong>
+gives us, at each position along the genome, a probability distribution over
+coalescence time intervals.</p>
+<p>This is the moment where the watch reveals its reading: at each position, the
+posterior tells us how deep in time the most recent common ancestor lies. In
+regions with many heterozygous sites, the posterior will peak at large <span class="math notranslate nohighlight">\(k\)</span>
+(deep coalescence, ancient MRCA). In regions with few heterozygous sites, it
+will peak at small <span class="math notranslate nohighlight">\(k\)</span> (recent MRCA). The spatial pattern of these
+posteriors – how the coalescence time waxes and wanes along the genome –
+reflects the history of recombination and population size changes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">posterior_decoding</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the posterior state probabilities at each position.</span>
+
+<span class="sd">    This is the final step of PSMC analysis: after EM has found the</span>
+<span class="sd">    best parameters, run forward-backward one more time to decode</span>
+<span class="sd">    the hidden states. The result is a probability distribution over</span>
+<span class="sd">    coalescence time intervals at each genomic position.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hmm : PSMC_HMM</span>
+<span class="sd">    seq : ndarray</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior : ndarray of shape (L, N)</span>
+<span class="sd">        posterior[a, k] = P(Z_a = k | X_1, ..., X_L)</span>
+<span class="sd">    map_states : ndarray of shape (L,)</span>
+<span class="sd">        Maximum a posteriori state at each position.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">N</span>
+
+    <span class="n">alpha_hat</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">forward_scaled</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>          <span class="c1"># forward pass</span>
+    <span class="n">beta_hat</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">backward_scaled</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">alpha_hat</span><span class="p">)</span>  <span class="c1"># backward pass</span>
+
+    <span class="n">posterior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span><span class="p">):</span>
+        <span class="c1"># Posterior = forward * backward, then normalize</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="n">gamma</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">posterior</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">/</span> <span class="n">total</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">posterior</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">N</span>  <span class="c1"># uniform fallback (should not happen)</span>
+
+    <span class="c1"># The MAP (Maximum A Posteriori) state is the most probable state</span>
+    <span class="c1"># at each position -- the single best guess for the coalescence interval</span>
+    <span class="n">map_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">posterior</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">posterior</span><span class="p">,</span> <span class="n">map_states</span>
+
+<span class="c1"># After running EM, decode the hidden states</span>
+<span class="c1"># posterior, map_states = posterior_decoding(final_hmm, seq)</span>
+<span class="c1"># print(f&quot;Most common state: {np.bincount(map_states).argmax()}&quot;)</span>
+</pre></div>
+</div>
+<div class="admonition-what-the-posterior-tells-us admonition">
+<p class="admonition-title">What the posterior tells us</p>
+<p>At each position, the posterior gives a probability distribution over
+coalescence time intervals. In regions with many heterozygous sites,
+the posterior will peak at large <span class="math notranslate nohighlight">\(k\)</span> (deep coalescence, ancient MRCA).
+In regions with few hets, it will peak at small <span class="math notranslate nohighlight">\(k\)</span> (recent MRCA).</p>
+<p>The beauty of PSMC is that these local patterns, aggregated over the entire
+genome, allow inference of the global population size history <span class="math notranslate nohighlight">\(N(t)\)</span>.
+The <span class="math notranslate nohighlight">\(\lambda_k\)</span> parameters – the gear sizes that EM has refined over
+many iterations – directly encode the population size at each time interval.
+The next chapter (<a class="reference internal" href="decoding.html#psmc-decoding"><span class="std std-ref">Decoding the Clock</span></a>) shows how to read these gear sizes
+as a population size curve and scale them to real biological units.</p>
+</div>
+</section>
+<section id="chapter-summary">
+<h2>Chapter Summary<a class="headerlink" href="#chapter-summary" title="Link to this heading"></a></h2>
+<p>Let’s trace the complete path we have traveled in this chapter:</p>
+<ol class="arabic simple">
+<li><p><strong>We assembled the HMM</strong> by collecting the initial distribution, transition
+matrix, and emission probabilities from the discretization chapter
+(<a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>) into a single <code class="docutils literal notranslate"><span class="pre">PSMC_HMM</span></code> class.</p></li>
+<li><p><strong>We implemented the forward-backward algorithm</strong>, which computes posterior
+state probabilities by combining evidence from both directions along the
+sequence. The forward pass looks at data from the left; the backward pass
+looks from the right; together they give us the posterior at every position
+(see <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a> for the foundational version).</p></li>
+<li><p><strong>We extracted expected sufficient statistics</strong> – the expected state
+occupancies, transition counts, and emission counts – which summarize
+everything the data tells us about the parameters.</p></li>
+<li><p><strong>We built the EM loop</strong>: alternate between computing expected counts
+(E-step) and finding parameters that maximize the expected log-likelihood
+(M-step). Each iteration improves the fit, guaranteed by the ELBO inequality.</p></li>
+<li><p><strong>We handled multiple sequences and missing data</strong>, exploiting the additivity
+of sufficient statistics and the standard HMM trick of setting missing-data
+emissions to 1.</p></li>
+<li><p><strong>We decoded the hidden states</strong> using the final parameters, producing a
+posterior distribution over coalescence times at every position.</p></li>
+</ol>
+<p>In the watch metaphor: we started with a box of gears (the HMM components from
+the discretization chapter), assembled them into a working mechanism (the
+forward-backward algorithm), and then used the EM algorithm to iteratively
+adjust every gear until the watch keeps accurate time. The next chapter
+(<a class="reference internal" href="decoding.html#psmc-decoding"><span class="std std-ref">Decoding the Clock</span></a>) shows how to read the dial – converting the inferred
+parameters into a population size history in real biological units.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-build-and-verify-the-hmm admonition">
+<p class="admonition-title">Exercise 1: Build and verify the HMM</p>
+<p>Construct the PSMC HMM for a constant population (<span class="math notranslate nohighlight">\(\lambda_k = 1\)</span>).
+Verify that:
+(a) forward probabilities can be computed without numerical issues for a
+10,000-bin sequence,
+(b) the log-likelihood increases across EM iterations,
+(c) <span class="math notranslate nohighlight">\(\hat{\theta}\)</span> converges to the true value on simulated data.</p>
+</div>
+<div class="admonition-exercise-2-em-on-simulated-bottleneck-data admonition">
+<p class="admonition-title">Exercise 2: EM on simulated bottleneck data</p>
+<p>Simulate 100,000 bins of data under a population that has
+<span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span> for <span class="math notranslate nohighlight">\(t &lt; 0.5\)</span>, <span class="math notranslate nohighlight">\(\lambda(t) = 0.1\)</span> for
+<span class="math notranslate nohighlight">\(0.5 \leq t &lt; 1.5\)</span>, and <span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span> for <span class="math notranslate nohighlight">\(t &gt; 1.5\)</span>.
+Run PSMC on this data and compare the inferred <span class="math notranslate nohighlight">\(\lambda_k\)</span> to the truth.</p>
+</div>
+<div class="admonition-exercise-3-the-effect-of-sequence-length admonition">
+<p class="admonition-title">Exercise 3: The effect of sequence length</p>
+<p>Run PSMC on sequences of length 1000, 10000, 100000, and 1000000 (all simulated
+under the same demographic model). How does the accuracy of the inferred
+<span class="math notranslate nohighlight">\(\lambda_k\)</span> improve with more data? At what length does the inference
+become reliable?</p>
+</div>
+<div class="admonition-exercise-4-watch-the-em-gears-turn admonition">
+<p class="admonition-title">Exercise 4: Watch the EM gears turn</p>
+<p>Run 25 EM iterations on simulated data and record the <span class="math notranslate nohighlight">\(\lambda_k\)</span> values
+at each iteration. Plot them as a function of iteration number. You should see
+them start at 1.0 (the initial guess) and gradually converge to the true
+population size history. How many iterations does it take for the curves to
+stabilize? Does convergence happen uniformly across all time intervals, or do
+some intervals converge faster than others?</p>
+</div>
+<p>Next: <a class="reference internal" href="decoding.html#psmc-decoding"><span class="std std-ref">Decoding the Clock</span></a> – reading the population size history from the inferred parameters.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="discretization.html" class="btn btn-neutral float-left" title="Discretizing Time" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="decoding.html" class="btn btn-neutral float-right" title="Decoding the Clock" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

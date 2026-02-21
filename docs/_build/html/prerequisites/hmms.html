@@ -1,0 +1,1189 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hidden Markov Models &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The Sequentially Markov Coalescent" href="smc.html" />
+    <link rel="prev" title="Ancestral Recombination Graphs" href="args.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The Workbench (Prerequisites)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../timepieces/index.html">Timepieces</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The Workbench (Prerequisites)</a></li>
+      <li class="breadcrumb-item active">Hidden Markov Models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="args.html" class="btn btn-neutral float-left" title="Ancestral Recombination Graphs" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="smc.html" class="btn btn-neutral float-right" title="The Sequentially Markov Coalescent" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hidden-markov-models">
+<span id="hmms"></span><h1>Hidden Markov Models<a class="headerlink" href="#hidden-markov-models" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The states are hidden, but the mechanism is not.</em></p>
+</div></blockquote>
+<p>Think of a mechanical watch. You can see the hands sweep across the dial – the
+hours, the minutes, the seconds – but the gears and springs that drive those
+hands are concealed behind the case. You observe the <em>output</em> of the mechanism,
+not the mechanism itself. A Hidden Markov Model is a mathematical formalization
+of exactly this situation: a system whose internal workings are invisible, but
+whose observable behavior carries clues about what is happening inside.</p>
+<p>In population genetics, the analogy is almost literal. When we sequence genomes,
+we see the mutations – the positions where alleles differ between individuals.
+These are the hands on the dial. What we cannot see directly are the genealogical
+relationships: which branches of the ancestral tree each genomic position “sits
+on,” and where recombination events reshuffled the ancestry. These hidden
+genealogical states are the gears behind the watch face.</p>
+<p>This chapter develops the mathematical machinery of HMMs from the ground up,
+building toward the specific form used in ARG inference tools like SINGER. If you
+have not yet read the chapters on <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> and <a class="reference internal" href="args.html#args"><span class="std std-ref">Ancestral Recombination Graphs</span></a>, now
+is a good time – the HMM framework here is the bridge that connects those
+theoretical concepts to practical inference algorithms.</p>
+<section id="why-hmms-for-arg-inference">
+<h2>Why HMMs for ARG Inference?<a class="headerlink" href="#why-hmms-for-arg-inference" title="Link to this heading"></a></h2>
+<p>Before diving into formalism, it is worth understanding <em>why</em> HMMs are the right
+tool for this problem.</p>
+<p>In the <a class="reference internal" href="args.html#args"><span class="std std-ref">Ancestral Recombination Graphs</span></a> chapter, we saw that an ARG encodes a sequence of marginal
+trees along the genome, with recombination events causing transitions from one
+tree to the next. In the <a class="reference internal" href="smc.html#smc"><span class="std std-ref">The Sequentially Markov Coalescent</span></a> chapter, we saw that the SMC approximation
+makes this sequence Markov: the tree at position <span class="math notranslate nohighlight">\(\ell\)</span> depends only on the
+tree at position <span class="math notranslate nohighlight">\(\ell - 1\)</span>, not on the entire history.</p>
+<p>This is exactly the structure an HMM is designed to handle:</p>
+<ul class="simple">
+<li><p>We have a sequence of <strong>hidden states</strong> (the marginal tree, or more
+specifically, the branch of the tree to which a lineage belongs) that evolves
+along the genome.</p></li>
+<li><p>At each position, the hidden state <strong>emits</strong> an observation (the allele we
+see – whether there is a mutation or not).</p></li>
+<li><p>The hidden states form a <strong>Markov chain</strong>: the state at position <span class="math notranslate nohighlight">\(\ell\)</span>
+depends only on the state at position <span class="math notranslate nohighlight">\(\ell - 1\)</span>.</p></li>
+</ul>
+<p>The goal of ARG inference is to go from the observations (the genome data) back
+to the hidden states (the genealogical relationships). HMMs give us principled,
+efficient algorithms for doing exactly this.</p>
+</section>
+<section id="a-warm-up-example-weather-and-umbrellas">
+<h2>A Warm-Up Example: Weather and Umbrellas<a class="headerlink" href="#a-warm-up-example-weather-and-umbrellas" title="Link to this heading"></a></h2>
+<p>Before tackling genetics, let us build intuition with a simpler example.</p>
+<p>Suppose you are locked in a windowless office. Each day, a colleague visits you,
+and you notice whether they are carrying an umbrella. You cannot see the weather
+outside (it is <em>hidden</em>), but you can observe the umbrella (the <em>emission</em>). Over
+time, you want to figure out what the weather has been doing.</p>
+<p>The weather follows a simple pattern:</p>
+<ul class="simple">
+<li><p>If today is sunny, there is a 90% chance tomorrow is also sunny (weather tends
+to persist).</p></li>
+<li><p>If today is rainy, there is an 80% chance tomorrow is also rainy.</p></li>
+<li><p>When it is sunny, your colleague carries an umbrella only 10% of the time.</p></li>
+<li><p>When it is rainy, your colleague carries an umbrella 80% of the time.</p></li>
+</ul>
+<p>This is a two-state HMM:</p>
+<ul class="simple">
+<li><p><strong>Hidden states</strong>: Sunny, Rainy</p></li>
+<li><p><strong>Observations</strong>: Umbrella, No umbrella</p></li>
+<li><p><strong>Transition probabilities</strong>: The chance of weather changing from one day to
+the next</p></li>
+<li><p><strong>Emission probabilities</strong>: The chance of seeing an umbrella given the weather</p></li>
+</ul>
+<p>Now, if you observe the sequence (Umbrella, Umbrella, No umbrella, Umbrella),
+what was the weather? This is the fundamental HMM inference question. The forward
+algorithm, which we develop below, gives us a principled way to answer it.</p>
+<p>In genetics, replace “sunny/rainy” with “which branch of the genealogical tree
+the lineage sits on” and “umbrella/no umbrella” with “derived allele / ancestral
+allele.” The logic is identical; only the vocabulary changes.</p>
+<div class="admonition-probability-aside-conditional-probability admonition">
+<p class="admonition-title">Probability Aside – Conditional Probability</p>
+<p>Several probability concepts appear throughout this chapter. Let us establish
+them now.</p>
+<p><strong>Conditional probability</strong> is the probability of an event given that another
+event has occurred. We write <span class="math notranslate nohighlight">\(P(A \mid B)\)</span> and read it as “the
+probability of A given B.” For example, <span class="math notranslate nohighlight">\(P(\text{umbrella} \mid
+\text{rain}) = 0.8\)</span> means that if it is raining, there is an 80% chance of
+seeing an umbrella.</p>
+<p>Formally:</p>
+<div class="math notranslate nohighlight">
+\[P(A \mid B) = \frac{P(A, B)}{P(B)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(P(A, B)\)</span> is the <strong>joint probability</strong> – the probability that
+both A and B occur together. Rearranging gives the <strong>product rule</strong>:</p>
+<div class="math notranslate nohighlight">
+\[P(A, B) = P(B) \cdot P(A \mid B)\]</div>
+<p>This generalizes to the <strong>chain rule of probability</strong>. For three events:</p>
+<div class="math notranslate nohighlight">
+\[P(A, B, C) = P(A) \cdot P(B \mid A) \cdot P(C \mid A, B)\]</div>
+<p>And for a whole sequence:</p>
+<div class="math notranslate nohighlight">
+\[P(X_1, X_2, \ldots, X_L) = P(X_1) \cdot P(X_2 \mid X_1) \cdot
+P(X_3 \mid X_1, X_2) \cdots P(X_L \mid X_1, \ldots, X_{L-1})\]</div>
+<p>Finally, <strong>marginalizing</strong> (or “summing out”) a variable means computing the
+probability of an event by summing over all possible values of another
+variable:</p>
+<div class="math notranslate nohighlight">
+\[P(A) = \sum_{b} P(A, B = b)\]</div>
+<p>If you know the joint probability of A and B for every possible value of B,
+you can recover the probability of A alone by summing over all B values. This
+is sometimes called the <strong>law of total probability</strong>, and it appears
+repeatedly in the forward algorithm.</p>
+</div>
+</section>
+<section id="the-core-idea">
+<h2>The Core Idea<a class="headerlink" href="#the-core-idea" title="Link to this heading"></a></h2>
+<p>A <strong>Hidden Markov Model (HMM)</strong> is a probabilistic model with two layers:</p>
+<ol class="arabic simple">
+<li><p>A <strong>hidden state sequence</strong> <span class="math notranslate nohighlight">\((Z_1, Z_2, \ldots, Z_L)\)</span> that evolves
+according to a Markov chain – each state depends only on the previous one.</p></li>
+<li><p>An <strong>observed sequence</strong> <span class="math notranslate nohighlight">\((X_1, X_2, \ldots, X_L)\)</span> where each
+observation depends only on the hidden state at that position.</p></li>
+</ol>
+<p>You observe <span class="math notranslate nohighlight">\(X\)</span>, but you want to infer <span class="math notranslate nohighlight">\(Z\)</span>. This is exactly the
+situation in ARG inference:</p>
+<ul class="simple">
+<li><p>The <strong>hidden states</strong> are the branches of the genealogical tree at each
+genomic position</p></li>
+<li><p>The <strong>observations</strong> are the alleles (mutations) at each position</p></li>
+<li><p>The <strong>transitions</strong> between states represent recombination events</p></li>
+</ul>
+<div class="admonition-the-markov-property-intuition admonition">
+<p class="admonition-title">The Markov Property – Intuition</p>
+<p>The word “Markov” refers to a specific kind of forgetfulness. A process is
+Markov if its future behavior depends only on where it is <em>right now</em>, not on
+how it got there. In the weather example, tomorrow’s weather depends only on
+today’s weather – it does not matter whether today’s sun came after a week of
+rain or a month of clear skies.</p>
+<p>Formally, if <span class="math notranslate nohighlight">\(Z_1, Z_2, \ldots\)</span> is a Markov chain, then:</p>
+<div class="math notranslate nohighlight">
+\[P(Z_{\ell+1} \mid Z_\ell, Z_{\ell-1}, \ldots, Z_1) = P(Z_{\ell+1} \mid Z_\ell)\]</div>
+<p>This is a drastic simplification. Without it, to predict the state at
+position <span class="math notranslate nohighlight">\(\ell + 1\)</span>, we would need to consider the entire history of
+states – an exponentially growing space. With the Markov property, we only
+need the current state.</p>
+<p>For ARGs, the <a class="reference internal" href="smc.html#smc"><span class="std std-ref">The Sequentially Markov Coalescent</span></a> approximation is precisely what gives us this
+property: it ensures that the marginal tree at genomic position <span class="math notranslate nohighlight">\(\ell\)</span>
+depends only on the tree at position <span class="math notranslate nohighlight">\(\ell - 1\)</span>, making the sequence of
+trees a Markov chain (see <a class="reference internal" href="smc.html#smc"><span class="std std-ref">The Sequentially Markov Coalescent</span></a>).</p>
+</div>
+</section>
+<section id="formal-definition">
+<h2>Formal Definition<a class="headerlink" href="#formal-definition" title="Link to this heading"></a></h2>
+<p>An HMM is defined by four components:</p>
+<ul class="simple">
+<li><p><strong>State space</strong> <span class="math notranslate nohighlight">\(\mathcal{S} = \{s_1, \ldots, s_K\}\)</span> – the <span class="math notranslate nohighlight">\(K\)</span>
+possible hidden states</p></li>
+<li><p><strong>Initial distribution</strong> <span class="math notranslate nohighlight">\(\pi_i = P(Z_1 = s_i)\)</span> – probability of
+starting in state <span class="math notranslate nohighlight">\(s_i\)</span></p></li>
+<li><p><strong>Transition matrix</strong> <span class="math notranslate nohighlight">\(A_{ij} = P(Z_\ell = s_j \mid Z_{\ell-1} = s_i)\)</span> –
+probability of moving from state <span class="math notranslate nohighlight">\(s_i\)</span> to <span class="math notranslate nohighlight">\(s_j\)</span></p></li>
+<li><p><strong>Emission probabilities</strong> <span class="math notranslate nohighlight">\(e_j(x) = P(X_\ell = x \mid Z_\ell = s_j)\)</span> –
+probability of observing <span class="math notranslate nohighlight">\(x\)</span> when in state <span class="math notranslate nohighlight">\(s_j\)</span></p></li>
+</ul>
+<p>Let us unpack the last two, since they carry all the modeling power.</p>
+<p><strong>Transition probabilities</strong> describe how the hidden state changes from one
+position to the next. In the weather example, the transition from Sunny to Rainy
+has probability 0.10. In genetics, a transition corresponds to a recombination
+event: the lineage jumps from one branch of the genealogical tree to another. A
+high transition probability between two states means recombination frequently
+causes the lineage to switch between those branches. A low transition probability
+(or a high probability of staying in the same state) means the same tree branch
+tends to persist across adjacent genomic positions.</p>
+<p><strong>Emission probabilities</strong> describe what you <em>observe</em> given the hidden state.
+The hidden state “emits” an observation, like a machine dropping a colored ball
+into a bin. In the weather model, the rainy state emits “umbrella” with
+probability 0.8. In genetics, the emission probability encodes the chance of
+seeing a particular allele given that the lineage sits on a specific branch of
+the tree. Under the infinite-sites mutation model (see <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>),
+this depends on the branch length measured in coalescent time units – longer
+branches accumulate more mutations, so a mutation is more likely to be observed
+on a long branch than a short one.</p>
+<div class="admonition-matrix-notation-what-is-a-transition-matrix admonition">
+<p class="admonition-title">Matrix Notation – What Is a Transition Matrix?</p>
+<p>A <strong>matrix</strong> is a rectangular array of numbers. The transition matrix
+<span class="math notranslate nohighlight">\(A\)</span> has <span class="math notranslate nohighlight">\(K\)</span> rows and <span class="math notranslate nohighlight">\(K\)</span> columns, where <span class="math notranslate nohighlight">\(K\)</span> is the
+number of hidden states. The entry <span class="math notranslate nohighlight">\(A_{ij}\)</span> in row <span class="math notranslate nohighlight">\(i\)</span> and column
+<span class="math notranslate nohighlight">\(j\)</span> gives the probability of transitioning from state <span class="math notranslate nohighlight">\(s_i\)</span> to
+state <span class="math notranslate nohighlight">\(s_j\)</span>.</p>
+<p>Each row of <span class="math notranslate nohighlight">\(A\)</span> must sum to 1, because from any state, the process must
+go <em>somewhere</em>:</p>
+<div class="math notranslate nohighlight">
+\[\sum_{j=1}^{K} A_{ij} = 1 \quad \text{for all } i\]</div>
+<p>When we later write expressions like <span class="math notranslate nohighlight">\(\sum_i \alpha_i \cdot A_{ij}\)</span>,
+this is computing a <strong>weighted sum</strong> over column <span class="math notranslate nohighlight">\(j\)</span> of the matrix,
+where the weights are the <span class="math notranslate nohighlight">\(\alpha_i\)</span> values. In matrix notation, this
+corresponds to a matrix-vector multiplication. The important thing is that it
+combines information from <em>all</em> possible previous states to compute the
+probability of being in state <span class="math notranslate nohighlight">\(j\)</span> next.</p>
+</div>
+<p>Let’s implement a basic HMM:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">class</span> <span class="nc">HMM</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A Hidden Markov Model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    initial : ndarray of shape (K,)</span>
+<span class="sd">        Initial state distribution pi.</span>
+<span class="sd">    transition : ndarray of shape (K, K)</span>
+<span class="sd">        Transition matrix A[i, j] = P(Z_l = j | Z_{l-1} = i).</span>
+<span class="sd">    emission : callable</span>
+<span class="sd">        emission(state, observation) returns P(X = obs | Z = state).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">transition</span><span class="p">,</span> <span class="n">emission</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial</span> <span class="o">=</span> <span class="n">initial</span>           <span class="c1"># pi: starting probabilities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transition</span> <span class="o">=</span> <span class="n">transition</span>     <span class="c1"># A: K x K transition matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emission</span> <span class="o">=</span> <span class="n">emission</span>         <span class="c1"># function(state, obs) -&gt; probability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial</span><span class="p">)</span>            <span class="c1"># number of hidden states</span>
+
+<span class="c1"># Example: a simple 2-state HMM (the weather model)</span>
+<span class="c1"># States: 0 = Sunny, 1 = Rainy</span>
+<span class="c1"># Observations: 0 = No umbrella, 1 = Umbrella</span>
+<span class="n">hmm</span> <span class="o">=</span> <span class="n">HMM</span><span class="p">(</span>
+    <span class="n">initial</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]),</span>         <span class="c1"># equal chance of starting sunny or rainy</span>
+    <span class="n">transition</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">],</span>     <span class="c1"># Sunny -&gt; Sunny: 0.95, Sunny -&gt; Rainy: 0.05</span>
+                         <span class="p">[</span><span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.90</span><span class="p">]]),</span>    <span class="c1"># Rainy -&gt; Sunny: 0.10, Rainy -&gt; Rainy: 0.90</span>
+    <span class="c1"># The lambda function takes a state index s and observation x,</span>
+    <span class="c1"># and returns the emission probability P(X=x | Z=s).</span>
+    <span class="c1"># For state 0 (Sunny): P(no umbrella)=0.9, P(umbrella)=0.1</span>
+    <span class="c1"># For state 1 (Rainy): P(no umbrella)=0.2, P(umbrella)=0.8</span>
+    <span class="n">emission</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">][</span><span class="n">x</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-forward-algorithm">
+<h2>The Forward Algorithm<a class="headerlink" href="#the-forward-algorithm" title="Link to this heading"></a></h2>
+<p>We now arrive at the first major computational tool: the <strong>forward algorithm</strong>.
+This algorithm answers the question: “Given a sequence of observations, how
+likely is each hidden state at each position?”</p>
+<p>Think of it this way. Behind the watch face, many different gear configurations
+could produce the hand positions you observe. The forward algorithm systematically
+counts up the probability of <em>every</em> possible gear configuration that is
+consistent with what you see, working from left to right along the sequence. At
+each position, it combines two sources of information: what the current
+observation tells us about the hidden state (emission), and what the previous
+position’s state probabilities tell us about where we could have come from
+(transition).</p>
+<p>The forward algorithm computes <span class="math notranslate nohighlight">\(P(X_1, \ldots, X_\ell, Z_\ell = s_j)\)</span>
+– the joint probability of the observations up to position <span class="math notranslate nohighlight">\(\ell\)</span> and
+being in state <span class="math notranslate nohighlight">\(s_j\)</span>.</p>
+<div class="admonition-probability-aside-joint-probability admonition">
+<p class="admonition-title">Probability Aside – Joint Probability</p>
+<p>The quantity <span class="math notranslate nohighlight">\(P(X_1, \ldots, X_\ell, Z_\ell = s_j)\)</span> is a <strong>joint
+probability</strong>. It answers the question: “What is the probability that the
+observations are <span class="math notranslate nohighlight">\(X_1, \ldots, X_\ell\)</span> <em>and simultaneously</em> the
+hidden state at position <span class="math notranslate nohighlight">\(\ell\)</span> is <span class="math notranslate nohighlight">\(s_j\)</span>?”</p>
+<p>This is not the same as asking “what is the probability that the state is
+<span class="math notranslate nohighlight">\(s_j\)</span> given the observations?” (which would be a conditional
+probability). The joint probability is smaller, because it also accounts for
+how likely the observations themselves are. We will see later that by
+normalizing, we can convert between the two.</p>
+</div>
+<p>Define the <strong>forward variable</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell) = P(X_1, \ldots, X_\ell, Z_\ell = s_j)\]</div>
+<p>This is the joint probability of having observed the data <span class="math notranslate nohighlight">\(X_1, \ldots, X_\ell\)</span>
+<em>and</em> being in state <span class="math notranslate nohighlight">\(s_j\)</span> at position <span class="math notranslate nohighlight">\(\ell\)</span>.</p>
+<p><strong>Initialization</strong> (<span class="math notranslate nohighlight">\(\ell = 1\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(1) = P(X_1, Z_1 = s_j) = P(Z_1 = s_j) \cdot P(X_1 \mid Z_1 = s_j) = \pi_j \cdot e_j(X_1)\]</div>
+<div class="admonition-probability-aside-the-chain-rule-at-work admonition">
+<p class="admonition-title">Probability Aside – The Chain Rule at Work</p>
+<p>The initialization step uses the <strong>product rule</strong> (a special case of the chain
+rule). We want the joint probability <span class="math notranslate nohighlight">\(P(X_1, Z_1 = s_j)\)</span>, which is the
+probability of two things happening together: the state is <span class="math notranslate nohighlight">\(s_j\)</span> and the
+observation is <span class="math notranslate nohighlight">\(X_1\)</span>.</p>
+<p>By the product rule: <span class="math notranslate nohighlight">\(P(A, B) = P(A) \cdot P(B \mid A)\)</span>. Here,
+<span class="math notranslate nohighlight">\(A\)</span> is “<span class="math notranslate nohighlight">\(Z_1 = s_j\)</span>” and <span class="math notranslate nohighlight">\(B\)</span> is “<span class="math notranslate nohighlight">\(X_1\)</span>.” So:</p>
+<div class="math notranslate nohighlight">
+\[P(X_1, Z_1 = s_j) = P(Z_1 = s_j) \cdot P(X_1 \mid Z_1 = s_j)
+= \pi_j \cdot e_j(X_1)\]</div>
+<p>The first factor is “how likely is this starting state?” and the second is
+“given this state, how likely is the observation?” Multiplying them gives the
+joint probability of both.</p>
+</div>
+<p><strong>Recursion</strong> (<span class="math notranslate nohighlight">\(\ell = 2, \ldots, L\)</span>):</p>
+<p>To derive the recursion, we use the law of total probability to sum over all
+possible previous states, and then apply the two key HMM independence
+assumptions:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\alpha_j(\ell) &amp;= P(X_1, \ldots, X_\ell, Z_\ell = s_j) \\
+&amp;= \sum_{i=1}^{K} P(X_1, \ldots, X_\ell, Z_{\ell-1} = s_i, Z_\ell = s_j) \\
+&amp;= \sum_{i=1}^{K} P(X_1, \ldots, X_{\ell-1}, Z_{\ell-1} = s_i) \cdot
+P(Z_\ell = s_j \mid Z_{\ell-1} = s_i) \cdot P(X_\ell \mid Z_\ell = s_j)\end{split}\]</div>
+<p>Let us walk through each step carefully:</p>
+<ul class="simple">
+<li><p><strong>Line 1 to Line 2</strong>: We introduced the previous state <span class="math notranslate nohighlight">\(Z_{\ell-1}\)</span> and
+summed over all its possible values. This is marginalizing – we do not know
+what the previous state was, so we consider all possibilities. (See the
+Probability Aside on marginalizing above.)</p></li>
+<li><p><strong>Line 2 to Line 3</strong>: We factored the joint probability using the chain rule
+and the two HMM independence assumptions (detailed below). The key insight is
+that the big joint probability <span class="math notranslate nohighlight">\(P(X_1, \ldots, X_\ell, Z_{\ell-1} = s_i,
+Z_\ell = s_j)\)</span> splits into three manageable pieces.</p></li>
+</ul>
+<p>The third line relies on two HMM properties:</p>
+<ol class="arabic simple">
+<li><p><strong>Markov property</strong>: <span class="math notranslate nohighlight">\(P(Z_\ell = s_j \mid Z_{\ell-1} = s_i, X_1, \ldots, X_{\ell-1}) = P(Z_\ell = s_j \mid Z_{\ell-1} = s_i) = A_{ij}\)</span>.
+The next state depends only on the current state, not on older states or observations.</p></li>
+<li><p><strong>Conditional independence of emissions</strong>: <span class="math notranslate nohighlight">\(P(X_\ell \mid Z_\ell = s_j, Z_{\ell-1}, X_1, \ldots, X_{\ell-1}) = P(X_\ell \mid Z_\ell = s_j) = e_j(X_\ell)\)</span>.
+Each observation depends only on the hidden state at that position.</p></li>
+</ol>
+<p>Substituting our definitions:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell) = e_j(X_\ell) \sum_{i=1}^{K} \alpha_i(\ell-1) \cdot A_{ij}\]</div>
+<p>Read this equation aloud: “The forward probability of being in state <span class="math notranslate nohighlight">\(j\)</span>
+at position <span class="math notranslate nohighlight">\(\ell\)</span> equals the emission probability of the current
+observation in state <span class="math notranslate nohighlight">\(j\)</span>, multiplied by the sum over all previous states
+<span class="math notranslate nohighlight">\(i\)</span> of (the forward probability of being in state <span class="math notranslate nohighlight">\(i\)</span> at the
+previous position, times the transition probability from <span class="math notranslate nohighlight">\(i\)</span> to
+<span class="math notranslate nohighlight">\(j\)</span>).”</p>
+<p>The sum <span class="math notranslate nohighlight">\(\sum_i \alpha_i(\ell-1) \cdot A_{ij}\)</span> aggregates contributions
+from every possible predecessor state, weighted by how likely each predecessor
+is and how likely it is to transition to state <span class="math notranslate nohighlight">\(j\)</span>. The emission term
+<span class="math notranslate nohighlight">\(e_j(X_\ell)\)</span> then adjusts for how well state <span class="math notranslate nohighlight">\(j\)</span> explains the
+current observation.</p>
+<p>Note the computational cost: for each of the <span class="math notranslate nohighlight">\(K\)</span> states at position <span class="math notranslate nohighlight">\(\ell\)</span>,
+we sum over <span class="math notranslate nohighlight">\(K\)</span> states at position <span class="math notranslate nohighlight">\(\ell - 1\)</span>. This is <span class="math notranslate nohighlight">\(O(K^2)\)</span> per
+position and <span class="math notranslate nohighlight">\(O(LK^2)\)</span> total.</p>
+<p><strong>Likelihood</strong> (marginalizing over final state):</p>
+<div class="math notranslate nohighlight">
+\[P(X_1, \ldots, X_L) = \sum_{j=1}^{K} \alpha_j(L)\]</div>
+<p>This final step sums over all possible hidden states at the last position. We do
+not know (or care about) which state the system ended in – we want the total
+probability of the observations regardless of the final state. This is another
+application of marginalization.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_algorithm</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">observations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the forward algorithm.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hmm : HMM</span>
+<span class="sd">    observations : list of length L</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha : ndarray of shape (L, K)</span>
+<span class="sd">        Forward probabilities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observations</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">K</span>
+    <span class="c1"># alpha[ell, j] will hold the forward probability alpha_j(ell)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+
+    <span class="c1"># Initialization: alpha_j(1) = pi_j * e_j(X_1)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">initial</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">hmm</span><span class="o">.</span><span class="n">emission</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">observations</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Recursion: process each position left-to-right</span>
+    <span class="k">for</span> <span class="n">ell</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="c1"># hmm.transition[:, j] is the j-th column of A, i.e., A[i,j] for all i.</span>
+            <span class="c1"># alpha[ell-1, :] is the row of forward probs at the previous position.</span>
+            <span class="c1"># Multiplying element-wise and summing gives sum_i alpha_i * A_{ij}.</span>
+            <span class="c1"># np.sum(...) computes this sum over all K previous states.</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">emission</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">observations</span><span class="p">[</span><span class="n">ell</span><span class="p">])</span> <span class="o">*</span> \
+                <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="n">ell</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">hmm</span><span class="o">.</span><span class="n">transition</span><span class="p">[:,</span> <span class="n">j</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">alpha</span>
+
+<span class="c1"># Test with a simple observation sequence</span>
+<span class="c1"># 0 = No umbrella, 1 = Umbrella</span>
+<span class="n">obs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">alpha</span> <span class="o">=</span> <span class="n">forward_algorithm</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+
+<span class="c1"># The total likelihood is the sum over all states at the last position.</span>
+<span class="c1"># alpha[-1, :] grabs the last row of the alpha table (i.e., position L).</span>
+<span class="n">likelihood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log-likelihood: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">likelihood</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Normalizing the last row gives P(state | all observations):</span>
+<span class="c1"># this converts joint probabilities to conditional probabilities.</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Forward probs at last position: </span><span class="si">{</span><span class="n">alpha</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">alpha</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="scaling-for-numerical-stability">
+<h2>Scaling for Numerical Stability<a class="headerlink" href="#scaling-for-numerical-stability" title="Link to this heading"></a></h2>
+<p>There is a practical problem with the forward algorithm as written above. Each
+forward variable <span class="math notranslate nohighlight">\(\alpha_j(\ell)\)</span> is a <em>joint</em> probability of an
+increasingly long sequence of observations. As the sequence grows, this joint
+probability shrinks – it is a product of many numbers less than 1. For a genome
+with millions of positions, these numbers become astronomically small, far
+smaller than the smallest number a computer can represent (roughly <span class="math notranslate nohighlight">\(10^{-308}\)</span>
+for standard 64-bit floating-point numbers).</p>
+<p>When a number becomes too small to represent, the computer rounds it to zero.
+This is called <strong>numerical underflow</strong>. Once a forward variable becomes zero, it
+stays zero – all subsequent computations that depend on it produce zero as well.
+The entire calculation collapses.</p>
+<div class="admonition-why-underflow-happens-a-concrete-example admonition">
+<p class="admonition-title">Why Underflow Happens – A Concrete Example</p>
+<p>Suppose you have 1,000 positions and at each position the forward variables
+are multiplied by emission probabilities around 0.5. The cumulative product
+is roughly <span class="math notranslate nohighlight">\(0.5^{1000} \approx 10^{-301}\)</span>. This is barely
+representable. With 10,000 positions, you get <span class="math notranslate nohighlight">\(0.5^{10000} \approx
+10^{-3010}\)</span>, which is hopelessly beyond the range of floating-point numbers.
+And real genomes have millions of positions.</p>
+</div>
+<p>The solution: <strong>normalize</strong> at each step. Instead of letting the forward
+variables shrink to zero, we divide them by their sum at each position, keeping
+them in a numerically comfortable range. We record the normalization constants
+separately and use them to recover the total likelihood.</p>
+<p>The idea is to compute <strong>scaled forward variables</strong> <span class="math notranslate nohighlight">\(\hat{\alpha}_j(\ell)\)</span>
+that sum to 1 at each position, and keep track of the normalizing constants
+<span class="math notranslate nohighlight">\(c_\ell\)</span> separately.</p>
+<p>At each step <span class="math notranslate nohighlight">\(\ell\)</span>, we first compute the unnormalized values:</p>
+<div class="math notranslate nohighlight">
+\[\tilde{\alpha}_j(\ell) = e_j(X_\ell) \sum_{i=1}^{K} \hat{\alpha}_i(\ell-1) \cdot A_{ij}\]</div>
+<p>Then we normalize by their sum:</p>
+<div class="math notranslate nohighlight">
+\[c_\ell = \sum_{j=1}^{K} \tilde{\alpha}_j(\ell), \qquad
+\hat{\alpha}_j(\ell) = \frac{\tilde{\alpha}_j(\ell)}{c_\ell}\]</div>
+<p>The <strong>scaled forward variables</strong> <span class="math notranslate nohighlight">\(\hat{\alpha}_j(\ell)\)</span> represent the
+<strong>conditional state distribution</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\alpha}_j(\ell) = P(Z_\ell = s_j \mid X_1, \ldots, X_\ell)\]</div>
+<p>Note the difference from the unscaled version: <span class="math notranslate nohighlight">\(\alpha_j(\ell)\)</span> is a joint
+probability (of both the observations and the state), while
+<span class="math notranslate nohighlight">\(\hat{\alpha}_j(\ell)\)</span> is a conditional probability (of the state given the
+observations). The scaled version directly answers the question we usually care
+about: “given what I have observed so far, how likely is each state?”</p>
+<p><strong>Why does this work?</strong> The unscaled forward variables can be recovered as:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell) = \hat{\alpha}_j(\ell) \prod_{m=1}^{\ell} c_m\]</div>
+<p>To see this, note that at each step we divided by <span class="math notranslate nohighlight">\(c_\ell\)</span>, so to recover
+the original values we multiply back all the <span class="math notranslate nohighlight">\(c_m\)</span>. The product of all
+scaling factors gives the total data likelihood:</p>
+<div class="math notranslate nohighlight">
+\[P(X_1, \ldots, X_L) = \sum_{j} \alpha_j(L) = \left(\prod_{m=1}^{L} c_m\right) \underbrace{\sum_j \hat{\alpha}_j(L)}_{= 1} = \prod_{m=1}^{L} c_m\]</div>
+<p>Taking logarithms:</p>
+<div class="math notranslate nohighlight">
+\[\log P(X_1, \ldots, X_L) = \sum_{\ell=1}^{L} \log c_\ell\]</div>
+<p>Each <span class="math notranslate nohighlight">\(c_\ell\)</span> is a sum of a few numbers (manageable), and the log-likelihood
+is a sum of logs (no underflow). This is numerically stable even for sequences of
+millions of positions.</p>
+<div class="admonition-what-are-the-scaling-factors-intuitively admonition">
+<p class="admonition-title">What are the scaling factors, intuitively?</p>
+<p>Each <span class="math notranslate nohighlight">\(c_\ell = P(X_\ell \mid X_1, \ldots, X_{\ell-1})\)</span> is the
+<strong>predictive probability</strong> of the observation at position <span class="math notranslate nohighlight">\(\ell\)</span> given all
+previous observations. It answers: “Given everything we have seen so far, how
+surprising is the current observation?” The total likelihood is the product of
+these predictive probabilities – this is just the chain rule:
+<span class="math notranslate nohighlight">\(P(X_1, \ldots, X_L) = P(X_1) \cdot P(X_2 | X_1) \cdot P(X_3 | X_1, X_2) \cdots\)</span></p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_scaled</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">observations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward algorithm with scaling for numerical stability.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha_hat : ndarray of shape (L, K)</span>
+<span class="sd">        Scaled forward probabilities (conditional state distributions).</span>
+<span class="sd">        alpha_hat[ell, j] = P(Z_ell = j | X_1, ..., X_ell)</span>
+<span class="sd">    log_likelihood : float</span>
+<span class="sd">        log P(X_1, ..., X_L), computed as sum of log(c_ell).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observations</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">K</span>
+    <span class="n">alpha_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+    <span class="n">log_likelihood</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Initialization: same as before, then normalize</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+        <span class="n">alpha_hat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">initial</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">hmm</span><span class="o">.</span><span class="n">emission</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">observations</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>        <span class="c1"># c_1: normalizing constant for position 1</span>
+    <span class="n">alpha_hat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/=</span> <span class="n">c</span>             <span class="c1"># now alpha_hat[0] sums to 1</span>
+    <span class="n">log_likelihood</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>   <span class="c1"># accumulate log-likelihood</span>
+
+    <span class="c1"># Recursion: compute, normalize, accumulate</span>
+    <span class="k">for</span> <span class="n">ell</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="n">alpha_hat</span><span class="p">[</span><span class="n">ell</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">emission</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">observations</span><span class="p">[</span><span class="n">ell</span><span class="p">])</span> <span class="o">*</span> \
+                <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">alpha_hat</span><span class="p">[</span><span class="n">ell</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">hmm</span><span class="o">.</span><span class="n">transition</span><span class="p">[:,</span> <span class="n">j</span><span class="p">])</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>        <span class="c1"># c_ell: normalizing constant</span>
+        <span class="n">alpha_hat</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">/=</span> <span class="n">c</span>             <span class="c1"># normalize to sum to 1</span>
+        <span class="n">log_likelihood</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>     <span class="c1"># accumulate log(c_ell)</span>
+
+    <span class="k">return</span> <span class="n">alpha_hat</span><span class="p">,</span> <span class="n">log_likelihood</span>
+
+<span class="n">alpha_hat</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">forward_scaled</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log-likelihood (scaled): </span><span class="si">{</span><span class="n">ll</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># alpha_hat[-1] is already a proper probability distribution over states:</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;P(state | observations) at last position: </span><span class="si">{</span><span class="n">alpha_hat</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="stochastic-traceback-sampling">
+<h2>Stochastic Traceback (Sampling)<a class="headerlink" href="#stochastic-traceback-sampling" title="Link to this heading"></a></h2>
+<p>The forward algorithm tells us the probability of each hidden state at each
+position. But for ARG inference, we need more: we need to produce complete
+sequences of hidden states that are consistent with the observations. SINGER
+doesn’t just find the single most likely state sequence – it <strong>samples</strong> from
+the posterior distribution of state sequences. This is done via <strong>stochastic
+traceback</strong> (also called forward-filtering backward-sampling).</p>
+<p>The watchmaking analogy: if the forward algorithm is like cataloging every
+possible gear configuration that could produce the observed hand positions, then
+stochastic traceback is like <strong>rewinding the mechanism</strong>. Starting from the final
+position (where we know the state probabilities), we trace backwards through the
+sequence, randomly selecting states according to their posterior probability.
+Each run of the traceback produces a different plausible gear configuration –
+a different possible history that is consistent with the observations.</p>
+<p>Why sample rather than just pick the most likely sequence? Because in Bayesian
+inference, a single “best” answer can be misleading. By generating many samples,
+SINGER captures the <em>uncertainty</em> in the genealogical reconstruction. Some parts
+of the genome may have a clear signal (all samples agree), while others are
+ambiguous (samples disagree). This uncertainty is itself informative.</p>
+<p>After running the forward algorithm, we sample states from right to left:</p>
+<ol class="arabic">
+<li><p>Sample <span class="math notranslate nohighlight">\(Z_L\)</span> from <span class="math notranslate nohighlight">\(P(Z_L \mid X_1, \ldots, X_L) \propto \alpha_{Z_L}(L)\)</span></p>
+<p>(At the last position, the scaled forward variables already give us the
+conditional distribution over states.)</p>
+</li>
+<li><p>For <span class="math notranslate nohighlight">\(\ell = L-1, \ldots, 1\)</span>, sample <span class="math notranslate nohighlight">\(Z_\ell\)</span> from:</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[P(Z_\ell = s_i \mid Z_{\ell+1} = s_j, X_1, \ldots, X_\ell)
+\propto \hat{\alpha}_i(\ell) \cdot A_{ij}\]</div>
+<p>This formula has an elegant interpretation: the probability of state <span class="math notranslate nohighlight">\(i\)</span> at
+position <span class="math notranslate nohighlight">\(\ell\)</span> is proportional to two factors:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\hat{\alpha}_i(\ell)\)</span>: how likely state <span class="math notranslate nohighlight">\(i\)</span> is given the
+observations up to position <span class="math notranslate nohighlight">\(\ell\)</span> (the “forward” information)</p></li>
+<li><p><span class="math notranslate nohighlight">\(A_{ij}\)</span>: how likely state <span class="math notranslate nohighlight">\(i\)</span> is to transition to the state
+<span class="math notranslate nohighlight">\(j\)</span> that we already sampled at position <span class="math notranslate nohighlight">\(\ell + 1\)</span> (the
+“backward” constraint)</p></li>
+</ul>
+<p>The product of these two factors balances the evidence from the left (what the
+data says) with the constraint from the right (what the next state requires).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">stochastic_traceback</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">alpha_hat</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample a state sequence from the posterior using forward probs.</span>
+
+<span class="sd">    This implements &quot;forward-filtering backward-sampling&quot;: the forward</span>
+<span class="sd">    algorithm filters information left-to-right, and this function</span>
+<span class="sd">    samples a path right-to-left.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hmm : HMM</span>
+<span class="sd">    alpha_hat : ndarray of shape (L, K)</span>
+<span class="sd">        Scaled forward probabilities from forward_scaled().</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    states : ndarray of shape (L,)</span>
+<span class="sd">        Sampled state sequence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span><span class="p">,</span> <span class="n">K</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># will hold the sampled state at each position</span>
+
+    <span class="c1"># Step 1: Sample the last state from the conditional distribution.</span>
+    <span class="c1"># alpha_hat[-1] is already normalized (sums to 1) from the scaled forward pass.</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="c1"># np.random.choice(K, p=probs) draws one integer from {0, ..., K-1}</span>
+    <span class="c1"># with probability given by &#39;probs&#39;.</span>
+    <span class="n">states</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Traceback from right to left.</span>
+    <span class="c1"># range(L-2, -1, -1) counts down: L-2, L-3, ..., 1, 0</span>
+    <span class="k">for</span> <span class="n">ell</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">states</span><span class="p">[</span><span class="n">ell</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># the state we already sampled at position ell+1</span>
+        <span class="c1"># P(Z_ell = i | Z_{ell+1} = j, data) is proportional to</span>
+        <span class="c1"># alpha_hat[ell, i] * A[i, j]</span>
+        <span class="c1"># alpha_hat[ell] is a length-K array of scaled forward probs.</span>
+        <span class="c1"># hmm.transition[:, j] is column j of A, i.e., A[i, j] for all i.</span>
+        <span class="c1"># Element-wise multiplication gives the unnormalized probabilities.</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">*</span> <span class="n">hmm</span><span class="o">.</span><span class="n">transition</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">probs</span> <span class="o">/=</span> <span class="n">probs</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># normalize so probabilities sum to 1</span>
+        <span class="n">states</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">states</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">alpha_hat</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">forward_scaled</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+<span class="c1"># Sample 5 state sequences from the posterior.</span>
+<span class="c1"># Each sample is a different plausible hidden state sequence.</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">states</span> <span class="o">=</span> <span class="n">stochastic_traceback</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">alpha_hat</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sample </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">states</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-li-stephens-trick-linear-time-transitions">
+<h2>The Li-Stephens Trick: Linear-Time Transitions<a class="headerlink" href="#the-li-stephens-trick-linear-time-transitions" title="Link to this heading"></a></h2>
+<p>We have now seen the full HMM inference pipeline: the forward algorithm computes
+state probabilities, scaling prevents underflow, and stochastic traceback
+generates samples. There is one remaining problem: <strong>speed</strong>.</p>
+<p>A standard HMM forward step is <span class="math notranslate nohighlight">\(O(K^2)\)</span> because every state can transition
+to every other state – the sum <span class="math notranslate nohighlight">\(\sum_i \alpha_i \cdot A_{ij}\)</span> has
+<span class="math notranslate nohighlight">\(K\)</span> terms and must be computed for each of <span class="math notranslate nohighlight">\(K\)</span> states. For SINGER,
+<span class="math notranslate nohighlight">\(K\)</span> is the number of branches in the marginal tree (<span class="math notranslate nohighlight">\(2n - 1\)</span> for
+<span class="math notranslate nohighlight">\(n\)</span> samples), so this is expensive. With <span class="math notranslate nohighlight">\(n = 1000\)</span> samples, we
+would have <span class="math notranslate nohighlight">\(K \approx 2000\)</span> states and <span class="math notranslate nohighlight">\(K^2 = 4{,}000{,}000\)</span>
+operations per genomic position. Multiply by millions of positions and the
+computation becomes intractable.</p>
+<p>The <strong>Li-Stephens model</strong> (Li and Stephens, 2003) exploits a special structure in
+the transition matrix that reduces the per-position cost from <span class="math notranslate nohighlight">\(O(K^2)\)</span> to
+<span class="math notranslate nohighlight">\(O(K)\)</span>. This is the single most important computational trick in HMM-based
+ARG inference.</p>
+<section id="the-li-stephens-transition-structure">
+<h3>The Li-Stephens Transition Structure<a class="headerlink" href="#the-li-stephens-transition-structure" title="Link to this heading"></a></h3>
+<p>The transition probability has the form:</p>
+<div class="math notranslate nohighlight">
+\[A_{ij} = (1 - r_i)\delta_{ij} + r_i \cdot \frac{q_j}{\sum_k q_k}\]</div>
+<p>Let us unpack every symbol:</p>
+<div class="admonition-what-is-the-kronecker-delta admonition">
+<p class="admonition-title">What Is the Kronecker Delta?</p>
+<p>The symbol <span class="math notranslate nohighlight">\(\delta_{ij}\)</span> is the <strong>Kronecker delta</strong>. It is the simplest
+possible function of two indices:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\delta_{ij} = \begin{cases} 1 &amp; \text{if } i = j \\ 0 &amp; \text{if } i \neq j \end{cases}\end{split}\]</div>
+<p>It acts as a mathematical “filter”: in any sum involving <span class="math notranslate nohighlight">\(\delta_{ij}\)</span>,
+only the term where <span class="math notranslate nohighlight">\(i = j\)</span> survives. For example:</p>
+<div class="math notranslate nohighlight">
+\[\sum_{i=1}^{K} f(i) \cdot \delta_{ij} = f(j)\]</div>
+<p>All terms where <span class="math notranslate nohighlight">\(i \neq j\)</span> are multiplied by zero and vanish. This
+property is what makes the Li-Stephens trick work.</p>
+</div>
+<p>The transition formula says: with probability <span class="math notranslate nohighlight">\(1 - r_i\)</span>, <strong>stay in the same
+state</strong> (no recombination). With probability <span class="math notranslate nohighlight">\(r_i\)</span>, <strong>“recombine”</strong> and
+jump to any state <span class="math notranslate nohighlight">\(j\)</span> with probability proportional to <span class="math notranslate nohighlight">\(q_j\)</span>.</p>
+<p>In the genetics context:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(r_i\)</span> is the probability that a recombination event occurs while the
+lineage sits on branch <span class="math notranslate nohighlight">\(i\)</span>. This depends on the branch length in
+coalescent time units (see <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>) and the recombination rate.</p></li>
+<li><p><span class="math notranslate nohighlight">\(q_j\)</span> is the probability that, after recombination, the lineage re-joins
+branch <span class="math notranslate nohighlight">\(j\)</span>. This is proportional to the coalescence probability on
+branch <span class="math notranslate nohighlight">\(j\)</span>.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\delta_{ij}\)</span> ensures that “staying” means remaining on the <em>same</em>
+branch.</p></li>
+</ul>
+<p>The key structural property is that the “jump” part of the transition is
+<strong>separable</strong>: the probability of jumping <em>to</em> state <span class="math notranslate nohighlight">\(j\)</span> (which is
+<span class="math notranslate nohighlight">\(q_j / \sum_k q_k\)</span>) does not depend on which state <span class="math notranslate nohighlight">\(i\)</span> we are
+jumping <em>from</em>. This separability is what enables the <span class="math notranslate nohighlight">\(O(K)\)</span> trick.</p>
+<p><strong>A concrete small example.</strong> Consider <span class="math notranslate nohighlight">\(K = 3\)</span> states with <span class="math notranslate nohighlight">\(r_i = 0.1\)</span>
+for all <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(q = (0.5, 0.3, 0.2)\)</span>. Then <span class="math notranslate nohighlight">\(\sum_k q_k = 1.0\)</span>
+and the transition matrix is:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}A = \begin{pmatrix}
+0.9 + 0.1 \cdot 0.5 &amp; 0.1 \cdot 0.3 &amp; 0.1 \cdot 0.2 \\
+0.1 \cdot 0.5 &amp; 0.9 + 0.1 \cdot 0.3 &amp; 0.1 \cdot 0.2 \\
+0.1 \cdot 0.5 &amp; 0.1 \cdot 0.3 &amp; 0.9 + 0.1 \cdot 0.2
+\end{pmatrix}
+= \begin{pmatrix}
+0.95 &amp; 0.03 &amp; 0.02 \\
+0.05 &amp; 0.93 &amp; 0.02 \\
+0.05 &amp; 0.03 &amp; 0.92
+\end{pmatrix}\end{split}\]</div>
+<p>Notice the structure: each row has a large diagonal entry (staying) and small
+off-diagonal entries (jumping), and the off-diagonal entries in each column are
+identical (because <span class="math notranslate nohighlight">\(q_j / \sum_k q_k\)</span> does not depend on the row).</p>
+<p><strong>Proof that rows sum to 1.</strong> For any row <span class="math notranslate nohighlight">\(i\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\sum_j A_{ij} &amp;= \sum_j \left[(1 - r_i)\delta_{ij} + r_i \frac{q_j}{\sum_k q_k}\right] \\
+&amp;= (1 - r_i) \underbrace{\sum_j \delta_{ij}}_{= 1} + r_i \underbrace{\frac{\sum_j q_j}{\sum_k q_k}}_{= 1} \\
+&amp;= (1 - r_i) + r_i = 1 \quad \checkmark\end{split}\]</div>
+</section>
+<section id="the-o-k-forward-step">
+<h3>The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step<a class="headerlink" href="#the-o-k-forward-step" title="Link to this heading"></a></h3>
+<p>Now we substitute the Li-Stephens transition structure into the forward recursion
+and see how the sum simplifies. This is the algebraic heart of the trick, so we
+will go step by step.</p>
+<p>Start with the standard forward recursion:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell) = e_j(X_\ell) \sum_{i=1}^{K} \alpha_i(\ell-1) \cdot A_{ij}\]</div>
+<p>Substitute the Li-Stephens form of <span class="math notranslate nohighlight">\(A_{ij}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell) &amp;= e_j(X_\ell) \sum_i \alpha_i(\ell-1) \left[(1 - r_i)\delta_{ij} + r_i \frac{q_j}{\sum_k q_k}\right]\]</div>
+<p>Now distribute the sum over the two terms inside the brackets:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell) &amp;= e_j(X_\ell) \left[\sum_i \alpha_i(\ell-1)(1 - r_i)\delta_{ij} + \sum_i \alpha_i(\ell-1) r_i \frac{q_j}{\sum_k q_k}\right]\]</div>
+<p><strong>Simplify the first sum.</strong> The Kronecker delta <span class="math notranslate nohighlight">\(\delta_{ij}\)</span> kills every
+term except <span class="math notranslate nohighlight">\(i = j\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\sum_i \alpha_i(\ell-1)(1 - r_i)\delta_{ij} = \alpha_j(\ell-1)(1 - r_j)\]</div>
+<p>Only the “stay in state <span class="math notranslate nohighlight">\(j\)</span>” term survives.</p>
+<p><strong>Simplify the second sum.</strong> The factor <span class="math notranslate nohighlight">\(q_j / \sum_k q_k\)</span> does not depend
+on <span class="math notranslate nohighlight">\(i\)</span>, so it can be pulled out of the sum:</p>
+<div class="math notranslate nohighlight">
+\[\sum_i \alpha_i(\ell-1) r_i \frac{q_j}{\sum_k q_k} = \frac{q_j}{\sum_k q_k} \sum_i r_i \alpha_i(\ell-1)\]</div>
+<p>This is the crucial step: the sum <span class="math notranslate nohighlight">\(\sum_i r_i \alpha_i(\ell-1)\)</span> does not
+depend on <span class="math notranslate nohighlight">\(j\)</span> at all. It is the same number regardless of which target
+state we are computing.</p>
+<p>Putting it together:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell) = e_j(X_\ell) \left[\alpha_j(\ell-1)(1 - r_j) + \frac{q_j}{\sum_k q_k} \underbrace{\sum_i r_i \alpha_i(\ell-1)}_{R}\right]\]</div>
+<p>The key: the sum <span class="math notranslate nohighlight">\(R = \sum_i r_i \alpha_i(\ell-1)\)</span> is computed <strong>once</strong>
+in <span class="math notranslate nohighlight">\(O(K)\)</span> time and reused for all <span class="math notranslate nohighlight">\(j\)</span>. Each <span class="math notranslate nohighlight">\(\alpha_j\)</span> then
+requires only <span class="math notranslate nohighlight">\(O(1)\)</span> work (one multiplication for the “stay” term, one
+for the “jump” term, one addition, and one multiplication by the emission), giving
+<span class="math notranslate nohighlight">\(O(K)\)</span> total per position instead of <span class="math notranslate nohighlight">\(O(K^2)\)</span>.</p>
+<div class="admonition-why-the-sum-factorizes-the-key-insight admonition">
+<p class="admonition-title">Why the Sum Factorizes – The Key Insight</p>
+<p>The reason this trick works is that the Li-Stephens transition separates into
+two parts: a “stay” part that depends on both source and target, and a “jump”
+part where the source and target contributions <em>multiply independently</em>.</p>
+<p>In the “jump” component, <span class="math notranslate nohighlight">\(r_i\)</span> (from the source state) and
+<span class="math notranslate nohighlight">\(q_j / \sum_k q_k\)</span> (from the target state) do not interact – they
+are multiplied, not entangled. This means the double sum
+<span class="math notranslate nohighlight">\(\sum_i \sum_j\)</span> can be split into <span class="math notranslate nohighlight">\((\sum_i \cdots)(\sum_j \cdots)\)</span>
+or equivalently, the inner sum <span class="math notranslate nohighlight">\(\sum_i r_i \alpha_i\)</span> can be precomputed
+once.</p>
+<p>If the transition probability had a more complicated dependence on <em>both</em>
+<span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(j\)</span>, this factorization would not be possible, and we
+would be stuck with <span class="math notranslate nohighlight">\(O(K^2)\)</span>.</p>
+</div>
+<p><strong>A small worked example.</strong> Suppose <span class="math notranslate nohighlight">\(K = 3\)</span>, <span class="math notranslate nohighlight">\(r = (0.1, 0.1, 0.1)\)</span>,
+<span class="math notranslate nohighlight">\(q = (0.5, 0.3, 0.2)\)</span>, and the forward variables at the previous position
+are <span class="math notranslate nohighlight">\(\alpha(\ell-1) = (0.4, 0.35, 0.25)\)</span>. Emissions at the current
+position are <span class="math notranslate nohighlight">\(e = (0.8, 0.6, 0.9)\)</span>.</p>
+<p>Step 1: Compute the recombination sum once.</p>
+<div class="math notranslate nohighlight">
+\[R = \sum_i r_i \alpha_i(\ell-1) = 0.1 \times 0.4 + 0.1 \times 0.35 + 0.1 \times 0.25 = 0.1\]</div>
+<p>Step 2: Compute each <span class="math notranslate nohighlight">\(\alpha_j(\ell)\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\alpha_1(\ell) &amp;= 0.8 \times [0.4 \times 0.9 + 0.5 \times 0.1] = 0.8 \times [0.36 + 0.05] = 0.328 \\
+\alpha_2(\ell) &amp;= 0.6 \times [0.35 \times 0.9 + 0.3 \times 0.1] = 0.6 \times [0.315 + 0.03] = 0.207 \\
+\alpha_3(\ell) &amp;= 0.9 \times [0.25 \times 0.9 + 0.2 \times 0.1] = 0.9 \times [0.225 + 0.02] = 0.2205\end{split}\]</div>
+<p>Each <span class="math notranslate nohighlight">\(\alpha_j\)</span> used only its own previous value (for the “stay” part) and
+the shared <span class="math notranslate nohighlight">\(R\)</span> (for the “jump” part). No double sum over states was needed.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_li_stephens</span><span class="p">(</span><span class="n">initial</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">emissions</span><span class="p">,</span> <span class="n">observations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward algorithm with Li-Stephens transition structure.</span>
+
+<span class="sd">    The Li-Stephens transition matrix has the form:</span>
+<span class="sd">        A[i,j] = (1 - r[i]) * delta(i,j) + r[i] * q[j] / sum(q)</span>
+<span class="sd">    This enables an O(K) forward step instead of O(K^2).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    initial : ndarray of shape (K,)</span>
+<span class="sd">        Initial state distribution.</span>
+<span class="sd">    r : ndarray of shape (K,)</span>
+<span class="sd">        Per-state recombination probabilities. r[i] is the probability</span>
+<span class="sd">        of a recombination event on branch i.</span>
+<span class="sd">    q : ndarray of shape (K,)</span>
+<span class="sd">        Re-joining weights. q[j] / sum(q) is the probability of</span>
+<span class="sd">        re-joining branch j after recombination.</span>
+<span class="sd">    emissions : ndarray of shape (L, K)</span>
+<span class="sd">        Pre-computed emission probabilities: emissions[ell, j] = P(X_ell | Z_ell = j).</span>
+<span class="sd">    observations : ignored (emissions pre-computed)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha : ndarray of shape (L, K)</span>
+<span class="sd">        Forward probabilities at each position.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span><span class="p">,</span> <span class="n">K</span> <span class="o">=</span> <span class="n">emissions</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+
+    <span class="c1"># Initialization: alpha_j(1) = pi_j * e_j(X_1)</span>
+    <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">initial</span> <span class="o">*</span> <span class="n">emissions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Pre-compute the sum of q for normalization (constant across positions)</span>
+    <span class="n">q_sum</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">ell</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+        <span class="c1"># O(K) step: compute the recombination sum R = sum_i r[i] * alpha[i]</span>
+        <span class="c1"># np.sum(r * alpha[ell-1]) multiplies r and alpha element-wise,</span>
+        <span class="c1"># then sums all K elements. This is done ONCE per position.</span>
+        <span class="n">recomb_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="c1"># &quot;Stay&quot; term: probability of no recombination on branch j,</span>
+            <span class="c1"># times the previous forward probability on the same branch j.</span>
+            <span class="n">stay</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+
+            <span class="c1"># &quot;Jump&quot; term: probability of recombining and re-joining branch j.</span>
+            <span class="c1"># Uses the pre-computed recomb_sum (shared across all j).</span>
+            <span class="n">switch</span> <span class="o">=</span> <span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">q_sum</span><span class="p">)</span> <span class="o">*</span> <span class="n">recomb_sum</span>
+
+            <span class="c1"># Multiply by emission probability for state j at position ell.</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">emissions</span><span class="p">[</span><span class="n">ell</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">stay</span> <span class="o">+</span> <span class="n">switch</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">alpha</span>
+
+<span class="c1"># Test: 10 states, 100 positions</span>
+<span class="n">K</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>                          <span class="c1"># uniform recombination rate</span>
+<span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">dirichlet</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">K</span><span class="p">))</span>            <span class="c1"># random re-joining weights</span>
+<span class="n">emissions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>  <span class="c1"># random emissions</span>
+
+<span class="n">alpha</span> <span class="o">=</span> <span class="n">forward_li_stephens</span><span class="p">(</span>
+    <span class="n">initial</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">K</span><span class="p">)</span> <span class="o">/</span> <span class="n">K</span><span class="p">,</span>    <span class="c1"># uniform initial distribution</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">emissions</span><span class="o">=</span><span class="n">emissions</span><span class="p">,</span> <span class="n">observations</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Forward probs shape: </span><span class="si">{</span><span class="n">alpha</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sum at last position: </span><span class="si">{</span><span class="n">alpha</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-why-this-matters-for-singer admonition">
+<p class="admonition-title">Why this matters for SINGER</p>
+<p>In SINGER’s branch sampling HMM, the hidden states are branches in the
+marginal tree. The transition probability has exactly this Li-Stephens
+structure: with probability <span class="math notranslate nohighlight">\(1 - r_i\)</span>, stay on the same branch (no
+recombination); with probability <span class="math notranslate nohighlight">\(r_i\)</span>, recombine and re-join a
+branch with probability proportional to the branch’s coalescence probability.
+The coalescence probabilities play the role of the <span class="math notranslate nohighlight">\(q_j\)</span> weights.
+Branch lengths are measured in coalescent time units (see
+<a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>), and the recombination probabilities <span class="math notranslate nohighlight">\(r_i\)</span>
+depend on both the recombination rate and the branch length.</p>
+<p>Without the Li-Stephens trick, SINGER’s forward algorithm would be
+<span class="math notranslate nohighlight">\(O(K^2)\)</span> per position – infeasible for large sample sizes. With it,
+the cost is <span class="math notranslate nohighlight">\(O(K)\)</span>, making genome-scale inference practical.</p>
+</div>
+</section>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Algorithm</p></th>
+<th class="head"><p>What it gives you</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Forward algorithm</p></td>
+<td><p><span class="math notranslate nohighlight">\(\alpha_j(\ell) = P(X_1, \ldots, X_\ell, Z_\ell = j)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Scaled forward</p></td>
+<td><p>Numerically stable version + log-likelihood</p></td>
+</tr>
+<tr class="row-even"><td><p>Stochastic traceback</p></td>
+<td><p>Posterior samples of state sequences</p></td>
+</tr>
+<tr class="row-odd"><td><p>Li-Stephens trick</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(K)\)</span> transitions instead of <span class="math notranslate nohighlight">\(O(K^2)\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>These are the <strong>gear train</strong> of SINGER. The forward algorithm is the mechanism
+that combines observations and transitions into state probabilities, position by
+position. Scaling keeps the gears turning without jamming (numerical underflow).
+Stochastic traceback runs the mechanism in reverse, producing complete hidden
+state sequences. And the Li-Stephens structure is the elegant engineering that
+makes it all fast enough to work on real genomes.</p>
+<p>Together, the forward algorithm and stochastic traceback form the core of how
+SINGER samples branches and coalescence times along the genome. The Li-Stephens
+transition structure is what makes this sampling computationally feasible for
+large datasets.</p>
+<p>Next: <a class="reference internal" href="smc.html#smc"><span class="std std-ref">The Sequentially Markov Coalescent</span></a> – the Markov approximation that makes ARG inference possible.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="args.html" class="btn btn-neutral float-left" title="Ancestral Recombination Graphs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="smc.html" class="btn btn-neutral float-right" title="The Sequentially Markov Coalescent" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

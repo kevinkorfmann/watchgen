@@ -1,0 +1,1245 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hudson’s Algorithm &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Demographics &amp; Population" href="demographics.html" />
+    <link rel="prev" title="Segments &amp; the Fenwick Tree" href="segments_and_fenwick.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece III: msprime</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece III: msprime</a></li>
+      <li class="breadcrumb-item active">Hudson’s Algorithm</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="segments_and_fenwick.html" class="btn btn-neutral float-left" title="Segments &amp; the Fenwick Tree" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demographics.html" class="btn btn-neutral float-right" title="Demographics &amp; Population" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hudson-s-algorithm">
+<span id="hudson-algorithm"></span><h1>Hudson’s Algorithm<a class="headerlink" href="#hudson-s-algorithm" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The mainspring: the event-driven loop that brings the whole mechanism to life.</em></p>
+</div></blockquote>
+<p>Hudson’s algorithm (Hudson 1983, 2002; Kelleher et al. 2016) is the main
+simulation loop of msprime – the ticking of the clock. Everything we have
+built so far comes together here: the exponential race from
+<a class="reference internal" href="coalescent.html#coalescent-process"><span class="std std-ref">The Coalescent Process</span></a>, the segment chains and Fenwick tree from
+<a class="reference internal" href="segments_and_fenwick.html#segments-fenwick"><span class="std std-ref">Segments &amp; the Fenwick Tree</span></a>, and the event-driven philosophy described in the
+<a class="reference internal" href="overview.html#msprime-overview"><span class="std std-ref">Overview of msprime</span></a>.</p>
+<p>If the coalescent process is the escapement (setting the rhythm), and the
+segments and Fenwick tree are the gear train (transmitting that rhythm
+efficiently), then Hudson’s algorithm is the mainspring – the driving force
+that makes the whole mechanism tick. It orchestrates the exponential race
+between coalescence, recombination, migration, and demographic events –
+always executing whichever happens first, updating the state, and repeating
+until every genomic position has found its MRCA.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Prerequisites.</strong> This chapter assumes familiarity with:</p>
+<ul class="simple">
+<li><p>The <strong>exponential race</strong> (Step 3 of <a class="reference internal" href="coalescent.html#coalescent-process"><span class="std std-ref">The Coalescent Process</span></a>): how
+competing exponential waiting times determine which event fires next.</p></li>
+<li><p><strong>Segment chains</strong> and the <strong>Fenwick tree</strong> (<a class="reference internal" href="segments_and_fenwick.html#segments-fenwick"><span class="std std-ref">Segments &amp; the Fenwick Tree</span></a>):
+the data structures for tracking ancestral material and selecting
+breakpoints.</p></li>
+<li><p>The concept of <strong>event-driven simulation</strong> (explained in the
+<a class="reference internal" href="overview.html#msprime-overview"><span class="std std-ref">Overview of msprime</span></a>): jumping directly from event to event rather
+than stepping through time uniformly.</p></li>
+</ul>
+</div>
+<section id="step-1-the-main-loop-structure">
+<h2>Step 1: The Main Loop Structure<a class="headerlink" href="#step-1-the-main-loop-structure" title="Link to this heading"></a></h2>
+<p>The algorithm is conceptually simple. At each iteration:</p>
+<ol class="arabic simple">
+<li><p>Compute the rate of every possible event</p></li>
+<li><p>Draw independent exponential waiting times</p></li>
+<li><p>Check if a demographic event (population size change, etc.) occurs first</p></li>
+<li><p>Execute the earliest event</p></li>
+<li><p>Update data structures</p></li>
+<li><p>Repeat</p></li>
+</ol>
+<p>This is the ticking of the clock: each tick is one event, and between ticks,
+nothing happens. The clock never idles – it always jumps directly to the
+next meaningful moment.</p>
+<div class="admonition-closing-a-confusion-gap-event-driven-vs-time-stepped-simulation admonition">
+<p class="admonition-title">Closing a confusion gap – Event-driven vs. time-stepped simulation</p>
+<p>In a <strong>time-stepped</strong> simulation (like the Wright-Fisher model), you
+advance the clock by one fixed unit (one generation) and process
+everything that happens in that unit. In an <strong>event-driven</strong> simulation,
+you ask “when does the <em>next</em> event happen?” and jump directly there.
+Event-driven simulation is vastly more efficient when events are rare
+relative to the time scale – which they are in the coalescent, where
+<span class="math notranslate nohighlight">\(O(k^2)\)</span> lineages might go thousands of generations between events.
+The expected waiting time between events is <span class="math notranslate nohighlight">\(O(1/k^2)\)</span> in
+coalescent units, so jumping directly saves <span class="math notranslate nohighlight">\(O(k^2)\)</span> wasted
+iterations per event.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="n">INFINITY</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">hudson_simulate</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="n">INFINITY</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The main Hudson simulation loop.</span>
+
+<span class="sd">    This is the heart of msprime -- the ticking of the clock.</span>
+<span class="sd">    Each iteration: compute rates, race exponentials, execute the winner.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    state : SimulationState</span>
+<span class="sd">        Contains lineages, Fenwick trees, rate maps, populations, etc.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    state : SimulationState</span>
+<span class="sd">        Final state with completed tree sequence tables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">state</span><span class="o">.</span><span class="n">is_completed</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">t</span> <span class="o">&gt;=</span> <span class="n">end_time</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="c1"># === Step 1: Compute event rates ===</span>
+        <span class="c1"># Each event type proposes an exponential waiting time.</span>
+
+        <span class="c1"># Recombination: rate comes from the Fenwick tree -- O(log n)</span>
+        <span class="n">re_rate</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get_total_recombination_rate</span><span class="p">()</span>
+        <span class="n">t_re</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">re_rate</span><span class="p">)</span> <span class="k">if</span> <span class="n">re_rate</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">INFINITY</span>
+
+        <span class="c1"># Gene conversion (within segments): also from a Fenwick tree</span>
+        <span class="n">gc_rate</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get_total_gc_rate</span><span class="p">()</span>
+        <span class="n">t_gc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">gc_rate</span><span class="p">)</span> <span class="k">if</span> <span class="n">gc_rate</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">INFINITY</span>
+
+        <span class="c1"># Gene conversion (left of first segment): proportional to lineage count</span>
+        <span class="n">gc_left_rate</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get_total_gc_left_rate</span><span class="p">()</span>
+        <span class="n">t_gc_left</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">gc_left_rate</span><span class="p">)</span>
+                     <span class="k">if</span> <span class="n">gc_left_rate</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">INFINITY</span><span class="p">)</span>
+
+        <span class="c1"># Coalescence: one exponential per population</span>
+        <span class="c1"># (each population has its own rate based on lineage count and size)</span>
+        <span class="n">t_ca</span> <span class="o">=</span> <span class="n">INFINITY</span>
+        <span class="n">ca_pop</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">for</span> <span class="n">pop</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">populations</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pop</span><span class="o">.</span><span class="n">num_ancestors</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">pop</span><span class="o">.</span><span class="n">get_coalescence_waiting_time</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">t_ca</span><span class="p">:</span>
+                    <span class="n">t_ca</span> <span class="o">=</span> <span class="n">t</span>
+                    <span class="n">ca_pop</span> <span class="o">=</span> <span class="n">pop</span><span class="o">.</span><span class="n">id</span>
+
+        <span class="c1"># Migration: one exponential per (source, dest) pair</span>
+        <span class="n">t_mig</span> <span class="o">=</span> <span class="n">INFINITY</span>
+        <span class="n">mig_source</span><span class="p">,</span> <span class="n">mig_dest</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">pop</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">populations</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">pop</span><span class="o">.</span><span class="n">num_ancestors</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">populations</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">k</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">rate</span> <span class="o">=</span> <span class="n">pop</span><span class="o">.</span><span class="n">num_ancestors</span> <span class="o">*</span> <span class="n">state</span><span class="o">.</span><span class="n">migration_matrix</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">rate</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">t_mig</span><span class="p">:</span>
+                        <span class="n">t_mig</span> <span class="o">=</span> <span class="n">t</span>
+                        <span class="n">mig_source</span><span class="p">,</span> <span class="n">mig_dest</span> <span class="o">=</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span>
+
+        <span class="c1"># === Step 2: Find the minimum (the exponential race winner) ===</span>
+        <span class="n">min_time</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t_re</span><span class="p">,</span> <span class="n">t_ca</span><span class="p">,</span> <span class="n">t_gc</span><span class="p">,</span> <span class="n">t_gc_left</span><span class="p">,</span> <span class="n">t_mig</span><span class="p">)</span>
+
+        <span class="c1"># === Step 3: Check demographic events ===</span>
+        <span class="c1"># Demographic events (size changes, splits) are deterministic</span>
+        <span class="c1"># in time, not random. If one falls before the next random event,</span>
+        <span class="c1"># it fires first.</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">t</span> <span class="o">+</span> <span class="n">min_time</span> <span class="o">&gt;</span> <span class="n">state</span><span class="o">.</span><span class="n">next_demographic_event_time</span><span class="p">():</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">execute_demographic_event</span><span class="p">()</span>
+            <span class="k">continue</span>  <span class="c1"># re-enter the loop with updated parameters</span>
+
+        <span class="c1"># === Step 4: Advance time and execute the winning event ===</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">t</span> <span class="o">+=</span> <span class="n">min_time</span>
+
+        <span class="k">if</span> <span class="n">min_time</span> <span class="o">==</span> <span class="n">t_re</span><span class="p">:</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">recombination_event</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">min_time</span> <span class="o">==</span> <span class="n">t_gc</span><span class="p">:</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">gene_conversion_within_event</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">min_time</span> <span class="o">==</span> <span class="n">t_gc_left</span><span class="p">:</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">gene_conversion_left_event</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">min_time</span> <span class="o">==</span> <span class="n">t_ca</span><span class="p">:</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">coalescence_event</span><span class="p">(</span><span class="n">ca_pop</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">min_time</span> <span class="o">==</span> <span class="n">t_mig</span><span class="p">:</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">migration_event</span><span class="p">(</span><span class="n">mig_source</span><span class="p">,</span> <span class="n">mig_dest</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">state</span>
+</pre></div>
+</div>
+<p>Now let us examine each event handler in detail, starting with recombination.</p>
+</section>
+<section id="step-2-the-recombination-event-in-detail">
+<h2>Step 2: The Recombination Event in Detail<a class="headerlink" href="#step-2-the-recombination-event-in-detail" title="Link to this heading"></a></h2>
+<p>When recombination wins the race, we split one lineage into two. The full
+procedure:</p>
+<ol class="arabic simple">
+<li><p><strong>Choose the breakpoint</strong> using the Fenwick tree (as derived in
+<a class="reference internal" href="segments_and_fenwick.html#segments-fenwick"><span class="std std-ref">Segments &amp; the Fenwick Tree</span></a>).</p></li>
+<li><p><strong>Find the segment</strong> containing the breakpoint.</p></li>
+<li><p><strong>Split the segment chain</strong> into left and right parts.</p></li>
+<li><p><strong>Update the Fenwick tree</strong> with new mass values for both parts.</p></li>
+<li><p><strong>Create a new lineage</strong> for the right part.</p></li>
+</ol>
+<p>There are two sub-cases depending on where the breakpoint falls:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Case 1: Breakpoint falls WITHIN a segment
+
+  Before:   ... x ======|===== y ...
+                       bp
+
+  After:    ... x ====== y          (left lineage)
+                        a ===== ... (right lineage)
+
+Case 2: Breakpoint falls in a GAP between segments
+
+  Before:   ... x =====     y ========= ...
+                      |
+                     bp
+
+  After:    ... x =====                 (left lineage)
+                      y ========= ...   (right lineage)
+</pre></div>
+</div>
+<div class="admonition-closing-a-confusion-gap-why-two-cases admonition">
+<p class="admonition-title">Closing a confusion gap – Why two cases?</p>
+<p>After multiple recombination events, a lineage’s segment chain may have
+gaps – intervals where ancestry has been transferred to another lineage.
+A recombination breakpoint can land either <em>within</em> a segment (splitting
+it) or <em>in a gap</em> (simply detaching the right portion of the chain).
+Both cases reduce to pointer rewiring, but the bookkeeping differs
+slightly: in Case 1, we must create a new segment for the right half;
+in Case 2, we just disconnect existing segments.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">recombination_event</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Execute a recombination event.</span>
+
+<span class="sd">    This is a detailed implementation following msprime&#39;s algorithms.py.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">state</span><span class="o">.</span><span class="n">num_re_events</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Step 1: Choose breakpoint using the Fenwick tree -- O(log n)</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">bp</span> <span class="o">=</span> <span class="n">choose_breakpoint</span><span class="p">(</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">recomb_mass_index</span><span class="p">[</span><span class="n">label</span><span class="p">],</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">recomb_map</span>
+    <span class="p">)</span>
+    <span class="n">left_lineage</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">lineage</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">prev</span>  <span class="c1"># segment to the left of y (may be None if y is head)</span>
+
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="n">bp</span><span class="p">:</span>
+        <span class="c1"># Case 1: breakpoint falls WITHIN segment y</span>
+        <span class="c1">#   x         y</span>
+        <span class="c1"># =====  ===|====  ...</span>
+        <span class="c1">#          bp</span>
+        <span class="c1">#</span>
+        <span class="c1"># Split y into y=[left, bp) and alpha=[bp, right)</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>      <span class="c1"># create new segment for right half</span>
+        <span class="n">alpha</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">bp</span>                 <span class="c1"># alpha starts at the breakpoint</span>
+        <span class="n">alpha</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="kc">None</span>               <span class="c1"># alpha is the head of the new chain</span>
+
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">next</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">y</span><span class="o">.</span><span class="n">next</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">alpha</span>  <span class="c1"># alpha inherits y&#39;s successors</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="kc">None</span>            <span class="c1"># y is now the tail of the left chain</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">bp</span>             <span class="c1"># trim y to end at breakpoint</span>
+
+        <span class="c1"># Update Fenwick tree for the trimmed y -- O(log n)</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">set_segment_mass</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">left_lineage</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">y</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Case 2: breakpoint falls in a GAP to the left of y</span>
+        <span class="c1">#   x            y</span>
+        <span class="c1"># =====  |   =========  ...</span>
+        <span class="c1">#       bp</span>
+        <span class="c1">#</span>
+        <span class="c1"># Just detach y from x -- pure pointer rewiring, O(1)</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="n">left_lineage</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="c1"># Step 2: Create new lineage for the right part</span>
+    <span class="n">right_lineage</span> <span class="o">=</span> <span class="n">Lineage</span><span class="p">(</span><span class="n">head</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">tail</span><span class="o">=</span><span class="n">find_tail</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span>
+                             <span class="n">population</span><span class="o">=</span><span class="n">left_lineage</span><span class="o">.</span><span class="n">population</span><span class="p">,</span>
+                             <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+    <span class="n">alpha</span><span class="o">.</span><span class="n">lineage</span> <span class="o">=</span> <span class="n">right_lineage</span>
+    <span class="n">state</span><span class="o">.</span><span class="n">set_segment_mass</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>  <span class="c1"># register mass in Fenwick tree</span>
+    <span class="n">state</span><span class="o">.</span><span class="n">add_lineage</span><span class="p">(</span><span class="n">right_lineage</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">left_lineage</span><span class="p">,</span> <span class="n">right_lineage</span>
+
+<span class="k">def</span> <span class="nf">find_tail</span><span class="p">(</span><span class="n">seg</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Follow the chain to find the tail.&quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">seg</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span>
+    <span class="k">return</span> <span class="n">seg</span>
+</pre></div>
+</div>
+<p>The recombination event <em>increases</em> the lineage count by one. The coalescence
+event, which we examine next, <em>decreases</em> it by one. The interplay between
+these two forces drives the entire simulation.</p>
+</section>
+<section id="step-3-the-coalescence-event-in-detail">
+<h2>Step 3: The Coalescence Event in Detail<a class="headerlink" href="#step-3-the-coalescence-event-in-detail" title="Link to this heading"></a></h2>
+<p>The coalescence event is the most complex operation. Two randomly chosen
+lineages merge their ancestral material, and at positions where they overlap,
+a new common ancestor node is created.</p>
+<p><strong>The core difficulty</strong>: when two segment chains overlap, we need to:</p>
+<ul class="simple">
+<li><p>Create a new ancestor node at overlapping positions</p></li>
+<li><p>Record edges in the tree sequence tables</p></li>
+<li><p>Update the overlap counter <span class="math notranslate nohighlight">\(S\)</span></p></li>
+<li><p>Handle non-overlapping regions (they just pass through)</p></li>
+<li><p>Handle partial overlaps (segment boundaries don’t align)</p></li>
+</ul>
+<p>The merge algorithm walks through both chains simultaneously, like the merge
+step of merge sort, but with genealogical bookkeeping.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Lineage x:  [0, 300)      [500, 800)         [900, 1000)
+Lineage y:       [200, 600)              [850, 950)
+
+Merge result:
+[0, 200):     only x  -&gt;  passes through from x
+[200, 300):   overlap -&gt;  COALESCENCE! new ancestor u
+[300, 500):   only y  -&gt;  passes through from y
+[500, 600):   overlap -&gt;  COALESCENCE! (same ancestor u)
+[600, 800):   only x  -&gt;  passes through from x
+[850, 900):   only y  -&gt;  passes through from y
+[900, 950):   overlap -&gt;  COALESCENCE! (same ancestor u)
+[950, 1000):  only x  -&gt;  passes through from x
+</pre></div>
+</div>
+<div class="admonition-closing-a-confusion-gap-the-merge-walk admonition">
+<p class="admonition-title">Closing a confusion gap – The merge walk</p>
+<p>The merge algorithm is often the hardest part of the simulator to
+understand. Think of it this way: lay both segment chains side by side on
+the genome number line. Walk from left to right. At each position, one
+of three things is true:</p>
+<ol class="arabic simple">
+<li><p><strong>Only one chain has material here</strong> – that material passes through
+unchanged to the merged lineage.</p></li>
+<li><p><strong>Both chains have material here</strong> – this is a <em>coalescence</em>: we
+create a new ancestor node, record edges linking both children to it,
+and decrement the overlap counter.</p></li>
+<li><p><strong>Neither chain has material here</strong> – nothing happens; skip ahead.</p></li>
+</ol>
+<p>The walk advances by jumping to the next boundary (left or right endpoint
+of any segment in either chain). At each boundary, the situation may
+change from case 1 to case 2 or vice versa.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">merge_two_ancestors</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">pop_index</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge two lineages&#39; segment chains.</span>
+
+<span class="sd">    This is the heart of the coalescence operation. It walks through</span>
+<span class="sd">    both chains simultaneously, handling overlaps and pass-throughs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    state : SimulationState</span>
+<span class="sd">    pop_index : int</span>
+<span class="sd">        Population where the coalescence occurs.</span>
+<span class="sd">    x, y : Segment</span>
+<span class="sd">        Head segments of the two lineages to merge.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_lineage : Lineage</span>
+<span class="sd">        The merged lineage (may be None if fully coalesced).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">state</span><span class="o">.</span><span class="n">num_ca_events</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">new_lineage</span> <span class="o">=</span> <span class="n">Lineage</span><span class="p">(</span><span class="n">head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tail</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="n">pop_index</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+    <span class="n">coalescence</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>  <span class="c1"># tree-sequence node for the common ancestor</span>
+
+    <span class="k">while</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># segment to add to the merged chain</span>
+
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># === One chain exhausted: absorb the rest of the other ===</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="n">x</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># mark as consumed</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="n">y</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># === Both chains still active ===</span>
+            <span class="c1"># Ensure x starts at or before y (simplifies case analysis)</span>
+            <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="n">x</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span>
+
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">right</span> <span class="o">&lt;=</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+                <span class="c1"># NO OVERLAP: x ends before y starts</span>
+                <span class="c1">#   x          y</span>
+                <span class="c1"># =====    =========</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="n">x</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">next</span>
+                <span class="n">alpha</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">elif</span> <span class="n">x</span><span class="o">.</span><span class="n">left</span> <span class="o">!=</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+                <span class="c1"># PARTIAL OVERLAP: x starts before y</span>
+                <span class="c1">#   x</span>
+                <span class="c1"># ====|=====</span>
+                <span class="c1">#     y</span>
+                <span class="c1">#     =========</span>
+                <span class="c1"># Trim the non-overlapping prefix of x</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">alloc</span><span class="p">(</span>
+                    <span class="n">left</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span>  <span class="c1"># advance x to where y starts</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># === COALESCENCE: x and y start at the same position ===</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">coalescence</span><span class="p">:</span>
+                    <span class="n">coalescence</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">u</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">store_node</span><span class="p">(</span><span class="n">pop_index</span><span class="p">)</span>  <span class="c1"># create ancestor node</span>
+
+                <span class="n">left</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">left</span>
+                <span class="n">right</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+                <span class="c1"># Update overlap counter: one fewer lineage covers [left, right)</span>
+                <span class="n">state</span><span class="o">.</span><span class="n">decrement_overlap</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+
+                <span class="c1"># Record edges: both x and y are children of u</span>
+                <span class="n">state</span><span class="o">.</span><span class="n">store_edge</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">u</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+                <span class="n">state</span><span class="o">.</span><span class="n">store_edge</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">u</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+
+                <span class="c1"># Create the coalesced segment (under ancestor u)</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">alloc</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">right</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">u</span><span class="p">)</span>
+
+                <span class="c1"># Trim x and y: consume the overlapping portion</span>
+                <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">right</span> <span class="o">==</span> <span class="n">right</span><span class="p">:</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># x is fully consumed</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">next</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">right</span>  <span class="c1"># x has leftover material</span>
+
+                <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">right</span> <span class="o">==</span> <span class="n">right</span><span class="p">:</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>  <span class="c1"># y is fully consumed</span>
+                    <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">next</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">y</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">right</span>  <span class="c1"># y has leftover material</span>
+
+        <span class="c1"># === Append alpha to the merged chain ===</span>
+        <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">alpha</span><span class="o">.</span><span class="n">lineage</span> <span class="o">=</span> <span class="n">new_lineage</span>
+            <span class="n">alpha</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">new_lineage</span><span class="o">.</span><span class="n">tail</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">set_segment_mass</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>  <span class="c1"># register in Fenwick tree</span>
+
+            <span class="k">if</span> <span class="n">new_lineage</span><span class="o">.</span><span class="n">head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">new_lineage</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">alpha</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_lineage</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">alpha</span>
+            <span class="n">new_lineage</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">alpha</span>
+
+    <span class="c1"># If the merged lineage has remaining segments, add it back</span>
+    <span class="k">if</span> <span class="n">new_lineage</span><span class="o">.</span><span class="n">head</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">defrag_segment_chain</span><span class="p">(</span><span class="n">new_lineage</span><span class="p">)</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">add_lineage</span><span class="p">(</span><span class="n">new_lineage</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_lineage</span>
+</pre></div>
+</div>
+<p>After the merge, the resulting chain may contain adjacent segments with the
+same node ID – a cosmetic issue that the next step addresses.</p>
+</section>
+<section id="step-4-segment-chain-defragmentation">
+<h2>Step 4: Segment Chain Defragmentation<a class="headerlink" href="#step-4-segment-chain-defragmentation" title="Link to this heading"></a></h2>
+<p>After a coalescence, adjacent segments in the merged chain might have the
+same node ID. This happens when two non-overlapping segments with the same
+ancestry end up next to each other. We merge them to keep the chains clean:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">defrag_segment_chain</span><span class="p">(</span><span class="n">lineage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge adjacent segments with the same node ID.</span>
+
+<span class="sd">    Before:  [0, 300: node 5] -&gt; [300, 800: node 5] -&gt; [800, 1000: node 3]</span>
+
+<span class="sd">    After:   [0, 800: node 5] -&gt; [800, 1000: node 3]</span>
+
+<span class="sd">    This reduces the number of segments (and Fenwick tree entries),</span>
+<span class="sd">    keeping the data structures lean.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seg</span> <span class="o">=</span> <span class="n">lineage</span><span class="o">.</span><span class="n">head</span>
+    <span class="k">while</span> <span class="n">seg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">node</span> <span class="o">==</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span><span class="o">.</span><span class="n">node</span> <span class="ow">and</span> <span class="n">seg</span><span class="o">.</span><span class="n">right</span> <span class="o">==</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+            <span class="c1"># Merge: extend seg to cover seg.next</span>
+            <span class="n">to_free</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">to_free</span><span class="o">.</span><span class="n">right</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">to_free</span><span class="o">.</span><span class="n">next</span>
+            <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">seg</span><span class="o">.</span><span class="n">next</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">seg</span>
+            <span class="c1"># Free the absorbed segment</span>
+            <span class="c1"># (in practice: return to pool and update Fenwick tree)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">seg</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span>
+
+    <span class="c1"># Update tail</span>
+    <span class="n">lineage</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">seg</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-the-migration-event">
+<h2>Step 5: The Migration Event<a class="headerlink" href="#step-5-the-migration-event" title="Link to this heading"></a></h2>
+<p>Migration is the simplest event. A randomly chosen lineage moves from one
+population to another. In the backward-time view, this means the lineage’s
+ancestor lived in a different population one generation earlier.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">migration_event</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Move a random lineage from source to dest population.</span>
+
+<span class="sd">    This is the simplest event type: no segment manipulation needed,</span>
+<span class="sd">    just update the lineage&#39;s population assignment.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Choose a random lineage from the source population</span>
+    <span class="n">source_pop</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">populations</span><span class="p">[</span><span class="n">source</span><span class="p">]</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">source_pop</span><span class="o">.</span><span class="n">num_ancestors</span><span class="p">)</span>
+    <span class="n">lineage</span> <span class="o">=</span> <span class="n">source_pop</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+
+    <span class="c1"># Add to destination</span>
+    <span class="n">lineage</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="n">dest</span>
+    <span class="n">state</span><span class="o">.</span><span class="n">populations</span><span class="p">[</span><span class="n">dest</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lineage</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With all event handlers defined, let us assemble the complete algorithm.</p>
+</section>
+<section id="step-6-the-complete-algorithm">
+<h2>Step 6: The Complete Algorithm<a class="headerlink" href="#step-6-the-complete-algorithm" title="Link to this heading"></a></h2>
+<p>Let’s put it all together into a minimal but complete implementation. This
+is the master clockmaker’s bench in miniature: a working simulation that
+uses all the data structures from <a class="reference internal" href="segments_and_fenwick.html#segments-fenwick"><span class="std std-ref">Segments &amp; the Fenwick Tree</span></a> and all the
+mathematics from <a class="reference internal" href="coalescent.html#coalescent-process"><span class="std std-ref">The Coalescent Process</span></a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MinimalSimulator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A minimal but complete Hudson&#39;s algorithm implementation.</span>
+
+<span class="sd">    This implements the core simulation loop with coalescence and</span>
+<span class="sd">    recombination (no gene conversion, no migration for simplicity).</span>
+<span class="sd">    It is the ticking of the clock -- the main event loop.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">sequence_length</span><span class="p">,</span> <span class="n">recombination_rate</span><span class="p">,</span> <span class="n">pop_size</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">sequence_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ne</span> <span class="o">=</span> <span class="n">pop_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># current simulation time (backwards from present)</span>
+
+        <span class="c1"># Rate map (uniform recombination rate)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recomb_rate</span> <span class="o">=</span> <span class="n">recombination_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">pop_size</span> <span class="o">*</span> <span class="n">recombination_rate</span> <span class="o">*</span> <span class="n">sequence_length</span>
+
+        <span class="c1"># Segments and Fenwick tree -- the gear train</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_segs</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segments</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_segs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">free_segs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_segs</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span> <span class="o">=</span> <span class="n">FenwickTree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_segs</span><span class="p">)</span>  <span class="c1"># the clever indexing mechanism</span>
+
+        <span class="c1"># Overlap counter -- tracks when we&#39;re done</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">S</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="n">n</span><span class="p">,</span> <span class="n">sequence_length</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">}</span>
+
+        <span class="c1"># Lineages -- initially n lineages, each covering [0, L)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lineages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">seg_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">free_segs</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">seg</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">seg_idx</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">sequence_length</span><span class="p">,</span>
+                           <span class="n">node</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="n">seg_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">seg</span>
+            <span class="n">lin</span> <span class="o">=</span> <span class="n">Lineage</span><span class="p">(</span><span class="n">head</span><span class="o">=</span><span class="n">seg</span><span class="p">,</span> <span class="n">tail</span><span class="o">=</span><span class="n">seg</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">lineage</span> <span class="o">=</span> <span class="n">lin</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lineages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span>
+
+            <span class="c1"># Register segment mass in Fenwick tree</span>
+            <span class="n">mass</span> <span class="o">=</span> <span class="n">recombination_rate</span> <span class="o">*</span> <span class="n">sequence_length</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">seg_idx</span><span class="p">,</span> <span class="n">mass</span><span class="p">)</span>
+
+        <span class="c1"># Output tables: edges and nodes form the tree sequence</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># (left, right, parent, child)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># (time, population)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>  <span class="c1"># sample nodes at time 0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_re_events</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_ca_events</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">is_completed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if all positions have found their MRCA.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">get_recomb_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Recombination mass of a segment.</span>
+
+<span class="sd">        The left bound accounts for the gap subtlety: if this segment</span>
+<span class="sd">        has a predecessor, the effective left bound is prev.right (not</span>
+<span class="sd">        seg.left), because recombination in the gap has no effect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">left_bound</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">prev</span><span class="o">.</span><span class="n">right</span> <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">prev</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">seg</span><span class="o">.</span><span class="n">left</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">recomb_rate</span> <span class="o">*</span> <span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">left_bound</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the simulation until completion.</span>
+
+<span class="sd">        This is the main loop -- each iteration is one tick of the clock.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_completed</span><span class="p">():</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lineages</span><span class="p">)</span>
+
+            <span class="c1"># Recombination rate: from the Fenwick tree -- O(log n)</span>
+            <span class="n">re_total</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">get_total</span><span class="p">()</span>
+            <span class="n">t_re</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">re_total</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">re_total</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">INFINITY</span><span class="p">)</span>
+
+            <span class="c1"># Coalescence rate: k choose 2, scaled by population size</span>
+            <span class="n">coal_rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">t_ca</span> <span class="o">=</span> <span class="n">INFINITY</span>
+            <span class="k">if</span> <span class="n">coal_rate</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Draw from Exp(2 * binom(k,2)), then scale by Ne</span>
+                <span class="n">t_ca</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ne</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span>
+                    <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">coal_rate</span><span class="p">))</span>
+
+            <span class="c1"># === The exponential race: smallest time wins ===</span>
+            <span class="n">min_t</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t_re</span><span class="p">,</span> <span class="n">t_ca</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">+=</span> <span class="n">min_t</span>
+
+            <span class="k">if</span> <span class="n">min_t</span> <span class="o">==</span> <span class="n">t_re</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_recombination_event</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_coalescence_event</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span>
+
+    <span class="k">def</span> <span class="nf">_recombination_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle a recombination event: split one lineage into two.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_re_events</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Choose breakpoint using Fenwick tree -- O(log n)</span>
+        <span class="n">random_mass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">get_total</span><span class="p">())</span>
+        <span class="n">seg_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">random_mass</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="n">seg_idx</span><span class="p">]</span>
+
+        <span class="c1"># Convert mass coordinate to genomic position</span>
+        <span class="n">cum_mass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">get_cumulative_sum</span><span class="p">(</span><span class="n">seg_idx</span><span class="p">)</span>
+        <span class="n">mass_from_right</span> <span class="o">=</span> <span class="n">cum_mass</span> <span class="o">-</span> <span class="n">random_mass</span>
+        <span class="n">bp</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">mass_from_right</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">recomb_rate</span>
+
+        <span class="k">if</span> <span class="n">bp</span> <span class="o">&lt;=</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span> <span class="ow">or</span> <span class="n">bp</span> <span class="o">&gt;=</span> <span class="n">y</span><span class="o">.</span><span class="n">right</span><span class="p">:</span>
+            <span class="k">return</span>  <span class="c1"># degenerate breakpoint (at segment boundary)</span>
+
+        <span class="c1"># Split the segment -- O(1) pointer rewiring</span>
+        <span class="n">new_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">free_segs</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">new_idx</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">bp</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">right</span><span class="p">,</span>
+                         <span class="n">node</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="n">new_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="n">alpha</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">next</span>
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">next</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">y</span><span class="o">.</span><span class="n">next</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">bp</span>
+
+        <span class="c1"># Update Fenwick tree -- O(log n)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_recomb_mass</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">alpha</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">recomb_rate</span> <span class="o">*</span> <span class="p">(</span><span class="n">alpha</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">alpha</span><span class="o">.</span><span class="n">left</span><span class="p">))</span>
+
+        <span class="c1"># Create new lineage for the right part</span>
+        <span class="n">old_lin</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">lineage</span>
+        <span class="n">old_lin</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="n">new_lin</span> <span class="o">=</span> <span class="n">Lineage</span><span class="p">(</span><span class="n">head</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">tail</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">alpha</span><span class="o">.</span><span class="n">lineage</span> <span class="o">=</span> <span class="n">new_lin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lineages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_lin</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_coalescence_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle a coalescence event: merge two lineages into one.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_ca_events</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lineages</span><span class="p">)</span>
+
+        <span class="c1"># Pick two random lineages (uniformly at random)</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="n">y_lin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lineages</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>  <span class="c1"># remove j first (higher index)</span>
+        <span class="n">x_lin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lineages</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>  <span class="c1"># then i</span>
+
+        <span class="c1"># Create ancestor node in the tree sequence</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># Walk through both chains -- the merge algorithm</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">x_lin</span><span class="o">.</span><span class="n">head</span><span class="p">,</span> <span class="n">y_lin</span><span class="o">.</span><span class="n">head</span>
+        <span class="n">new_lin</span> <span class="o">=</span> <span class="n">Lineage</span><span class="p">(</span><span class="n">head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tail</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">coalescence</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">while</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># x exhausted: absorb rest of y</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="n">y</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># y exhausted: absorb rest of x</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="n">x</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Both active: ensure x starts at or before y</span>
+                <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="n">x</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+                    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span>
+
+                <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">right</span> <span class="o">&lt;=</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+                    <span class="c1"># No overlap: x passes through</span>
+                    <span class="n">alpha</span> <span class="o">=</span> <span class="n">x</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">next</span>
+                    <span class="n">alpha</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">elif</span> <span class="n">x</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+                    <span class="c1"># Partial overlap: trim x&#39;s prefix</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">free_segs</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                    <span class="n">alpha</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span><span class="n">new_idx</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+                                     <span class="n">node</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="n">new_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">left</span>  <span class="c1"># advance x</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Coalescence! x and y start at the same position</span>
+                    <span class="n">coalescence</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">left</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">left</span>
+                    <span class="n">right</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+
+                    <span class="c1"># Record edges: both are children of ancestor u</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">node</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">node</span><span class="p">))</span>
+
+                    <span class="c1"># Update overlap counter</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_decrement_overlap</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+
+                    <span class="c1"># Create coalesced segment under ancestor u</span>
+                    <span class="n">new_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">free_segs</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                    <span class="n">alpha</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span><span class="n">new_idx</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">right</span><span class="p">,</span>
+                                     <span class="n">node</span><span class="o">=</span><span class="n">u</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="n">new_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
+
+                    <span class="c1"># Consume overlapping portions of x and y</span>
+                    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">right</span> <span class="o">==</span> <span class="n">right</span><span class="p">:</span>
+                        <span class="n">old_x</span> <span class="o">=</span> <span class="n">x</span>
+                        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">next</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">x</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">right</span>  <span class="c1"># x has leftover</span>
+                    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">right</span> <span class="o">==</span> <span class="n">right</span><span class="p">:</span>
+                        <span class="n">old_y</span> <span class="o">=</span> <span class="n">y</span>
+                        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">next</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">y</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">right</span>  <span class="c1"># y has leftover</span>
+
+            <span class="c1"># Append alpha to the merged chain</span>
+            <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">alpha</span><span class="o">.</span><span class="n">lineage</span> <span class="o">=</span> <span class="n">new_lin</span>
+                <span class="n">alpha</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">new_lin</span><span class="o">.</span><span class="n">tail</span>
+                <span class="n">mass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recomb_rate</span> <span class="o">*</span> <span class="p">(</span><span class="n">alpha</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">alpha</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">alpha</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">mass</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">new_lin</span><span class="o">.</span><span class="n">head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">new_lin</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">alpha</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_lin</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">alpha</span>
+                <span class="n">new_lin</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">alpha</span>
+
+        <span class="c1"># Add the merged lineage back (if it has remaining segments)</span>
+        <span class="k">if</span> <span class="n">new_lin</span><span class="o">.</span><span class="n">head</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lineages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_lin</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_decrement_overlap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrement overlap counter in [left, right).&quot;&quot;&quot;</span>
+        <span class="c1"># Simplified version (the full version uses an AVL tree)</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;=</span> <span class="n">left</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">right</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+
+<span class="c1"># Run a small simulation</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">sim</span> <span class="o">=</span> <span class="n">MinimalSimulator</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">sequence_length</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                        <span class="n">recombination_rate</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">pop_size</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">edges</span><span class="p">,</span> <span class="n">nodes</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Simulation complete!&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Coalescence events: </span><span class="si">{</span><span class="n">sim</span><span class="o">.</span><span class="n">num_ca_events</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Recombination events: </span><span class="si">{</span><span class="n">sim</span><span class="o">.</span><span class="n">num_re_events</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Nodes: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">sim</span><span class="o">.</span><span class="n">n</span><span class="si">}</span><span class="s2"> samples + &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sim</span><span class="o">.</span><span class="n">n</span><span class="si">}</span><span class="s2"> ancestors)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Edges: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  TMRCA: </span><span class="si">{</span><span class="n">sim</span><span class="o">.</span><span class="n">t</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> coalescent units&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You have now seen the complete algorithm – every tick of the clock, from
+rate computation through event execution. Let us analyze its computational
+complexity.</p>
+</section>
+<section id="step-7-complexity-analysis">
+<h2>Step 7: Complexity Analysis<a class="headerlink" href="#step-7-complexity-analysis" title="Link to this heading"></a></h2>
+<p>Let’s count the operations per simulation step:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Operation</p></th>
+<th class="head"><p>Complexity</p></th>
+<th class="head"><p>Why</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Compute recomb rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(\log n)\)</span></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">FenwickTree.get_total()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Compute coal rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(1)\)</span></p></td>
+<td><p>Just <span class="math notranslate nohighlight">\(k(k-1)/2\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Draw exponentials</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(1)\)</span></p></td>
+<td><p>Random number generation</p></td>
+</tr>
+<tr class="row-odd"><td><p>Choose breakpoint</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(\log n)\)</span></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">FenwickTree.find()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Split segment</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(1)\)</span></p></td>
+<td><p>Pointer rewiring</p></td>
+</tr>
+<tr class="row-odd"><td><p>Update Fenwick tree</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(\log n)\)</span></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">FenwickTree.set_value()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Choose pair for coal.</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(1)\)</span></p></td>
+<td><p>Random selection</p></td>
+</tr>
+<tr class="row-odd"><td><p>Merge two chains</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(s)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(s\)</span> = segments in the two chains</p></td>
+</tr>
+<tr class="row-even"><td><p>Update overlap counter</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(\log n)\)</span></p></td>
+<td><p>AVL tree operations</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total per event</strong>: <span class="math notranslate nohighlight">\(O(s \log n)\)</span> where <span class="math notranslate nohighlight">\(s\)</span> is the number of
+segments in the merging chains. In practice, <span class="math notranslate nohighlight">\(s\)</span> is small for most
+events.</p>
+<p><strong>Total simulation</strong>: <span class="math notranslate nohighlight">\(O(n + E \log n)\)</span> where <span class="math notranslate nohighlight">\(E\)</span> is the total
+number of events. The number of events is <span class="math notranslate nohighlight">\(O(n + \rho)\)</span> where
+<span class="math notranslate nohighlight">\(\rho = 4N_e r L\)</span> is the population-scaled recombination rate. This
+gives msprime its celebrated near-linear scaling in <span class="math notranslate nohighlight">\(n\)</span>.</p>
+<div class="admonition-probability-aside-why-math-o-n-rho-events admonition">
+<p class="admonition-title">Probability Aside – Why <span class="math notranslate nohighlight">\(O(n + \rho)\)</span> events?</p>
+<p>The expected number of coalescence events is <span class="math notranslate nohighlight">\(n - 1\)</span> (each reduces
+the lineage count by 1, from <span class="math notranslate nohighlight">\(n\)</span> to 1). The expected number of
+recombination events is <span class="math notranslate nohighlight">\(O(\rho)\)</span> because the total recombination
+rate summed over the coalescent tree is proportional to <span class="math notranslate nohighlight">\(\rho\)</span>.
+More precisely, the expected number of recombination events is
+<span class="math notranslate nohighlight">\(\frac{\rho}{2} \cdot E[L_{\text{total}}]\)</span> where
+<span class="math notranslate nohighlight">\(E[L_{\text{total}}] = 2\sum_{k=1}^{n-1} 1/k\)</span> is the expected
+total branch length. For large <span class="math notranslate nohighlight">\(\rho\)</span>, this is the dominant term.</p>
+</div>
+</section>
+<section id="step-8-comparison-with-ms">
+<h2>Step 8: Comparison with ms<a class="headerlink" href="#step-8-comparison-with-ms" title="Link to this heading"></a></h2>
+<p>The original <code class="docutils literal notranslate"><span class="pre">ms</span></code> program (Hudson 2002) uses the same algorithm but with
+<span class="math notranslate nohighlight">\(O(n)\)</span> data structures instead of <span class="math notranslate nohighlight">\(O(\log n)\)</span> Fenwick trees. This
+makes <code class="docutils literal notranslate"><span class="pre">ms</span></code> quadratic in the number of segments for large genomes.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 26.3%" />
+<col style="width: 36.8%" />
+<col style="width: 36.8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Property</p></th>
+<th class="head"><p>ms (Hudson 2002)</p></th>
+<th class="head"><p>msprime (Kelleher 2016)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Breakpoint selection</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n)\)</span> linear scan</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(\log n)\)</span> Fenwick tree</p></td>
+</tr>
+<tr class="row-odd"><td><p>Rate maintenance</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n)\)</span> recompute</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(\log n)\)</span> incremental update</p></td>
+</tr>
+<tr class="row-even"><td><p>Output format</p></td>
+<td><p>Text (variant matrix)</p></td>
+<td><p>Tree sequence (tskit)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Memory</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n \cdot L)\)</span> for output</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n + E)\)</span> for tree sequence</p></td>
+</tr>
+<tr class="row-even"><td><p>Scaling</p></td>
+<td><p><span class="math notranslate nohighlight">\(\sim n^2 \cdot L\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\sim n \log n + n \cdot L\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>The tree sequence output is particularly important: instead of storing the
+full variant matrix (which is <span class="math notranslate nohighlight">\(O(n \cdot S)\)</span> where <span class="math notranslate nohighlight">\(S\)</span> is the
+number of segregating sites), msprime stores edges and nodes, which is
+<span class="math notranslate nohighlight">\(O(n + \rho)\)</span> – often orders of magnitude smaller.</p>
+<p>This is the culmination of the master clockmaker’s bench: a simulation
+algorithm that scales gracefully to millions of samples and whole chromosomes.
+In the next chapter, we add population structure and demographic history –
+the case and dial that shape the genealogy’s form.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-build-a-minimal-simulator admonition">
+<p class="admonition-title">Exercise 1: Build a minimal simulator</p>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">MinimalSimulator</span></code> class to simulate genealogies for
+<span class="math notranslate nohighlight">\(n = 10, 50, 100\)</span> with <span class="math notranslate nohighlight">\(L = 10^5\)</span> bp and
+<span class="math notranslate nohighlight">\(r = 10^{-8}\)</span>. For each, record the number of trees in the
+tree sequence (= number of distinct marginal trees). Plot
+<span class="math notranslate nohighlight">\(E[\text{num trees}]\)</span> vs <span class="math notranslate nohighlight">\(n\)</span> and compare to the
+theoretical expectation.</p>
+</div>
+<div class="admonition-exercise-2-verify-the-exponential-race admonition">
+<p class="admonition-title">Exercise 2: Verify the exponential race</p>
+<p>Instrument the main loop to record which event type wins at each step.
+Verify that the fraction of coalescence vs recombination events matches
+the ratio of their rates.</p>
+</div>
+<div class="admonition-exercise-3-the-coalescence-merge admonition">
+<p class="admonition-title">Exercise 3: The coalescence merge</p>
+<p>Create two lineages with overlapping segment chains (draw them on paper
+first). Walk through <code class="docutils literal notranslate"><span class="pre">merge_two_ancestors</span></code> by hand, tracking which
+segments are created, which edges are recorded, and how the overlap
+counter changes.</p>
+</div>
+<div class="admonition-exercise-4-fenwick-vs-naive admonition">
+<p class="admonition-title">Exercise 4: Fenwick vs naive</p>
+<p>Time the simulation with and without the Fenwick tree (replace
+<code class="docutils literal notranslate"><span class="pre">FenwickTree.find()</span></code> with a linear scan). At what genome length does
+the Fenwick tree become faster?</p>
+</div>
+<p>Next: <a class="reference internal" href="demographics.html#msprime-demographics"><span class="std std-ref">Demographics &amp; Population</span></a> – how population size changes, migration,
+and growth affect the simulation.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="segments_and_fenwick.html" class="btn btn-neutral float-left" title="Segments &amp; the Fenwick Tree" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demographics.html" class="btn btn-neutral float-right" title="Demographics &amp; Population" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

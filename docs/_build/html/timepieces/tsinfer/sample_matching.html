@@ -1,0 +1,1015 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gear 4: Sample Matching &amp; Post-Processing &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Timepiece VII: tsdate" href="../tsdate/index.html" />
+    <link rel="prev" title="Gear 3: Ancestor Matching" href="ancestor_matching.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece V: tsinfer</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece V: tsinfer</a></li>
+      <li class="breadcrumb-item active">Gear 4: Sample Matching &amp; Post-Processing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="ancestor_matching.html" class="btn btn-neutral float-left" title="Gear 3: Ancestor Matching" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../tsdate/index.html" class="btn btn-neutral float-right" title="Timepiece VII: tsdate" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gear-4-sample-matching-post-processing">
+<span id="tsinfer-sample-matching"></span><h1>Gear 4: Sample Matching &amp; Post-Processing<a class="headerlink" href="#gear-4-sample-matching-post-processing" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The final assembly: connecting the present to the past, then polishing
+every surface until the mechanism runs true.</em></p>
+</div></blockquote>
+<p>Sample matching is the last phase of tsinfer’s pipeline. We thread each
+observed sample through the ancestor tree built in <a class="reference internal" href="ancestor_matching.html#tsinfer-ancestor-matching"><span class="std std-ref">Gear 3</span></a>, then apply a series of post-processing steps
+to clean up the result into a valid, simplified tree sequence.</p>
+<p>If ancestor matching assembled the movement – the mainplate, bridges, and
+wheel train – then sample matching <strong>fits the hands to the dial</strong>. The
+hands (samples) connect to the wheels (ancestors) at precise points, and
+the final polishing steps (post-processing) ensure that the mechanism runs
+cleanly: no extraneous parts, no rough edges, no wasted material.</p>
+<div class="admonition-prerequisites admonition">
+<p class="admonition-title">Prerequisites</p>
+<p>This chapter assumes you have worked through:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="ancestor_generation.html#tsinfer-ancestor-generation"><span class="std std-ref">Gear 1: Ancestor Generation</span></a> (Gear 1): how ancestors are built</p></li>
+<li><p><a class="reference internal" href="copying_model.html#tsinfer-copying-model"><span class="std std-ref">Gear 2: The Copying Model</span></a> (Gear 2): the Viterbi algorithm and
+NONCOPY handling</p></li>
+<li><p><a class="reference internal" href="ancestor_matching.html#tsinfer-ancestor-matching"><span class="std std-ref">Gear 3: Ancestor Matching</span></a> (Gear 3): how the ancestor tree
+is assembled</p></li>
+<li><p>The <a class="reference internal" href="../lshmm/index.html#lshmm-timepiece"><span class="std std-ref">Li &amp; Stephens HMM chapter</span></a> for the
+theoretical background</p></li>
+</ul>
+</div>
+<section id="step-1-threading-samples">
+<h2>Step 1: Threading Samples<a class="headerlink" href="#step-1-threading-samples" title="Link to this heading"></a></h2>
+<p>Sample matching uses the <strong>same Li &amp; Stephens engine</strong> from Gear 2,
+but the reference panel is now the complete set of ancestors (not just
+older ones). Each sample is matched independently against the ancestor
+panel.</p>
+<div class="admonition-confusion-buster-how-sample-matching-differs-from-ancestor-matching admonition">
+<p class="admonition-title">Confusion Buster – How Sample Matching Differs from Ancestor Matching</p>
+<p>In ancestor matching (<a class="reference internal" href="ancestor_matching.html#tsinfer-ancestor-matching"><span class="std std-ref">Gear 3</span></a>), each
+ancestor is matched against only the <em>older</em> ancestors – the panel grows
+as we work through time groups. In sample matching, the panel is <strong>fixed</strong>:
+it contains <em>all</em> ancestors simultaneously. This is because samples are at
+time 0 (the present), so every ancestor is older than every sample.
+Another difference: ancestors have limited genomic extent (they only span
+a subset of sites), while samples span all inference sites. The Viterbi
+algorithm for sample matching therefore runs over the full set of inference
+sites, with the NONCOPY mechanism handling ancestors that don’t extend to
+certain sites.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">NONCOPY</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+
+<span class="k">def</span> <span class="nf">match_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">ancestors</span><span class="p">,</span> <span class="n">inference_sites</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span>
+                  <span class="n">recombination_rate</span><span class="p">,</span> <span class="n">mismatch_ratio</span><span class="p">,</span> <span class="n">builder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Match all samples against the ancestor tree.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    samples : ndarray of shape (n, m_inf)</span>
+<span class="sd">        Sample genotypes at inference sites only.</span>
+<span class="sd">    ancestors : list of dict</span>
+<span class="sd">        All ancestors (with &#39;node_id&#39; assigned during ancestor matching).</span>
+<span class="sd">    inference_sites : ndarray of int</span>
+<span class="sd">        Inference site indices.</span>
+<span class="sd">    positions : ndarray of float</span>
+<span class="sd">        Genomic positions of inference sites.</span>
+<span class="sd">    recombination_rate : float</span>
+<span class="sd">        Per-unit recombination rate.</span>
+<span class="sd">    mismatch_ratio : float</span>
+<span class="sd">        Mismatch-to-recombination ratio.</span>
+<span class="sd">    builder : TreeSequenceBuilder</span>
+<span class="sd">        The tree sequence builder (already contains ancestor nodes/edges).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    builder : TreeSequenceBuilder</span>
+<span class="sd">        Updated builder with sample nodes and edges.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ancestors</span><span class="p">)</span>  <span class="c1"># Total number of ancestors in the panel</span>
+
+    <span class="c1"># Build the full ancestor panel (all ancestors at once)</span>
+    <span class="n">panel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">NONCOPY</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">ref_node_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">anc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ancestors</span><span class="p">):</span>
+        <span class="c1"># Fill in each ancestor&#39;s haplotype where it is defined</span>
+        <span class="n">panel</span><span class="p">[</span><span class="n">anc</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]:</span><span class="n">anc</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">],</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">anc</span><span class="p">[</span><span class="s1">&#39;haplotype&#39;</span><span class="p">]</span>
+        <span class="n">ref_node_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anc</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">])</span>
+
+    <span class="c1"># HMM parameters (fixed for all samples, since panel doesn&#39;t change)</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ell</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">-</span> <span class="n">positions</span><span class="p">[</span><span class="n">ell</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Recombination and mismatch probabilities scale with 1/k</span>
+        <span class="n">rho</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">d</span> <span class="o">*</span> <span class="n">recombination_rate</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">mu</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">d</span> <span class="o">*</span> <span class="n">recombination_rate</span> <span class="o">*</span> <span class="n">mismatch_ratio</span>
+                              <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">m</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">1e-6</span>
+
+    <span class="c1"># Match each sample independently</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="c1"># Samples are at time 0.0 (the present)</span>
+        <span class="n">node_id</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">is_sample</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="c1"># This sample&#39;s genotype at inference sites</span>
+
+        <span class="c1"># Run Viterbi against the full ancestor panel</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">viterbi_ls_with_noncopy</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">panel</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+
+        <span class="c1"># Convert the Viterbi path to tree sequence edges</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_edges_from_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">node_id</span><span class="p">,</span>
+                                     <span class="n">ref_node_ids</span><span class="o">=</span><span class="n">ref_node_ids</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Matched sample </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">builder</span>
+</pre></div>
+</div>
+<p>The key difference from ancestor matching: <strong>all ancestors</strong> are in the
+panel simultaneously, and samples are always at time 0 (the present).</p>
+<p>With all samples threaded into the tree, we now turn to the sites we
+deliberately excluded from inference. These non-inference sites need
+mutations placed on the tree by a different method: parsimony.</p>
+</section>
+<section id="step-2-non-inference-sites-parsimony">
+<h2>Step 2: Non-Inference Sites – Parsimony<a class="headerlink" href="#step-2-non-inference-sites-parsimony" title="Link to this heading"></a></h2>
+<p>Recall that we excluded many sites from inference (multiallelic, unknown
+ancestral state, singletons, fixed). These <strong>non-inference sites</strong> still
+need mutations placed on the tree. tsinfer uses <strong>parsimony</strong>: find the
+minimum number of mutations that explain the observed allele pattern on
+the inferred tree.</p>
+<div class="admonition-confusion-buster-why-some-sites-are-non-inference admonition">
+<p class="admonition-title">Confusion Buster – Why Some Sites Are Non-Inference</p>
+<p>As explained in <a class="reference internal" href="ancestor_generation.html#tsinfer-ancestor-generation"><span class="std std-ref">Gear 1</span></a>, sites are
+excluded from inference if they are multiallelic (more than two alleles),
+if the ancestral allele is unknown (we can’t determine polarity), if the
+derived allele is a singleton (only one copy – doesn’t help with tree
+topology), or if the derived allele is fixed (all samples carry it).
+These sites were <em>not</em> used to build the tree. But the tree still needs
+to explain the allele patterns at these sites. Parsimony does this by
+placing the minimum number of mutations on the existing tree edges.</p>
+</div>
+<section id="the-algorithm-map-mutations">
+<h3>The algorithm: <code class="docutils literal notranslate"><span class="pre">map_mutations()</span></code><a class="headerlink" href="#the-algorithm-map-mutations" title="Link to this heading"></a></h3>
+<p>For each non-inference site, tsinfer calls <code class="docutils literal notranslate"><span class="pre">tskit</span></code>’s <code class="docutils literal notranslate"><span class="pre">map_mutations()</span></code>
+method, which implements Fitch’s parsimony algorithm:</p>
+<ol class="arabic simple">
+<li><p><strong>Bottom-up pass</strong>: At each internal node, compute the set of alleles
+that would require the fewest mutations below. If the children agree,
+take their allele. If they disagree, take the union (and record a
+potential mutation point).</p></li>
+<li><p><strong>Top-down pass</strong>: Starting from the root, assign an allele to each
+node. Where a child’s assigned allele differs from its parent’s, place
+a mutation on the connecting edge.</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[\text{Parsimony score} = \min \sum_{\text{edges}} \mathbb{1}[\text{parent allele} \neq \text{child allele}]\]</div>
+<div class="admonition-probability-aside-parsimony-vs-maximum-likelihood-for-mutation-placement admonition">
+<p class="admonition-title">Probability Aside – Parsimony vs. Maximum Likelihood for Mutation Placement</p>
+<p><strong>Maximum likelihood</strong> mutation placement would assign mutations to edges
+in a way that maximizes the probability of the observed data, given a
+model of mutation along branches. This requires knowing the branch lengths
+(in units of expected mutations). Since tsinfer’s branch lengths are
+approximate – they come from the frequency-based time proxy, not from a
+calibrated molecular clock – ML mutation placement would compound the
+error in the time estimates. <strong>Parsimony</strong> avoids this problem entirely:
+it places the fewest mutations needed to explain the data, regardless
+of branch lengths. The cost is that parsimony can undercount the true
+number of mutations (e.g., it misses back-mutations), but for the
+purpose of recording which edges carry mutations, it is robust and fast
+(<span class="math notranslate nohighlight">\(O(n)\)</span> per site per tree).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">fitch_parsimony</span><span class="p">(</span><span class="n">tree_parent</span><span class="p">,</span> <span class="n">tree_children</span><span class="p">,</span> <span class="n">leaf_alleles</span><span class="p">,</span> <span class="n">root</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Place mutations by Fitch parsimony on a single tree.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tree_parent : dict</span>
+<span class="sd">        Mapping from node -&gt; parent node. Root maps to None.</span>
+<span class="sd">    tree_children : dict</span>
+<span class="sd">        Mapping from node -&gt; list of child nodes.</span>
+<span class="sd">    leaf_alleles : dict</span>
+<span class="sd">        Mapping from leaf node -&gt; observed allele.</span>
+<span class="sd">    root : int</span>
+<span class="sd">        Root node ID.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mutations : list of (node, parent_allele, child_allele)</span>
+<span class="sd">        Mutations placed on edges.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># --- Bottom-up pass: compute Fitch sets ---</span>
+    <span class="c1"># The Fitch set at each node is the set of alleles that</span>
+    <span class="c1"># minimize the number of mutations in the subtree below.</span>
+    <span class="n">fitch_set</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Post-order traversal (children before parents)</span>
+    <span class="k">def</span> <span class="nf">bottom_up</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tree_children</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">tree_children</span><span class="p">[</span><span class="n">node</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Leaf node: Fitch set = {observed allele}</span>
+            <span class="n">fitch_set</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">leaf_alleles</span><span class="p">[</span><span class="n">node</span><span class="p">]}</span>
+            <span class="k">return</span>
+
+        <span class="n">child_sets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree_children</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
+            <span class="n">bottom_up</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="n">child_sets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fitch_set</span><span class="p">[</span><span class="n">child</span><span class="p">])</span>
+
+        <span class="c1"># If children agree (non-empty intersection), take intersection</span>
+        <span class="n">common</span> <span class="o">=</span> <span class="n">child_sets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">child_sets</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">common</span> <span class="o">=</span> <span class="n">common</span> <span class="o">&amp;</span> <span class="n">s</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Children agree -- no mutation needed at this node</span>
+            <span class="n">fitch_set</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">common</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Children disagree -- take union, mutation needed somewhere</span>
+            <span class="n">union</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">child_sets</span><span class="p">:</span>
+                <span class="n">union</span> <span class="o">=</span> <span class="n">union</span> <span class="o">|</span> <span class="n">s</span>
+            <span class="n">fitch_set</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">union</span>
+
+    <span class="n">bottom_up</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+
+    <span class="c1"># --- Top-down pass: assign alleles and place mutations ---</span>
+    <span class="n">assigned</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">mutations</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">top_down</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">parent_allele</span><span class="p">):</span>
+        <span class="c1"># If the parent&#39;s allele is in this node&#39;s Fitch set, keep it</span>
+        <span class="c1"># (no mutation needed). Otherwise, pick from the Fitch set.</span>
+        <span class="k">if</span> <span class="n">parent_allele</span> <span class="ow">in</span> <span class="n">fitch_set</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
+            <span class="n">assigned</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent_allele</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">assigned</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">fitch_set</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>  <span class="c1"># Deterministic tie-break</span>
+
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree_children</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree_children</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
+                <span class="n">top_down</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">assigned</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
+                <span class="c1"># If child got a different allele, that&#39;s a mutation</span>
+                <span class="k">if</span> <span class="n">assigned</span><span class="p">[</span><span class="n">child</span><span class="p">]</span> <span class="o">!=</span> <span class="n">assigned</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
+                    <span class="n">mutations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">child</span><span class="p">,</span> <span class="n">assigned</span><span class="p">[</span><span class="n">node</span><span class="p">],</span>
+                                      <span class="n">assigned</span><span class="p">[</span><span class="n">child</span><span class="p">]))</span>
+
+    <span class="c1"># Root gets any allele from its Fitch set</span>
+    <span class="n">root_allele</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">fitch_set</span><span class="p">[</span><span class="n">root</span><span class="p">])</span>
+    <span class="n">assigned</span><span class="p">[</span><span class="n">root</span><span class="p">]</span> <span class="o">=</span> <span class="n">root_allele</span>
+    <span class="k">if</span> <span class="n">root</span> <span class="ow">in</span> <span class="n">tree_children</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree_children</span><span class="p">[</span><span class="n">root</span><span class="p">]:</span>
+            <span class="n">top_down</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">root_allele</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">assigned</span><span class="p">[</span><span class="n">child</span><span class="p">]</span> <span class="o">!=</span> <span class="n">root_allele</span><span class="p">:</span>
+                <span class="n">mutations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">child</span><span class="p">,</span> <span class="n">root_allele</span><span class="p">,</span> <span class="n">assigned</span><span class="p">[</span><span class="n">child</span><span class="p">]))</span>
+
+    <span class="k">return</span> <span class="n">mutations</span>
+
+<span class="c1"># Example: a simple tree</span>
+<span class="c1">#       0 (root)</span>
+<span class="c1">#      / \</span>
+<span class="c1">#     1   2</span>
+<span class="c1">#    / \</span>
+<span class="c1">#   3   4</span>
+<span class="n">tree_parent</span> <span class="o">=</span> <span class="p">{</span><span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+<span class="n">tree_children</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="mi">2</span><span class="p">:</span> <span class="p">[],</span> <span class="mi">3</span><span class="p">:</span> <span class="p">[],</span> <span class="mi">4</span><span class="p">:</span> <span class="p">[]}</span>
+<span class="n">leaf_alleles</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>  <span class="c1"># Leaves: node 2, 3, 4</span>
+
+<span class="n">mutations</span> <span class="o">=</span> <span class="n">fitch_parsimony</span><span class="p">(</span><span class="n">tree_parent</span><span class="p">,</span> <span class="n">tree_children</span><span class="p">,</span>
+                             <span class="n">leaf_alleles</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mutations (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mutations</span><span class="p">)</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">p_allele</span><span class="p">,</span> <span class="n">c_allele</span> <span class="ow">in</span> <span class="n">mutations</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Edge to node </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">p_allele</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">c_allele</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Why parsimony and not maximum likelihood?</strong> Parsimony is fast
+(<span class="math notranslate nohighlight">\(O(n)\)</span> per site per tree) and doesn’t require branch length
+estimates. Since tsinfer’s branch lengths are approximate (frequency-based
+proxy), the simpler parsimony approach avoids compounding errors.</p>
+<p>With mutations placed, the tree sequence contains all the genealogical
+information. But it still has rough edges that need polishing. The next
+section describes the cleanup steps.</p>
+</section>
+</section>
+<section id="step-3-post-processing-pipeline">
+<h2>Step 3: Post-Processing Pipeline<a class="headerlink" href="#step-3-post-processing-pipeline" title="Link to this heading"></a></h2>
+<p>After sample matching and mutation placement, the raw tree sequence needs
+several cleanup steps. Think of this as the final polishing and regulation
+of the watch movement – removing scaffolding, trimming excess material,
+and ensuring every component serves a purpose.</p>
+<section id="a-virtual-root-removal">
+<h3>3a: Virtual Root Removal<a class="headerlink" href="#a-virtual-root-removal" title="Link to this heading"></a></h3>
+<p>The ultimate ancestor (virtual root) was a scaffolding device. In the
+final tree sequence, we want a proper coalescent root. The virtual root
+is removed by redirecting its children’s edges.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">remove_virtual_root</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">virtual_root_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove the virtual root node.</span>
+
+<span class="sd">    Children of the virtual root become roots of their subtrees.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    edges : list of (left, right, parent, child)</span>
+<span class="sd">    nodes : list of dict</span>
+<span class="sd">    virtual_root_id : int</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    filtered_edges : list of (left, right, parent, child)</span>
+<span class="sd">    filtered_nodes : list of dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Simply remove all edges where the virtual root is the parent</span>
+    <span class="n">filtered_edges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">edges</span>
+                      <span class="k">if</span> <span class="n">p</span> <span class="o">!=</span> <span class="n">virtual_root_id</span><span class="p">]</span>
+    <span class="c1"># Remove the virtual root node itself</span>
+    <span class="n">filtered_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span> <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">virtual_root_id</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">filtered_edges</span><span class="p">,</span> <span class="n">filtered_nodes</span>
+</pre></div>
+</div>
+</section>
+<section id="b-ultimate-ancestor-splitting">
+<h3>3b: Ultimate Ancestor Splitting<a class="headerlink" href="#b-ultimate-ancestor-splitting" title="Link to this heading"></a></h3>
+<p>The ultimate ancestor spans the entire genome. After removing the virtual
+root, nodes that were children of the ultimate ancestor may need to be
+<strong>split</strong> into separate root segments for different local trees.</p>
+</section>
+<section id="c-flank-erasure">
+<h3>3c: Flank Erasure<a class="headerlink" href="#c-flank-erasure" title="Link to this heading"></a></h3>
+<p>Edges that extend beyond the <strong>rightmost</strong> or <strong>leftmost</strong> inference site
+are trimmed. These flanking edges have no data support and would create
+artificial deep coalescences at the edges of the genome.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">erase_flanks</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="n">leftmost_position</span><span class="p">,</span> <span class="n">rightmost_position</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trim edges that extend beyond the data range.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    edges : list of (left, right, parent, child)</span>
+<span class="sd">    leftmost_position : float</span>
+<span class="sd">        Leftmost inference site position.</span>
+<span class="sd">    rightmost_position : float</span>
+<span class="sd">        Rightmost inference site position.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    trimmed_edges : list of (left, right, parent, child)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trimmed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="c1"># Clamp the edge to the data range</span>
+        <span class="n">new_left</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">leftmost_position</span><span class="p">)</span>
+        <span class="n">new_right</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">right</span><span class="p">,</span> <span class="n">rightmost_position</span><span class="p">)</span>
+        <span class="c1"># Only keep edges that still have positive length</span>
+        <span class="k">if</span> <span class="n">new_left</span> <span class="o">&lt;</span> <span class="n">new_right</span><span class="p">:</span>
+            <span class="n">trimmed</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">new_left</span><span class="p">,</span> <span class="n">new_right</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">trimmed</span>
+
+<span class="c1"># Example</span>
+<span class="n">edges_raw</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>     <span class="c1"># Extends left of first site</span>
+    <span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">8000</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>   <span class="c1"># Within range</span>
+    <span class="p">(</span><span class="mi">7000</span><span class="p">,</span> <span class="mi">15000</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>  <span class="c1"># Extends right of last site</span>
+<span class="p">]</span>
+
+<span class="n">trimmed</span> <span class="o">=</span> <span class="n">erase_flanks</span><span class="p">(</span><span class="n">edges_raw</span><span class="p">,</span>
+                        <span class="n">leftmost_position</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                        <span class="n">rightmost_position</span><span class="o">=</span><span class="mi">9000</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Trimmed edges:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">trimmed</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [</span><span class="si">{</span><span class="n">l</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">r</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="d-simplification">
+<h3>3d: Simplification<a class="headerlink" href="#d-simplification" title="Link to this heading"></a></h3>
+<p>The final step is <strong>simplification</strong>: removing all nodes and edges that
+are not ancestral to any sample. This is tskit’s built-in <code class="docutils literal notranslate"><span class="pre">simplify()</span></code>
+operation.</p>
+<div class="admonition-confusion-buster-what-simplification-actually-does admonition">
+<p class="admonition-title">Confusion Buster – What Simplification Actually Does</p>
+<p>Simplification is one of tskit’s most powerful operations, and it is
+worth understanding precisely. It takes a tree sequence and a set of
+“focal” nodes (usually the samples) and produces a new tree sequence
+that is <em>equivalent</em> from the perspective of those focal nodes – every
+local tree, every mutation, every statistic computed on the samples is
+identical – but with all unnecessary structure removed.</p>
+<p>Specifically, simplification does three things:</p>
+<ol class="arabic simple">
+<li><p><strong>Removes unary nodes</strong>: A unary node has exactly one child. It
+represents a lineage that passed through an ancestor without any
+coalescence happening. In the simplified tree, this lineage is
+represented by a single edge from grandparent to grandchild, and
+the unary node is removed.</p></li>
+<li><p><strong>Removes unreferenced nodes</strong>: Nodes that are not ancestral to any
+sample have no effect on the genealogy as seen from the samples.
+They are pruned entirely.</p></li>
+<li><p><strong>Merges adjacent edges</strong>: If a parent-child relationship spans two
+adjacent intervals (e.g., [0, 5000) and [5000, 10000)) and there is
+no tree change at the boundary, the two edges are merged into one:
+[0, 10000).</p></li>
+</ol>
+<p>The result is a leaner tree sequence that preserves all information
+relevant to the samples but discards the scaffolding used during
+construction.</p>
+</div>
+<p>Simplification does three things:</p>
+<ol class="arabic simple">
+<li><p><strong>Removes unary nodes</strong>: nodes with only one child (they don’t represent
+real coalescence events)</p></li>
+<li><p><strong>Removes unreferenced nodes</strong>: nodes not ancestral to any sample</p></li>
+<li><p><strong>Merges adjacent edges</strong>: edges that can be combined</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[\text{Before simplification:} \quad |\mathcal{N}| = A + n, \quad |\mathcal{E}| = O(Am)\]</div>
+<div class="math notranslate nohighlight">
+\[\text{After simplification:} \quad |\mathcal{N}| \ll A + n, \quad |\mathcal{E}| \ll O(Am)\]</div>
+<p>The reduction can be dramatic: a tree sequence with 10,000 ancestor nodes
+might simplify to 2,000 internal nodes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">simplify_tree_sequence</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">sample_ids</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simplified illustration of the simplify algorithm.</span>
+
+<span class="sd">    In practice, use tskit&#39;s built-in simplify().</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nodes : list of dict</span>
+<span class="sd">    edges : list of (left, right, parent, child)</span>
+<span class="sd">    sample_ids : set of int</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    kept_nodes : set of int</span>
+<span class="sd">        Node IDs retained after simplification.</span>
+<span class="sd">    kept_edges : list of (left, right, parent, child)</span>
+<span class="sd">        Edges retained.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Find all nodes ancestral to at least one sample</span>
+    <span class="c1"># by traversing upward from the samples through edges</span>
+    <span class="n">ancestral</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sample_ids</span><span class="p">)</span>
+    <span class="n">edge_map</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edge_map</span><span class="p">:</span>
+            <span class="n">edge_map</span><span class="p">[</span><span class="n">child</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">edge_map</span><span class="p">[</span><span class="n">child</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">parent</span><span class="p">))</span>
+
+    <span class="c1"># BFS upward from samples to find all ancestors</span>
+    <span class="n">queue</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_ids</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">edge_map</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">edge_map</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">parent</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ancestral</span><span class="p">:</span>
+                    <span class="n">ancestral</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+                    <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+
+    <span class="c1"># Keep only edges between ancestral nodes</span>
+    <span class="n">kept_edges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">edges</span>
+                  <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ancestral</span> <span class="ow">and</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">ancestral</span><span class="p">]</span>
+    <span class="n">kept_nodes</span> <span class="o">=</span> <span class="n">ancestral</span>
+
+    <span class="k">return</span> <span class="n">kept_nodes</span><span class="p">,</span> <span class="n">kept_edges</span>
+
+<span class="c1"># Example</span>
+<span class="n">nodes_ex</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;is_sample&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span> <span class="s1">&#39;is_sample&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s1">&#39;is_sample&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>  <span class="c1"># Not ancestral</span>
+    <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;is_sample&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;is_sample&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+<span class="p">]</span>
+<span class="n">edges_ex</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>   <span class="c1"># Node 2 has no sample descendants</span>
+<span class="p">]</span>
+<span class="n">sample_ids</span> <span class="o">=</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">}</span>
+
+<span class="n">kept_nodes</span><span class="p">,</span> <span class="n">kept_edges</span> <span class="o">=</span> <span class="n">simplify_tree_sequence</span><span class="p">(</span><span class="n">nodes_ex</span><span class="p">,</span> <span class="n">edges_ex</span><span class="p">,</span>
+                                                  <span class="n">sample_ids</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nodes before: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes_ex</span><span class="p">)</span><span class="si">}</span><span class="s2">, after: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kept_nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Edges before: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">edges_ex</span><span class="p">)</span><span class="si">}</span><span class="s2">, after: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kept_edges</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removed nodes: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">nodes_ex</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">kept_nodes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="step-4-the-complete-pipeline">
+<h2>Step 4: The Complete Pipeline<a class="headerlink" href="#step-4-the-complete-pipeline" title="Link to this heading"></a></h2>
+<p>Here’s the full tsinfer pipeline, end to end – all four gears meshing
+together in sequence:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">tsinfer_pipeline</span><span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">ancestral_known</span><span class="p">,</span>
+                     <span class="n">recombination_rate</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+                     <span class="n">mismatch_ratio</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                     <span class="n">sequence_length</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the complete tsinfer pipeline.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    D : ndarray of shape (n, m)</span>
+<span class="sd">        Variant matrix (0 = ancestral, 1 = derived).</span>
+<span class="sd">    positions : ndarray of float</span>
+<span class="sd">        Genomic positions of all sites.</span>
+<span class="sd">    ancestral_known : ndarray of bool</span>
+<span class="sd">        Whether the ancestral allele is known at each site.</span>
+<span class="sd">    recombination_rate : float</span>
+<span class="sd">        Per-base-pair recombination rate.</span>
+<span class="sd">    mismatch_ratio : float</span>
+<span class="sd">        Mismatch-to-recombination ratio.</span>
+<span class="sd">    sequence_length : float or None</span>
+<span class="sd">        Total genome length (defaults to max position + 1).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    builder : TreeSequenceBuilder</span>
+<span class="sd">        The final tree sequence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sequence_length</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sequence_length</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">shape</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=== tsinfer pipeline ===&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Samples: </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">, Sites: </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Phase 1: Ancestor generation (Gear 1) ---</span>
+    <span class="c1"># &quot;Extracting the template gears&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Phase 1: Generating ancestors...&quot;</span><span class="p">)</span>
+    <span class="n">ancestors</span><span class="p">,</span> <span class="n">inference_sites</span> <span class="o">=</span> <span class="n">generate_ancestors</span><span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">ancestral_known</span><span class="p">)</span>
+    <span class="n">inf_positions</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="n">inference_sites</span><span class="p">]</span>
+    <span class="n">ancestors</span> <span class="o">=</span> <span class="n">add_ultimate_ancestor</span><span class="p">(</span><span class="n">ancestors</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">inference_sites</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ancestors</span><span class="p">)</span><span class="si">}</span><span class="s2"> ancestors &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inference_sites</span><span class="p">)</span><span class="si">}</span><span class="s2"> inference sites)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Phase 2: Ancestor matching (Gear 3, using Gear 2&#39;s engine) ---</span>
+    <span class="c1"># &quot;Assembling the movement&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Phase 2: Matching ancestors...&quot;</span><span class="p">)</span>
+    <span class="n">builder</span> <span class="o">=</span> <span class="n">match_ancestors</span><span class="p">(</span>
+        <span class="n">ancestors</span><span class="p">,</span> <span class="n">inference_sites</span><span class="p">,</span> <span class="n">inf_positions</span><span class="p">,</span>
+        <span class="n">recombination_rate</span><span class="p">,</span> <span class="n">mismatch_ratio</span><span class="p">,</span> <span class="n">sequence_length</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Ancestor tree: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2"> nodes, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span><span class="si">}</span><span class="s2"> edges&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Phase 3: Sample matching (Gear 4, using Gear 2&#39;s engine) ---</span>
+    <span class="c1"># &quot;Fitting the hands to the dial&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Phase 3: Matching samples...&quot;</span><span class="p">)</span>
+    <span class="n">samples_at_inf</span> <span class="o">=</span> <span class="n">D</span><span class="p">[:,</span> <span class="n">inference_sites</span><span class="p">]</span>
+    <span class="n">builder</span> <span class="o">=</span> <span class="n">match_samples</span><span class="p">(</span>
+        <span class="n">samples_at_inf</span><span class="p">,</span> <span class="n">ancestors</span><span class="p">,</span> <span class="n">inference_sites</span><span class="p">,</span> <span class="n">inf_positions</span><span class="p">,</span>
+        <span class="n">recombination_rate</span><span class="p">,</span> <span class="n">mismatch_ratio</span><span class="p">,</span> <span class="n">builder</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  After samples: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2"> nodes, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span><span class="si">}</span><span class="s2"> edges&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- Phase 4: Post-processing ---</span>
+    <span class="c1"># &quot;Final polishing and regulation&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Phase 4: Post-processing...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Flank erasure: trim edges beyond data range</span>
+    <span class="n">builder</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">erase_flanks</span><span class="p">(</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
+        <span class="n">leftmost_position</span><span class="o">=</span><span class="n">inf_positions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">rightmost_position</span><span class="o">=</span><span class="n">inf_positions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  After flank erasure: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span><span class="si">}</span><span class="s2"> edges&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Simplification: remove nodes/edges not ancestral to samples</span>
+    <span class="n">sample_ids</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">builder</span><span class="o">.</span><span class="n">nodes</span> <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;is_sample&#39;</span><span class="p">]}</span>
+    <span class="n">kept_nodes</span><span class="p">,</span> <span class="n">kept_edges</span> <span class="o">=</span> <span class="n">simplify_tree_sequence</span><span class="p">(</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="n">builder</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span> <span class="n">sample_ids</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  After simplification: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kept_nodes</span><span class="p">)</span><span class="si">}</span><span class="s2"> nodes, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kept_edges</span><span class="p">)</span><span class="si">}</span><span class="s2"> edges&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Done ===&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">builder</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-what-the-output-looks-like">
+<h2>Step 5: What the Output Looks Like<a class="headerlink" href="#step-5-what-the-output-looks-like" title="Link to this heading"></a></h2>
+<p>The final tree sequence is a <code class="docutils literal notranslate"><span class="pre">tskit.TreeSequence</span></code> object. In our
+simplified implementation, we have a <code class="docutils literal notranslate"><span class="pre">TreeSequenceBuilder</span></code>. In the real
+tsinfer, the output is a full tskit tree sequence that you can query:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In real tsinfer:</span>
+<span class="c1"># ts = tsinfer.infer(sample_data)</span>
+<span class="c1">#</span>
+<span class="c1"># ts.num_trees          -&gt; number of local trees</span>
+<span class="c1"># ts.num_nodes          -&gt; total nodes</span>
+<span class="c1"># ts.num_edges          -&gt; total edges</span>
+<span class="c1"># ts.num_mutations      -&gt; total mutations</span>
+<span class="c1">#</span>
+<span class="c1"># for tree in ts.trees():</span>
+<span class="c1">#     print(tree.draw_text())  # ASCII visualization of a local tree</span>
+<span class="c1">#</span>
+<span class="c1"># ts.diversity()        -&gt; nucleotide diversity (pi)</span>
+<span class="c1"># ts.Tajimas_D()        -&gt; Tajima&#39;s D statistic</span>
+<span class="c1"># ts.simplify()         -&gt; further simplification if needed</span>
+</pre></div>
+</div>
+<p>The tree sequence format is extremely compact. A dataset with 100,000
+samples and 1,000,000 sites might produce a tree sequence file of only
+a few hundred megabytes, compared to tens of gigabytes for the original
+VCF file. This is the payoff of the quartz-movement approach: by
+sacrificing full posterior inference, tsinfer delivers a tree sequence
+that is both computationally tractable to produce and remarkably efficient
+to store and query.</p>
+</section>
+<section id="verification">
+<h2>Verification<a class="headerlink" href="#verification" title="Link to this heading"></a></h2>
+<p>Let’s verify the key properties of our complete pipeline:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">verify_pipeline</span><span class="p">(</span><span class="n">builder</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">inference_sites</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify the output of the tsinfer pipeline.&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pipeline verification:&quot;</span><span class="p">)</span>
+
+    <span class="c1"># 1. All samples are present as nodes</span>
+    <span class="n">sample_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">builder</span><span class="o">.</span><span class="n">nodes</span> <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;is_sample&#39;</span><span class="p">]]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [ok] </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_nodes</span><span class="p">)</span><span class="si">}</span><span class="s2"> sample nodes present&quot;</span><span class="p">)</span>
+
+    <span class="c1"># 2. All samples have at least one parent edge</span>
+    <span class="n">children_with_edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">builder</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+        <span class="n">children_with_edges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+    <span class="n">samples_with_parents</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="mi">1</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">sample_nodes</span> <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">children_with_edges</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [</span><span class="si">{</span><span class="s1">&#39;ok&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">samples_with_parents</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">sample_nodes</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;FAIL&#39;</span><span class="si">}</span><span class="s2">] &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;All samples have parent edges &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">samples_with_parents</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># 3. Edge coordinates are within bounds</span>
+    <span class="n">all_lefts</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">builder</span><span class="o">.</span><span class="n">edges</span><span class="p">]</span>
+    <span class="n">all_rights</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">builder</span><span class="o">.</span><span class="n">edges</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [ok] Edge range: [</span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="n">all_lefts</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">all_rights</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># 4. No negative times</span>
+    <span class="n">all_times</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">builder</span><span class="o">.</span><span class="n">nodes</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [</span><span class="si">{</span><span class="s1">&#39;ok&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">min</span><span class="p">(</span><span class="n">all_times</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;FAIL&#39;</span><span class="si">}</span><span class="s2">] &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;All times &gt;= 0&quot;</span><span class="p">)</span>
+
+    <span class="c1"># 5. Summary</span>
+    <span class="n">non_sample</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_nodes</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Summary:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Total nodes: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Ancestor nodes: </span><span class="si">{</span><span class="n">non_sample</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Sample nodes: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Edges: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Inference sites used: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inference_sites</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-compare-with-real-tsinfer admonition">
+<p class="admonition-title">Exercise 1: Compare with real tsinfer</p>
+<p>Install <code class="docutils literal notranslate"><span class="pre">tsinfer</span></code> and <code class="docutils literal notranslate"><span class="pre">msprime</span></code>. Simulate a tree sequence with
+<code class="docutils literal notranslate"><span class="pre">msprime</span></code> (<span class="math notranslate nohighlight">\(n = 50\)</span>, <span class="math notranslate nohighlight">\(L = 10^5\)</span>, <span class="math notranslate nohighlight">\(\rho = 10^{-8}\)</span>,
+<span class="math notranslate nohighlight">\(\mu = 10^{-8}\)</span>). Run <code class="docutils literal notranslate"><span class="pre">tsinfer.infer()</span></code> on the simulated data.
+Compare the number of trees, edges, and mutations in the inferred tree
+sequence vs. the true one. What is the Robinson-Foulds distance between
+corresponding local trees?</p>
+</div>
+<div class="admonition-exercise-2-effect-of-non-inference-sites admonition">
+<p class="admonition-title">Exercise 2: Effect of non-inference sites</p>
+<p>Take a simulated dataset and vary the fraction of sites marked as
+non-inference (by artificially removing the ancestral allele annotation
+or by including multiallelic sites). How does the tree topology change?
+How many extra parsimony mutations are needed?</p>
+</div>
+<div class="admonition-exercise-3-scaling-experiment admonition">
+<p class="admonition-title">Exercise 3: Scaling experiment</p>
+<p>Run tsinfer on datasets of increasing size: <span class="math notranslate nohighlight">\(n = 100, 500, 2000,
+10000\)</span> with fixed genome length <span class="math notranslate nohighlight">\(L = 10^6\)</span>. Plot runtime and
+memory usage vs. <span class="math notranslate nohighlight">\(n\)</span>. Does the empirical scaling match the
+theoretical <span class="math notranslate nohighlight">\(O(An)\)</span> complexity?</p>
+</div>
+<p>This completes the tsinfer Timepiece. You’ve built every gear from scratch:
+ancestor generation (extracting the template gears), the copying model (the
+oscillator circuit), ancestor matching (assembling the movement), and sample
+matching with post-processing (fitting the hands and polishing the case).
+The full tsinfer algorithm is simply these four gears meshing together in
+sequence – a quartz movement, simpler than the mechanical MCMC approaches,
+but precise enough for biobank-scale data and fast enough to keep time for
+millions of samples.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ancestor_matching.html" class="btn btn-neutral float-left" title="Gear 3: Ancestor Matching" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../tsdate/index.html" class="btn btn-neutral float-right" title="Timepiece VII: tsdate" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

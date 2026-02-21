@@ -1,0 +1,503 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timepiece V: tsinfer &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Overview of tsinfer" href="overview.html" />
+    <link rel="prev" title="MCMC Sampling" href="../argweaver/mcmc_sampling.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+      <li class="breadcrumb-item active">Timepiece V: tsinfer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="../argweaver/mcmc_sampling.html" class="btn btn-neutral float-left" title="MCMC Sampling" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="overview.html" class="btn btn-neutral float-right" title="Overview of tsinfer" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="timepiece-v-tsinfer">
+<span id="tsinfer-timepiece"></span><h1>Timepiece V: tsinfer<a class="headerlink" href="#timepiece-v-tsinfer" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>Tree Sequence Inference from Genetic Variation Data</em></p>
+</div></blockquote>
+<blockquote class="epigraph">
+<div><p>“We introduce a method for inferring the correlated genealogies underlying
+a set of DNA sequences, scaling to millions of genomes and variable sites.”</p>
+<p class="attribution">—Kelleher, Wong, Wohns, Bridget, Burrill, and McVean (2019)</p>
+</div></blockquote>
+<section id="the-mechanism-at-a-glance">
+<h2>The Mechanism at a Glance<a class="headerlink" href="#the-mechanism-at-a-glance" title="Link to this heading"></a></h2>
+<p><strong>tsinfer</strong> infers a tree sequence from observed genetic variation data. Unlike
+MCMC-based methods (such as SINGER and ARGweaver), tsinfer is a <em>deterministic
+algorithm</em> that scales to biobank-sized datasets – hundreds of thousands of samples
+and millions of sites – in hours rather than weeks.</p>
+<p>The core idea is breathtakingly simple: every sample’s genome is a <strong>mosaic</strong> of
+ancestral haplotypes, glued together by recombination. If we can figure out <em>what</em>
+those ancestral pieces are and <em>how</em> they were assembled, we’ve reconstructed the
+genealogy.</p>
+<p>If SINGER and ARGweaver are precision mechanical watches – statistically optimal but
+complex and slow – tsinfer is a quartz movement: simpler, faster, and designed for
+scale. What it sacrifices in statistical sophistication (no Bayesian posterior, no
+uncertainty quantification), it gains in raw throughput. And like a good quartz
+movement, it’s remarkably accurate for most practical purposes.</p>
+<p>The four gears of tsinfer:</p>
+<ol class="arabic simple">
+<li><p><strong>Ancestor Generation</strong> (the escapement) – Infer putative ancestral haplotypes from
+the patterns of derived alleles in the data. Older ancestors carry
+higher-frequency derived alleles. This is where the biological signal is first
+extracted.</p></li>
+<li><p><strong>The Copying Model</strong> (the gear train) – A Li &amp; Stephens HMM engine (from
+<a class="reference internal" href="../lshmm/index.html#lshmm-timepiece"><span class="std std-ref">Timepiece II</span></a>) that finds the best way to express one
+haplotype as a mosaic of others. This is the workhorse shared by both the ancestor
+matching and sample matching phases.</p></li>
+<li><p><strong>Ancestor Matching</strong> (the first assembly) – Match each ancestor against older
+ancestors using the copying model, building a tree sequence of ancestors from the
+root down. Like assembling the base caliber of a movement.</p></li>
+<li><p><strong>Sample Matching</strong> (the final assembly) – Thread each sample through the ancestor
+tree using the same copying model, then post-process to produce the final tree
+sequence. Like fitting the dial and hands onto the finished movement.</p></li>
+</ol>
+<p>These gears mesh together into a three-phase pipeline:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Variant data D (n samples x m sites)
+            |
+            v
++----------------------------+
+|   PHASE 1: Generate        |
+|   Ancestral Haplotypes     |
+|                            |
+|   For each frequency tier: |
+|     Build consensus from   |
+|     samples carrying the   |
+|     derived allele         |
++----------------------------+
+            |
+            | A putative ancestors
+            v
++----------------------------+
+|   PHASE 2: Match Ancestors |
+|                            |
+|   For each ancestor        |
+|   (oldest first):          |
+|     Express it as a mosaic |
+|     of older ancestors     |
+|     (Li &amp; Stephens HMM)    |
+|                            |
+|   -&gt; Build ancestor tree   |
++----------------------------+
+            |
+            | Ancestor tree sequence
+            v
++----------------------------+
+|   PHASE 3: Match Samples   |
+|                            |
+|   For each sample:         |
+|     Express it as a mosaic |
+|     of ancestors           |
+|     (Li &amp; Stephens HMM)    |
+|                            |
+|   -&gt; Post-processing:      |
+|     - Parsimony mutations  |
+|     - Simplification       |
++----------------------------+
+            |
+            v
+    Final tree sequence T
+    (tskit TreeSequence)
+</pre></div>
+</div>
+<div class="admonition-prerequisites-for-this-timepiece admonition">
+<p class="admonition-title">Prerequisites for this Timepiece</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> – the biological framework</p></li>
+<li><p><a class="reference internal" href="../../prerequisites/args.html#args"><span class="std std-ref">Ancestral Recombination Graphs</span></a> – tree sequences and marginal trees</p></li>
+<li><p><a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a> – the forward algorithm and the
+Li-Stephens <span class="math notranslate nohighlight">\(O(K)\)</span> trick</p></li>
+<li><p><a class="reference internal" href="../lshmm/index.html#lshmm-timepiece"><span class="std std-ref">Li &amp; Stephens HMM</span></a> – the copying model (Timepiece II)</p></li>
+</ul>
+</div>
+</section>
+<section id="chapters">
+<h2>Chapters<a class="headerlink" href="#chapters" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview of tsinfer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#what-does-tsinfer-do">What Does tsinfer Do?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#the-mosaic-insight">The Mosaic Insight</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#the-three-phases">The Three Phases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#terminology">Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#the-flow-in-detail">The Flow in Detail</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#why-not-mcmc">Why Not MCMC?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#ready-to-build">Ready to Build</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ancestor_generation.html">Gear 1: Ancestor Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_generation.html#step-1-site-selection">Step 1: Site Selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_generation.html#step-2-frequency-as-a-time-proxy">Step 2: Frequency as a Time Proxy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_generation.html#step-3-the-focal-samples">Step 3: The Focal Samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_generation.html#step-4-ancestor-construction-by-consensus">Step 4: Ancestor Construction by Consensus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_generation.html#step-5-the-full-ancestor-generation-algorithm">Step 5: The Full Ancestor Generation Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_generation.html#step-6-grouping-by-time">Step 6: Grouping by Time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_generation.html#the-ultimate-ancestor">The Ultimate Ancestor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_generation.html#verification">Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_generation.html#exercises">Exercises</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="copying_model.html">Gear 2: The Copying Model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="copying_model.html#the-copying-metaphor">The Copying Metaphor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying_model.html#step-1-transition-probabilities">Step 1: Transition Probabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying_model.html#step-2-emission-probabilities">Step 2: Emission Probabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying_model.html#step-3-the-viterbi-algorithm">Step 3: The Viterbi Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying_model.html#step-4-handling-noncopy-states">Step 4: Handling NONCOPY States</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying_model.html#step-5-from-viterbi-path-to-edges">Step 5: From Viterbi Path to Edges</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying_model.html#step-6-recombination-breakpoints">Step 6: Recombination Breakpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying_model.html#verification">Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying_model.html#exercises">Exercises</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ancestor_matching.html">Gear 3: Ancestor Matching</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_matching.html#step-1-the-matching-order">Step 1: The Matching Order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_matching.html#step-2-building-the-reference-panel">Step 2: Building the Reference Panel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_matching.html#step-3-match-and-add-edges">Step 3: Match and Add Edges</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_matching.html#step-4-the-complete-ancestor-matching-loop">Step 4: The Complete Ancestor Matching Loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_matching.html#step-5-path-compression">Step 5: Path Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_matching.html#step-6-verification">Step 6: Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ancestor_matching.html#exercises">Exercises</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sample_matching.html#step-1-threading-samples">Step 1: Threading Samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sample_matching.html#step-2-non-inference-sites-parsimony">Step 2: Non-Inference Sites – Parsimony</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sample_matching.html#step-3-post-processing-pipeline">Step 3: Post-Processing Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sample_matching.html#step-4-the-complete-pipeline">Step 4: The Complete Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sample_matching.html#step-5-what-the-output-looks-like">Step 5: What the Output Looks Like</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sample_matching.html#verification">Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sample_matching.html#exercises">Exercises</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>Each chapter derives the math, explains the intuition, implements the code,
+and verifies it works. By the end, you’ll have built a complete tree sequence
+inference engine from scratch – and you’ll understand every gear that makes it tick.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../argweaver/mcmc_sampling.html" class="btn btn-neutral float-left" title="MCMC Sampling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="overview.html" class="btn btn-neutral float-right" title="Overview of tsinfer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

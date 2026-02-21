@@ -1,0 +1,1269 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Sequentially Markov Coalescent &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Timepieces" href="../timepieces/index.html" />
+    <link rel="prev" title="Hidden Markov Models" href="hmms.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The Workbench (Prerequisites)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../timepieces/index.html">Timepieces</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The Workbench (Prerequisites)</a></li>
+      <li class="breadcrumb-item active">The Sequentially Markov Coalescent</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="hmms.html" class="btn btn-neutral float-left" title="Hidden Markov Models" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../timepieces/index.html" class="btn btn-neutral float-right" title="Timepieces" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-sequentially-markov-coalescent">
+<span id="smc"></span><h1>The Sequentially Markov Coalescent<a class="headerlink" href="#the-sequentially-markov-coalescent" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>To make the impossible tractable, we give up a little exactness.</em></p>
+</div></blockquote>
+<p>In the <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter, we learned how lineages coalesce
+backwards in time. In the <a class="reference internal" href="args.html#args"><span class="std std-ref">ARG chapter</span></a>, we saw how recombination
+creates a <em>sequence</em> of marginal trees along the genome. And in the
+<a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>, we set up the machinery to do inference on hidden
+state sequences – provided those states form a Markov chain.</p>
+<p>There is a problem. The sequence of marginal trees produced by the full
+coalescent with recombination (CwR) is <strong>not</strong> Markov. This chapter explains
+why, introduces the Sequentially Markov Coalescent (SMC) approximation that
+fixes the problem, and derives the transition densities that will power our
+Timepieces.</p>
+<div class="admonition-the-watch-metaphor admonition">
+<p class="admonition-title">The Watch Metaphor</p>
+<p>The SMC approximation is like simplifying a complex mechanism by ignoring
+gear interactions that almost never occur. A master watchmaker knows that
+two gears deep inside the movement <em>could</em> brush against each other under
+extreme conditions, but for all practical purposes they never do. By
+designing the movement as if those interactions cannot happen, the watch
+becomes far simpler to build and maintain – and it still keeps nearly
+perfect time.</p>
+</div>
+<section id="the-problem-with-the-full-coalescent">
+<h2>The Problem with the Full Coalescent<a class="headerlink" href="#the-problem-with-the-full-coalescent" title="Link to this heading"></a></h2>
+<p>The coalescent with recombination (CwR) is the correct model for ancestry along
+a recombining chromosome (see <a class="reference internal" href="args.html#args"><span class="std std-ref">Ancestral Recombination Graphs</span></a>). But it has a fatal flaw for
+computation: the process of marginal trees along the genome is <strong>not Markov</strong>.</p>
+<p>In the CwR, the marginal tree at position <span class="math notranslate nohighlight">\(x\)</span> depends on the trees at
+<em>all</em> previous positions, not just the immediately preceding one. This means we
+cannot directly plug the tree sequence into a Hidden Markov Model – and without
+HMMs, efficient inference is out of reach.</p>
+<p>The <strong>Sequentially Markov Coalescent (SMC)</strong> (McVean and Cardin, 2005; Marjoram
+and Wall, 2006) is an approximation that restores the Markov property by
+excluding a class of rare events. The rest of this chapter develops this idea
+step by step.</p>
+</section>
+<section id="what-does-markov-mean-and-why-does-it-matter">
+<h2>What Does “Markov” Mean, and Why Does It Matter?<a class="headerlink" href="#what-does-markov-mean-and-why-does-it-matter" title="Link to this heading"></a></h2>
+<p>Before diving into the technical details, let us build intuition for what the
+Markov property is and why computational methods depend on it.</p>
+<section id="intuitive-explanation">
+<h3>Intuitive Explanation<a class="headerlink" href="#intuitive-explanation" title="Link to this heading"></a></h3>
+<p>Imagine you are watching a clock. At each tick, the configuration of gears
+determines exactly what happens at the next tick. You do not need to know the
+entire history of every tick since the clock was wound – the current gear
+positions are sufficient. That is the Markov property: <strong>the future depends on
+the past only through the present.</strong></p>
+<div class="admonition-the-watch-metaphor admonition">
+<p class="admonition-title">The Watch Metaphor</p>
+<p>The Markov property is like a mechanism where the next tick depends only on
+the current state of the gears, not on how they got there. A watchmaker
+can predict what will happen next by examining the movement right now,
+without consulting a logbook of every previous tick.</p>
+</div>
+<p>In the context of genealogical trees along a genome: if the tree sequence were
+Markov, knowing the tree at position <span class="math notranslate nohighlight">\(x\)</span> would be all we need to compute
+the probability of the tree at position <span class="math notranslate nohighlight">\(x + 1\)</span>. We would not need to
+remember the trees at positions <span class="math notranslate nohighlight">\(1, 2, \ldots, x - 1\)</span>.</p>
+</section>
+<section id="formal-definition">
+<h3>Formal Definition<a class="headerlink" href="#formal-definition" title="Link to this heading"></a></h3>
+<p>A sequence of random variables <span class="math notranslate nohighlight">\((Z_1, Z_2, \ldots)\)</span> is <strong>Markov</strong> if for
+every <span class="math notranslate nohighlight">\(\ell\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[P(Z_{\ell+1} \mid Z_\ell, Z_{\ell-1}, \ldots, Z_1) = P(Z_{\ell+1} \mid Z_\ell)\]</div>
+<div class="admonition-probability-aside-conditional-probability-notation admonition">
+<p class="admonition-title">Probability Aside – Conditional Probability Notation</p>
+<p>The expression <span class="math notranslate nohighlight">\(P(A \mid B)\)</span> is read “the probability of <span class="math notranslate nohighlight">\(A\)</span>
+given <span class="math notranslate nohighlight">\(B\)</span>”. It means: if we know <span class="math notranslate nohighlight">\(B\)</span> has happened, what is the
+probability that <span class="math notranslate nohighlight">\(A\)</span> also happens? The Markov property says that
+conditioning on the <em>entire history</em> <span class="math notranslate nohighlight">\((Z_1, \ldots, Z_\ell)\)</span> gives the
+same result as conditioning on just the most recent value <span class="math notranslate nohighlight">\(Z_\ell\)</span>.
+In other words, the history provides no additional predictive power beyond
+what the present state already tells us.</p>
+</div>
+</section>
+<section id="why-markov-matters-for-computation">
+<h3>Why Markov Matters for Computation<a class="headerlink" href="#why-markov-matters-for-computation" title="Link to this heading"></a></h3>
+<p>The Markov property is not just a mathematical nicety – it is a <strong>computational
+necessity</strong>. Recall from the <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a> that the forward
+algorithm computes the likelihood of an observed sequence in <span class="math notranslate nohighlight">\(O(L K^2)\)</span>
+time, where <span class="math notranslate nohighlight">\(L\)</span> is the sequence length and <span class="math notranslate nohighlight">\(K\)</span> is the number of
+hidden states. This efficiency relies entirely on the Markov property: at each
+step, the forward variable <span class="math notranslate nohighlight">\(\alpha_\ell(j) = P(X_1, \ldots, X_\ell,
+Z_\ell = j)\)</span> can be updated using only <span class="math notranslate nohighlight">\(\alpha_{\ell-1}\)</span>, not the full
+history.</p>
+<p>Without the Markov property, we would need to track all possible histories
+<span class="math notranslate nohighlight">\((Z_1, \ldots, Z_\ell)\)</span> to compute the probability of
+<span class="math notranslate nohighlight">\(Z_{\ell+1}\)</span>. The number of such histories grows exponentially with
+<span class="math notranslate nohighlight">\(\ell\)</span>, making exact computation infeasible for genomes with millions of
+positions.</p>
+</section>
+</section>
+<section id="what-makes-cwr-non-markov">
+<h2>What Makes CwR Non-Markov?<a class="headerlink" href="#what-makes-cwr-non-markov" title="Link to this heading"></a></h2>
+<p>If the marginal trees along the genome were Markov, we could use HMMs. But
+in the full CwR, they are <strong>not</strong>. The culprit is a phenomenon called
+<strong>ghost lineages</strong>.</p>
+<section id="the-mechanism">
+<h3>The Mechanism<a class="headerlink" href="#the-mechanism" title="Link to this heading"></a></h3>
+<p>When a recombination happens in the CwR:</p>
+<ol class="arabic simple">
+<li><p>A lineage splits at a breakpoint</p></li>
+<li><p>The piece to the right of the breakpoint floats up and can coalesce with
+<em>any</em> lineage in the full ancestral process, including ones that are
+<strong>not</strong> in the current marginal tree</p></li>
+</ol>
+<p>This means a lineage from the “past” – one that already coalesced and left the
+current tree – can reappear. These returning lineages are called <strong>ghost
+lineages</strong>.</p>
+</section>
+<section id="what-are-ghost-lineages-a-concrete-example">
+<h3>What Are Ghost Lineages? A Concrete Example<a class="headerlink" href="#what-are-ghost-lineages-a-concrete-example" title="Link to this heading"></a></h3>
+<p>To understand ghost lineages, consider a concrete example with three samples
+<span class="math notranslate nohighlight">\(A\)</span>, <span class="math notranslate nohighlight">\(B\)</span>, and <span class="math notranslate nohighlight">\(C\)</span>.</p>
+<p>Suppose the marginal tree at genomic position <span class="math notranslate nohighlight">\(x\)</span> has this shape:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Position x:
+
+Time
+ |
+ |        MRCA          &lt;-- most recent common ancestor of all three
+ |       /    \
+ |      /      \
+ |    (AB)      |       &lt;-- A and B coalesce first
+ |    / \       |
+ |   A   B      C
+ |
+ 0 ──────────────────
+</pre></div>
+</div>
+<p>In this tree, the internal node where <span class="math notranslate nohighlight">\(A\)</span> and <span class="math notranslate nohighlight">\(B\)</span> coalesce
+(call it node <span class="math notranslate nohighlight">\(AB\)</span>) sends a single lineage upward. That lineage eventually
+coalesces with <span class="math notranslate nohighlight">\(C\)</span>’s lineage at the MRCA.</p>
+<p>Now suppose a recombination occurs between positions <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(x+1\)</span>.
+The recombination cuts <span class="math notranslate nohighlight">\(A\)</span>’s lineage at some time below <span class="math notranslate nohighlight">\(AB\)</span>. The
+piece of <span class="math notranslate nohighlight">\(A\)</span>’s ancestry to the right of the breakpoint detaches and floats
+upward, looking for a lineage to coalesce with.</p>
+<p>In the <strong>full CwR</strong>, this detached lineage can coalesce with <em>any</em> lineage that
+exists at that time in the full ancestral recombination graph – including
+lineages that are not visible in the marginal tree at position <span class="math notranslate nohighlight">\(x\)</span>. For
+instance, perhaps at an earlier position there was a lineage <span class="math notranslate nohighlight">\(D\)</span> that
+coalesced with <span class="math notranslate nohighlight">\(C\)</span>’s lineage but then disappeared from the marginal tree.
+Lineage <span class="math notranslate nohighlight">\(D\)</span> is a <strong>ghost lineage</strong>: it is not part of the current tree,
+but it still exists in the full ARG and could reappear.</p>
+<p><strong>Why this breaks the Markov property</strong>: Knowing the current tree
+<span class="math notranslate nohighlight">\(\Psi_x\)</span> is not enough to predict which ghost lineages might return. You
+would need to know the full history of trees <span class="math notranslate nohighlight">\(\Psi_1, \ldots,
+\Psi_{x-1}\)</span> to track all potentially returning lineages.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>The ghost lineage problem:
+
+Position x tree:      Full ARG (invisible from position x alone):
+
+    MRCA                     MRCA
+   /    \                   /    \
+ (AB)    |                (AB)    |
+ / \     |                / \    (CD)   &lt;-- ghost: D coalesced with C
+A   B    C              A   B   / \        at some earlier position
+                               C   D       but left the marginal tree
+</pre></div>
+</div>
+</section>
+</section>
+<section id="the-smc-approximation">
+<h2>The SMC Approximation<a class="headerlink" href="#the-smc-approximation" title="Link to this heading"></a></h2>
+<p>The SMC makes one simple restriction: after a recombination, the detached
+lineage can only re-coalesce with branches that are <strong>present in the current
+marginal tree</strong>. Ghost lineages are forbidden.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{CwR: re-coalesce with any ancestral lineage (including &quot;ghost&quot; lineages)} \\
+\text{SMC: re-coalesce only with branches in the current marginal tree}\end{split}\]</div>
+<section id="why-does-this-restore-the-markov-property">
+<h3>Why Does This Restore the Markov Property?<a class="headerlink" href="#why-does-this-restore-the-markov-property" title="Link to this heading"></a></h3>
+<p>Under the SMC, the next tree <span class="math notranslate nohighlight">\(\Psi_{x+1}\)</span> is determined entirely by:</p>
+<ol class="arabic simple">
+<li><p>The current tree <span class="math notranslate nohighlight">\(\Psi_x\)</span> (which branches exist)</p></li>
+<li><p>Whether a recombination occurs between <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(x+1\)</span></p></li>
+<li><p>If so, which branch is cut and which branch is re-joined</p></li>
+</ol>
+<p>All three of these depend only on <span class="math notranslate nohighlight">\(\Psi_x\)</span>, not on any earlier tree.
+No ghost lineages can appear. Therefore
+<span class="math notranslate nohighlight">\(P(\Psi_{x+1} \mid \Psi_x, \Psi_{x-1}, \ldots) = P(\Psi_{x+1} \mid \Psi_x)\)</span>.</p>
+<p>The Markov property is restored, and we can build an HMM.</p>
+</section>
+<section id="how-good-is-the-approximation">
+<h3>How Good Is the Approximation?<a class="headerlink" href="#how-good-is-the-approximation" title="Link to this heading"></a></h3>
+<p>The events excluded by the SMC (re-coalescence with a lineage not in the
+current tree) are rare: they require a specific lineage to leave the tree and
+then return. For large sample sizes, the current tree has many branches, so
+re-coalescence with an existing branch is overwhelmingly likely anyway.
+Empirically, the SMC matches the CwR very closely for most statistics of
+interest.</p>
+<p>Think of it this way: the approximation removes a set of paths through the ARG
+that are both rare and difficult to track. The resulting model captures the vast
+majority of the probability mass while gaining the enormous computational
+advantage of the Markov property.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">smc_transition</span><span class="p">(</span><span class="n">tree_branches</span><span class="p">,</span> <span class="n">recomb_rate</span><span class="p">,</span> <span class="n">coal_rates</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute SMC transition: given a marginal tree, produce the next one.</span>
+
+<span class="sd">    Under the SMC, recombination picks a branch (proportional to length),</span>
+<span class="sd">    snips above the recombination point, and the detached lineage re-coalesces</span>
+<span class="sd">    with one of the remaining branches -- never with a &#39;ghost&#39; lineage outside</span>
+<span class="sd">    the current tree.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tree_branches : list of (child, parent, lower_time, upper_time)</span>
+<span class="sd">        Each tuple represents one branch of the marginal tree.</span>
+<span class="sd">        - child: node index of the child end of the branch</span>
+<span class="sd">        - parent: node index of the parent end of the branch</span>
+<span class="sd">        - lower_time: time at the child (bottom of branch)</span>
+<span class="sd">        - upper_time: time at the parent (top of branch)</span>
+<span class="sd">    recomb_rate : float</span>
+<span class="sd">        rho/2 per unit branch length.</span>
+<span class="sd">    coal_rates : callable</span>
+<span class="sd">        coal_rates(t) returns the coalescence rate at time t.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict or None</span>
+<span class="sd">        Description of the transition (which branch was cut, where,</span>
+<span class="sd">        and which branch was rejoined), or None if no valid</span>
+<span class="sd">        re-coalescence target exists.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute the total branch length of the tree.</span>
+    <span class="c1"># The expression (u - l) computes the length of one branch;</span>
+    <span class="c1"># the generator iterates over all branches, and sum() adds them up.</span>
+    <span class="c1"># The syntax &quot;_, _, l, u&quot; is called tuple unpacking: it extracts</span>
+    <span class="c1"># the third and fourth elements (lower_time, upper_time) from each</span>
+    <span class="c1"># 4-tuple, ignoring the first two (child, parent) with underscores.</span>
+    <span class="n">total_length</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">l</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">tree_branches</span><span class="p">)</span>
+
+    <span class="c1"># Probability of recombination on each branch (proportional to length).</span>
+    <span class="c1"># This is a list comprehension: it creates a new list by computing</span>
+    <span class="c1"># (u - l) for each branch tuple in tree_branches.</span>
+    <span class="n">branch_lengths</span> <span class="o">=</span> <span class="p">[(</span><span class="n">u</span> <span class="o">-</span> <span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">tree_branches</span><span class="p">]</span>
+
+    <span class="c1"># Convert to a NumPy array and normalize to get probabilities.</span>
+    <span class="c1"># Longer branches are more likely to be hit by recombination because</span>
+    <span class="c1"># they represent more &quot;exposure time&quot; to the recombination process.</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">branch_lengths</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_length</span>
+
+    <span class="c1"># Randomly pick which branch the recombination falls on,</span>
+    <span class="c1"># weighted by branch length.</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tree_branches</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+
+    <span class="c1"># Unpack the chosen branch into its four components.</span>
+    <span class="c1"># This is tuple unpacking again: the single element</span>
+    <span class="c1"># tree_branches[idx] is a 4-tuple, and we assign each element</span>
+    <span class="c1"># to a separate variable.</span>
+    <span class="n">child</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">tree_branches</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="c1"># Pick a recombination time uniformly on the chosen branch.</span>
+    <span class="c1"># The recombination can happen anywhere between the bottom (lower)</span>
+    <span class="c1"># and top (upper) of this branch.</span>
+    <span class="n">recomb_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+
+    <span class="c1"># Under the SMC: re-coalesce with a branch in the CURRENT tree</span>
+    <span class="c1"># above the recombination time. This is the key SMC restriction --</span>
+    <span class="c1"># in the full CwR, we could also coalesce with ghost lineages.</span>
+    <span class="c1">#</span>
+    <span class="c1"># This list comprehension filters tree_branches to keep only those</span>
+    <span class="c1"># branches that:</span>
+    <span class="c1">#   (a) extend above the recombination time (u &gt; recomb_time), AND</span>
+    <span class="c1">#   (b) are not the same branch that was cut.</span>
+    <span class="c1"># The &quot;!=&quot; comparison checks tuple inequality element by element.</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="p">[(</span><span class="n">c</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">tree_branches</span>
+                 <span class="k">if</span> <span class="n">u</span> <span class="o">&gt;</span> <span class="n">recomb_time</span> <span class="ow">and</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="o">!=</span> <span class="n">tree_branches</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">available</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># No valid re-coalescence (rare edge case)</span>
+
+    <span class="c1"># Choose re-coalescence branch (simplified: uniform random choice).</span>
+    <span class="c1"># In reality, the coalescent process determines this with rates</span>
+    <span class="c1"># that depend on the number of lineages at each time, but for</span>
+    <span class="c1"># illustration we use a uniform distribution.</span>
+    <span class="n">rejoin_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">available</span><span class="p">))</span>
+    <span class="n">rejoin_branch</span> <span class="o">=</span> <span class="n">available</span><span class="p">[</span><span class="n">rejoin_idx</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;recomb_branch&#39;</span><span class="p">:</span> <span class="n">tree_branches</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+        <span class="s1">&#39;recomb_time&#39;</span><span class="p">:</span> <span class="n">recomb_time</span><span class="p">,</span>
+        <span class="s1">&#39;rejoin_branch&#39;</span><span class="p">:</span> <span class="n">rejoin_branch</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="c1"># Example tree: ((0,1):4, (2,3):5, (4,5):6)</span>
+<span class="c1"># This is a tree with 4 leaf nodes (0, 1, 2, 3) and 2 internal nodes</span>
+<span class="c1"># (4, 5), plus a root (6).</span>
+<span class="c1"># Times: leaves at 0.0; node 4 at 0.3; node 5 at 0.7; root 6 at 1.5</span>
+<span class="n">tree_branches</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>  <span class="c1"># leaf 0 to internal node 4</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>  <span class="c1"># leaf 1 to internal node 4</span>
+    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">),</span>  <span class="c1"># leaf 2 to internal node 5</span>
+    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">),</span>  <span class="c1"># leaf 3 to internal node 5</span>
+    <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>  <span class="c1"># internal node 4 to root 6</span>
+    <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>  <span class="c1"># internal node 5 to root 6</span>
+<span class="p">]</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">smc_transition</span><span class="p">(</span><span class="n">tree_branches</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recombination on branch: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;recomb_branch&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recombination time: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;recomb_time&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Re-join branch: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;rejoin_branch&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now that we have established the SMC approximation and its key consequence –
+the Markov property – we can derive the transition probabilities that an HMM
+needs.</p>
+</section>
+</section>
+<section id="the-smc-transition-probability">
+<h2>The SMC Transition Probability<a class="headerlink" href="#the-smc-transition-probability" title="Link to this heading"></a></h2>
+<p>Under the SMC, when a recombination occurs in a new lineage being threaded onto
+the tree, the probability of the lineage moving from branch <span class="math notranslate nohighlight">\(b_i\)</span> to
+branch <span class="math notranslate nohighlight">\(b_j\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[P(B_\ell = b_j \mid B_{\ell-1} = b_i) =
+(1 - r_i)\delta_{ij} + r_i \frac{q_j}{\sum_k q_k}\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(r_i = 1 - \exp(-\frac{\rho}{2}\tau_i)\)</span> is the probability of
+recombination on branch <span class="math notranslate nohighlight">\(b_i\)</span>, with <span class="math notranslate nohighlight">\(\tau_i\)</span> being the
+representative time for that branch</p></li>
+<li><p><span class="math notranslate nohighlight">\(q_j = r_j \cdot p_j\)</span> weights the re-joining probability</p></li>
+<li><p><span class="math notranslate nohighlight">\(\delta_{ij}\)</span> is the Kronecker delta (1 if <span class="math notranslate nohighlight">\(i = j\)</span>, 0 otherwise)</p></li>
+</ul>
+<p>This transition has the classic <strong>stay-or-switch</strong> structure: with probability
+<span class="math notranslate nohighlight">\(1 - r_i\)</span>, nothing happens and we stay on the same branch; with
+probability <span class="math notranslate nohighlight">\(r_i\)</span>, a recombination occurs and we jump to a new branch
+chosen according to the weights <span class="math notranslate nohighlight">\(q_j\)</span>. This is exactly the Li-Stephens
+transition structure from the <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>.</p>
+<section id="deriving-r-i-the-recombination-probability">
+<h3>Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability<a class="headerlink" href="#deriving-r-i-the-recombination-probability" title="Link to this heading"></a></h3>
+<p><strong>Where does</strong> <span class="math notranslate nohighlight">\(r_i\)</span> <strong>come from?</strong> A lineage at representative time
+<span class="math notranslate nohighlight">\(\tau_i\)</span> has been evolving for <span class="math notranslate nohighlight">\(\tau_i\)</span> coalescent time units. In
+each infinitesimal interval <span class="math notranslate nohighlight">\(dt\)</span>, a recombination occurs with probability
+<span class="math notranslate nohighlight">\((\rho/2)dt\)</span>. The probability of <em>no</em> recombination over the entire
+interval <span class="math notranslate nohighlight">\([0, \tau_i]\)</span> is <span class="math notranslate nohighlight">\(e^{-\rho\tau_i/2}\)</span> (survival probability
+of a Poisson process). So the probability of <em>at least one</em> recombination is
+<span class="math notranslate nohighlight">\(r_i = 1 - e^{-\rho\tau_i/2}\)</span>.</p>
+<div class="admonition-probability-aside-survival-probability-of-a-poisson-process admonition">
+<p class="admonition-title">Probability Aside – Survival Probability of a Poisson Process</p>
+<p>If events happen at a constant rate <span class="math notranslate nohighlight">\(\lambda\)</span> per unit time, the
+probability of <em>no</em> event in an interval of length <span class="math notranslate nohighlight">\(t\)</span> is
+<span class="math notranslate nohighlight">\(e^{-\lambda t}\)</span>. This is the survival function of the exponential
+distribution. Here, the “event” is recombination, the rate is
+<span class="math notranslate nohighlight">\(\rho/2\)</span>, and the interval is <span class="math notranslate nohighlight">\(\tau_i\)</span>, giving survival
+probability <span class="math notranslate nohighlight">\(e^{-\rho \tau_i / 2}\)</span>.</p>
+</div>
+</section>
+<section id="deriving-q-j-the-re-joining-weights">
+<h3>Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights<a class="headerlink" href="#deriving-q-j-the-re-joining-weights" title="Link to this heading"></a></h3>
+<p><strong>Why</strong> <span class="math notranslate nohighlight">\(q_j = r_j \cdot p_j\)</span> <strong>?</strong> This choice ensures the <strong>stationary
+distribution</strong> of the Markov chain is <span class="math notranslate nohighlight">\(\pi_i = p_i\)</span>. To verify, a
+stationary distribution satisfies <span class="math notranslate nohighlight">\(\pi_j = \sum_i \pi_i A_{ij}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\sum_i p_i A_{ij} &amp;= \sum_i p_i \left[(1-r_i)\delta_{ij} + r_i \frac{q_j}{\sum_k q_k}\right] \\
+&amp;= p_j(1-r_j) + \frac{q_j}{\sum_k q_k} \sum_i p_i r_i \\
+&amp;= p_j(1-r_j) + \frac{r_j p_j}{\sum_k r_k p_k} \sum_i r_i p_i \\
+&amp;= p_j(1-r_j) + r_j p_j = p_j \quad \checkmark\end{split}\]</div>
+<div class="admonition-probability-aside-stationary-distributions admonition">
+<p class="admonition-title">Probability Aside – Stationary Distributions</p>
+<p>A <strong>stationary distribution</strong> <span class="math notranslate nohighlight">\(\pi\)</span> of a Markov chain with transition
+matrix <span class="math notranslate nohighlight">\(A\)</span> is a probability vector such that <span class="math notranslate nohighlight">\(\pi A = \pi\)</span>. If the
+chain starts in distribution <span class="math notranslate nohighlight">\(\pi\)</span>, it stays in distribution <span class="math notranslate nohighlight">\(\pi\)</span>
+forever. Requiring that the SMC chain have stationary distribution
+<span class="math notranslate nohighlight">\(p_i\)</span> (the coalescence probability for branch <span class="math notranslate nohighlight">\(i\)</span>) ensures that
+the chain is consistent with the coalescent in equilibrium.</p>
+</div>
+<p>The product <span class="math notranslate nohighlight">\(r_j \cdot p_j\)</span> also has a physical interpretation: after a
+recombination at time <span class="math notranslate nohighlight">\(u\)</span>, the lineage must re-coalesce at some time
+<span class="math notranslate nohighlight">\(t &gt; u\)</span>. Branches with higher representative times (larger <span class="math notranslate nohighlight">\(\tau_j\)</span>)
+are more likely to be “available” for re-coalescence, and <span class="math notranslate nohighlight">\(r_j\)</span> captures
+this effect. The coalescence probability <span class="math notranslate nohighlight">\(p_j\)</span> captures the intrinsic
+likelihood of joining branch <span class="math notranslate nohighlight">\(j\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">smc_branch_transition</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">n_branches</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute SMC transition probabilities between branches.</span>
+
+<span class="sd">    This implements the stay-or-switch transition matrix:</span>
+<span class="sd">        A[i,j] = (1 - r_i) * delta(i,j)  +  r_i * q_j / sum(q)</span>
+<span class="sd">    where r_i is the recombination probability on branch i and</span>
+<span class="sd">    q_j = r_j * p_j is the re-joining weight for branch j.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tau : ndarray of shape (K,)</span>
+<span class="sd">        Representative joining time for each branch.</span>
+<span class="sd">    p : ndarray of shape (K,)</span>
+<span class="sd">        Coalescence probability for each branch.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Population-scaled recombination rate (4*Ne*r*m per bin).</span>
+<span class="sd">    n_branches : int</span>
+<span class="sd">        Number of branches (K).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    T : ndarray of shape (K, K)</span>
+<span class="sd">        Transition matrix where T[i, j] = P(next branch = j | current = i).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">n_branches</span>
+
+    <span class="c1"># Recombination probability for each branch:</span>
+    <span class="c1"># r_i = 1 - exp(-rho/2 * tau_i)</span>
+    <span class="c1"># This is 1 minus the &quot;survival probability&quot; (no recombination).</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">tau</span><span class="p">)</span>
+
+    <span class="c1"># Re-joining weights: q_j = r_j * p_j</span>
+    <span class="c1"># These ensure the stationary distribution is p_i.</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">p</span>
+
+    <span class="c1"># Sum of all re-joining weights (used to normalize).</span>
+    <span class="n">q_sum</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># Build the K x K transition matrix.</span>
+    <span class="c1"># T[i, j] is the probability of transitioning from branch i to branch j.</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>           <span class="c1"># iterate over source branches</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>       <span class="c1"># iterate over destination branches</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
+                <span class="c1"># Stay on the same branch: no recombination + recombination</span>
+                <span class="c1"># that happens to land back on the same branch.</span>
+                <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">q_sum</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Switch to a different branch: requires recombination.</span>
+                <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">q_sum</span>
+
+    <span class="c1"># Verify rows sum to 1 (each row is a probability distribution).</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">),</span> <span class="s2">&quot;Rows must sum to 1&quot;</span>
+    <span class="k">return</span> <span class="n">T</span>
+
+<span class="c1"># Example: 5 branches with different representative times and</span>
+<span class="c1"># coalescence probabilities.</span>
+<span class="n">K</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">])</span>   <span class="c1"># representative times</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>     <span class="c1"># coalescence probabilities</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="mf">0.5</span>                                       <span class="c1"># recombination rate</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">smc_branch_transition</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Transition matrix:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Row sums: </span><span class="si">{</span><span class="n">T</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With the general SMC transition structure in hand, we now turn to the simplest
+and most important special case: the pairwise (two-sequence) version.</p>
+</section>
+</section>
+<section id="psmc-the-pairwise-case">
+<h2>PSMC: The Pairwise Case<a class="headerlink" href="#psmc-the-pairwise-case" title="Link to this heading"></a></h2>
+<p>The <strong>Pairwise Sequentially Markov Coalescent (PSMC)</strong> (Li and Durbin, 2011) is
+the simplest application of the SMC: it uses just two sequences.</p>
+<div class="admonition-the-watch-metaphor admonition">
+<p class="admonition-title">The Watch Metaphor</p>
+<p>The PSMC transition is the simplest timepiece movement: just two hands
+(lineages) whose relative position changes at recombination breakpoints.
+With only two hands, the “tree” at each position is trivially described by
+a single number – the coalescence time – making the movement elegant
+in its simplicity.</p>
+</div>
+<p>With two sequences, the marginal tree at each position is trivial – just a
+single coalescence time <span class="math notranslate nohighlight">\(T\)</span>. There is one branch going up from each
+sample to the coalescence point, and that is it. As you move along the genome,
+<span class="math notranslate nohighlight">\(T\)</span> changes at recombination breakpoints.</p>
+<p>The hidden state is the coalescence time <span class="math notranslate nohighlight">\(T\)</span>, which is now a continuous
+variable rather than a discrete branch index. The transition density
+<span class="math notranslate nohighlight">\(q_\rho(t \mid s)\)</span> gives the probability density of the new coalescence
+time <span class="math notranslate nohighlight">\(t\)</span> given that the previous coalescence time was <span class="math notranslate nohighlight">\(s\)</span>.</p>
+<p>Let us derive this transition density from first principles.</p>
+<p><strong>Step 1: Does a recombination happen?</strong></p>
+<p>The two lineages form a branch of total length <span class="math notranslate nohighlight">\(2s\)</span> (two lineages, each
+of length <span class="math notranslate nohighlight">\(s\)</span>, but since we measure the rate <span class="math notranslate nohighlight">\(\rho/2\)</span> per lineage
+the effective rate along both lineages together is <span class="math notranslate nohighlight">\(\rho s\)</span>). The
+probability of <em>at least one</em> recombination is:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{recombination}) = 1 - e^{-\rho s}\]</div>
+<div class="admonition-calculus-aside-why-math-rho-s-and-not-math-rho-cdot-2s admonition">
+<p class="admonition-title">Calculus Aside – Why <span class="math notranslate nohighlight">\(\rho s\)</span> and Not <span class="math notranslate nohighlight">\(\rho \cdot 2s\)</span>?</p>
+<p>There are two lineages, each of length <span class="math notranslate nohighlight">\(s\)</span>, and each experiences
+recombination at rate <span class="math notranslate nohighlight">\(\rho/2\)</span>. The total rate is
+<span class="math notranslate nohighlight">\(2 \times (\rho/2) \times s = \rho s\)</span>. Different references use
+different conventions for whether <span class="math notranslate nohighlight">\(\rho\)</span> already includes the factor
+of 2 or not. Here we follow the convention where the total rate on the pair
+is <span class="math notranslate nohighlight">\(\rho s\)</span>.</p>
+</div>
+<p>With probability <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span>, no recombination occurs and the
+coalescence time stays at <span class="math notranslate nohighlight">\(s\)</span>. This is a <strong>point mass</strong> at <span class="math notranslate nohighlight">\(t = s\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[q_\rho(t \mid s) = e^{-\rho s} \quad \text{at } t = s\]</div>
+<div class="admonition-probability-aside-what-is-a-point-mass-dirac-delta admonition">
+<p class="admonition-title">Probability Aside – What Is a Point Mass (Dirac Delta)?</p>
+<p>When we say the distribution has a “point mass” at <span class="math notranslate nohighlight">\(t = s\)</span>, we mean
+that there is a nonzero probability <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span> concentrated at the
+single point <span class="math notranslate nohighlight">\(t = s\)</span>. This is different from a continuous density,
+which assigns zero probability to any individual point and only assigns
+nonzero probability to intervals.</p>
+<p>Mathematically, a point mass is often written using the <strong>Dirac delta
+function</strong> <span class="math notranslate nohighlight">\(\delta(t - s)\)</span>, which is not a function in the ordinary
+sense but rather a “generalized function” (or distribution) defined by its
+behavior under integration:</p>
+<div class="math notranslate nohighlight">
+\[\int_{-\infty}^{\infty} f(t) \, \delta(t - s) \, dt = f(s)\]</div>
+<p>The Dirac delta is zero everywhere except at <span class="math notranslate nohighlight">\(t = s\)</span>, where it is
+“infinitely tall” in such a way that its total integral is 1. When we write
+that the transition “density” has a component <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span> at
+<span class="math notranslate nohighlight">\(t = s\)</span>, we are implicitly using this notation:
+<span class="math notranslate nohighlight">\(e^{-\rho s} \cdot \delta(t - s)\)</span>.</p>
+<p>For our purposes, the key intuition is simple: with probability
+<span class="math notranslate nohighlight">\(e^{-\rho s}\)</span>, no recombination happens and the coalescence time is
+<em>exactly</em> <span class="math notranslate nohighlight">\(s\)</span> – not “near <span class="math notranslate nohighlight">\(s\)</span>” or “approximately <span class="math notranslate nohighlight">\(s\)</span>”,
+but precisely <span class="math notranslate nohighlight">\(s\)</span>.</p>
+</div>
+<p><strong>Step 2: Where does the recombination happen?</strong></p>
+<p>Conditioned on a recombination occurring, let <span class="math notranslate nohighlight">\(u\)</span> be the recombination time.
+Under the SMC, <span class="math notranslate nohighlight">\(u\)</span> is <strong>uniform</strong> on <span class="math notranslate nohighlight">\([0, s]\)</span> (the branch extends
+from the present at 0 to the coalescence at <span class="math notranslate nohighlight">\(s\)</span>). So:</p>
+<div class="math notranslate nohighlight">
+\[p(u \mid \text{recomb}) = \frac{1}{s}, \quad 0 \leq u \leq s\]</div>
+<p>The recombination can strike anywhere along the branch with equal probability.
+This is because, given that at least one recombination event occurred on a
+branch of length <span class="math notranslate nohighlight">\(s\)</span> (under a Poisson process), the location of the
+<em>first</em> event is approximately uniform for the rates we consider.</p>
+<p><strong>Step 3: Where does the lineage re-coalesce?</strong></p>
+<p>After recombination at time <span class="math notranslate nohighlight">\(u\)</span>, the detached lineage floats up and
+re-coalesces with the other lineage. Under the coalescent (with 2 lineages and
+pairwise coalescence rate 1 in coalescent time units), the waiting time from
+<span class="math notranslate nohighlight">\(u\)</span> is <span class="math notranslate nohighlight">\(\text{Exp}(1)\)</span> – an exponential random variable with
+rate 1.</p>
+<p>So the re-coalescence time is <span class="math notranslate nohighlight">\(t = u + W\)</span> where <span class="math notranslate nohighlight">\(W \sim
+\text{Exp}(1)\)</span>. The density of <span class="math notranslate nohighlight">\(t\)</span> given <span class="math notranslate nohighlight">\(u\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[p(t \mid u) = e^{-(t - u)}, \quad t \geq u\]</div>
+<div class="admonition-probability-aside-the-exponential-distribution admonition">
+<p class="admonition-title">Probability Aside – The Exponential Distribution</p>
+<p>A random variable <span class="math notranslate nohighlight">\(W \sim \text{Exp}(\lambda)\)</span> has density
+<span class="math notranslate nohighlight">\(f(w) = \lambda e^{-\lambda w}\)</span> for <span class="math notranslate nohighlight">\(w \geq 0\)</span>. Its mean is
+<span class="math notranslate nohighlight">\(1/\lambda\)</span>. With <span class="math notranslate nohighlight">\(\lambda = 1\)</span>, the density simplifies to
+<span class="math notranslate nohighlight">\(e^{-w}\)</span> and the mean waiting time is 1 coalescent time unit. This
+is the standard coalescent waiting time for two lineages, as derived in the
+<a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter.</p>
+</div>
+<p><strong>Step 4: Combine by integrating over</strong> <span class="math notranslate nohighlight">\(u\)</span>.</p>
+<p>We now have all the ingredients. Given that a recombination occurred:</p>
+<ul class="simple">
+<li><p>The recombination time <span class="math notranslate nohighlight">\(u\)</span> is uniform on <span class="math notranslate nohighlight">\([0, s]\)</span>, with density
+<span class="math notranslate nohighlight">\(1/s\)</span></p></li>
+<li><p>Given <span class="math notranslate nohighlight">\(u\)</span>, the new coalescence time <span class="math notranslate nohighlight">\(t\)</span> has density
+<span class="math notranslate nohighlight">\(e^{-(t-u)}\)</span> for <span class="math notranslate nohighlight">\(t \geq u\)</span></p></li>
+</ul>
+<p>To get the density of <span class="math notranslate nohighlight">\(t\)</span> (marginalizing over <span class="math notranslate nohighlight">\(u\)</span>), we integrate:</p>
+<div class="math notranslate nohighlight">
+\[q_0(t \mid s) = \int_0^{s \wedge t} \frac{1}{s} e^{-(t-u)} \, du\]</div>
+<div class="admonition-calculus-aside-why-math-s-wedge-t-as-the-upper-limit admonition">
+<p class="admonition-title">Calculus Aside – Why <span class="math notranslate nohighlight">\(s \wedge t\)</span> as the Upper Limit?</p>
+<p>The notation <span class="math notranslate nohighlight">\(s \wedge t\)</span> means <span class="math notranslate nohighlight">\(\min(s, t)\)</span>. There are two
+constraints on <span class="math notranslate nohighlight">\(u\)</span>: it must satisfy <span class="math notranslate nohighlight">\(u \leq s\)</span> (the
+recombination must occur on the branch, which extends from 0 to <span class="math notranslate nohighlight">\(s\)</span>)
+and <span class="math notranslate nohighlight">\(u \leq t\)</span> (the re-coalescence time <span class="math notranslate nohighlight">\(t\)</span> must come after the
+recombination time <span class="math notranslate nohighlight">\(u\)</span>). The binding constraint is whichever is
+smaller, hence <span class="math notranslate nohighlight">\(\min(s, t)\)</span>.</p>
+</div>
+<p>This integral splits into two cases depending on whether <span class="math notranslate nohighlight">\(t &lt; s\)</span> or
+<span class="math notranslate nohighlight">\(t \geq s\)</span>.</p>
+<p><strong>Case 1:</strong> <span class="math notranslate nohighlight">\(t &lt; s\)</span> <strong>(new coalescence time is earlier than the old one).</strong></p>
+<p>The integral runs from 0 to <span class="math notranslate nohighlight">\(t\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[q_0(t \mid s) = \frac{1}{s} \int_0^{t} e^{-(t-u)} \, du\]</div>
+<p>To evaluate this, we use the substitution <span class="math notranslate nohighlight">\(v = t - u\)</span>. Then
+<span class="math notranslate nohighlight">\(dv = -du\)</span>, and the limits change:</p>
+<ul class="simple">
+<li><p>When <span class="math notranslate nohighlight">\(u = 0\)</span>: <span class="math notranslate nohighlight">\(v = t\)</span></p></li>
+<li><p>When <span class="math notranslate nohighlight">\(u = t\)</span>: <span class="math notranslate nohighlight">\(v = 0\)</span></p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[\int_0^t e^{-(t-u)} \, du = \int_t^0 e^{-v}(-dv) = \int_0^t e^{-v} \, dv\]</div>
+<p>Now we compute the antiderivative of <span class="math notranslate nohighlight">\(e^{-v}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\int_0^t e^{-v} \, dv = \left[-e^{-v}\right]_0^t = -e^{-t} - (-e^{0}) = 1 - e^{-t}\]</div>
+<div class="admonition-calculus-aside-evaluating-definite-integrals admonition">
+<p class="admonition-title">Calculus Aside – Evaluating Definite Integrals</p>
+<p>The notation <span class="math notranslate nohighlight">\(\left[F(v)\right]_a^b\)</span> means <span class="math notranslate nohighlight">\(F(b) - F(a)\)</span>. Here,
+<span class="math notranslate nohighlight">\(F(v) = -e^{-v}\)</span>, so <span class="math notranslate nohighlight">\(F(t) - F(0) = -e^{-t} - (-1) = 1 - e^{-t}\)</span>.
+This is the CDF of the standard exponential distribution evaluated at
+<span class="math notranslate nohighlight">\(t\)</span>.</p>
+</div>
+<p>Therefore:</p>
+<div class="math notranslate nohighlight">
+\[q_0(t \mid s) = \frac{1}{s}(1 - e^{-t}), \quad t &lt; s\]</div>
+<p><strong>Case 2:</strong> <span class="math notranslate nohighlight">\(t \geq s\)</span> <strong>(new coalescence time is later than or equal to the old one).</strong></p>
+<p>The integral runs from 0 to <span class="math notranslate nohighlight">\(s\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[q_0(t \mid s) = \frac{1}{s} \int_0^{s} e^{-(t-u)} \, du\]</div>
+<p>Using the same substitution <span class="math notranslate nohighlight">\(v = t - u\)</span>, with <span class="math notranslate nohighlight">\(dv = -du\)</span>:</p>
+<ul class="simple">
+<li><p>When <span class="math notranslate nohighlight">\(u = 0\)</span>: <span class="math notranslate nohighlight">\(v = t\)</span></p></li>
+<li><p>When <span class="math notranslate nohighlight">\(u = s\)</span>: <span class="math notranslate nohighlight">\(v = t - s\)</span></p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[\int_0^s e^{-(t-u)} \, du = \int_t^{t-s} e^{-v}(-dv) = \int_{t-s}^{t} e^{-v} \, dv\]</div>
+<p>Computing the antiderivative:</p>
+<div class="math notranslate nohighlight">
+\[\int_{t-s}^{t} e^{-v} \, dv = \left[-e^{-v}\right]_{t-s}^{t} = -e^{-t} - (-e^{-(t-s)}) = e^{-(t-s)} - e^{-t}\]</div>
+<p>Therefore:</p>
+<div class="math notranslate nohighlight">
+\[q_0(t \mid s) = \frac{1}{s}\left(e^{-(t-s)} - e^{-t}\right), \quad t \geq s\]</div>
+<p><strong>Step 5: Include the no-recombination probability.</strong></p>
+<p>Combining the recombination probability <span class="math notranslate nohighlight">\((1 - e^{-\rho s})\)</span> with the
+conditional density <span class="math notranslate nohighlight">\(q_0(t \mid s)\)</span>, and adding the point mass for the
+no-recombination case:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}q_\rho(t \mid s) = \begin{cases}
+\frac{1 - e^{-\rho s}}{s}[1 - e^{-t}] &amp; t &lt; s \\[6pt]
+e^{-\rho s} &amp; t = s \text{ (point mass: no recombination)} \\[6pt]
+\frac{1 - e^{-\rho s}}{s}[e^{-(t-s)} - e^{-t}] &amp; t &gt; s
+\end{cases}\end{split}\]</div>
+<p><strong>Verification: Does the density integrate to 1?</strong></p>
+<p>The total probability must be 1: the continuous part should integrate to
+<span class="math notranslate nohighlight">\(1 - e^{-\rho s}\)</span> (the probability that recombination occurs), and the
+point mass contributes <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span>.</p>
+<p>We need to verify that <span class="math notranslate nohighlight">\(\int_0^\infty q_0(t \mid s) \, dt = 1\)</span> (the
+conditional density given recombination integrates to 1):</p>
+<div class="math notranslate nohighlight">
+\[\int_0^\infty q_0(t|s) \, dt &amp;= \frac{1}{s}\int_0^s (1-e^{-t})dt + \frac{1}{s}\int_s^\infty (e^{-(t-s)} - e^{-t})dt\]</div>
+<p><strong>First integral</strong> (<span class="math notranslate nohighlight">\(t\)</span> from 0 to <span class="math notranslate nohighlight">\(s\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[\int_0^s (1 - e^{-t}) \, dt = \left[t + e^{-t}\right]_0^s = (s + e^{-s}) - (0 + 1) = s + e^{-s} - 1\]</div>
+<p><strong>Second integral</strong> (<span class="math notranslate nohighlight">\(t\)</span> from <span class="math notranslate nohighlight">\(s\)</span> to <span class="math notranslate nohighlight">\(\infty\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[\int_s^\infty (e^{-(t-s)} - e^{-t}) \, dt = \left[-e^{-(t-s)} + e^{-t}\right]_s^\infty\]</div>
+<p>At <span class="math notranslate nohighlight">\(t \to \infty\)</span>: both <span class="math notranslate nohighlight">\(e^{-(t-s)}\)</span> and <span class="math notranslate nohighlight">\(e^{-t}\)</span> go to 0,
+so the upper limit contributes 0.</p>
+<p>At <span class="math notranslate nohighlight">\(t = s\)</span>: <span class="math notranslate nohighlight">\(-e^{0} + e^{-s} = -1 + e^{-s}\)</span>.</p>
+<p>Therefore: <span class="math notranslate nohighlight">\(0 - (-1 + e^{-s}) = 1 - e^{-s}\)</span>.</p>
+<p><strong>Putting it together:</strong></p>
+<div class="math notranslate nohighlight">
+\[\int_0^\infty q_0(t|s) \, dt = \frac{1}{s}[(s + e^{-s} - 1) + (1 - e^{-s})] = \frac{1}{s} \cdot s = 1 \quad \checkmark\]</div>
+<p>So the conditional density integrates to 1 (given recombination). Multiplying
+by <span class="math notranslate nohighlight">\((1 - e^{-\rho s})\)</span> and adding the point mass <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span>
+gives total probability <span class="math notranslate nohighlight">\((1 - e^{-\rho s}) + e^{-\rho s} = 1\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">psmc_transition_density</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PSMC transition density q_rho(t | s).</span>
+
+<span class="sd">    Computes the probability density of the new coalescence time t,</span>
+<span class="sd">    given that the previous coalescence time was s.</span>
+
+<span class="sd">    The density has three components:</span>
+<span class="sd">    1. For t &lt; s: (p_recomb / s) * (1 - exp(-t))</span>
+<span class="sd">    2. At t = s:  a point mass of weight exp(-rho * s)  [no recombination]</span>
+<span class="sd">    3. For t &gt; s: (p_recomb / s) * (exp(-(t-s)) - exp(-t))</span>
+
+<span class="sd">    This function returns only the continuous part (items 1 and 3).</span>
+<span class="sd">    The point mass at t = s must be handled separately.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float or ndarray</span>
+<span class="sd">        New coalescence time(s) to evaluate the density at.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Previous coalescence time.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Recombination rate for the bin.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    density : float or ndarray</span>
+<span class="sd">        The continuous part of the transition density at each t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Probability of no recombination on the pair of branches.</span>
+    <span class="n">p_no_recomb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+
+    <span class="c1"># Probability that at least one recombination occurs.</span>
+    <span class="n">p_recomb</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">p_no_recomb</span>
+
+    <span class="c1"># Convert t to a NumPy array so we can use boolean indexing.</span>
+    <span class="c1"># The dtype=float ensures we get floating-point arithmetic.</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="c1"># Initialize output array to zero (same shape as t).</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="c1"># Case 1: t &lt; s (new coalescence time is earlier than old).</span>
+    <span class="c1"># mask_lt is a boolean array: True where t &lt; s, False elsewhere.</span>
+    <span class="n">mask_lt</span> <span class="o">=</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">s</span>
+    <span class="n">density</span><span class="p">[</span><span class="n">mask_lt</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_recomb</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="n">mask_lt</span><span class="p">]))</span>
+
+    <span class="c1"># Case 2: t &gt;= s (new coalescence time is later than old).</span>
+    <span class="c1"># Note: at the single point t = s, the continuous density is</span>
+    <span class="c1"># well-defined (both formulas give the same value there), but the</span>
+    <span class="c1"># point mass must be added separately.</span>
+    <span class="n">mask_ge</span> <span class="o">=</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">s</span>
+    <span class="n">density</span><span class="p">[</span><span class="n">mask_ge</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_recomb</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">mask_ge</span><span class="p">]</span> <span class="o">-</span> <span class="n">s</span><span class="p">))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="n">mask_ge</span><span class="p">])</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">density</span>
+
+<span class="c1"># Visualize the transition density</span>
+<span class="n">s</span> <span class="o">=</span> <span class="mf">1.0</span>        <span class="c1"># previous coalescence time</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="mf">0.5</span>      <span class="c1"># recombination rate</span>
+<span class="n">t_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>  <span class="c1"># grid of new coalescence times</span>
+<span class="n">densities</span> <span class="o">=</span> <span class="n">psmc_transition_density</span><span class="p">(</span><span class="n">t_values</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Transition density from s=</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">, rho=</span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Peak near t=</span><span class="si">{</span><span class="n">t_values</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">densities</span><span class="p">)]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># np.trapz approximates the integral using the trapezoidal rule.</span>
+<span class="c1"># This should be close to (1 - exp(-rho * s)), the recombination probability.</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Integral (approx): </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">densities</span><span class="p">,</span><span class="w"> </span><span class="n">t_values</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># The &quot;missing mass&quot; is the point mass at t = s (no recombination).</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Missing mass (at t=s): </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Together they should sum to 1.</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Total: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">densities</span><span class="p">,</span><span class="w"> </span><span class="n">t_values</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The PSMC transition density is the foundation of the PSMC’s time-discretized
+HMM (see <a class="reference internal" href="../timepieces/psmc/overview.html#psmc-overview"><span class="std std-ref">Overview of PSMC</span></a>) and of SINGER’s <strong>time sampling</strong> step.</p>
+</section>
+<section id="the-cumulative-distribution-function">
+<h2>The Cumulative Distribution Function<a class="headerlink" href="#the-cumulative-distribution-function" title="Link to this heading"></a></h2>
+<p>To use the transition density in practice – for instance, to sample from it
+or to compute probabilities over intervals – we need the <strong>cumulative
+distribution function</strong> (CDF).</p>
+<div class="admonition-probability-aside-what-is-a-cdf admonition">
+<p class="admonition-title">Probability Aside – What Is a CDF?</p>
+<p>The <strong>cumulative distribution function</strong> (CDF) of a random variable
+<span class="math notranslate nohighlight">\(T\)</span> is defined as <span class="math notranslate nohighlight">\(F(t) = P(T \leq t)\)</span>: the probability that
+<span class="math notranslate nohighlight">\(T\)</span> takes a value less than or equal to <span class="math notranslate nohighlight">\(t\)</span>. The CDF is obtained
+by integrating the density:</p>
+<div class="math notranslate nohighlight">
+\[F(t) = \int_{-\infty}^{t} f(x) \, dx\]</div>
+<p>CDFs are monotonically increasing from 0 to 1. They are essential for:</p>
+<ul class="simple">
+<li><p>Computing the probability that <span class="math notranslate nohighlight">\(T\)</span> falls in an interval
+<span class="math notranslate nohighlight">\([a, b]\)</span>: <span class="math notranslate nohighlight">\(P(a \leq T \leq b) = F(b) - F(a)\)</span></p></li>
+<li><p>Sampling from the distribution via <strong>inverse transform sampling</strong>:
+generate <span class="math notranslate nohighlight">\(U \sim \text{Uniform}(0, 1)\)</span> and set <span class="math notranslate nohighlight">\(T = F^{-1}(U)\)</span></p></li>
+<li><p>Discretizing a continuous distribution by computing probabilities for
+each bin: <span class="math notranslate nohighlight">\(P(a_k \leq T &lt; a_{k+1}) = F(a_{k+1}) - F(a_k)\)</span></p></li>
+</ul>
+<p>In the PSMC, we discretize coalescence time into bins and need the
+probability mass in each bin, which requires the CDF.</p>
+</div>
+<p>The CDF is obtained by integrating the density. Let us derive each case.</p>
+<p><strong>Case 1:</strong> <span class="math notranslate nohighlight">\(t &lt; s\)</span>.</p>
+<p>We integrate the density <span class="math notranslate nohighlight">\(\frac{1-e^{-\rho s}}{s}(1 - e^{-x})\)</span> from 0
+to <span class="math notranslate nohighlight">\(t\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[Q_\rho(t \mid s) &amp;= \frac{1-e^{-\rho s}}{s} \int_0^t (1 - e^{-x}) \, dx\]</div>
+<p>The integrand <span class="math notranslate nohighlight">\(1 - e^{-x}\)</span> has antiderivative <span class="math notranslate nohighlight">\(x + e^{-x}\)</span> (since
+the derivative of <span class="math notranslate nohighlight">\(x\)</span> is 1 and the derivative of <span class="math notranslate nohighlight">\(e^{-x}\)</span> is
+<span class="math notranslate nohighlight">\(-e^{-x}\)</span>, so <span class="math notranslate nohighlight">\(\frac{d}{dx}(x + e^{-x}) = 1 - e^{-x}\)</span>).</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}Q_\rho(t \mid s) &amp;= \frac{1-e^{-\rho s}}{s} \left[x + e^{-x}\right]_0^t \\
+&amp;= \frac{1-e^{-\rho s}}{s} \left[(t + e^{-t}) - (0 + 1)\right] \\
+&amp;= \frac{1-e^{-\rho s}}{s}[t + e^{-t} - 1]\end{split}\]</div>
+<p><strong>Case 2:</strong> <span class="math notranslate nohighlight">\(t \geq s\)</span>.</p>
+<p>We build the CDF in three pieces:</p>
+<ol class="arabic simple">
+<li><p>The integral of the density from 0 to <span class="math notranslate nohighlight">\(s\)</span> (the Case 1 density,
+evaluated at its upper limit <span class="math notranslate nohighlight">\(s\)</span>)</p></li>
+<li><p>The point mass <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span> at <span class="math notranslate nohighlight">\(t = s\)</span> (no recombination)</p></li>
+<li><p>The integral of the density from <span class="math notranslate nohighlight">\(s\)</span> to <span class="math notranslate nohighlight">\(t\)</span> (the Case 2 density)</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[Q_\rho(t \mid s) &amp;= \underbrace{\frac{1-e^{-\rho s}}{s}[s + e^{-s} - 1]}_{\text{integral up to } s}
++ \underbrace{e^{-\rho s}}_{\text{point mass}}
++ \underbrace{\frac{1-e^{-\rho s}}{s} \int_s^t (e^{-(x-s)} - e^{-x}) \, dx}_{\text{integral from } s \text{ to } t}\]</div>
+<p>Let us compute the remaining integral. The integrand has two terms:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(e^{-(x-s)}\)</span> has antiderivative <span class="math notranslate nohighlight">\(-e^{-(x-s)}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(-e^{-x}\)</span> has antiderivative <span class="math notranslate nohighlight">\(e^{-x}\)</span></p></li>
+</ul>
+<p>So the antiderivative of the integrand is <span class="math notranslate nohighlight">\(-e^{-(x-s)} + e^{-x}\)</span>.
+Evaluating:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\int_s^t (e^{-(x-s)} - e^{-x}) dx &amp;= \left[-e^{-(x-s)} + e^{-x}\right]_s^t \\
+&amp;= \left(-e^{-(t-s)} + e^{-t}\right) - \left(-e^{0} + e^{-s}\right) \\
+&amp;= -e^{-(t-s)} + e^{-t} + 1 - e^{-s} \\
+&amp;= 1 - e^{-s} - e^{-(t-s)} + e^{-t}\end{split}\]</div>
+<p>Adding it all up:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}Q_\rho(t \mid s) &amp;= \frac{1-e^{-\rho s}}{s}[\underbrace{s + e^{-s} - 1 + 1 - e^{-s}}_{= s} - e^{-(t-s)} + e^{-t}] + e^{-\rho s} \\
+&amp;= \frac{1-e^{-\rho s}}{s}[s - e^{-(t-s)} + e^{-t}] + e^{-\rho s}\end{split}\]</div>
+<p><strong>Verification</strong>: As <span class="math notranslate nohighlight">\(t \to \infty\)</span>, both <span class="math notranslate nohighlight">\(e^{-(t-s)} \to 0\)</span> and
+<span class="math notranslate nohighlight">\(e^{-t} \to 0\)</span>, so:</p>
+<div class="math notranslate nohighlight">
+\[Q_\rho(\infty \mid s) = \frac{1-e^{-\rho s}}{s} \cdot s + e^{-\rho s} = 1 - e^{-\rho s} + e^{-\rho s} = 1 \quad \checkmark\]</div>
+<p>In summary:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}Q_\rho(t \mid s) = \begin{cases}
+\frac{1 - e^{-\rho s}}{s}[t + e^{-t} - 1] &amp; t &lt; s \\[6pt]
+\frac{1 - e^{-\rho s}}{s}[s - e^{-(t-s)} + e^{-t}] + e^{-\rho s} &amp; t \geq s
+\end{cases}\end{split}\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">psmc_transition_cdf</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PSMC transition CDF Q_rho(t | s).</span>
+
+<span class="sd">    Computes the cumulative distribution function of the new coalescence</span>
+<span class="sd">    time t, given the previous coalescence time s.</span>
+
+<span class="sd">    This CDF includes the point mass at t = s (no recombination).</span>
+<span class="sd">    For t &gt;= s, the CDF jumps by exp(-rho * s) at t = s.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float or ndarray</span>
+<span class="sd">        New coalescence time(s) to evaluate the CDF at.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Previous coalescence time.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Recombination rate for the bin.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cdf : float or ndarray</span>
+<span class="sd">        CDF values at each t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Probability of no recombination (the point mass weight).</span>
+    <span class="n">p_no_recomb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+
+    <span class="c1"># Probability of recombination (weight of the continuous part).</span>
+    <span class="n">p_recomb</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">p_no_recomb</span>
+
+    <span class="c1"># Convert t to a NumPy array for vectorized computation.</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="c1"># Case 1: t &lt; s</span>
+    <span class="c1"># CDF is the integral of the density from 0 to t.</span>
+    <span class="n">mask_lt</span> <span class="o">=</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">s</span>
+    <span class="n">cdf</span><span class="p">[</span><span class="n">mask_lt</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_recomb</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">t</span><span class="p">[</span><span class="n">mask_lt</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="n">mask_lt</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Case 2: t &gt;= s</span>
+    <span class="c1"># CDF includes the continuous integral plus the point mass.</span>
+    <span class="n">mask_ge</span> <span class="o">=</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">s</span>
+    <span class="n">cdf</span><span class="p">[</span><span class="n">mask_ge</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_recomb</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">s</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">mask_ge</span><span class="p">]</span> <span class="o">-</span> <span class="n">s</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="n">mask_ge</span><span class="p">])</span>
+    <span class="p">)</span> <span class="o">+</span> <span class="n">p_no_recomb</span>
+
+    <span class="k">return</span> <span class="n">cdf</span>
+
+<span class="c1"># Verify: CDF should approach 1 as t -&gt; infinity.</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CDF at t=10: </span><span class="si">{</span><span class="n">psmc_transition_cdf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">10.0</span><span class="p">]),</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">rho</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CDF at t=100: </span><span class="si">{</span><span class="n">psmc_transition_cdf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">100.0</span><span class="p">]),</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">rho</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="why-smc-enables-hmm-inference">
+<h2>Why SMC Enables HMM Inference<a class="headerlink" href="#why-smc-enables-hmm-inference" title="Link to this heading"></a></h2>
+<p>Let us now make explicit the connection between everything we have derived and
+the HMM framework from the <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>.</p>
+<p>An HMM requires three ingredients:</p>
+<ol class="arabic simple">
+<li><p><strong>Hidden states</strong>: The possible values of the hidden variable at each
+genomic position.</p></li>
+<li><p><strong>Transition probabilities</strong>: The probability of moving from one hidden state
+to another between adjacent positions. These must depend only on the current
+state (Markov property).</p></li>
+<li><p><strong>Emission probabilities</strong>: The probability of the observed data at each
+position, given the hidden state.</p></li>
+</ol>
+<p>The SMC provides ingredients 1 and 2. Here is the mapping:</p>
+<ol class="arabic simple">
+<li><p><strong>Markov property</strong>: The SMC ensures that the tree at position <span class="math notranslate nohighlight">\(\ell\)</span>
+depends only on the tree at <span class="math notranslate nohighlight">\(\ell - 1\)</span> and the recombination event
+between them. This is exactly the Markov property that HMMs require.
+Without the SMC approximation (in the full CwR), we would need the entire
+tree history, and the HMM framework would not apply.</p></li>
+<li><p><strong>Conditional independence</strong>: Given the tree at position <span class="math notranslate nohighlight">\(\ell\)</span>, the
+mutations at that position are independent of mutations at other positions.
+This gives us emission probabilities <span class="math notranslate nohighlight">\(P(X_\ell \mid Z_\ell)\)</span> that
+depend only on the current hidden state, as HMMs require.</p></li>
+<li><p><strong>Li-Stephens structure</strong>: The SMC transition probability has the
+stay-or-switch form <span class="math notranslate nohighlight">\((1 - r_i)\delta_{ij} + r_i \cdot (\text{weights})\)</span>,
+which enables <span class="math notranslate nohighlight">\(O(K)\)</span> forward steps instead of <span class="math notranslate nohighlight">\(O(K^2)\)</span>.
+This is the same structure we studied in the <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>.</p></li>
+</ol>
+<p>Together: <strong>SMC + HMM = tractable ARG inference</strong>. The SMC gives us a Markov
+model of tree evolution along the genome, the HMM machinery lets us do efficient
+inference in that model, and the PSMC transition density derived above provides
+the specific transition probabilities for the pairwise case.</p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Concept</p></th>
+<th class="head"><p>Key Idea</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>CwR limitation</p></td>
+<td><p>Tree sequence is not Markov (ghost lineages can return)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Markov property</p></td>
+<td><p>Future depends on past only through present; enables HMM inference</p></td>
+</tr>
+<tr class="row-even"><td><p>Ghost lineages</p></td>
+<td><p>Ancestral lineages not in the current tree that could reappear in the CwR</p></td>
+</tr>
+<tr class="row-odd"><td><p>SMC approximation</p></td>
+<td><p>Re-coalescence only with current tree branches; eliminates ghost lineages</p></td>
+</tr>
+<tr class="row-even"><td><p>SMC transitions</p></td>
+<td><p>Li-Stephens structure: <span class="math notranslate nohighlight">\((1-r_i)\delta_{ij} + r_i \frac{q_j}{\sum q}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>PSMC transitions</p></td>
+<td><p>Continuous-time density <span class="math notranslate nohighlight">\(q_\rho(t|s)\)</span> and CDF <span class="math notranslate nohighlight">\(Q_\rho(t|s)\)</span> for pairwise coalescence</p></td>
+</tr>
+<tr class="row-even"><td><p>SMC + HMM</p></td>
+<td><p>The SMC provides the Markov property; the HMM provides the inference algorithm</p></td>
+</tr>
+</tbody>
+</table>
+<p>You now have all the prerequisites. Time to build a Timepiece.</p>
+<p>Next:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../timepieces/singer/overview.html#singer-overview"><span class="std std-ref">Overview of SINGER</span></a> – disassembling the SINGER algorithm (ARG inference for multiple samples).</p></li>
+<li><p><a class="reference internal" href="../timepieces/psmc/overview.html#psmc-overview"><span class="std std-ref">Overview of PSMC</span></a> – building the PSMC (population size history from a single diploid genome).</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hmms.html" class="btn btn-neutral float-left" title="Hidden Markov Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../timepieces/index.html" class="btn btn-neutral float-right" title="Timepieces" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

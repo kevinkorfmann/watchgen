@@ -1,0 +1,1000 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Discretization &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Transition Probabilities" href="transition_probabilities.html" />
+    <link rel="prev" title="Overview of ARGweaver" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece IV: ARGweaver</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece IV: ARGweaver</a></li>
+      <li class="breadcrumb-item active">Time Discretization</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of ARGweaver" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="transition_probabilities.html" class="btn btn-neutral float-right" title="Transition Probabilities" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="time-discretization">
+<span id="argweaver-time-discretization"></span><h1>Time Discretization<a class="headerlink" href="#time-discretization" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The first gear to cut: a clock face with unevenly spaced tick marks,
+crowded near the present where the action is densest.</em></p>
+</div></blockquote>
+<p>This chapter covers the foundational mechanism that distinguishes ARGweaver from
+continuous-time methods like SINGER: the <strong>discretization of time</strong> onto a finite
+grid. This single design choice cascades through the entire algorithm — it determines
+the HMM state space, the transition matrix structure, and the granularity of the
+posterior samples.</p>
+<p>In the overview (<a class="reference internal" href="overview.html#argweaver-overview"><span class="std std-ref">Overview of ARGweaver</span></a>), we called ARGweaver a “digital watch.”
+Now we forge the tick marks on its dial. If you skipped the overview, go back and
+read it first — the terminology and high-level flow defined there are essential for
+what follows.</p>
+<section id="why-discretize-time">
+<h2>Why Discretize Time?<a class="headerlink" href="#why-discretize-time" title="Link to this heading"></a></h2>
+<p>In a coalescent model, times are continuous: any positive real number is a valid
+coalescence time. This means the state space for an HMM threading a new lineage
+is infinite — you cannot enumerate all (branch, time) pairs.</p>
+<p>SINGER handles this by splitting the problem: first pick branches (finite), then
+sample continuous times conditioned on the branch choice. ARGweaver takes a different
+approach: <strong>snap all times to a finite grid</strong>, making the joint (branch, time) state
+space finite from the start.</p>
+<p>The benefits:</p>
+<ol class="arabic simple">
+<li><p><strong>Exact HMM computation</strong> — The forward–backward algorithm runs on a finite
+state space with no quadrature or approximation in the HMM itself.</p></li>
+<li><p><strong>Single HMM</strong> — No need to decouple branches and times into separate stages.</p></li>
+<li><p><strong>Simpler transition matrices</strong> — Transitions are ordinary matrices, not
+continuous kernels.</p></li>
+</ol>
+<p>The cost is a discretization error: coalescence times are rounded to the nearest
+grid point. This error is controlled by the number of time points <span class="math notranslate nohighlight">\(n_t\)</span> and
+the grid spacing.</p>
+<div class="admonition-calculus-aside-from-continuous-kernels-to-finite-matrices admonition">
+<p class="admonition-title">Calculus Aside — From continuous kernels to finite matrices</p>
+<p>Under the continuous coalescent (see <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>), the probability
+that a lineage coalesces in the infinitesimal interval <span class="math notranslate nohighlight">\([t, t+dt)\)</span> is
+<span class="math notranslate nohighlight">\(\lambda(t)\,dt\)</span>, where <span class="math notranslate nohighlight">\(\lambda(t) = k(k-1)/(4N_e(t))\)</span> for <span class="math notranslate nohighlight">\(k\)</span>
+lineages. To compute the forward probability in an HMM with continuous time, you
+must evaluate integrals of the form:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_s(b', t') = \int_0^\infty \alpha_{s-1}(b, t) \; K\big((b,t) \to (b',t')\big) \; dt\]</div>
+<p>where <span class="math notranslate nohighlight">\(K\)</span> is a transition kernel. Discretization replaces this integral with
+a finite sum:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_s(b', j) = \sum_{(b,i)} \alpha_{s-1}(b, i) \; T_{(b,i) \to (b',j)}\]</div>
+<p>The integral becomes a matrix–vector product — something a computer can evaluate
+exactly (up to floating point). This is why discretization is so powerful: it turns
+an analytically intractable integral equation into linear algebra.</p>
+</div>
+<div class="admonition-closing-the-confusion-gap-why-finite-matters admonition">
+<p class="admonition-title">Closing the confusion gap — Why “finite” matters</p>
+<p>You might wonder: cannot we just approximate the integral numerically? Yes, but
+every numerical integration scheme (trapezoidal rule, Gauss quadrature, etc.)
+effectively <em>discretizes</em> the integral at a finite set of evaluation points.
+ARGweaver’s time grid is exactly such a discretization, but designed specifically
+for the coalescent: denser where coalescence events concentrate (near the present)
+and sparser where they are rare (the deep past). By building the discretization
+into the model rather than treating it as an afterthought, ARGweaver can
+pre-compute all transition probabilities once per tree and reuse them for every
+genomic position — a huge efficiency gain.</p>
+</div>
+</section>
+<section id="the-exponential-time-grid">
+<h2>The Exponential Time Grid<a class="headerlink" href="#the-exponential-time-grid" title="Link to this heading"></a></h2>
+<p>ARGweaver does <strong>not</strong> use a uniform grid. Instead, it uses a log-spaced grid that
+is denser near the present (where the coalescent density is highest) and sparser
+in the deep past.</p>
+<p>The <span class="math notranslate nohighlight">\(i\)</span>-th time point is:</p>
+<div class="math notranslate nohighlight">
+\[t_i = \frac{\exp\!\Big(\frac{i}{n_t - 1} \cdot \ln(1 + \delta \cdot T_{\max})\Big) - 1}{\delta}\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(n_t\)</span> is the number of time points (including <span class="math notranslate nohighlight">\(t_0 = 0\)</span>)</p></li>
+<li><p><span class="math notranslate nohighlight">\(T_{\max}\)</span> is the maximum time in generations</p></li>
+<li><p><span class="math notranslate nohighlight">\(\delta\)</span> is a parameter controlling the spacing</p></li>
+</ul>
+<div class="admonition-why-this-formula admonition">
+<p class="admonition-title">Why this formula?</p>
+<p>Let’s unpack it. Define <span class="math notranslate nohighlight">\(f(x) = \frac{e^x - 1}{\delta}\)</span>. This maps
+<span class="math notranslate nohighlight">\(x = 0\)</span> to <span class="math notranslate nohighlight">\(t = 0\)</span> and <span class="math notranslate nohighlight">\(x = \ln(1 + \delta T_{\max})\)</span> to
+<span class="math notranslate nohighlight">\(t = T_{\max}\)</span>. By spacing <span class="math notranslate nohighlight">\(x\)</span> uniformly on <span class="math notranslate nohighlight">\([0, \ln(1 + \delta T_{\max})]\)</span>
+and applying <span class="math notranslate nohighlight">\(f\)</span>, we get time points that are <strong>uniformly spaced on a log scale</strong>
+(after shifting by <span class="math notranslate nohighlight">\(1/\delta\)</span>).</p>
+<p>Near the present, consecutive time points are close together because the exponential
+grows slowly when <span class="math notranslate nohighlight">\(x\)</span> is small. In the deep past, they spread out because
+the exponential grows fast. This matches the coalescent’s behavior: most coalescence
+events happen recently, so we need finer resolution there.</p>
+</div>
+<div class="admonition-calculus-aside-the-exponential-map-in-detail admonition">
+<p class="admonition-title">Calculus Aside — The exponential map in detail</p>
+<p>The formula is a change of variables. Start with <span class="math notranslate nohighlight">\(n_t\)</span> uniformly spaced points
+<span class="math notranslate nohighlight">\(x_i = i \cdot h\)</span> where <span class="math notranslate nohighlight">\(h = \frac{1}{n_t - 1} \ln(1 + \delta T_{\max})\)</span>.
+Then apply the transformation <span class="math notranslate nohighlight">\(t = g(x) = (e^x - 1)/\delta\)</span>.</p>
+<p>The derivative is <span class="math notranslate nohighlight">\(g'(x) = e^x / \delta\)</span>, which grows with <span class="math notranslate nohighlight">\(x\)</span>. This
+means equal steps in <span class="math notranslate nohighlight">\(x\)</span>-space produce <em>growing</em> steps in <span class="math notranslate nohighlight">\(t\)</span>-space —
+small steps near <span class="math notranslate nohighlight">\(t=0\)</span> (where <span class="math notranslate nohighlight">\(x\)</span> is small and <span class="math notranslate nohighlight">\(g'\)</span> is small) and
+large steps in the deep past (where <span class="math notranslate nohighlight">\(x\)</span> is large and <span class="math notranslate nohighlight">\(g'\)</span> is large).</p>
+<p>If you have studied PSMC (see <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>), you will recognize a similar
+strategy: PSMC also uses a non-uniform time discretization to concentrate resolution
+in the recent past. ARGweaver’s formula is a specific, closed-form version of the
+same idea.</p>
+</div>
+<p>The watch metaphor is apt here: <strong>the tick marks on the dial are not evenly spaced</strong>.
+They crowd together near 12 o’clock (the present) where the second hand’s motion
+matters most, and spread out near 6 o’clock (the deep past) where the hand barely
+moves. Twenty ticks are enough to read the time accurately in the range that matters.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">exp</span><span class="p">,</span> <span class="n">log</span>
+
+<span class="k">def</span> <span class="nf">get_time_point</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">ntimes</span><span class="p">,</span> <span class="n">maxtime</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the i-th discretized time point.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    i : int</span>
+<span class="sd">        Index of the time point (0 &lt;= i &lt;= ntimes-1).</span>
+<span class="sd">    ntimes : int</span>
+<span class="sd">        Total number of time intervals (ntimes-1 is the last index).</span>
+<span class="sd">    maxtime : float</span>
+<span class="sd">        Maximum time in generations.</span>
+<span class="sd">    delta : float</span>
+<span class="sd">        Controls log-spacing. Smaller delta -&gt; more uniform spacing.</span>
+<span class="sd">        Larger delta -&gt; more concentration near present.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The i-th time point in generations.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; get_time_point(0, 19, 160000, 0.01)</span>
+<span class="sd">    0.0</span>
+<span class="sd">    &gt;&gt;&gt; round(get_time_point(1, 19, 160000, 0.01), 1)</span>
+<span class="sd">    52.6</span>
+<span class="sd">    &gt;&gt;&gt; round(get_time_point(19, 19, 160000, 0.01), 1)</span>
+<span class="sd">    160000.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># i / ntimes gives the fractional position along the grid (0 to 1).</span>
+    <span class="c1"># Multiplying by log(1 + delta*maxtime) maps this to a log-scale range.</span>
+    <span class="c1"># exp(...) transforms back, and subtracting 1 then dividing by delta</span>
+    <span class="c1"># undoes the shift-and-scale, producing a time in generations.</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">ntimes</span><span class="p">)</span> <span class="o">*</span> <span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">maxtime</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">delta</span>
+
+
+<span class="k">def</span> <span class="nf">get_time_points</span><span class="p">(</span><span class="n">ntimes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">maxtime</span><span class="o">=</span><span class="mi">160000</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute all discretized time points.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ntimes : int</span>
+<span class="sd">        Number of time points (including t_0 = 0).</span>
+<span class="sd">    maxtime : float</span>
+<span class="sd">        Maximum time in generations.</span>
+<span class="sd">    delta : float</span>
+<span class="sd">        Controls log-spacing.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of float</span>
+<span class="sd">        The ntimes time points.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; times = get_time_points(ntimes=20, maxtime=160000, delta=0.01)</span>
+<span class="sd">    &gt;&gt;&gt; len(times)</span>
+<span class="sd">    20</span>
+<span class="sd">    &gt;&gt;&gt; times[0]</span>
+<span class="sd">    0.0</span>
+<span class="sd">    &gt;&gt;&gt; round(times[-1], 1)</span>
+<span class="sd">    160000.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># ntimes-1 is used as the denominator because the grid has ntimes</span>
+    <span class="c1"># points but only ntimes-1 intervals between them.</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">get_time_point</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">ntimes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">maxtime</span><span class="p">,</span> <span class="n">delta</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntimes</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>Let’s visualize a typical grid:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">times</span> <span class="o">=</span> <span class="n">get_time_points</span><span class="p">(</span><span class="n">ntimes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">maxtime</span><span class="o">=</span><span class="mi">160000</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t[</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">10.1f</span><span class="si">}</span><span class="s2">   step = </span><span class="si">{</span><span class="n">step</span><span class="si">:</span><span class="s2">10.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># t[ 0] =        0.0   step =        0.0</span>
+<span class="c1"># t[ 1] =       52.6   step =       52.6</span>
+<span class="c1"># t[ 2] =      134.6   step =       82.0</span>
+<span class="c1"># t[ 3] =      256.3   step =      121.7</span>
+<span class="c1"># t[ 4] =      437.4   step =      181.1</span>
+<span class="c1"># t[ 5] =      706.8   step =      269.4</span>
+<span class="c1"># t[ 6] =     1108.0   step =      401.3</span>
+<span class="c1"># t[ 7] =     1706.4   step =      598.3</span>
+<span class="c1"># t[ 8] =     2597.9   step =      891.5</span>
+<span class="c1"># t[ 9] =     3925.7   step =     1327.8</span>
+<span class="c1"># t[10] =     5903.3   step =     1977.6</span>
+<span class="c1"># t[11] =     8849.5   step =     2946.2</span>
+<span class="c1"># t[12] =    13240.2   step =     4390.7</span>
+<span class="c1"># t[13] =    19783.7   step =     6543.5</span>
+<span class="c1"># t[14] =    29540.7   step =     9757.0</span>
+<span class="c1"># t[15] =    44088.1   step =    14547.4</span>
+<span class="c1"># t[16] =    65764.1   step =    21675.9</span>
+<span class="c1"># t[17] =    98058.2   step =    32294.1</span>
+<span class="c1"># t[18] =   146195.1   step =    48136.9</span>
+<span class="c1"># t[19] =   160000.0   step =    13804.9</span>
+</pre></div>
+</div>
+<p>Notice how the first step is ~53 generations but the steps grow to tens of thousands
+of generations in the deep past.</p>
+<section id="the-delta-parameter">
+<h3>The Delta Parameter<a class="headerlink" href="#the-delta-parameter" title="Link to this heading"></a></h3>
+<p>The <span class="math notranslate nohighlight">\(\delta\)</span> parameter controls how concentrated the grid is near the present:</p>
+<ul class="simple">
+<li><p><strong>Small</strong> <span class="math notranslate nohighlight">\(\delta\)</span> (e.g., 0.001): nearly uniform spacing</p></li>
+<li><p><strong>Large</strong> <span class="math notranslate nohighlight">\(\delta\)</span> (e.g., 0.1): very concentrated near present, huge gaps in past</p></li>
+<li><p><strong>Default</strong> <span class="math notranslate nohighlight">\(\delta = 0.01\)</span>: a good balance for human population genetics</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Effect of delta on the first few time points</span>
+<span class="k">for</span> <span class="n">delta</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]:</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">get_time_points</span><span class="p">(</span><span class="n">ntimes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">maxtime</span><span class="o">=</span><span class="mi">160000</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;delta=</span><span class="si">{</span><span class="n">delta</span><span class="si">}</span><span class="s2">: first 5 times = &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">times</span><span class="p">[:</span><span class="mi">5</span><span class="p">]]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># delta=0.001: first 5 times = [0.0, 530.6, 1116.2, 1764.5, 2484.5]</span>
+<span class="c1"># delta=0.01:  first 5 times = [0.0, 52.6, 134.6, 256.3, 437.4]</span>
+<span class="c1"># delta=0.1:   first 5 times = [0.0, 5.3, 13.8, 27.1, 47.8]</span>
+</pre></div>
+</div>
+<p><em>Transition:</em> Now that we have the time grid itself, we need two more ingredients
+before we can build the HMM: a way to represent “the typical time” within each
+interval, and a way to measure how long each interval is. These are the time steps
+and coal times.</p>
+</section>
+<section id="time-steps">
+<h3>Time Steps<a class="headerlink" href="#time-steps" title="Link to this heading"></a></h3>
+<p>The <strong>time step</strong> <span class="math notranslate nohighlight">\(\Delta t_i\)</span> is the length of the <span class="math notranslate nohighlight">\(i\)</span>-th interval:</p>
+<div class="math notranslate nohighlight">
+\[\Delta t_i = t_{i+1} - t_i\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_time_steps</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute time step sizes from time points.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of float</span>
+<span class="sd">        Time steps: times[i+1] - times[i] for each interval.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ntimes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="c1"># Each step is simply the difference between consecutive time points.</span>
+    <span class="c1"># Because the grid is log-spaced, these steps grow geometrically.</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntimes</span><span class="p">)]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="coal-times-interval-midpoints">
+<h2>Coal Times: Interval Midpoints<a class="headerlink" href="#coal-times-interval-midpoints" title="Link to this heading"></a></h2>
+<p>When ARGweaver assigns a coalescence to time interval <span class="math notranslate nohighlight">\([t_i, t_{i+1})\)</span>, it
+needs a <strong>representative time</strong> within that interval for computing branch lengths,
+emissions, and tree lengths. It uses the <strong>geometric mean midpoint</strong>:</p>
+<div class="math notranslate nohighlight">
+\[t_{\text{mid},i} = \sqrt{(t_i + 1)(t_{i+1} + 1)} - 1\]</div>
+<div class="admonition-why-geometric-mean-not-arithmetic-mean admonition">
+<p class="admonition-title">Why geometric mean, not arithmetic mean?</p>
+<p>The arithmetic mean <span class="math notranslate nohighlight">\((t_i + t_{i+1})/2\)</span> would work, but the geometric mean
+better represents the “typical” coalescence time within the interval. Under the
+coalescent, the waiting time is exponentially distributed, so the expected
+coalescence time within an interval is closer to the geometric mean (which
+down-weights the tail). The “+1” shift avoids issues at <span class="math notranslate nohighlight">\(t = 0\)</span>.</p>
+</div>
+<div class="admonition-probability-aside-the-exponential-distribution-and-interval-midpoints admonition">
+<p class="admonition-title">Probability Aside — The exponential distribution and interval midpoints</p>
+<p>Under the coalescent with <span class="math notranslate nohighlight">\(k\)</span> lineages and constant population size <span class="math notranslate nohighlight">\(N_e\)</span>,
+the time to the next coalescence event is exponentially distributed with rate
+<span class="math notranslate nohighlight">\(\lambda = \binom{k}{2}/(2N_e)\)</span>. The density is
+<span class="math notranslate nohighlight">\(f(t) = \lambda e^{-\lambda t}\)</span>, which is highest at <span class="math notranslate nohighlight">\(t=0\)</span> and decays
+exponentially.</p>
+<p>Within an interval <span class="math notranslate nohighlight">\([a, b)\)</span>, the conditional expected coalescence time is:</p>
+<div class="math notranslate nohighlight">
+\[E[T \mid a \leq T &lt; b] = a + \frac{1}{\lambda} - \frac{(b-a) e^{-\lambda(b-a)}}{1 - e^{-\lambda(b-a)}}\]</div>
+<p>For small <span class="math notranslate nohighlight">\(\lambda(b-a)\)</span>, this is close to the arithmetic mean <span class="math notranslate nohighlight">\((a+b)/2\)</span>.
+For larger <span class="math notranslate nohighlight">\(\lambda(b-a)\)</span>, the expected time is pulled toward <span class="math notranslate nohighlight">\(a\)</span> because
+the exponential density is higher near the interval’s lower boundary. The geometric
+mean <span class="math notranslate nohighlight">\(\sqrt{(a+1)(b+1)} - 1\)</span> approximates this pull-toward-the-bottom behavior
+without needing to know <span class="math notranslate nohighlight">\(\lambda\)</span>.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_coal_times</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute coal times (geometric mean midpoints) for each interval.</span>
+
+<span class="sd">    The coal_times list interleaves boundary times and midpoints:</span>
+<span class="sd">      [t_0, mid_0, t_1, mid_1, ..., t_{n-1}, mid_{n-1}, t_n]</span>
+
+<span class="sd">    This interleaved structure is used internally for computing</span>
+<span class="sd">    transition probabilities (the &quot;half-intervals&quot; above and below</span>
+<span class="sd">    each time point).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points (length ntimes).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of float</span>
+<span class="sd">        Interleaved boundary times and midpoints (length 2*ntimes - 1).</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; times = [0.0, 100.0, 1000.0, 10000.0]</span>
+<span class="sd">    &gt;&gt;&gt; ct = get_coal_times(times)</span>
+<span class="sd">    &gt;&gt;&gt; len(ct)</span>
+<span class="sd">    7</span>
+<span class="sd">    &gt;&gt;&gt; round(ct[0], 1)  # t_0</span>
+<span class="sd">    0.0</span>
+<span class="sd">    &gt;&gt;&gt; round(ct[1], 1)  # mid between t_0 and t_1</span>
+<span class="sd">    9.0</span>
+<span class="sd">    &gt;&gt;&gt; round(ct[2], 1)  # t_1</span>
+<span class="sd">    100.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ntimes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">times2</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntimes</span><span class="p">):</span>
+        <span class="n">times2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1"># Geometric mean midpoint: sqrt((t_i + 1) * (t_{i+1} + 1)) - 1</span>
+        <span class="c1"># The +1/-1 shift ensures the formula works at t=0 (where the</span>
+        <span class="c1"># plain geometric mean sqrt(0 * t_{i+1}) would always be 0).</span>
+        <span class="n">times2</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">times2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">ntimes</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">times2</span>
+</pre></div>
+</div>
+<p>Let’s see what this looks like for the first few intervals:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">times</span> <span class="o">=</span> <span class="n">get_time_points</span><span class="p">(</span><span class="n">ntimes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">maxtime</span><span class="o">=</span><span class="mi">160000</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">coal_times</span> <span class="o">=</span> <span class="n">get_coal_times</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)):</span>
+    <span class="n">t_lo</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">t_hi</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">t_mid</span> <span class="o">=</span> <span class="n">coal_times</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">arith</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_lo</span> <span class="o">+</span> <span class="n">t_hi</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Interval [</span><span class="si">{</span><span class="n">t_lo</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">t_hi</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">): &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;geometric mid = </span><span class="si">{</span><span class="n">t_mid</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, arithmetic mid = </span><span class="si">{</span><span class="n">arith</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Interval [0.0, 52.6): geometric mid = 6.3, arithmetic mid = 26.3</span>
+<span class="c1"># Interval [52.6, 134.6): geometric mid = 90.2, arithmetic mid = 93.6</span>
+<span class="c1"># Interval [134.6, 256.3): geometric mid = 190.0, arithmetic mid = 195.5</span>
+<span class="c1"># Interval [256.3, 437.4): geometric mid = 339.2, arithmetic mid = 346.9</span>
+<span class="c1"># Interval [437.4, 706.8): geometric mid = 561.2, arithmetic mid = 572.1</span>
+</pre></div>
+</div>
+<p>Notice how the geometric midpoint is pulled toward the lower boundary, especially for
+the first interval (6.3 vs. 26.3). This reflects the exponential concentration of
+coalescence events near the bottom of each interval.</p>
+<section id="coal-time-steps">
+<h3>Coal Time Steps<a class="headerlink" href="#coal-time-steps" title="Link to this heading"></a></h3>
+<p>The <strong>coal time steps</strong> partition the timeline into sub-intervals centered on each
+time point, using the midpoints as boundaries:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_coal_time_steps</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the effective time step for coalescence at each time point.</span>
+
+<span class="sd">    For time point i, the coal time step spans from the midpoint below</span>
+<span class="sd">    to the midpoint above:</span>
+<span class="sd">      coal_step[i] = mid[i] - mid[i-1]</span>
+
+<span class="sd">    These are used in transition probability calculations to compute</span>
+<span class="sd">    the &quot;exposure&quot; of each time point to coalescence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of float</span>
+<span class="sd">        Coal time steps for each time index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ntimes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="c1"># First, rebuild the interleaved structure (same as get_coal_times).</span>
+    <span class="n">times2</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntimes</span><span class="p">):</span>
+        <span class="n">times2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">times2</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">times2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">ntimes</span><span class="p">])</span>
+
+    <span class="c1"># For each time point (at even indices 0, 2, 4, ...),</span>
+    <span class="c1"># the coal time step spans from the midpoint just below (index i-1)</span>
+    <span class="c1"># to the midpoint just above (index i+1). Clamped at boundaries.</span>
+    <span class="n">coal_time_steps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">times2</span><span class="p">),</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">coal_time_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">times2</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">times2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">-</span>
+            <span class="n">times2</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">coal_time_steps</span>
+</pre></div>
+</div>
+<p><em>Transition:</em> With the time grid, its midpoints, and its step sizes fully specified,
+we are ready to define the HMM state space. The state space is where the time grid
+meets the tree topology — each valid (branch, time-index) pair is one tick on the
+watch’s digital display.</p>
+</section>
+</section>
+<section id="the-state-space">
+<h2>The State Space<a class="headerlink" href="#the-state-space" title="Link to this heading"></a></h2>
+<p>With the time grid defined, we can now describe the HMM state space precisely.</p>
+<p>At each genomic position, the local tree has a set of branches. Each branch <span class="math notranslate nohighlight">\(b\)</span>
+spans from the age of its child node to the age of its parent node. A valid state
+<span class="math notranslate nohighlight">\((b, i)\)</span> means “the new lineage coalesces with branch <span class="math notranslate nohighlight">\(b\)</span> at time index
+<span class="math notranslate nohighlight">\(i\)</span>”, which requires <span class="math notranslate nohighlight">\(t_i\)</span> to fall within the time span of branch <span class="math notranslate nohighlight">\(b\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\text{States}(T) = \{(b, i) : b \in \text{branches}(T), \;
+\text{age}(\text{child}(b)) \leq t_i &lt; \text{age}(\text{parent}(b))\}\]</div>
+<p>For the root branch (which has no parent), the state extends up to the last time
+point <span class="math notranslate nohighlight">\(t_{n_t - 1}\)</span> (excluding the final sentinel time).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">iter_coal_states</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Iterate through valid coalescent states for a local tree.</span>
+
+<span class="sd">    Each state is a (node_name, time_index) pair, where node_name</span>
+<span class="sd">    identifies the branch (by its child node) and time_index is</span>
+<span class="sd">    the index into the times array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tree : tree object</span>
+<span class="sd">        A local tree with nodes having .age, .parents, .children attributes.</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points.</span>
+
+<span class="sd">    Yields</span>
+<span class="sd">    ------</span>
+<span class="sd">    tuple of (str, int)</span>
+<span class="sd">        (node_name, time_index) pairs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ntimes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">time_lookup</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">times</span><span class="p">)}</span>
+
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">preorder</span><span class="p">():</span>
+        <span class="c1"># Skip single-child nodes (artifacts of the ARG structure)</span>
+        <span class="c1"># These arise from recombination events in the full ARG but</span>
+        <span class="c1"># do not represent real branches in the marginal tree.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">i</span> <span class="o">=</span> <span class="n">time_lookup</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">age</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">:</span>
+            <span class="c1"># Find the &quot;real&quot; parent (skip single-child nodes)</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">while</span> <span class="n">parent</span> <span class="ow">and</span> <span class="n">parent</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># Yield states from this node&#39;s age up to parent&#39;s age.</span>
+            <span class="c1"># Each yielded (node.name, i) means &quot;the new lineage joins</span>
+            <span class="c1"># this branch at time index i.&quot;</span>
+            <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">ntimes</span> <span class="ow">and</span> <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">parent</span><span class="o">.</span><span class="n">age</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Root: yield states up to ntimes-1.</span>
+            <span class="c1"># The root branch extends to infinity in principle, but the</span>
+            <span class="c1"># time grid truncates it at the last time point.</span>
+            <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">ntimes</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-state-space-size admonition">
+<p class="admonition-title">State space size</p>
+<p>For a tree with <span class="math notranslate nohighlight">\(k\)</span> leaves, there are <span class="math notranslate nohighlight">\(2k - 1\)</span> nodes and
+<span class="math notranslate nohighlight">\(2k - 2\)</span> branches. Each branch spans some number of time intervals.
+A typical state count is <span class="math notranslate nohighlight">\(O(k \cdot n_t)\)</span>, though the exact number
+depends on the tree shape. For <span class="math notranslate nohighlight">\(k = 8\)</span> leaves and <span class="math notranslate nohighlight">\(n_t = 20\)</span>
+time points, the state space might contain 50–150 states per position.</p>
+</div>
+<div class="admonition-probability-aside-why-the-state-space-determines-computational-cost admonition">
+<p class="admonition-title">Probability Aside — Why the state space determines computational cost</p>
+<p>The forward algorithm (see <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a>) computes one vector of length <span class="math notranslate nohighlight">\(S\)</span>
+(the number of states) at each genomic position, using a matrix–vector product
+that costs <span class="math notranslate nohighlight">\(O(S^2)\)</span>. For a genome of length <span class="math notranslate nohighlight">\(L\)</span>, the total cost is
+<span class="math notranslate nohighlight">\(O(L \cdot S^2)\)</span>. With <span class="math notranslate nohighlight">\(S \sim k \cdot n_t\)</span>, this becomes
+<span class="math notranslate nohighlight">\(O(L \cdot k^2 \cdot n_t^2)\)</span>. Compare this with SINGER, where the two-HMM
+approach achieves <span class="math notranslate nohighlight">\(O(L \cdot k)\)</span> per site — the scaling advantage of
+SINGER for large <span class="math notranslate nohighlight">\(k\)</span> is dramatic.</p>
+<p>However, ARGweaver’s <span class="math notranslate nohighlight">\(O(S^2)\)</span> cost can be reduced to <span class="math notranslate nohighlight">\(O(S)\)</span> per site
+by exploiting the rank-1 structure of the transition matrix (see
+<a class="reference internal" href="transition_probabilities.html#argweaver-transitions"><span class="std std-ref">Transition Probabilities</span></a>). This is a key optimization that makes ARGweaver
+practical even with hundreds of states.</p>
+</div>
+</section>
+<section id="lineage-counting">
+<h2>Lineage Counting<a class="headerlink" href="#lineage-counting" title="Link to this heading"></a></h2>
+<p>The transition probabilities depend on how many lineages exist at each time
+interval. ARGweaver counts three quantities:</p>
+<ul class="simple">
+<li><p><strong>nbranches[i]</strong>: number of branches passing through <span class="math notranslate nohighlight">\([t_i, t_{i+1})\)</span> —
+these are the lineages that could <em>coalesce</em> with a new lineage at time <span class="math notranslate nohighlight">\(i\)</span>,
+or on which a <em>recombination</em> could occur.</p></li>
+<li><p><strong>nrecombs[i]</strong>: number of valid recombination points at time <span class="math notranslate nohighlight">\(i\)</span> —
+the number of (branch, time) pairs at this time index.</p></li>
+<li><p><strong>ncoals[i]</strong>: number of valid coalescence points at time <span class="math notranslate nohighlight">\(t_i\)</span> —
+where a re-coalescing lineage could attach.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_nlineages_recomb_coal</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Count lineages, recombination points, and coalescence points</span>
+<span class="sd">    at each time index.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tree : tree object</span>
+<span class="sd">        A local tree.</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    nbranches : list of int</span>
+<span class="sd">        Number of lineages at each time interval.</span>
+<span class="sd">    nrecombs : list of int</span>
+<span class="sd">        Number of recombination points at each time index.</span>
+<span class="sd">    ncoals : list of int</span>
+<span class="sd">        Number of coalescence points at each time index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nbranches</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+    <span class="n">nrecombs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+    <span class="n">ncoals</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">timei</span> <span class="ow">in</span> <span class="n">iter_coal_states</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">times</span><span class="p">):</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="n">node_name</span><span class="p">]</span>
+
+        <span class="c1"># Find the real parent (skip single-child nodes)</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># A branch &quot;passes through&quot; interval i if the branch&#39;s parent</span>
+        <span class="c1"># is strictly above time i. If the parent is exactly at time i,</span>
+        <span class="c1"># the branch ends there (coalescence event), so it does not</span>
+        <span class="c1"># contribute to the lineage count for the *next* interval.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">parent</span> <span class="ow">or</span> <span class="n">times</span><span class="p">[</span><span class="n">timei</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">parent</span><span class="o">.</span><span class="n">age</span><span class="p">:</span>
+            <span class="n">nbranches</span><span class="p">[</span><span class="n">timei</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Count as both a recombination and coalescence point.</span>
+        <span class="c1"># nrecombs and ncoals count *states* (branch, time pairs),</span>
+        <span class="c1"># while nbranches counts *lineages* (branches extending</span>
+        <span class="c1"># through the interval). The distinction matters at nodes</span>
+        <span class="c1"># where a coalescence event occurs.</span>
+        <span class="n">nrecombs</span><span class="p">[</span><span class="n">timei</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">ncoals</span><span class="p">[</span><span class="n">timei</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># The last time point always has exactly 1 branch (above root)</span>
+    <span class="n">nbranches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">nbranches</span><span class="p">,</span> <span class="n">nrecombs</span><span class="p">,</span> <span class="n">ncoals</span>
+</pre></div>
+</div>
+<div class="admonition-why-separate-counts admonition">
+<p class="admonition-title">Why separate counts?</p>
+<p>You might wonder why <code class="docutils literal notranslate"><span class="pre">nrecombs</span></code> and <code class="docutils literal notranslate"><span class="pre">ncoals</span></code> differ from <code class="docutils literal notranslate"><span class="pre">nbranches</span></code>.
+The key is that <code class="docutils literal notranslate"><span class="pre">nbranches</span></code> counts lineages that <em>pass through</em> an interval
+(contributing to the coalescent rate), while <code class="docutils literal notranslate"><span class="pre">nrecombs</span></code> and <code class="docutils literal notranslate"><span class="pre">ncoals</span></code> count
+<em>points</em> in the state space (used for normalizing probabilities). At a
+coalescence node, the point exists for both recombination and coalescence,
+but the branch above may or may not pass through the next interval.</p>
+</div>
+<p><em>Recap:</em> We have now built the complete time-discretization gear. The grid itself
+(log-spaced, denser near the present), the midpoint representation (geometric mean),
+the step sizes, the state space (valid branch-time pairs), and the lineage counts.
+These are the tick marks, numerals, and subdivisions on the watch dial — everything
+the transition and emission gears will need to do their work.</p>
+</section>
+<section id="worked-example">
+<h2>Worked Example<a class="headerlink" href="#worked-example" title="Link to this heading"></a></h2>
+<p>Let’s put it all together with a concrete example. Consider a tree with 4 leaves
+and 20 time points:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># A simple example: 4 leaves, tree shape ((A,B),(C,D))</span>
+<span class="c1"># Leaf ages: all at t=0</span>
+<span class="c1"># Internal node ages: AB coalesces at t_3, CD at t_5, root at t_8</span>
+
+<span class="n">times</span> <span class="o">=</span> <span class="n">get_time_points</span><span class="p">(</span><span class="n">ntimes</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">maxtime</span><span class="o">=</span><span class="mi">160000</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">time_steps</span> <span class="o">=</span> <span class="n">get_time_steps</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+<span class="c1"># Count states</span>
+<span class="c1"># Branch A: from t_0 to t_3 -&gt; states at i=0,1,2,3</span>
+<span class="c1"># Branch B: from t_0 to t_3 -&gt; states at i=0,1,2,3</span>
+<span class="c1"># Branch C: from t_0 to t_5 -&gt; states at i=0,1,2,3,4,5</span>
+<span class="c1"># Branch D: from t_0 to t_5 -&gt; states at i=0,1,2,3,4,5</span>
+<span class="c1"># Branch AB: from t_3 to t_8 -&gt; states at i=3,4,5,6,7,8</span>
+<span class="c1"># Branch CD: from t_5 to t_8 -&gt; states at i=5,6,7,8</span>
+<span class="c1"># Branch root: from t_8 to t_19 -&gt; states at i=8,9,...,18</span>
+
+<span class="c1"># Total states = 4 + 4 + 6 + 6 + 6 + 4 + 11 = 41</span>
+
+<span class="c1"># Lineage counts:</span>
+<span class="c1"># nbranches[0] = 4  (A, B, C, D all present)</span>
+<span class="c1"># nbranches[1] = 4</span>
+<span class="c1"># nbranches[2] = 4</span>
+<span class="c1"># nbranches[3] = 4  (A, B, C, D; AB starts at t_3 but A,B end at t_3)</span>
+<span class="c1"># ...actually, at t_3: A and B coalesce -&gt; branches are AB, C, D = 3</span>
+<span class="c1"># nbranches[3] = 3</span>
+<span class="c1"># nbranches[4] = 3  (AB, C, D)</span>
+<span class="c1"># nbranches[5] = 2  (AB, CD)</span>
+<span class="c1"># nbranches[6] = 2</span>
+<span class="c1"># nbranches[7] = 2</span>
+<span class="c1"># nbranches[8] = 1  (root)</span>
+<span class="c1"># nbranches[9..19] = 1</span>
+</pre></div>
+</div>
+<p><em>Where we are headed next:</em> The time grid is now fully specified. In the next chapter
+(<a class="reference internal" href="transition_probabilities.html#argweaver-transitions"><span class="std std-ref">Transition Probabilities</span></a>), we will use these time points, step sizes, midpoints,
+and lineage counts to derive the transition probabilities — the largest and most
+intricate gear in the ARGweaver mechanism.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-grid-sensitivity admonition">
+<p class="admonition-title">Exercise 1: Grid sensitivity</p>
+<p>Generate time grids with <span class="math notranslate nohighlight">\(n_t = 10, 20, 40\)</span> and <span class="math notranslate nohighlight">\(\delta = 0.01\)</span>.
+For each grid, compute the maximum ratio <span class="math notranslate nohighlight">\(\Delta t_{i+1} / \Delta t_i\)</span>
+between consecutive time steps. How does this ratio change with <span class="math notranslate nohighlight">\(n_t\)</span>?
+What does this tell you about the smoothness of the approximation?</p>
+</div>
+<div class="admonition-exercise-2-coalescent-concentration admonition">
+<p class="admonition-title">Exercise 2: Coalescent concentration</p>
+<p>Under the standard coalescent with constant <span class="math notranslate nohighlight">\(N_e = 10{,}000\)</span>, the
+expected time to the first coalescence of <span class="math notranslate nohighlight">\(k\)</span> lineages is
+<span class="math notranslate nohighlight">\(2N_e / \binom{k}{2}\)</span>. For <span class="math notranslate nohighlight">\(k = 20\)</span>, compute this expected time.
+How many of the default 20 time points fall below this expected time?
+What does this tell you about the grid’s resolution where it matters most?</p>
+</div>
+<div class="admonition-exercise-3-implement-state-counting admonition">
+<p class="admonition-title">Exercise 3: Implement state counting</p>
+<p>Write a function that takes a tree (as a dictionary of parent–child relationships
+with ages) and a time grid, and returns the total number of HMM states. Verify
+your count against the worked example above.</p>
+</div>
+<div class="admonition-exercise-4-midpoint-comparison admonition">
+<p class="admonition-title">Exercise 4: Midpoint comparison</p>
+<p>For the default time grid, plot the geometric-mean midpoints and the arithmetic
+midpoints on the same axis. At which time intervals is the difference largest
+in relative terms? Why does this matter for emission calculations?</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of ARGweaver" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="transition_probabilities.html" class="btn btn-neutral float-right" title="Transition Probabilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

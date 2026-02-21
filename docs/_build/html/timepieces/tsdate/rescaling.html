@@ -1,0 +1,829 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rescaling &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Timepiece VI: SINGER" href="../singer/index.html" />
+    <link rel="prev" title="Variational Gamma (Expectation Propagation)" href="variational_gamma.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece VII: tsdate</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece VII: tsdate</a></li>
+      <li class="breadcrumb-item active">Rescaling</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="variational_gamma.html" class="btn btn-neutral float-left" title="Variational Gamma (Expectation Propagation)" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../singer/index.html" class="btn btn-neutral float-right" title="Timepiece VI: SINGER" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="rescaling">
+<span id="tsdate-rescaling"></span><h1>Rescaling<a class="headerlink" href="#rescaling" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>Even a well-tuned mechanism drifts; the final step is calibrating against
+the master clock.</em></p>
+</div></blockquote>
+<p>After belief propagation (whether inside-outside or variational gamma), tsdate
+has posterior estimates for every node’s age. But these estimates assume a
+<strong>constant effective population size</strong>, which is almost never true. If the
+population was larger in the past, branches are too long; if it was smaller,
+they’re too short.</p>
+<p>Rescaling corrects for this by comparing the inferred times against the
+<strong>empirical mutation clock</strong>: the observed number of mutations in different
+time windows. In the watch metaphor, this is the final calibration – checking
+the movement against a master reference clock and adjusting the hands until
+the ticks match.</p>
+<p>This is the same idea used in SINGER’s ARG rescaling (see
+<a class="reference internal" href="../singer/arg_rescaling.html#arg-rescaling"><span class="std std-ref">ARG Rescaling</span></a>), adapted for tsdate’s continuous posteriors.</p>
+<div class="admonition-prerequisites admonition">
+<p class="admonition-title">Prerequisites</p>
+<p>This chapter assumes you have followed the full tsdate pipeline so far:
+the coalescent prior (<a class="reference internal" href="coalescent_prior.html#tsdate-coalescent-prior"><span class="std std-ref">The Coalescent Prior</span></a>), the mutation
+likelihood (<a class="reference internal" href="mutation_likelihood.html#tsdate-mutation-likelihood"><span class="std std-ref">The Mutation Likelihood</span></a>), and one of the two message
+passing algorithms (<a class="reference internal" href="inside_outside.html#tsdate-inside-outside"><span class="std std-ref">Inside-Outside Belief Propagation</span></a> or
+<a class="reference internal" href="variational_gamma.html#tsdate-variational-gamma"><span class="std std-ref">Variational Gamma (Expectation Propagation)</span></a>). Rescaling is a post-processing step
+applied to the node times that those algorithms produce.</p>
+</div>
+<section id="the-problem-mismatch-between-model-and-reality">
+<h2>The Problem: Mismatch Between Model and Reality<a class="headerlink" href="#the-problem-mismatch-between-model-and-reality" title="Link to this heading"></a></h2>
+<p>The coalescent prior assumes constant <span class="math notranslate nohighlight">\(N_e\)</span>. Under this model, the
+expected time between coalescence events is fixed. But real populations have
+complex histories: bottlenecks, expansions, migrations.</p>
+<p>When <span class="math notranslate nohighlight">\(N_e\)</span> was <em>larger</em> in the past:</p>
+<ul class="simple">
+<li><p>Real coalescence events were <em>slower</em> (more time between them)</p></li>
+<li><p>The constant-<span class="math notranslate nohighlight">\(N_e\)</span> model underestimates deep times</p></li>
+<li><p>Branches in the deep past are too short</p></li>
+</ul>
+<p>When <span class="math notranslate nohighlight">\(N_e\)</span> was <em>smaller</em> in the past:</p>
+<ul class="simple">
+<li><p>Real coalescence events were <em>faster</em></p></li>
+<li><p>The model overestimates deep times</p></li>
+<li><p>Branches in the deep past are too long</p></li>
+</ul>
+<p>Either way, the mutation rate implied by the inferred times won’t match the
+true mutation rate. Rescaling fixes this.</p>
+<p>Think of it as a watch whose mainspring weakens with age: the gears near the
+present run at the right speed, but the deeper you go, the more the rate
+drifts. Rescaling adjusts the time scale in each epoch so that the ticks
+(mutations) per unit time remain constant.</p>
+</section>
+<section id="the-key-insight-mutations-don-t-lie">
+<h2>The Key Insight: Mutations Don’t Lie<a class="headerlink" href="#the-key-insight-mutations-don-t-lie" title="Link to this heading"></a></h2>
+<p>Whatever the population history, the molecular clock still ticks at rate
+<span class="math notranslate nohighlight">\(\mu\)</span> per base pair per generation. The total number of mutations
+in a time window is:</p>
+<div class="math notranslate nohighlight">
+\[\text{mutations in } [t_a, t_b) = \mu \cdot \text{(total branch length in } [t_a, t_b) \text{)}\]</div>
+<p>If our estimated times are correct, the ratio
+<span class="math notranslate nohighlight">\(\text{observed mutations} / \text{expected mutations}\)</span> should be 1.0
+in every time window. If it’s consistently <span class="math notranslate nohighlight">\(&gt; 1\)</span> in some window, our
+branch lengths there are too short, and we need to stretch time. If it’s
+<span class="math notranslate nohighlight">\(&lt; 1\)</span>, we need to compress.</p>
+<p>This ratio is a direct diagnostic: any deviation from 1.0 reveals how much
+the constant-<span class="math notranslate nohighlight">\(N_e\)</span> assumption has distorted the time scale in that epoch.</p>
+</section>
+<section id="step-1-partition-time-into-windows">
+<h2>Step 1: Partition Time into Windows<a class="headerlink" href="#step-1-partition-time-into-windows" title="Link to this heading"></a></h2>
+<p>Divide the time axis <span class="math notranslate nohighlight">\([0, t_{\max})\)</span> into <span class="math notranslate nohighlight">\(J\)</span> windows such that each
+window contains approximately equal total branch length:</p>
+<div class="math notranslate nohighlight">
+\[[t_0 = 0, t_1), \quad [t_1, t_2), \quad \ldots, \quad [t_{J-1}, t_J)\]</div>
+<p><strong>Why equal branch length?</strong> So that each window has comparable statistical
+power for estimating the local mutation rate. A window with very little branch
+length would have very few mutations and a noisy estimate.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">partition_time_axis</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">node_times</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Partition the time axis into J windows of roughly equal branch length.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ts : tskit.TreeSequence</span>
+<span class="sd">    node_times : np.ndarray</span>
+<span class="sd">        Current estimated node times (from EP or inside-outside).</span>
+<span class="sd">    J : int</span>
+<span class="sd">        Number of windows.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    breakpoints : np.ndarray, shape (J+1,)</span>
+<span class="sd">        Window boundaries: [breakpoints[j], breakpoints[j+1]) for window j.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Collect all branch lengths weighted by span</span>
+    <span class="n">branch_data</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># (midpoint_time, weighted_length)</span>
+
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="n">t_parent</span> <span class="o">=</span> <span class="n">node_times</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">parent</span><span class="p">]</span>
+        <span class="n">t_child</span> <span class="o">=</span> <span class="n">node_times</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">child</span><span class="p">]</span>
+        <span class="n">span</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">edge</span><span class="o">.</span><span class="n">left</span>       <span class="c1"># genomic span in bp</span>
+
+        <span class="k">if</span> <span class="n">t_parent</span> <span class="o">&gt;</span> <span class="n">t_child</span><span class="p">:</span>
+            <span class="n">midpoint</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_parent</span> <span class="o">+</span> <span class="n">t_child</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>     <span class="c1"># time midpoint of the edge</span>
+            <span class="n">weighted_length</span> <span class="o">=</span> <span class="n">span</span> <span class="o">*</span> <span class="p">(</span><span class="n">t_parent</span> <span class="o">-</span> <span class="n">t_child</span><span class="p">)</span>  <span class="c1"># bp * generations</span>
+            <span class="n">branch_data</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">midpoint</span><span class="p">,</span> <span class="n">weighted_length</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">branch_data</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">J</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Sort by time and find breakpoints with equal cumulative branch length</span>
+    <span class="n">branch_data</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">branch_data</span><span class="p">])</span>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">branch_data</span><span class="p">])</span>
+
+    <span class="n">cum_length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span>       <span class="c1"># running total of branch length</span>
+    <span class="n">total_length</span> <span class="o">=</span> <span class="n">cum_length</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">breakpoints</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+    <span class="n">target_per_window</span> <span class="o">=</span> <span class="n">total_length</span> <span class="o">/</span> <span class="n">J</span>  <span class="c1"># each window gets equal share</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">J</span><span class="p">):</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">j</span> <span class="o">*</span> <span class="n">target_per_window</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cum_length</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>  <span class="c1"># find where cumulative exceeds target</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
+            <span class="n">breakpoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">breakpoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">breakpoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_times</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.01</span><span class="p">)</span>  <span class="c1"># upper bound beyond all nodes</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">breakpoints</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-count-mutations-per-window">
+<h2>Step 2: Count Mutations per Window<a class="headerlink" href="#step-2-count-mutations-per-window" title="Link to this heading"></a></h2>
+<p>For each time window, count how many mutations fall in it. A mutation on edge
+<span class="math notranslate nohighlight">\(e\)</span> is assigned to the time window containing the midpoint of the edge
+(or, more precisely, proportionally distributed across windows that the edge
+spans).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">count_mutations_per_window</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">node_times</span><span class="p">,</span> <span class="n">breakpoints</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Count observed and expected mutations in each time window.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ts : tskit.TreeSequence</span>
+<span class="sd">    node_times : np.ndarray</span>
+<span class="sd">    breakpoints : np.ndarray, shape (J+1,)</span>
+<span class="sd">    mutation_rate : float</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    observed : np.ndarray, shape (J,)</span>
+<span class="sd">        Mutation count in each window.</span>
+<span class="sd">    expected : np.ndarray, shape (J,)</span>
+<span class="sd">        Expected mutations (mu * total branch length) in each window.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">breakpoints</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">observed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">J</span><span class="p">)</span>
+    <span class="n">expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">J</span><span class="p">)</span>
+
+    <span class="c1"># Count mutations per edge (once)</span>
+    <span class="n">mut_per_edge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">num_edges</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">mut</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">mutations</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">mut</span><span class="o">.</span><span class="n">edge</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mut_per_edge</span><span class="p">[</span><span class="n">mut</span><span class="o">.</span><span class="n">edge</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="n">t_parent</span> <span class="o">=</span> <span class="n">node_times</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">parent</span><span class="p">]</span>
+        <span class="n">t_child</span> <span class="o">=</span> <span class="n">node_times</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">child</span><span class="p">]</span>
+        <span class="n">span</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">edge</span><span class="o">.</span><span class="n">left</span>    <span class="c1"># genomic span</span>
+        <span class="n">m_e</span> <span class="o">=</span> <span class="n">mut_per_edge</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>      <span class="c1"># observed mutations on this edge</span>
+
+        <span class="k">if</span> <span class="n">t_parent</span> <span class="o">&lt;=</span> <span class="n">t_child</span><span class="p">:</span>
+            <span class="k">continue</span>  <span class="c1"># skip edges with zero or negative branch length</span>
+
+        <span class="c1"># Distribute this edge&#39;s contribution across windows</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">J</span><span class="p">):</span>
+            <span class="n">w_lo</span> <span class="o">=</span> <span class="n">breakpoints</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">w_hi</span> <span class="o">=</span> <span class="n">breakpoints</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1"># Overlap of edge [t_child, t_parent] with window [w_lo, w_hi]</span>
+            <span class="n">overlap_lo</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t_child</span><span class="p">,</span> <span class="n">w_lo</span><span class="p">)</span>
+            <span class="n">overlap_hi</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t_parent</span><span class="p">,</span> <span class="n">w_hi</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">overlap_hi</span> <span class="o">&gt;</span> <span class="n">overlap_lo</span><span class="p">:</span>
+                <span class="c1"># Fraction of edge in this window</span>
+                <span class="n">frac</span> <span class="o">=</span> <span class="p">(</span><span class="n">overlap_hi</span> <span class="o">-</span> <span class="n">overlap_lo</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">t_parent</span> <span class="o">-</span> <span class="n">t_child</span><span class="p">)</span>
+
+                <span class="c1"># Expected mutations: mu * span * overlap_length</span>
+                <span class="n">expected</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">mutation_rate</span> <span class="o">*</span> <span class="n">span</span> <span class="o">*</span> <span class="p">(</span><span class="n">overlap_hi</span> <span class="o">-</span> <span class="n">overlap_lo</span><span class="p">)</span>
+
+                <span class="c1"># Observed mutations: distribute proportionally by time overlap</span>
+                <span class="n">observed</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">m_e</span> <span class="o">*</span> <span class="n">frac</span>
+
+    <span class="k">return</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-compute-scaling-factors">
+<h2>Step 3: Compute Scaling Factors<a class="headerlink" href="#step-3-compute-scaling-factors" title="Link to this heading"></a></h2>
+<p>For each window, the scaling factor is the ratio of observed to expected
+mutations:</p>
+<div class="math notranslate nohighlight">
+\[s_j = \frac{\text{observed}_j}{\text{expected}_j}\]</div>
+<p>If <span class="math notranslate nohighlight">\(s_j &gt; 1\)</span>, the branch lengths in window <span class="math notranslate nohighlight">\(j\)</span> are too short (need
+stretching). If <span class="math notranslate nohighlight">\(s_j &lt; 1\)</span>, they’re too long (need compression).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_scaling_factors</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="n">min_count</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute per-window scaling factors.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    observed, expected : np.ndarray, shape (J,)</span>
+<span class="sd">    min_count : float</span>
+<span class="sd">        Minimum mutation count to trust a window.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    scales : np.ndarray, shape (J,)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scales</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">observed</span><span class="p">))</span>  <span class="c1"># default: no rescaling</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">observed</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">expected</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">observed</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">min_count</span><span class="p">:</span>
+            <span class="c1"># Ratio &gt; 1 means branches too short; &lt; 1 means too long</span>
+            <span class="n">scales</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">observed</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">expected</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">scales</span>
+</pre></div>
+</div>
+<p><strong>Intuition</strong>: This is a piecewise-constant estimate of <span class="math notranslate nohighlight">\(N_e(t)\)</span>.
+If the model assumed <span class="math notranslate nohighlight">\(N_e = 10{,}000\)</span> but the true <span class="math notranslate nohighlight">\(N_e\)</span> was
+<span class="math notranslate nohighlight">\(20{,}000\)</span> during window <span class="math notranslate nohighlight">\(j\)</span>, then branch lengths are half what
+they should be, and <span class="math notranslate nohighlight">\(s_j \approx 2\)</span>.</p>
+<div class="admonition-probability-aside-rescaling-as-implicit-ne-estimation admonition">
+<p class="admonition-title">Probability Aside – Rescaling as implicit Ne estimation</p>
+<p>The scaling factor <span class="math notranslate nohighlight">\(s_j\)</span> is closely related to the ratio of true
+<span class="math notranslate nohighlight">\(N_e\)</span> to assumed <span class="math notranslate nohighlight">\(N_e\)</span> in window <span class="math notranslate nohighlight">\(j\)</span>. Under the
+coalescent with variable population size, the coalescent rate is
+<span class="math notranslate nohighlight">\(1/N_e(t)\)</span>. If we used the wrong <span class="math notranslate nohighlight">\(N_e\)</span>, the branch lengths in
+that epoch are stretched or compressed by the ratio
+<span class="math notranslate nohighlight">\(N_e^{\text{true}} / N_e^{\text{assumed}}\)</span>. By setting
+<span class="math notranslate nohighlight">\(s_j = \text{observed}_j / \text{expected}_j\)</span>, we effectively
+estimate this ratio and correct for it – without explicitly fitting a
+population-size model. This is similar in spirit to how PSMC
+(<a class="reference internal" href="../psmc/index.html#psmc-timepiece"><span class="std std-ref">Timepiece I: PSMC</span></a>) estimates <span class="math notranslate nohighlight">\(N_e(t)\)</span>, except here it is a
+post-processing step rather than the main inference.</p>
+</div>
+</section>
+<section id="step-4-apply-the-rescaling">
+<h2>Step 4: Apply the Rescaling<a class="headerlink" href="#step-4-apply-the-rescaling" title="Link to this heading"></a></h2>
+<p>Each node’s time is adjusted by the cumulative scaling factor up to its
+current time:</p>
+<div class="math notranslate nohighlight">
+\[t_u^{\text{new}} = \int_0^{t_u^{\text{old}}} s(x) \, dx\]</div>
+<p>where <span class="math notranslate nohighlight">\(s(x)\)</span> is the piecewise-constant scaling function. This integral
+is just a sum:</p>
+<div class="math notranslate nohighlight">
+\[t_u^{\text{new}} = \sum_{j : t_j &lt; t_u} s_j \cdot \min(t_u, t_{j+1}) - t_j)
++ s_{j^*} \cdot (t_u - t_{j^*})\]</div>
+<p>where <span class="math notranslate nohighlight">\(j^*\)</span> is the window containing <span class="math notranslate nohighlight">\(t_u\)</span>.</p>
+<div class="admonition-calculus-aside-piecewise-integration admonition">
+<p class="admonition-title">Calculus Aside – Piecewise integration</p>
+<p>The rescaling integral <span class="math notranslate nohighlight">\(\int_0^{t} s(x) \, dx\)</span> with
+piecewise-constant <span class="math notranslate nohighlight">\(s(x)\)</span> decomposes into a sum of rectangles:
+in each window <span class="math notranslate nohighlight">\([t_j, t_{j+1})\)</span> where <span class="math notranslate nohighlight">\(s(x) = s_j\)</span>, the
+contribution is <span class="math notranslate nohighlight">\(s_j \cdot (t_{j+1} - t_j)\)</span>. For the final
+(partial) window containing <span class="math notranslate nohighlight">\(t\)</span>, the contribution is
+<span class="math notranslate nohighlight">\(s_{j^*} \cdot (t - t_{j^*})\)</span>. The result is a piecewise-linear,
+monotonically increasing function of the original time – a “warped” time
+axis that stretches or compresses different epochs.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">apply_rescaling</span><span class="p">(</span><span class="n">node_times</span><span class="p">,</span> <span class="n">breakpoints</span><span class="p">,</span> <span class="n">scales</span><span class="p">,</span> <span class="n">fixed_nodes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply piecewise rescaling to node times.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    node_times : np.ndarray</span>
+<span class="sd">        Current node times (will not be modified).</span>
+<span class="sd">    breakpoints : np.ndarray, shape (J+1,)</span>
+<span class="sd">    scales : np.ndarray, shape (J,)</span>
+<span class="sd">    fixed_nodes : set</span>
+<span class="sd">        Nodes whose times should not change (e.g., samples).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_times : np.ndarray</span>
+<span class="sd">        Rescaled node times.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">node_times</span><span class="p">)</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">scales</span><span class="p">)</span>
+
+    <span class="c1"># Build cumulative scaling function</span>
+    <span class="c1"># cum_rescaled[j] = rescaled time at window boundary j</span>
+    <span class="n">cum_rescaled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">J</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">J</span><span class="p">):</span>
+        <span class="n">window_width</span> <span class="o">=</span> <span class="n">breakpoints</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">breakpoints</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">cum_rescaled</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cum_rescaled</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">scales</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">window_width</span>
+
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">node_times</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">fixed_nodes</span><span class="p">:</span>
+            <span class="n">new_times</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">node_times</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>  <span class="c1"># samples stay fixed</span>
+            <span class="k">continue</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="n">node_times</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
+
+        <span class="c1"># Find which window t falls in</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">breakpoints</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">J</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Rescaled time = cumulative up to window j + fraction within window</span>
+        <span class="n">fraction_in_window</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="n">breakpoints</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">new_times</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">cum_rescaled</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">scales</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">fraction_in_window</span>
+
+    <span class="k">return</span> <span class="n">new_times</span>
+</pre></div>
+</div>
+</section>
+<section id="iterating-the-rescaling">
+<h2>Iterating the Rescaling<a class="headerlink" href="#iterating-the-rescaling" title="Link to this heading"></a></h2>
+<p>A single round of rescaling may not be sufficient because the window boundaries
+depend on the node times, which change after rescaling. tsdate iterates:</p>
+<ol class="arabic simple">
+<li><p>Compute window boundaries from current times</p></li>
+<li><p>Count mutations per window</p></li>
+<li><p>Compute scaling factors</p></li>
+<li><p>Apply rescaling to get new times</p></li>
+<li><p>Repeat (default: 5 iterations)</p></li>
+</ol>
+<p>Each iteration refines the time scale, like adjusting a regulator screw on a
+mechanical watch – small turns that progressively bring the rate into
+alignment with the master clock.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">iterative_rescaling</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">node_times</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">,</span> <span class="n">fixed_nodes</span><span class="p">,</span>
+                        <span class="n">J</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">num_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Iteratively rescale node times to match the mutation clock.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ts : tskit.TreeSequence</span>
+<span class="sd">    node_times : np.ndarray</span>
+<span class="sd">    mutation_rate : float</span>
+<span class="sd">    fixed_nodes : set</span>
+<span class="sd">    J : int</span>
+<span class="sd">        Number of time windows.</span>
+<span class="sd">    num_iter : int</span>
+<span class="sd">        Number of rescaling iterations.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    node_times : np.ndarray</span>
+<span class="sd">        Rescaled node times.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">node_times</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iter</span><span class="p">):</span>
+        <span class="c1"># 1. Partition time into equal-branch-length windows</span>
+        <span class="n">breakpoints</span> <span class="o">=</span> <span class="n">partition_time_axis</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">J</span><span class="p">)</span>
+
+        <span class="c1"># 2. Count observed vs. expected mutations per window</span>
+        <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span> <span class="o">=</span> <span class="n">count_mutations_per_window</span><span class="p">(</span>
+            <span class="n">ts</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">breakpoints</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">)</span>
+
+        <span class="c1"># 3. Compute scaling factors (observed / expected)</span>
+        <span class="n">scales</span> <span class="o">=</span> <span class="n">compute_scaling_factors</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">)</span>
+
+        <span class="c1"># 4. Apply piecewise rescaling</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">apply_rescaling</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">breakpoints</span><span class="p">,</span> <span class="n">scales</span><span class="p">,</span> <span class="n">fixed_nodes</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">times</span>
+</pre></div>
+</div>
+</section>
+<section id="connection-to-population-size-history">
+<h2>Connection to Population Size History<a class="headerlink" href="#connection-to-population-size-history" title="Link to this heading"></a></h2>
+<p>The scaling factors <span class="math notranslate nohighlight">\(s_j\)</span> are intimately related to the effective
+population size history. Under the coalescent with variable <span class="math notranslate nohighlight">\(N_e(t)\)</span>:</p>
+<ul class="simple">
+<li><p>The rate of coalescence at time <span class="math notranslate nohighlight">\(t\)</span> is <span class="math notranslate nohighlight">\(1 / N_e(t)\)</span></p></li>
+<li><p>The mutation rate is constant at <span class="math notranslate nohighlight">\(\mu\)</span></p></li>
+</ul>
+<p>If we model the coalescent under constant <span class="math notranslate nohighlight">\(N_e^{(0)}\)</span> but the true
+population size in window <span class="math notranslate nohighlight">\(j\)</span> is <span class="math notranslate nohighlight">\(N_e^{(j)}\)</span>, then:</p>
+<div class="math notranslate nohighlight">
+\[s_j \approx \frac{N_e^{(j)}}{N_e^{(0)}}\]</div>
+<p>So the rescaling implicitly estimates the population size history. This is
+similar to what PSMC does (see the <a class="reference internal" href="../psmc/index.html#psmc-timepiece"><span class="std std-ref">Timepiece I: PSMC</span></a>), but here it’s a
+post-processing step rather than the main inference.</p>
+</section>
+<section id="edge-cases-and-robustness">
+<h2>Edge Cases and Robustness<a class="headerlink" href="#edge-cases-and-robustness" title="Link to this heading"></a></h2>
+<p>Several practical issues arise:</p>
+<p><strong>Windows with few mutations</strong>: If a window has very few mutations (or none),
+the scaling factor is unreliable. tsdate handles this by:</p>
+<ul class="simple">
+<li><p>Setting a minimum count threshold</p></li>
+<li><p>Smoothing adjacent scaling factors</p></li>
+<li><p>Falling back to a scale of 1.0 for empty windows</p></li>
+</ul>
+<p><strong>Negative branch lengths</strong>: After rescaling, some edges might end up with
+the parent younger than the child. tsdate enforces constraints by adjusting
+times to maintain the topological ordering.</p>
+<p><strong>Convergence</strong>: Rescaling typically converges within 3-5 iterations. The
+scaling factors stabilize as the times settle into their correct positions.</p>
+</section>
+<section id="the-full-pipeline">
+<h2>The Full Pipeline<a class="headerlink" href="#the-full-pipeline" title="Link to this heading"></a></h2>
+<p>Putting rescaling together with EP, here is the complete tsdate pipeline from
+raw tree sequence to dated genealogy.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">tsdate_full_pipeline</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">,</span> <span class="n">Ne</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">max_ep_iter</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+                         <span class="n">rescaling_intervals</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">rescaling_iterations</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The complete tsdate pipeline.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ts : tskit.TreeSequence</span>
+<span class="sd">        Input (topology from tsinfer).</span>
+<span class="sd">    mutation_rate : float</span>
+<span class="sd">    Ne : float</span>
+<span class="sd">    max_ep_iter : int</span>
+<span class="sd">    rescaling_intervals : int</span>
+<span class="sd">    rescaling_iterations : int</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dated_ts : np.ndarray</span>
+<span class="sd">        Posterior mean node times.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Build priors (Gear 1 -- the expected beat rate)</span>
+    <span class="n">prior_grid</span> <span class="o">=</span> <span class="n">build_coalescent_priors</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">Ne</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Run EP (Gear 4 -- messages flow through the gear train)</span>
+    <span class="n">posteriors</span> <span class="o">=</span> <span class="n">run_ep</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">,</span> <span class="n">prior_grid</span><span class="p">,</span> <span class="n">max_ep_iter</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Extract posterior means</span>
+    <span class="n">node_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">posteriors</span><span class="p">:</span>
+            <span class="n">node_times</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">posteriors</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span>
+
+    <span class="n">fixed_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">samples</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">fixed_nodes</span><span class="p">:</span>
+        <span class="n">node_times</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Step 4: Rescale (Gear 5 -- calibrate against the mutation clock)</span>
+    <span class="k">if</span> <span class="n">rescaling_iterations</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">node_times</span> <span class="o">=</span> <span class="n">iterative_rescaling</span><span class="p">(</span>
+            <span class="n">ts</span><span class="p">,</span> <span class="n">node_times</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">,</span> <span class="n">fixed_nodes</span><span class="p">,</span>
+            <span class="n">J</span><span class="o">=</span><span class="n">rescaling_intervals</span><span class="p">,</span>
+            <span class="n">num_iter</span><span class="o">=</span><span class="n">rescaling_iterations</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">node_times</span>
+</pre></div>
+</div>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>Rescaling is tsdate’s final calibration step – the last gear in the mechanism:</p>
+<ol class="arabic simple">
+<li><p><strong>Partition</strong> the time axis into <span class="math notranslate nohighlight">\(J\)</span> windows of equal branch length</p></li>
+<li><p><strong>Count</strong> observed vs. expected mutations per window</p></li>
+<li><p><strong>Scale</strong> each window by the ratio <span class="math notranslate nohighlight">\(s_j = \text{observed}/\text{expected}\)</span></p></li>
+<li><p><strong>Apply</strong> the piecewise scaling to all node times</p></li>
+<li><p><strong>Iterate</strong> until convergence (default: 5 rounds)</p></li>
+</ol>
+<p>The key equation:</p>
+<div class="math notranslate nohighlight">
+\[t_u^{\text{new}} = \int_0^{t_u^{\text{old}}} \frac{\text{observed mutations}(x)}
+{\text{expected mutations}(x)} \, dx\]</div>
+<p>This corrects for variable population size without explicitly modeling it,
+by letting the molecular clock be the final arbiter of time. In the watch
+metaphor, the mutation clock is the master reference – it ticks at a known
+rate (<span class="math notranslate nohighlight">\(\mu\)</span>) regardless of population history, and rescaling adjusts
+every hand on the dial until the ticks match.</p>
+<p>Congratulations – you’ve now built every gear of the tsdate mechanism:</p>
+<ol class="arabic simple">
+<li><p><strong>Coalescent prior</strong> – the expected beat rate from coalescent theory: informed
+starting beliefs about node ages</p></li>
+<li><p><strong>Mutation likelihood</strong> – evidence from the mutation clock: the Poisson model
+connecting observed data to branch lengths</p></li>
+<li><p><strong>Inside-outside</strong> – messages flowing through the gear train on a discrete grid</p></li>
+<li><p><strong>Variational gamma</strong> – the same messages, now carried by continuous gamma
+distributions via expectation propagation</p></li>
+<li><p><strong>Rescaling</strong> – calibrating the clock against the master reference: adjusting
+for variable population size</p></li>
+</ol>
+<p>Together, these gears transform a topology-only tree sequence (from tsinfer)
+into a fully dated genealogy. You understand the math, the code, and the
+intuition behind every step. The watch is assembled, calibrated, and keeping
+time.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="variational_gamma.html" class="btn btn-neutral float-left" title="Variational Gamma (Expectation Propagation)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../singer/index.html" class="btn btn-neutral float-right" title="Timepiece VI: SINGER" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

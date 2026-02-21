@@ -1,0 +1,510 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory-Efficient Viterbi Inference &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Dating Path Segments" href="dating.html" />
+    <link rel="prev" title="Haplotype Matching with the PBWT" href="pbwt_matching.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece VII: Threads</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece VII: Threads</a></li>
+      <li class="breadcrumb-item active">Memory-Efficient Viterbi Inference</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="pbwt_matching.html" class="btn btn-neutral float-left" title="Haplotype Matching with the PBWT" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dating.html" class="btn btn-neutral float-right" title="Dating Path Segments" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="memory-efficient-viterbi-inference">
+<span id="viterbi-threads"></span><h1>Memory-Efficient Viterbi Inference<a class="headerlink" href="#memory-efficient-viterbi-inference" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The classical machine works, but it does not fit in the case. Redesign it.</em></p>
+</div></blockquote>
+<p>The second step in the Threads pipeline takes the candidate matches from the
+PBWT pre-filter and runs a <strong>memory-efficient Viterbi algorithm</strong> under the
+Li-Stephens model to find the optimal threading path for each sample.</p>
+<section id="the-classical-viterbi-limitation">
+<h2>The Classical Viterbi Limitation<a class="headerlink" href="#the-classical-viterbi-limitation" title="Link to this heading"></a></h2>
+<p>Given a reference panel <span class="math notranslate nohighlight">\(H\)</span> of <span class="math notranslate nohighlight">\(N\)</span> haplotypes over <span class="math notranslate nohighlight">\(M\)</span> sites
+and a query haplotype <span class="math notranslate nohighlight">\(g\)</span>, the Li-Stephens model assigns a probability
+<span class="math notranslate nohighlight">\(P(\pi)\)</span> to each path <span class="math notranslate nohighlight">\(\pi \in \{1, \ldots, N\}^M\)</span> through the
+panel. A <strong>Viterbi path</strong> is a path of maximum probability.</p>
+<p>The classical Viterbi algorithm finds this path in <span class="math notranslate nohighlight">\(O(NM)\)</span> time by
+constructing a full <span class="math notranslate nohighlight">\(N \times M\)</span> probability matrix, then performing a
+traceback. For biobank-scale data, this matrix is computationally prohibitive
+– even after PBWT pre-filtering reduces <span class="math notranslate nohighlight">\(N\)</span> to <span class="math notranslate nohighlight">\(L\)</span>, the memory
+requirement for long genomic tracts remains high.</p>
+</section>
+<section id="two-key-observations">
+<h2>Two Key Observations<a class="headerlink" href="#two-key-observations" title="Link to this heading"></a></h2>
+<p>The Threads-Viterbi algorithm exploits two properties of the Li-Stephens model:</p>
+<p><strong>Observation 1: Recombination events are rare.</strong> Viterbi paths consist of few
+but long segments. In the 1000 Genomes Project (2,251 sequences), the average
+segment length exceeds 200 kilobases. In UK Biobank array data
+(<span class="math notranslate nohighlight">\(N = 337{,}464\)</span>), segments average well over a megabase. This means a
+complete Viterbi path can be stored compactly by recording only the segment
+breakpoints and threading targets.</p>
+<p><strong>Observation 2: Recombination is symmetric.</strong> Under the Li-Stephens model:</p>
+<div class="math notranslate nohighlight">
+\[p(\pi_{i+1} = \beta \mid \pi_i = \alpha, \text{recombination between } i \text{ and } i+1) = \frac{1}{N}\]</div>
+<p>for any states <span class="math notranslate nohighlight">\(\alpha, \beta\)</span>. This symmetry dramatically reduces the
+search space for possible Viterbi paths, as formalized in Proposition 1.</p>
+</section>
+<section id="proposition-1">
+<h2>Proposition 1<a class="headerlink" href="#proposition-1" title="Link to this heading"></a></h2>
+<p><strong>Proposition 1.</strong> <em>Suppose</em> <span class="math notranslate nohighlight">\(\pi^{(i)}\)</span> <em>is a Viterbi path for the
+subset of the panel</em> <span class="math notranslate nohighlight">\(H\)</span> <em>containing sites 1 through</em> <span class="math notranslate nohighlight">\(i\)</span>. <em>If
+there exists a Viterbi path through</em> <span class="math notranslate nohighlight">\(H\)</span> <em>that recombines between sites</em>
+<span class="math notranslate nohighlight">\(i\)</span> <em>and</em> <span class="math notranslate nohighlight">\(i + 1\)</span>, <em>then there exists a Viterbi path</em> <span class="math notranslate nohighlight">\(\pi\)</span>
+<em>through</em> <span class="math notranslate nohighlight">\(H\)</span> <em>satisfying</em> <span class="math notranslate nohighlight">\(\pi_i = \pi^{(i)}_i\)</span>.</p>
+<p>In plain language: at site <span class="math notranslate nohighlight">\(i\)</span>, we only need to consider recombination
+from the sequence of highest probability given all observations up to
+<span class="math notranslate nohighlight">\(i\)</span>. This is the property that makes the branch-and-bound strategy
+correct.</p>
+</section>
+<section id="the-segment-set">
+<h2>The Segment Set<a class="headerlink" href="#the-segment-set" title="Link to this heading"></a></h2>
+<p>The algorithm maintains a set <span class="math notranslate nohighlight">\(\Omega\)</span> of <strong>path segments</strong>, each
+consisting of:</p>
+<ul class="simple">
+<li><p>A start site <span class="math notranslate nohighlight">\(m_\omega \in \{1, \ldots, M\}\)</span></p></li>
+<li><p>A threading target <span class="math notranslate nohighlight">\(n_\omega \in \{1, \ldots, N\}\)</span></p></li>
+<li><p>If <span class="math notranslate nohighlight">\(m_\omega &gt; 0\)</span>, a traceback segment <span class="math notranslate nohighlight">\(\omega' \in \Omega\)</span> with
+<span class="math notranslate nohighlight">\(m_{\omega'} &lt; m_\omega\)</span></p></li>
+</ul>
+<p>A full path through <span class="math notranslate nohighlight">\(H\)</span> is constructed by starting at any segment and
+following traceback pointers until a segment with <span class="math notranslate nohighlight">\(m_\omega = 0\)</span> is
+reached. The penalty (negative log-likelihood) of a path ending at
+<span class="math notranslate nohighlight">\(\omega\)</span> is denoted <span class="math notranslate nohighlight">\(s(\omega)\)</span>.</p>
+<p>The set <span class="math notranslate nohighlight">\(\Omega\)</span> contains exactly <span class="math notranslate nohighlight">\(N\)</span> <strong>active segments</strong>
+<span class="math notranslate nohighlight">\(\omega_1, \ldots, \omega_N\)</span>, one per reference haplotype. The segment
+set is <strong>complete</strong> if each <span class="math notranslate nohighlight">\(P(\omega_n)\)</span> is the Li-Stephens-optimal path
+ending at haplotype <span class="math notranslate nohighlight">\(n\)</span>. When the set is complete, the active segment
+with minimum penalty gives a Viterbi path.</p>
+</section>
+<section id="the-branch-step-theorem-1">
+<h2>The Branch Step (Theorem 1)<a class="headerlink" href="#the-branch-step-theorem-1" title="Link to this heading"></a></h2>
+<p>Given a complete segment set <span class="math notranslate nohighlight">\(\Omega^{(m)}\)</span> for sites <span class="math notranslate nohighlight">\(1\)</span> through
+<span class="math notranslate nohighlight">\(m\)</span>, the branch step constructs <span class="math notranslate nohighlight">\(\Omega^{(m+1)}\)</span> that is complete
+for sites <span class="math notranslate nohighlight">\(1\)</span> through <span class="math notranslate nohighlight">\(m + 1\)</span>.</p>
+<p>Let <span class="math notranslate nohighlight">\(\omega'\)</span> be the active segment with minimum penalty (the current
+Viterbi path), and let <span class="math notranslate nohighlight">\(\rho\)</span> and <span class="math notranslate nohighlight">\(\rho_c\)</span> be the penalties for
+recombination and no-recombination respectively.</p>
+<p>For each active segment <span class="math notranslate nohighlight">\(\omega_n\)</span>, if continuing without recombination
+is worse than recombining from the best path:</p>
+<div class="math notranslate nohighlight">
+\[s(\omega_n, m) + \rho_c &gt; s(\omega', m) + \rho\]</div>
+<p>then a <strong>new segment</strong> <span class="math notranslate nohighlight">\(\omega(m+1, n, \omega')\)</span> is created, representing
+a recombination from the best path to haplotype <span class="math notranslate nohighlight">\(n\)</span> at site <span class="math notranslate nohighlight">\(m+1\)</span>.</p>
+<p>The new active segment for haplotype <span class="math notranslate nohighlight">\(n\)</span> becomes whichever option has
+lower penalty:</p>
+<div class="math notranslate nohighlight">
+\[s_{\text{new}} = \min\{s(\omega_n, m) + \rho_c,\; s(\omega', m) + \rho\} + \mu_n\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mu_n\)</span> is the match/mismatch penalty at site <span class="math notranslate nohighlight">\(m + 1\)</span>.</p>
+<p><strong>Complexity per site:</strong> The branch step adds at most <span class="math notranslate nohighlight">\(N\)</span> new segments,
+giving <span class="math notranslate nohighlight">\(O(NM)\)</span> total segments across all sites. In practice, new
+segments are created only at inferred recombination events, which are rare.</p>
+</section>
+<section id="the-bound-step-theorem-2">
+<h2>The Bound Step (Theorem 2)<a class="headerlink" href="#the-bound-step-theorem-2" title="Link to this heading"></a></h2>
+<p>The bound step prunes the segment set without losing completeness.</p>
+<p><strong>Theorem 2.</strong> <em>Let</em> <span class="math notranslate nohighlight">\(\Omega\)</span> <em>be a complete segment set with active
+segments</em> <span class="math notranslate nohighlight">\(\omega_1, \ldots, \omega_N\)</span>. <em>Define</em>
+<span class="math notranslate nohighlight">\(\Omega^* \subseteq \Omega\)</span> <em>as the union of all traceback paths from
+the active segments:</em>
+<span class="math notranslate nohighlight">\(\Omega^* = \bigcup_{n=1}^{N} P(\omega_n)\)</span>. <em>Then</em> <span class="math notranslate nohighlight">\(\Omega^*\)</span>
+<em>is also a complete segment set.</em></p>
+<p>The bound step simply discards any segment that is not on a traceback path from
+an active segment – these segments are <strong>undercut</strong> and can never be part of
+an optimal path.</p>
+<p>Threads applies the bound step at regular intervals using a heuristic threshold:</p>
+<ul class="simple">
+<li><p>Initialize with <span class="math notranslate nohighlight">\(B_0 = 10 \cdot N\)</span></p></li>
+<li><p>If <span class="math notranslate nohighlight">\(|\Omega^{(m)}| &gt; B_0\)</span>, prune to <span class="math notranslate nohighlight">\(\Omega^*\)</span></p></li>
+<li><p>If the next pruning trigger occurs within 30 sites, double the threshold to
+<span class="math notranslate nohighlight">\(B_1 = 2B_0\)</span>; otherwise reset to <span class="math notranslate nohighlight">\(B_0\)</span></p></li>
+</ul>
+<p>This balances pruning frequency against the risk of memory spikes from rapid
+segment accumulation.</p>
+</section>
+<section id="traceback">
+<h2>Traceback<a class="headerlink" href="#traceback" title="Link to this heading"></a></h2>
+<p>After processing all <span class="math notranslate nohighlight">\(M\)</span> sites, the final Viterbi path is recovered by:</p>
+<ol class="arabic simple">
+<li><p>Identifying the active segment <span class="math notranslate nohighlight">\(\omega^*\)</span> with minimum penalty</p></li>
+<li><p>Following traceback pointers from <span class="math notranslate nohighlight">\(\omega^*\)</span> until reaching a segment
+with start site 0</p></li>
+</ol>
+<p>The result is a piecewise-constant path through the reference panel: a sequence
+of segments, each specifying a threading target and a genomic interval.</p>
+</section>
+<section id="parallelism">
+<h2>Parallelism<a class="headerlink" href="#parallelism" title="Link to this heading"></a></h2>
+<p>A critical property of the Threads-Viterbi algorithm: the <span class="math notranslate nohighlight">\(N\)</span> Viterbi
+instances (one per sample) are <strong>completely independent</strong>. The output of each
+HMM does not depend on any other. This means all <span class="math notranslate nohighlight">\(N\)</span> instances can run
+in parallel, divided evenly among available CPU cores.</p>
+<p>Given <span class="math notranslate nohighlight">\(L\)</span> haplotype matches per sample and <span class="math notranslate nohighlight">\(N_{\text{CPU}}\)</span> cores:</p>
+<ul class="simple">
+<li><p><strong>Time:</strong> <span class="math notranslate nohighlight">\(O(MLN / N_{\text{CPU}})\)</span></p></li>
+<li><p><strong>Memory:</strong> <span class="math notranslate nohighlight">\(O(LN)\)</span> average</p></li>
+</ul>
+<p>The genotype data is streamed from disk once per core, and neither the full
+genotype matrix nor any <span class="math notranslate nohighlight">\(N \times M\)</span> probability matrix is ever stored in
+memory.</p>
+</section>
+<section id="complexity-summary">
+<h2>Complexity Summary<a class="headerlink" href="#complexity-summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 35.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Property</p></th>
+<th class="head"><p>Classical Viterbi</p></th>
+<th class="head"><p>Threads-Viterbi</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Time (per sample)</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(NM)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(NM)\)</span> (same)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Memory (per sample)</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(NM)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(N)\)</span> average</p></td>
+</tr>
+<tr class="row-even"><td><p>Total (all samples)</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(MN^2)\)</span> time + memory</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(MLN/N_{\text{CPU}})\)</span> time, <span class="math notranslate nohighlight">\(O(LN)\)</span> memory</p></td>
+</tr>
+<tr class="row-odd"><td><p>Parallelism</p></td>
+<td><p>Not straightforward</p></td>
+<td><p>Embarrassingly parallel</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pbwt_matching.html" class="btn btn-neutral float-left" title="Haplotype Matching with the PBWT" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dating.html" class="btn btn-neutral float-right" title="Dating Path Segments" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

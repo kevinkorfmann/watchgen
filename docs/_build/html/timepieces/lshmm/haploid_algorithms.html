@@ -1,0 +1,1222 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Haploid LS HMM Algorithms &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="The Diploid Extension" href="diploid.html" />
+    <link rel="prev" title="The Copying Model" href="copying_model.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece II: The Li &amp; Stephens HMM</a></li>
+      <li class="breadcrumb-item active">Haploid LS HMM Algorithms</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="copying_model.html" class="btn btn-neutral float-left" title="The Copying Model" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="diploid.html" class="btn btn-neutral float-right" title="The Diploid Extension" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="haploid-ls-hmm-algorithms">
+<span id="haploid-algorithms"></span><h1>Haploid LS HMM Algorithms<a class="headerlink" href="#haploid-ls-hmm-algorithms" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The gear train: turning the model into answers.</em></p>
+</div></blockquote>
+<p>In the <a class="reference internal" href="copying_model.html#copying-model"><span class="std std-ref">previous chapter</span></a>, we built the gears of the
+template mechanism: transition probabilities, emission probabilities, and the
+<span class="math notranslate nohighlight">\(O(n)\)</span> trick. Now we assemble them into a working gear train – the three
+core algorithms that turn the Li &amp; Stephens model into actionable results:</p>
+<ol class="arabic simple">
+<li><p><strong>Forward algorithm</strong> – computes the data likelihood and forward probabilities</p></li>
+<li><p><strong>Backward algorithm</strong> – computes backward probabilities for posterior decoding</p></li>
+<li><p><strong>Viterbi algorithm</strong> – finds the single most likely copying path (the most
+likely gear sequence through which the mechanism ticked)</p></li>
+</ol>
+<p>Each algorithm is derived step by step, implemented in Python, and verified.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Prerequisites.</strong> This chapter builds directly on two earlier chapters:</p>
+<ul class="simple">
+<li><p>The <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>, where the forward, backward, and Viterbi
+algorithms were introduced in their general form for arbitrary HMMs.
+We assume you are comfortable with the concepts of forward variables,
+backward variables, scaling, and traceback.</p></li>
+<li><p>The <a class="reference internal" href="copying_model.html#copying-model"><span class="std std-ref">copying model chapter</span></a>, where we derived the
+Li-Stephens transition and emission probabilities and the <span class="math notranslate nohighlight">\(O(n)\)</span>
+trick. We will use these results directly.</p></li>
+</ul>
+<p>If any of these concepts are unfamiliar, reviewing those chapters first
+will make this one much easier to follow.</p>
+</div>
+<section id="the-forward-algorithm">
+<h2>The Forward Algorithm<a class="headerlink" href="#the-forward-algorithm" title="Link to this heading"></a></h2>
+<p>We already saw the forward algorithm in the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a> and used
+the Li-Stephens <span class="math notranslate nohighlight">\(O(n)\)</span> trick in the <a class="reference internal" href="copying_model.html#copying-model"><span class="std std-ref">previous chapter</span></a>.
+Here we implement the complete, production-quality version with scaling.</p>
+<section id="recap-of-the-forward-recursion">
+<h3>Recap of the forward recursion<a class="headerlink" href="#recap-of-the-forward-recursion" title="Link to this heading"></a></h3>
+<p>The forward variable <span class="math notranslate nohighlight">\(\alpha_j(\ell) = P(X_1, \ldots, X_\ell, Z_\ell = j)\)</span>
+satisfies:</p>
+<p><strong>Initialization:</strong></p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(1) = \frac{1}{n} \cdot e_j(X_1)\]</div>
+<p><strong>Recursion</strong> (using the Li-Stephens structure):</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell) = e_j(X_\ell) \left[(1 - r_\ell) \alpha_j(\ell - 1) + \frac{r_\ell}{n_\ell} \sum_{i} \alpha_i(\ell - 1)\right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(n_\ell\)</span> is the number of copiable entries at site <span class="math notranslate nohighlight">\(\ell\)</span>.</p>
+<div class="admonition-probability-aside-what-the-forward-variable-represents admonition">
+<p class="admonition-title">Probability Aside: What the Forward Variable Represents</p>
+<p>The forward variable <span class="math notranslate nohighlight">\(\alpha_j(\ell)\)</span> is a <strong>joint probability</strong>:
+the probability of seeing the observations <span class="math notranslate nohighlight">\(X_1, \ldots, X_\ell\)</span>
+<em>and</em> being in state <span class="math notranslate nohighlight">\(j\)</span> at site <span class="math notranslate nohighlight">\(\ell\)</span>. It is <em>not</em> a
+conditional probability – it does not condition on the observations.
+Summing over all states gives the marginal probability of the
+observations up to site <span class="math notranslate nohighlight">\(\ell\)</span>:
+<span class="math notranslate nohighlight">\(P(X_1, \ldots, X_\ell) = \sum_j \alpha_j(\ell)\)</span>. At the last site,
+this sum gives the full data likelihood. This distinction matters because
+it explains why forward probabilities become vanishingly small for long
+sequences – they are products of many probabilities less than 1.</p>
+</div>
+</section>
+<section id="with-scaling-normalized">
+<h3>With scaling (normalized)<a class="headerlink" href="#with-scaling-normalized" title="Link to this heading"></a></h3>
+<p>As discussed in the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>, the forward probabilities become
+astronomically small for long sequences. The solution: normalize at each step.</p>
+<p>After normalization, <span class="math notranslate nohighlight">\(\sum_j \hat{\alpha}_j(\ell) = 1\)</span>, and the recursion
+simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\tilde{\alpha}_j(\ell) = e_j(X_\ell) \left[(1 - r_\ell) \hat{\alpha}_j(\ell-1) + \frac{r_\ell}{n_\ell}\right]\]</div>
+<div class="math notranslate nohighlight">
+\[c_\ell = \sum_j \tilde{\alpha}_j(\ell), \qquad
+\hat{\alpha}_j(\ell) = \frac{\tilde{\alpha}_j(\ell)}{c_\ell}\]</div>
+<p>The log-likelihood is recovered as:</p>
+<div class="math notranslate nohighlight">
+\[\log_{10} P(X_1, \ldots, X_m) = \sum_{\ell=1}^m \log_{10} c_\ell\]</div>
+<p><strong>Why does the</strong> <span class="math notranslate nohighlight">\(\sum_i\)</span> <strong>disappear?</strong> Because <span class="math notranslate nohighlight">\(\sum_i \hat{\alpha}_i = 1\)</span>
+after normalization. This is why the normalized version is actually simpler to
+code – one fewer thing to compute.</p>
+<div class="admonition-probability-aside-scaling-and-numerical-stability admonition">
+<p class="admonition-title">Probability Aside: Scaling and Numerical Stability</p>
+<p>Without scaling, the forward probabilities at site <span class="math notranslate nohighlight">\(\ell\)</span> are
+roughly <span class="math notranslate nohighlight">\(O(\epsilon^\ell)\)</span> where <span class="math notranslate nohighlight">\(\epsilon\)</span> is a typical
+emission probability (say 0.01 for a mismatch). After a few hundred
+sites, these values underflow to zero in floating-point arithmetic.
+Scaling rescues us by dividing by the sum at each step. The log-likelihood
+is then accumulated as a sum of log-scaling-factors, which stays in a
+numerically well-behaved range. This technique is standard in HMM
+implementations and was introduced in the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>.</p>
+</div>
+<p>Let’s look at the complete implementation, matching the structure of the lshmm
+library:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">forwards_ls_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">emission_matrix</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward algorithm for the haploid Li-Stephens model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of reference haplotypes.</span>
+<span class="sd">    m : int</span>
+<span class="sd">        Number of sites.</span>
+<span class="sd">    H : ndarray of shape (m, n)</span>
+<span class="sd">        Reference panel.</span>
+<span class="sd">    s : ndarray of shape (1, m)</span>
+<span class="sd">        Query haplotype (wrapped in 2D array for API compatibility).</span>
+<span class="sd">    emission_matrix : ndarray of shape (m, 2)</span>
+<span class="sd">        Column 0 = mismatch prob, column 1 = match prob.</span>
+<span class="sd">    r : ndarray of shape (m,)</span>
+<span class="sd">        Per-site recombination probability.</span>
+<span class="sd">    norm : bool</span>
+<span class="sd">        Whether to normalize (scale) the forward probabilities.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    F : ndarray of shape (m, n)</span>
+<span class="sd">        Forward probabilities.</span>
+<span class="sd">    c : ndarray of shape (m,)</span>
+<span class="sd">        Scaling factors.</span>
+<span class="sd">    ll : float</span>
+<span class="sd">        Log-likelihood (base 10).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span>  <span class="c1"># Pre-compute r/n for each site (the O(n) trick constant)</span>
+
+    <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="c1"># Initialization: site 0</span>
+        <span class="c1"># Prior pi_j = 1/n, times emission probability</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">H</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+                <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># match</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># mismatch</span>
+            <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>  <span class="c1"># Accumulate scaling factor</span>
+
+        <span class="c1"># Normalize so forward probs sum to 1</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">/=</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Forward pass: sites 1, ..., m-1</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="c1"># Li-Stephens transition (normalized: sum = 1, so</span>
+                <span class="c1"># the switch term is simply r_n[l])</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">+</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+
+                <span class="c1"># Emission: multiply by match or mismatch probability</span>
+                <span class="k">if</span> <span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">l</span><span class="p">]:</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># match</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># mismatch</span>
+
+                <span class="n">c</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">+=</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>  <span class="c1"># Accumulate scaling factor</span>
+
+            <span class="c1"># Normalize</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">/=</span> <span class="n">c</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+
+        <span class="c1"># Log-likelihood = sum of log scaling factors</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="c1"># Initialization: site 0 (same as above, without normalization)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">H</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+                <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Forward pass: sites 1, ..., m-1</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+            <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>  <span class="c1"># Must compute sum explicitly (O(n))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="c1"># Unnormalized: switch term requires S * r_n[l]</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">+</span> <span class="n">S</span> <span class="o">*</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">l</span><span class="p">]:</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Log-likelihood from final sum</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]))</span>
+
+    <span class="k">return</span> <span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ll</span>
+</pre></div>
+</div>
+<p>Let’s trace through a small example to make sure we understand every step:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Tiny example: 3 reference haplotypes, 4 sites</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>  <span class="c1"># site 0</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>  <span class="c1"># site 1</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>  <span class="c1"># site 2</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>  <span class="c1"># site 3</span>
+<span class="p">])</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>  <span class="c1"># query haplotype</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">0.1</span>  <span class="c1"># exaggerated for visibility</span>
+<span class="n">num_alleles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+<span class="c1"># Build emission matrix: column 0 = mismatch, column 1 = match</span>
+<span class="n">e_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">e_mat</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span>        <span class="c1"># P(mismatch) = mu</span>
+    <span class="n">e_mat</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span>    <span class="c1"># P(match) = 1 - mu</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="c1"># Run both versions and verify they give the same log-likelihood</span>
+<span class="n">F_norm</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ll_norm</span> <span class="o">=</span> <span class="n">forwards_ls_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">F_raw</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">ll_raw</span> <span class="o">=</span> <span class="n">forwards_ls_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log-likelihood (normalized): </span><span class="si">{</span><span class="n">ll_norm</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log-likelihood (raw):        </span><span class="si">{</span><span class="n">ll_raw</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Match: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">ll_norm</span><span class="p">,</span><span class="w"> </span><span class="n">ll_raw</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Normalized forward probs (sum to 1 at each site):&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Site </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">F_norm</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> (sum=</span><span class="si">{</span><span class="n">F_norm</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Raw forward probs:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Site </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">F_raw</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span><span class="si">}</span><span class="s2"> (sum=</span><span class="si">{</span><span class="n">F_raw</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With the forward algorithm in place, we now turn to its mirror image: the
+backward algorithm.</p>
+</section>
+</section>
+<section id="the-backward-algorithm">
+<h2>The Backward Algorithm<a class="headerlink" href="#the-backward-algorithm" title="Link to this heading"></a></h2>
+<p>The backward algorithm computes <span class="math notranslate nohighlight">\(\beta_j(\ell) = P(X_{\ell+1}, \ldots, X_m \mid Z_\ell = j)\)</span>:
+the probability of the future data given the current state.</p>
+<p>While the forward algorithm asks “how likely is everything up to and including
+site <span class="math notranslate nohighlight">\(\ell\)</span>?”, the backward algorithm asks “how likely is everything
+<em>after</em> site <span class="math notranslate nohighlight">\(\ell\)</span>?” Together, they give the full posterior probability
+at each site, using all the data.</p>
+<section id="deriving-the-recursion">
+<h3>Deriving the recursion<a class="headerlink" href="#deriving-the-recursion" title="Link to this heading"></a></h3>
+<p><strong>Initialization</strong> (<span class="math notranslate nohighlight">\(\ell = m\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[\beta_j(m) = 1 \quad \text{for all } j\]</div>
+<p>There’s no future data after the last site, so the probability is 1 regardless
+of the state.</p>
+<p><strong>Recursion</strong> (<span class="math notranslate nohighlight">\(\ell = m-1, \ldots, 1\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[\beta_j(\ell) = \sum_{i=1}^n A_{ji} \cdot e_i(X_{\ell+1}) \cdot \beta_i(\ell+1)\]</div>
+<p>Note the index order: <span class="math notranslate nohighlight">\(A_{ji}\)</span> (transition <strong>from</strong> <span class="math notranslate nohighlight">\(j\)</span> <strong>to</strong> <span class="math notranslate nohighlight">\(i\)</span>),
+because we’re asking “given state <span class="math notranslate nohighlight">\(j\)</span> now, what’s the probability of the
+future data?”</p>
+<div class="admonition-probability-aside-forward-vs-backward-index-order admonition">
+<p class="admonition-title">Probability Aside: Forward vs. Backward Index Order</p>
+<p>A common source of confusion is the index order in the backward recursion.
+In the forward recursion, we sum over the <em>previous</em> state <span class="math notranslate nohighlight">\(i\)</span> with
+transition <span class="math notranslate nohighlight">\(A_{ij}\)</span> (from <span class="math notranslate nohighlight">\(i\)</span> to <span class="math notranslate nohighlight">\(j\)</span>). In the backward
+recursion, we sum over the <em>next</em> state <span class="math notranslate nohighlight">\(i\)</span> with transition
+<span class="math notranslate nohighlight">\(A_{ji}\)</span> (from <span class="math notranslate nohighlight">\(j\)</span> to <span class="math notranslate nohighlight">\(i\)</span>). The difference is which
+direction we are moving in time:</p>
+<ul class="simple">
+<li><p>Forward: “I was in state <span class="math notranslate nohighlight">\(i\)</span>; what is the probability of reaching
+state <span class="math notranslate nohighlight">\(j\)</span>?” – sum over previous states.</p></li>
+<li><p>Backward: “I am in state <span class="math notranslate nohighlight">\(j\)</span>; what is the probability of the future
+data?” – sum over next states.</p></li>
+</ul>
+<p>For the LS model, <span class="math notranslate nohighlight">\(A_{ji}\)</span> has the same structure as <span class="math notranslate nohighlight">\(A_{ij}\)</span>
+(since <span class="math notranslate nohighlight">\(A\)</span> is symmetric: <span class="math notranslate nohighlight">\(A_{ji} = A_{ij}\)</span>), so the index
+order doesn’t change the formulas. But it matters for understanding what
+the backward variable represents.</p>
+</div>
+<p>Using the Li-Stephens structure:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\beta_j(\ell) &amp;= \sum_i \left[(1 - r_{\ell+1})\delta_{ji} + \frac{r_{\ell+1}}{n}\right] e_i(X_{\ell+1}) \beta_i(\ell+1) \\
+&amp;= (1 - r_{\ell+1}) \cdot e_j(X_{\ell+1}) \cdot \beta_j(\ell+1)
++ \frac{r_{\ell+1}}{n} \sum_i e_i(X_{\ell+1}) \beta_i(\ell+1)\end{split}\]</div>
+<p>Again, the sum <span class="math notranslate nohighlight">\(\sum_i e_i \beta_i\)</span> is computed once and reused, giving
+<span class="math notranslate nohighlight">\(O(n)\)</span> per site.</p>
+</section>
+<section id="scaling-the-backward-variables">
+<h3>Scaling the backward variables<a class="headerlink" href="#scaling-the-backward-variables" title="Link to this heading"></a></h3>
+<p>To maintain numerical stability, the backward variables are scaled using the
+<strong>same</strong> scaling factors <span class="math notranslate nohighlight">\(c_\ell\)</span> from the forward pass. At each step, we
+divide by <span class="math notranslate nohighlight">\(c_{\ell+1}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\beta}_j(\ell) = \frac{1}{c_{\ell+1}} \left[(1 - r_{\ell+1}) \cdot e_j(X_{\ell+1}) \cdot \hat{\beta}_j(\ell+1) + \frac{r_{\ell+1}}{n} \sum_i e_i(X_{\ell+1}) \hat{\beta}_i(\ell+1)\right]\]</div>
+<p><strong>Why the same</strong> <span class="math notranslate nohighlight">\(c\)</span> <strong>?</strong> The posterior probability at any site is:</p>
+<div class="math notranslate nohighlight">
+\[P(Z_\ell = j \mid X_1, \ldots, X_m) = \hat{\alpha}_j(\ell) \cdot \hat{\beta}_j(\ell)\]</div>
+<p>This only works if the forward and backward variables use compatible scaling.
+Using <span class="math notranslate nohighlight">\(c_\ell\)</span> from the forward pass ensures this.</p>
+<div class="admonition-probability-aside-why-the-product-gives-the-posterior admonition">
+<p class="admonition-title">Probability Aside: Why the Product Gives the Posterior</p>
+<p>The unscaled posterior is:</p>
+<div class="math notranslate nohighlight">
+\[P(Z_\ell = j \mid X) = \frac{\alpha_j(\ell) \beta_j(\ell)}{P(X)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(P(X) = \sum_j \alpha_j(\ell) \beta_j(\ell)\)</span> (this sum is
+the same for all <span class="math notranslate nohighlight">\(\ell\)</span>). When we use compatible scaling, the
+product <span class="math notranslate nohighlight">\(\hat{\alpha}_j \hat{\beta}_j\)</span> is already proportional to
+the posterior, and we simply need to normalize so it sums to 1. This is
+derived in detail in the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">backwards_ls_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">emission_matrix</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Backward algorithm for the haploid Li-Stephens model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n, m, H, s, emission_matrix, r : same as forwards_ls_hap.</span>
+<span class="sd">    c : ndarray of shape (m,)</span>
+<span class="sd">        Scaling factors from the forward pass.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    B : ndarray of shape (m, n)</span>
+<span class="sd">        Scaled backward probabilities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+    <span class="c1"># Initialization: last site -- beta = 1 for all states</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">B</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span>  <span class="c1"># Pre-compute r/n for the O(n) trick</span>
+
+    <span class="c1"># Backward pass: iterate from site m-2 down to 0</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Pre-compute emission * backward for each state at site l+1.</span>
+        <span class="c1"># This is the inner product that gets reused via the O(n) trick.</span>
+        <span class="n">tmp_B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">tmp_B_sum</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">H</span><span class="p">[</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="n">emission_prob</span> <span class="o">=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># match</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">emission_prob</span> <span class="o">=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># mismatch</span>
+            <span class="n">tmp_B</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">emission_prob</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>  <span class="c1"># e_i * beta_i</span>
+            <span class="n">tmp_B_sum</span> <span class="o">+=</span> <span class="n">tmp_B</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="c1"># Accumulate the sum (O(n) trick)</span>
+
+        <span class="c1"># Compute backward variable at site l</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">B</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tmp_B_sum</span>      <span class="c1"># switch: sum term</span>
+            <span class="n">B</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">tmp_B</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="c1"># stay: diagonal term</span>
+            <span class="n">B</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">/=</span> <span class="n">c</span><span class="p">[</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>                    <span class="c1"># scale with forward c</span>
+
+    <span class="k">return</span> <span class="n">B</span>
+
+<span class="c1"># Run forward-backward on our small example</span>
+<span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">forwards_ls_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">backwards_ls_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+<span class="c1"># Posterior probabilities: alpha * beta (should sum to ~1 at each site)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Posterior P(Z_l = j | all data):&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">posterior</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">*</span> <span class="n">B</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+    <span class="n">posterior</span> <span class="o">/=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># Should already sum to ~1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Site </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">posterior</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With both forward and backward probabilities computed, we can now perform
+posterior decoding.</p>
+</section>
+</section>
+<section id="posterior-decoding">
+<h2>Posterior Decoding<a class="headerlink" href="#posterior-decoding" title="Link to this heading"></a></h2>
+<p>With both forward and backward probabilities, we can compute the <strong>posterior
+probability</strong> of being in state <span class="math notranslate nohighlight">\(j\)</span> at site <span class="math notranslate nohighlight">\(\ell\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\gamma_j(\ell) = P(Z_\ell = j \mid X_1, \ldots, X_m)
+= \hat{\alpha}_j(\ell) \cdot \hat{\beta}_j(\ell)\]</div>
+<p>This is the full posterior – it uses the data at <strong>all</strong> sites, not just the
+ones up to <span class="math notranslate nohighlight">\(\ell\)</span>. The <strong>posterior decoding</strong> chooses the most likely state
+independently at each site:</p>
+<div class="math notranslate nohighlight">
+\[Z_\ell^* = \arg\max_j \gamma_j(\ell)\]</div>
+<div class="admonition-probability-aside-posterior-decoding-vs-viterbi admonition">
+<p class="admonition-title">Probability Aside: Posterior Decoding vs. Viterbi</p>
+<p>Posterior decoding and the Viterbi algorithm both produce a state sequence,
+but they optimize different objectives:</p>
+<ul class="simple">
+<li><p><strong>Posterior decoding</strong> maximizes the probability of each site
+<em>independently</em>: <span class="math notranslate nohighlight">\(\arg\max_j P(Z_\ell = j \mid X)\)</span> at each
+<span class="math notranslate nohighlight">\(\ell\)</span>. This minimizes the expected number of incorrectly
+decoded sites.</p></li>
+<li><p><strong>Viterbi</strong> maximizes the probability of the <em>entire path jointly</em>:
+<span class="math notranslate nohighlight">\(\arg\max_{Z_1,\ldots,Z_m} P(Z_1,\ldots,Z_m \mid X)\)</span>. This
+finds the single most probable sequence.</p></li>
+</ul>
+<p>The difference matters when there are multiple plausible paths. Posterior
+decoding might assign site <span class="math notranslate nohighlight">\(\ell\)</span> to state A and site <span class="math notranslate nohighlight">\(\ell+1\)</span>
+to state B, even if the transition <span class="math notranslate nohighlight">\(A \to B\)</span> has zero probability.
+Viterbi never does this, because it considers the path as a whole.</p>
+<p>In practice, for the LS model, the two methods usually agree except near
+recombination breakpoints, where the uncertainty is highest.</p>
+</div>
+<p><strong>Warning</strong>: Posterior decoding is not the same as the Viterbi path. Posterior
+decoding maximizes each <span class="math notranslate nohighlight">\(Z_\ell\)</span> independently, which can sometimes
+produce impossible state sequences. The Viterbi algorithm (next section) finds
+the globally most likely path.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">posterior_decoding</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute posterior decoding from forward-backward probabilities.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    F : ndarray of shape (m, n)</span>
+<span class="sd">        Scaled forward probabilities.</span>
+<span class="sd">    B : ndarray of shape (m, n)</span>
+<span class="sd">        Scaled backward probabilities.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    gamma : ndarray of shape (m, n)</span>
+<span class="sd">        Posterior state probabilities.</span>
+<span class="sd">    path : ndarray of shape (m,)</span>
+<span class="sd">        Most likely state at each site (posterior decoding).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Element-wise product of forward and backward probabilities</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="n">F</span> <span class="o">*</span> <span class="n">B</span>
+    <span class="c1"># Normalize rows (should already be close to 1, but enforce it)</span>
+    <span class="n">gamma</span> <span class="o">/=</span> <span class="n">gamma</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># Posterior decoding: pick the most probable state at each site</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">gamma</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">path</span>
+
+<span class="n">gamma</span><span class="p">,</span> <span class="n">decoded</span> <span class="o">=</span> <span class="n">posterior_decoding</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Posterior decoding:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Site </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">: state=</span><span class="si">{</span><span class="n">decoded</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;confidence=</span><span class="si">{</span><span class="n">gamma</span><span class="p">[</span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="n">decoded</span><span class="p">[</span><span class="n">l</span><span class="p">]]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Having obtained a per-site optimal decoding, we now turn to finding the globally
+optimal path.</p>
+</section>
+<section id="the-viterbi-algorithm">
+<h2>The Viterbi Algorithm<a class="headerlink" href="#the-viterbi-algorithm" title="Link to this heading"></a></h2>
+<p>The Viterbi algorithm finds the <strong>single most likely state sequence</strong> – the
+most likely gear sequence through which the mechanism ticked from the first site
+to the last:</p>
+<div class="math notranslate nohighlight">
+\[Z^* = \arg\max_{Z_1, \ldots, Z_m} P(Z_1, \ldots, Z_m \mid X_1, \ldots, X_m)\]</div>
+<p>This is the global optimum, not the per-site optimum of posterior decoding.</p>
+<p>Think of it this way: if the Li &amp; Stephens HMM is a watch mechanism, the
+Viterbi algorithm traces the exact sequence of gears that drove the hands from
+start to finish. Every transition must be mechanically valid (non-zero
+transition probability), and the algorithm finds the sequence that best
+explains all the observed ticks (alleles) simultaneously.</p>
+<section id="the-viterbi-recursion">
+<h3>The Viterbi recursion<a class="headerlink" href="#the-viterbi-recursion" title="Link to this heading"></a></h3>
+<p>Define the <strong>Viterbi variable</strong>:</p>
+<div class="math notranslate nohighlight">
+\[V_j(\ell) = \max_{Z_1, \ldots, Z_{\ell-1}} P(X_1, \ldots, X_\ell, Z_1, \ldots, Z_{\ell-1}, Z_\ell = j)\]</div>
+<p>This is the probability of the most likely path ending in state <span class="math notranslate nohighlight">\(j\)</span> at
+site <span class="math notranslate nohighlight">\(\ell\)</span>.</p>
+<div class="admonition-terminology-viterbi-variable-vs-forward-variable admonition">
+<p class="admonition-title">Terminology: Viterbi Variable vs. Forward Variable</p>
+<p>The Viterbi variable <span class="math notranslate nohighlight">\(V_j(\ell)\)</span> looks almost identical to the
+forward variable <span class="math notranslate nohighlight">\(\alpha_j(\ell)\)</span>, with one crucial difference:
+<span class="math notranslate nohighlight">\(\alpha_j(\ell)\)</span> <strong>sums</strong> over all paths, while <span class="math notranslate nohighlight">\(V_j(\ell)\)</span>
+takes the <strong>max</strong> over all paths. This difference – sum vs. max – is
+the entire distinction between the forward algorithm (which computes
+likelihoods) and the Viterbi algorithm (which finds the best path). In
+the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>, we showed that this replacement is valid
+because max distributes over products just like sum does.</p>
+</div>
+<p><strong>Initialization:</strong></p>
+<div class="math notranslate nohighlight">
+\[V_j(1) = \frac{1}{n} \cdot e_j(X_1)\]</div>
+<p><strong>Recursion:</strong></p>
+<div class="math notranslate nohighlight">
+\[V_j(\ell) = e_j(X_\ell) \cdot \max_{i} \left[\alpha_i(\ell-1) \cdot A_{ij}\right]\]</div>
+<p>The key difference from the forward algorithm: we take the <strong>max</strong> instead of
+the <strong>sum</strong> over previous states.</p>
+<p>We also store the <strong>pointer</strong> (traceback) array:</p>
+<div class="math notranslate nohighlight">
+\[P_j(\ell) = \arg\max_i \left[V_i(\ell-1) \cdot A_{ij}\right]\]</div>
+</section>
+<section id="exploiting-li-stephens-structure-for-viterbi">
+<h3>Exploiting Li-Stephens structure for Viterbi<a class="headerlink" href="#exploiting-li-stephens-structure-for-viterbi" title="Link to this heading"></a></h3>
+<p>The Li-Stephens transition structure gives us the same <span class="math notranslate nohighlight">\(O(n)\)</span> speedup
+for Viterbi. For each state <span class="math notranslate nohighlight">\(j\)</span> at site <span class="math notranslate nohighlight">\(\ell\)</span>, the predecessor
+is either:</p>
+<ol class="arabic simple">
+<li><p><strong>Stay</strong> (<span class="math notranslate nohighlight">\(i = j\)</span>): <span class="math notranslate nohighlight">\(V_j(\ell-1) \cdot [(1 - r) + r/n]\)</span></p></li>
+<li><p><strong>Switch</strong> (<span class="math notranslate nohighlight">\(i \neq j\)</span>): <span class="math notranslate nohighlight">\(\max_i V_i(\ell-1) \cdot r/n\)</span></p></li>
+</ol>
+<p>For the “switch” case, we only need <span class="math notranslate nohighlight">\(\max_i V_i(\ell-1)\)</span>, which is the
+same for all <span class="math notranslate nohighlight">\(j\)</span> and computed once in <span class="math notranslate nohighlight">\(O(n)\)</span>.</p>
+<p>So the decision at each state <span class="math notranslate nohighlight">\(j\)</span> is: is it better to <strong>stay</strong> (with the
+bonus <span class="math notranslate nohighlight">\((1 - r)\)</span>) or <strong>switch</strong> from the globally best previous state?</p>
+<div class="math notranslate nohighlight">
+\[V_j(\ell) = e_j(X_\ell) \cdot \max\left\{V_j(\ell-1) \cdot (1 - r + r/n), \quad V^*(\ell-1) \cdot r/n\right\}\]</div>
+<p>where <span class="math notranslate nohighlight">\(V^*(\ell-1) = \max_i V_i(\ell-1)\)</span> is computed once.</p>
+<p>The pointer <span class="math notranslate nohighlight">\(P_j(\ell)\)</span> is:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(j\)</span> (stay) if the first term wins</p></li>
+<li><p><span class="math notranslate nohighlight">\(\arg\max_i V_i(\ell-1)\)</span> (switch) if the second term wins</p></li>
+</ul>
+<p>This is <span class="math notranslate nohighlight">\(O(n)\)</span> per site: one pass to find <span class="math notranslate nohighlight">\(V^*\)</span>, then <span class="math notranslate nohighlight">\(O(1)\)</span>
+per state.</p>
+<div class="admonition-probability-aside-when-does-viterbi-switch admonition">
+<p class="admonition-title">Probability Aside: When Does Viterbi Switch?</p>
+<p>The Viterbi algorithm switches from state <span class="math notranslate nohighlight">\(j\)</span> at site <span class="math notranslate nohighlight">\(\ell\)</span>
+when the “switch” option beats the “stay” option:</p>
+<div class="math notranslate nohighlight">
+\[V^*(\ell-1) \cdot \frac{r}{n} &gt; V_j(\ell-1) \cdot \left(1 - r + \frac{r}{n}\right)\]</div>
+<p>Rearranging:</p>
+<div class="math notranslate nohighlight">
+\[\frac{V^*(\ell-1)}{V_j(\ell-1)} &gt; \frac{(1-r) + r/n}{r/n} = \frac{n(1-r) + r}{r} = \frac{n - r(n-1)}{r}\]</div>
+<p>For small <span class="math notranslate nohighlight">\(r\)</span>, this ratio is approximately <span class="math notranslate nohighlight">\(n/r\)</span>. So a switch
+happens when the best alternative state is roughly <span class="math notranslate nohighlight">\(n/r\)</span> times
+more probable than the current state. With <span class="math notranslate nohighlight">\(n = 100\)</span> and <span class="math notranslate nohighlight">\(r = 0.01\)</span>,
+that’s a factor of 10,000 – switches are rare and require strong evidence,
+which is biologically appropriate (recombination breakpoints are infrequent).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forwards_viterbi_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">emission_matrix</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Viterbi algorithm for the haploid Li-Stephens model.</span>
+
+<span class="sd">    Uses the Li-Stephens structure for O(n) per site.</span>
+<span class="sd">    Includes rescaling for numerical stability.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n, m, H, s, emission_matrix, r : same as forwards_ls_hap.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    V : ndarray of shape (n,)</span>
+<span class="sd">        Viterbi probabilities at the last site.</span>
+<span class="sd">    P : ndarray of shape (m, n), dtype int</span>
+<span class="sd">        Pointer (traceback) array.</span>
+<span class="sd">    ll : float</span>
+<span class="sd">        Log-likelihood of the best path (base 10).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>  <span class="c1"># Rescaling factors for numerical stability</span>
+
+    <span class="c1"># Initialization: uniform prior times emission</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">H</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+            <span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># match</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># mismatch</span>
+
+    <span class="c1"># Forward pass: find best path to each state at each site</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+        <span class="c1"># Rescale V to prevent underflow.</span>
+        <span class="c1"># We divide by the current maximum, which keeps the</span>
+        <span class="c1"># largest value at 1.0 and prevents all values from</span>
+        <span class="c1"># drifting toward zero.</span>
+        <span class="n">argmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+        <span class="n">c</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">V</span><span class="p">[</span><span class="n">argmax</span><span class="p">]</span>
+        <span class="n">V</span> <span class="o">/=</span> <span class="n">c</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="c1"># Option 1: Stay in state i (no recombination).</span>
+            <span class="c1"># Transition weight is (1 - r) + r/n.</span>
+            <span class="n">stay</span> <span class="o">=</span> <span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">r_n</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+            <span class="c1"># Option 2: Switch from the best previous state.</span>
+            <span class="c1"># Transition weight is r/n. After rescaling,</span>
+            <span class="c1"># the best previous state has value 1.0, so</span>
+            <span class="c1"># switch = r_n[j] * 1.0 = r_n[j].</span>
+            <span class="n">switch</span> <span class="o">=</span> <span class="n">r_n</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+            <span class="c1"># Compare: is it better to stay or switch?</span>
+            <span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">stay</span>
+            <span class="n">P</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>  <span class="c1"># Default: stay in current state</span>
+            <span class="k">if</span> <span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">switch</span><span class="p">:</span>
+                <span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">switch</span>
+                <span class="n">P</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">argmax</span>  <span class="c1"># Switch from the best previous state</span>
+
+            <span class="c1"># Emission: multiply by match or mismatch probability</span>
+            <span class="k">if</span> <span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">]:</span>
+                <span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># match</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># mismatch</span>
+
+    <span class="c1"># Log-likelihood: sum of log rescaling factors + log of final max</span>
+    <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">c</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">V</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">ll</span>
+</pre></div>
+</div>
+</section>
+<section id="the-backward-traceback">
+<h3>The backward traceback<a class="headerlink" href="#the-backward-traceback" title="Link to this heading"></a></h3>
+<p>Once the forward pass is complete, we trace back through the pointer array to
+recover the most likely path. This is the final step: we start at the last site,
+pick the best state, and follow the pointers backward to reconstruct the
+complete gear sequence.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">backwards_viterbi_hap</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">V_last</span><span class="p">,</span> <span class="n">P</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Traceback to find the most likely path.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m : int</span>
+<span class="sd">        Number of sites.</span>
+<span class="sd">    V_last : ndarray of shape (n,)</span>
+<span class="sd">        Viterbi probabilities at the last site.</span>
+<span class="sd">    P : ndarray of shape (m, n)</span>
+<span class="sd">        Pointer array from the forward pass.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    path : ndarray of shape (m,)</span>
+<span class="sd">        Most likely state sequence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="c1"># Start at the last site: pick the state with highest Viterbi prob</span>
+    <span class="n">path</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">V_last</span><span class="p">)</span>
+
+    <span class="c1"># Trace backward: at each site, follow the pointer from the</span>
+    <span class="c1"># state we chose at the next site</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">path</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+
+    <span class="k">return</span> <span class="n">path</span>
+
+<span class="c1"># Run Viterbi on our example</span>
+<span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">ll_vit</span> <span class="o">=</span> <span class="n">forwards_viterbi_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<span class="n">viterbi_path</span> <span class="o">=</span> <span class="n">backwards_viterbi_hap</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Viterbi path: </span><span class="si">{</span><span class="n">viterbi_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Viterbi log-likelihood: </span><span class="si">{</span><span class="n">ll_vit</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The traceback is <span class="math notranslate nohighlight">\(O(m)\)</span> – just follow the pointers backward from the best
+final state.</p>
+<p>To build further intuition, let us visualize the stay-vs-switch decision in a
+larger example.</p>
+</section>
+<section id="understanding-the-viterbi-decision">
+<h3>Understanding the Viterbi Decision<a class="headerlink" href="#understanding-the-viterbi-decision" title="Link to this heading"></a></h3>
+<p>Let’s visualize the stay-vs-switch decision at each site:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Larger example to see the Viterbi algorithm in action</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">20</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+<span class="c1"># Mosaic query: copy h_0 for sites 0-9, h_3 for sites 10-19</span>
+<span class="n">true_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">true_path</span><span class="p">[</span><span class="mi">10</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">s_flat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">true_path</span><span class="p">[</span><span class="n">l</span><span class="p">]]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)])</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">s_flat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Wrap in 2D array for API compatibility</span>
+
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">0.05</span>
+<span class="n">e_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">e_mat</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span>        <span class="c1"># mismatch probability</span>
+<span class="n">e_mat</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span>    <span class="c1"># match probability</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+<span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># No recombination before the first site</span>
+
+<span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">forwards_viterbi_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<span class="n">vit_path</span> <span class="o">=</span> <span class="n">backwards_viterbi_hap</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True path:    </span><span class="si">{</span><span class="n">true_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Viterbi path: </span><span class="si">{</span><span class="n">vit_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Match: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">true_path</span><span class="p">,</span><span class="w"> </span><span class="n">vit_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now that we have all three algorithms – forward, backward, and Viterbi – let
+us introduce a utility for verifying the Viterbi result.</p>
+</section>
+</section>
+<section id="path-log-likelihood">
+<h2>Path Log-Likelihood<a class="headerlink" href="#path-log-likelihood" title="Link to this heading"></a></h2>
+<p>Given a specific copying path, we can evaluate its log-likelihood directly.
+This is useful for verifying the Viterbi algorithm (the Viterbi path should have
+the highest likelihood) and for comparing paths.</p>
+<div class="admonition-probability-aside-path-likelihood-vs-data-likelihood admonition">
+<p class="admonition-title">Probability Aside: Path Likelihood vs. Data Likelihood</p>
+<p>The <strong>path log-likelihood</strong> <span class="math notranslate nohighlight">\(\log P(Z, X)\)</span> is the joint probability
+of a specific path <em>and</em> the data. The <strong>data log-likelihood</strong>
+<span class="math notranslate nohighlight">\(\log P(X) = \log \sum_Z P(Z, X)\)</span> sums over all paths. The Viterbi
+path maximizes the path log-likelihood, not the data log-likelihood. The
+data log-likelihood is always at least as large as the path log-likelihood
+(since it sums over all paths, not just the best one). The forward
+algorithm gives the data log-likelihood; the path log-likelihood function
+below evaluates a specific path.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">path_loglik_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">emission_matrix</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate the log-likelihood of a specific copying path.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n, m, H, s, emission_matrix, r : same as forwards_ls_hap.</span>
+<span class="sd">    path : ndarray of shape (m,)</span>
+<span class="sd">        The copying path to evaluate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ll : float</span>
+<span class="sd">        Log-likelihood (base 10).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span>
+
+    <span class="c1"># First site: initial probability times emission</span>
+    <span class="k">if</span> <span class="n">H</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">((</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>  <span class="c1"># match</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">((</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>  <span class="c1"># mismatch</span>
+
+    <span class="n">old</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+
+        <span class="c1"># Transition: stay or switch?</span>
+        <span class="k">if</span> <span class="n">old</span> <span class="o">==</span> <span class="n">current</span><span class="p">:</span>
+            <span class="n">ll</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">+</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">])</span>  <span class="c1"># Stay: (1-r) + r/n</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ll</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">])</span>  <span class="c1"># Switch: r/n</span>
+
+        <span class="c1"># Emission: match or mismatch?</span>
+        <span class="k">if</span> <span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">current</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">l</span><span class="p">]:</span>
+            <span class="n">ll</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>  <span class="c1"># match</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ll</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>  <span class="c1"># mismatch</span>
+
+        <span class="n">old</span> <span class="o">=</span> <span class="n">current</span>
+
+    <span class="k">return</span> <span class="n">ll</span>
+
+<span class="c1"># Verify: Viterbi path should have the highest log-likelihood</span>
+<span class="n">ll_viterbi</span> <span class="o">=</span> <span class="n">path_loglik_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">vit_path</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<span class="n">ll_true</span> <span class="o">=</span> <span class="n">path_loglik_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">true_path</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Viterbi path LL: </span><span class="si">{</span><span class="n">ll_viterbi</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True path LL:    </span><span class="si">{</span><span class="n">ll_true</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Viterbi &gt;= True: </span><span class="si">{</span><span class="n">ll_viterbi</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">ll_true</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1e-10</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Try a random path -- should be worse</span>
+<span class="n">random_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+<span class="n">ll_random</span> <span class="o">=</span> <span class="n">path_loglik_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">random_path</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random path LL:  </span><span class="si">{</span><span class="n">ll_random</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="memory-optimization-from-o-mn-to-o-m-n">
+<h2>Memory Optimization: From O(mn) to O(m + n)<a class="headerlink" href="#memory-optimization-from-o-mn-to-o-m-n" title="Link to this heading"></a></h2>
+<p>The naive Viterbi stores a full <span class="math notranslate nohighlight">\((m \times n)\)</span> matrix of Viterbi values.
+In practice, we only need the values at the <strong>current</strong> site (plus the pointer
+array <span class="math notranslate nohighlight">\(P\)</span>). The lshmm library implements this optimization.</p>
+<p>The key insight: the forward pass only needs <span class="math notranslate nohighlight">\(V_{j}(\ell-1)\)</span> to compute
+<span class="math notranslate nohighlight">\(V_j(\ell)\)</span>. So we keep a single vector <code class="docutils literal notranslate"><span class="pre">V</span></code> of length <span class="math notranslate nohighlight">\(n\)</span> and
+overwrite it at each step.</p>
+<p>The pointer array <span class="math notranslate nohighlight">\(P\)</span> still requires <span class="math notranslate nohighlight">\(O(mn)\)</span>, but this is stored as
+integers (8 bytes each vs. 8 bytes for doubles), and in many applications the
+memory savings from not storing the full Viterbi matrix are significant.</p>
+<p>The lshmm library goes even further: the
+<code class="docutils literal notranslate"><span class="pre">forwards_viterbi_hap_lower_mem_rescaling_no_pointer</span></code> function eliminates the
+pointer array entirely, storing only which states had recombination at each site.
+The traceback reconstructs the path from this minimal information.</p>
+<div class="admonition-probability-aside-why-can-we-discard-the-pointer-array admonition">
+<p class="admonition-title">Probability Aside: Why Can We Discard the Pointer Array?</p>
+<p>The pointer-free Viterbi works because the LS model has only two types
+of transitions: “stay” (same state) and “switch” (to the globally best
+state). At each site, we only need to know <em>whether</em> a switch happened –
+a single bit per state. During traceback, if the current state shows
+“switch,” we jump to the globally best state at the previous site; if
+“stay,” we remain. This binary encoding reduces memory from <span class="math notranslate nohighlight">\(O(mn)\)</span>
+integers to <span class="math notranslate nohighlight">\(O(mn)\)</span> bits, a factor-of-64 improvement.</p>
+</div>
+<p>With all the individual algorithms in place, let us now run them together on a
+realistic-sized example.</p>
+</section>
+<section id="putting-it-all-together-a-complete-example">
+<h2>Putting It All Together: A Complete Example<a class="headerlink" href="#putting-it-all-together-a-complete-example" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Full pipeline on a realistic-sized example</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">20</span>   <span class="c1"># reference haplotypes</span>
+<span class="n">m</span> <span class="o">=</span> <span class="mi">200</span>  <span class="c1"># sites</span>
+
+<span class="c1"># Simulate reference panel (biallelic, allele frequency 0.3)</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+<span class="c1"># Create a mosaic query with 4 segments</span>
+<span class="n">true_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">true_path</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">50</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>     <span class="c1"># Copy from haplotype 3 for sites 0-49</span>
+<span class="n">true_path</span><span class="p">[</span><span class="mi">50</span><span class="p">:</span><span class="mi">100</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>   <span class="c1"># Switch to haplotype 7 at site 50</span>
+<span class="n">true_path</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">150</span><span class="p">]</span> <span class="o">=</span> <span class="mi">12</span> <span class="c1"># Switch to haplotype 12 at site 100</span>
+<span class="n">true_path</span><span class="p">[</span><span class="mi">150</span><span class="p">:</span><span class="mi">200</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Switch to haplotype 1 at site 150</span>
+
+<span class="c1"># Copy alleles from reference with 2% mutation rate</span>
+<span class="n">s_flat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">true_path</span><span class="p">[</span><span class="n">l</span><span class="p">]]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)])</span>
+<span class="n">mutation_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.02</span>  <span class="c1"># ~2% of sites mutate</span>
+<span class="n">s_flat</span><span class="p">[</span><span class="n">mutation_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">s_flat</span><span class="p">[</span><span class="n">mutation_mask</span><span class="p">]</span>  <span class="c1"># Flip allele</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">s_flat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Simulated </span><span class="si">{</span><span class="n">mutation_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2"> mutations in the query&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True breakpoints at sites 50, 100, 150&quot;</span><span class="p">)</span>
+
+<span class="c1"># Set up model parameters using the Li-Stephens mutation estimator</span>
+<span class="n">mu_est</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">mu_est</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="n">mu_est</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Estimated mu: </span><span class="si">{</span><span class="n">mu</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Build emission matrix</span>
+<span class="n">e_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">e_mat</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span>        <span class="c1"># mismatch probability</span>
+<span class="n">e_mat</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span>    <span class="c1"># match probability</span>
+
+<span class="c1"># Recombination probabilities (uniform for this example)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">)</span>
+<span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<span class="c1"># Forward-backward: compute posteriors</span>
+<span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">forwards_ls_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">backwards_ls_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<span class="n">gamma</span><span class="p">,</span> <span class="n">posterior_path</span> <span class="o">=</span> <span class="n">posterior_decoding</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+
+<span class="c1"># Viterbi: find the most likely gear sequence</span>
+<span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">ll_vit</span> <span class="o">=</span> <span class="n">forwards_viterbi_hap</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">e_mat</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<span class="n">viterbi_path</span> <span class="o">=</span> <span class="n">backwards_viterbi_hap</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+
+<span class="c1"># Compare the two decodings</span>
+<span class="n">posterior_accuracy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">posterior_path</span> <span class="o">==</span> <span class="n">true_path</span><span class="p">)</span>
+<span class="n">viterbi_accuracy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">viterbi_path</span> <span class="o">==</span> <span class="n">true_path</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Results:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Forward log-likelihood: </span><span class="si">{</span><span class="n">ll</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Viterbi log-likelihood: </span><span class="si">{</span><span class="n">ll_vit</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Posterior decoding accuracy: </span><span class="si">{</span><span class="n">posterior_accuracy</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Viterbi decoding accuracy:   </span><span class="si">{</span><span class="n">viterbi_accuracy</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Find detected breakpoints (where the Viterbi path changes)</span>
+<span class="n">viterbi_breaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">viterbi_path</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  True breakpoints:     [50, 100, 150]&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Detected breakpoints: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">viterbi_breaks</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 35.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Algorithm</p></th>
+<th class="head"><p>What it computes</p></th>
+<th class="head"><p>Complexity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Forward</p></td>
+<td><p><span class="math notranslate nohighlight">\(P(X_1..X_\ell, Z_\ell=j)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn)\)</span> time, <span class="math notranslate nohighlight">\(O(mn)\)</span> space</p></td>
+</tr>
+<tr class="row-odd"><td><p>Backward</p></td>
+<td><p><span class="math notranslate nohighlight">\(P(X_{\ell+1}..X_m \mid Z_\ell=j)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn)\)</span> time, <span class="math notranslate nohighlight">\(O(mn)\)</span> space</p></td>
+</tr>
+<tr class="row-even"><td><p>Posterior decoding</p></td>
+<td><p><span class="math notranslate nohighlight">\(\arg\max_j P(Z_\ell=j \mid \text{all data})\)</span></p></td>
+<td><p>Per-site optimal (not global)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Viterbi</p></td>
+<td><p><span class="math notranslate nohighlight">\(\arg\max_{Z_{1..m}} P(Z_{1..m} \mid \text{all data})\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn)\)</span> time, <span class="math notranslate nohighlight">\(O(mn)\)</span> space</p></td>
+</tr>
+<tr class="row-even"><td><p>Path log-likelihood</p></td>
+<td><p><span class="math notranslate nohighlight">\(\log P(Z, X)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(m)\)</span> time</p></td>
+</tr>
+</tbody>
+</table>
+<p>All algorithms use the Li-Stephens <span class="math notranslate nohighlight">\(O(n)\)</span> trick – the jeweled bearing
+of this mechanism – giving <span class="math notranslate nohighlight">\(O(mn)\)</span> total instead of the naive
+<span class="math notranslate nohighlight">\(O(mn^2)\)</span>.</p>
+<p>We have now assembled the complete haploid gear train: the forward algorithm
+computes likelihoods, the backward algorithm enables posterior decoding, and the
+Viterbi algorithm traces the most likely gear sequence. Together, they turn the
+template mechanism of the <a class="reference internal" href="copying_model.html#copying-model"><span class="std std-ref">copying model</span></a> into concrete
+answers about which reference haplotypes the query is copying from.</p>
+<p>But real organisms are diploid – they carry two copies of each chromosome. In
+the next chapter, we extend this mechanism to handle two watches ticking
+together.</p>
+<p>Next: <a class="reference internal" href="diploid.html#diploid"><span class="std std-ref">The Diploid Extension</span></a> – extending the model to diploid genotypes.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="copying_model.html" class="btn btn-neutral float-left" title="The Copying Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="diploid.html" class="btn btn-neutral float-right" title="The Diploid Extension" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

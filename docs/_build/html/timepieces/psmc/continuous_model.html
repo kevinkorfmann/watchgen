@@ -1,0 +1,1273 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Continuous-Time PSMC Model &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Discretizing Time" href="discretization.html" />
+    <link rel="prev" title="Overview of PSMC" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece I: PSMC</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece I: PSMC</a></li>
+      <li class="breadcrumb-item active">The Continuous-Time PSMC Model</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of PSMC" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="discretization.html" class="btn btn-neutral float-right" title="Discretizing Time" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-continuous-time-psmc-model">
+<span id="psmc-continuous"></span><h1>The Continuous-Time PSMC Model<a class="headerlink" href="#the-continuous-time-psmc-model" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The escapement: the mathematical heartbeat that makes the whole mechanism tick.</em></p>
+</div></blockquote>
+<p>This chapter derives the continuous-time foundations of PSMC. We start from the
+simplest case (constant population size) and generalize to variable <span class="math notranslate nohighlight">\(N(t)\)</span>.
+By the end, you’ll have derived the transition density, the stationary distribution,
+and the recombination probability – all from first principles.</p>
+<p>The transition density is the tick-to-tick mechanism of the PSMC watch – it
+describes how the coalescence time at one genomic position relates to the
+coalescence time at the next. The stationary distribution is the long-run
+equilibrium where the watch runs steadily. And variable population size is like
+a watch whose mainspring tension changes over time, altering the rhythm of the
+ticks without breaking the mechanism.</p>
+<p>If you’ve read the <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">SMC prerequisite</span></a>, you’ve already seen the
+constant-population version of the PSMC transition density. Here we generalize
+it to handle the case PSMC actually cares about: <strong>variable population size</strong>.</p>
+<section id="step-1-coalescence-under-variable-population-size">
+<h2>Step 1: Coalescence Under Variable Population Size<a class="headerlink" href="#step-1-coalescence-under-variable-population-size" title="Link to this heading"></a></h2>
+<p>Recall from the <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">coalescent theory prerequisite</span></a>:
+under constant population size <span class="math notranslate nohighlight">\(N\)</span>, two lineages coalesce at rate 1 (in
+units of <span class="math notranslate nohighlight">\(2N\)</span> generations). The waiting time is <span class="math notranslate nohighlight">\(\text{Exp}(1)\)</span>.</p>
+<p>When the population size varies over time as <span class="math notranslate nohighlight">\(N(t) = N_0 \lambda(t)\)</span>, the
+coalescence rate at time <span class="math notranslate nohighlight">\(t\)</span> is no longer constant – it’s
+<span class="math notranslate nohighlight">\(1/\lambda(t)\)</span>. A larger population means a lower coalescence rate (harder
+to find a common ancestor when there are more individuals), and a smaller
+population means a higher rate (fewer individuals, so lineages are forced together
+more quickly).</p>
+<p><strong>The survival probability.</strong> The probability that two lineages have <em>not</em>
+coalesced by time <span class="math notranslate nohighlight">\(t\)</span> is the product of surviving through each
+infinitesimal interval. With a time-varying rate <span class="math notranslate nohighlight">\(1/\lambda(t)\)</span>, the
+probability of surviving each tiny interval <span class="math notranslate nohighlight">\([u, u + du]\)</span> is approximately
+<span class="math notranslate nohighlight">\(1 - du/\lambda(u) \approx e^{-du/\lambda(u)}\)</span>. Multiplying these
+together over all intervals from 0 to <span class="math notranslate nohighlight">\(t\)</span> – and recalling that
+multiplying exponentials is the same as adding their exponents – gives:</p>
+<div class="math notranslate nohighlight">
+\[P(T &gt; t) = \exp\left(-\int_0^t \frac{du}{\lambda(u)}\right)\]</div>
+<p>This formula belongs to a branch of probability called <strong>survival analysis</strong>,
+which studies the time until an event occurs (originally developed for
+analyzing lifetimes in medical studies, but applicable whenever you ask “how long
+until something happens?”).</p>
+<p>Let’s define a shorthand for the cumulative integral that appears everywhere:</p>
+<div class="math notranslate nohighlight">
+\[\Lambda(t) = \int_0^t \frac{du}{\lambda(u)}\]</div>
+<p>So <span class="math notranslate nohighlight">\(P(T &gt; t) = e^{-\Lambda(t)}\)</span>. The function <span class="math notranslate nohighlight">\(\Lambda(t)\)</span> is
+called the <strong>cumulative hazard</strong> of the coalescent process under variable
+population size.</p>
+<div class="admonition-probability-aside-the-hazard-function-and-survival-analysis admonition">
+<p class="admonition-title">Probability aside: the hazard function and survival analysis</p>
+<p><strong>Survival analysis</strong> is the study of how long we must wait for an event to
+occur. It was originally developed to study patient lifetimes, but the
+mathematics applies to any waiting time – including coalescence.</p>
+<p>The central objects are:</p>
+<ul class="simple">
+<li><p>The <strong>survival function</strong> <span class="math notranslate nohighlight">\(S(t) = P(T &gt; t)\)</span>: the probability that
+the event has <em>not yet</em> happened by time <span class="math notranslate nohighlight">\(t\)</span>.</p></li>
+<li><p>The <strong>hazard function</strong> (or hazard rate) <span class="math notranslate nohighlight">\(h(t)\)</span>: the instantaneous
+rate at which the event occurs, given that it has not yet occurred. You can
+think of it as “how dangerous is this moment?” – at each instant, <span class="math notranslate nohighlight">\(h(t)\)</span>
+measures the intensity of the risk. Formally,
+<span class="math notranslate nohighlight">\(h(t) = -S'(t)/S(t)\)</span>.</p></li>
+<li><p>The <strong>cumulative hazard</strong> <span class="math notranslate nohighlight">\(H(t) = \int_0^t h(u)\,du\)</span>: the total
+accumulated risk up to time <span class="math notranslate nohighlight">\(t\)</span>. The survival function and
+cumulative hazard are linked by <span class="math notranslate nohighlight">\(S(t) = e^{-H(t)}\)</span>.</p></li>
+</ul>
+<p>In our coalescent setting, the hazard rate is <span class="math notranslate nohighlight">\(h(t) = 1/\lambda(t)\)</span>
+(the instantaneous coalescence rate), and the cumulative hazard is
+<span class="math notranslate nohighlight">\(\Lambda(t)\)</span>. Everything that follows is an application of the
+identity <span class="math notranslate nohighlight">\(S(t) = e^{-H(t)}\)</span> – the survival probability is the
+exponential of the negative cumulative hazard.</p>
+</div>
+<div class="admonition-computing-math-lambda-t-in-practice admonition">
+<p class="admonition-title">Computing <span class="math notranslate nohighlight">\(\Lambda(t)\)</span> in practice</p>
+<p>For piecewise-constant <span class="math notranslate nohighlight">\(\lambda(t)\)</span> (which is the PSMC assumption),
+the integral decomposes into a sum over intervals:</p>
+<div class="math notranslate nohighlight">
+\[\Lambda(t) = \sum_{i=0}^{k-1} \frac{\tau_i}{\lambda_i} + \frac{t - t_k}{\lambda_k}
+\quad \text{when } t \in [t_k, t_{k+1})\]</div>
+<p>where <span class="math notranslate nohighlight">\(\tau_i = t_{i+1} - t_i\)</span>. No numerical quadrature is needed –
+it’s a running sum. In the continuous case (smooth <span class="math notranslate nohighlight">\(\lambda(t)\)</span>),
+we use numerical integration such as <code class="docutils literal notranslate"><span class="pre">scipy.integrate.quad</span></code>.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">quad</span>
+
+<span class="k">def</span> <span class="nf">cumulative_hazard</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute Lambda(t) = integral_0^t 1/lambda(u) du.</span>
+
+<span class="sd">    This is the cumulative hazard of the coalescent process.</span>
+
+<span class="sd">    We use scipy.integrate.quad, which performs adaptive numerical</span>
+<span class="sd">    integration (also called &quot;quadrature&quot;). It approximates the</span>
+<span class="sd">    integral by evaluating the function at many points and fitting</span>
+<span class="sd">    polynomial segments. The function returns two values: the</span>
+<span class="sd">    estimated integral and an estimate of the numerical error.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># quad returns (result, error_estimate).</span>
+    <span class="c1"># The underscore _ is a Python convention meaning &quot;I don&#39;t need</span>
+    <span class="c1"># this value&quot; -- here we discard the error estimate.</span>
+    <span class="n">result</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span>
+        <span class="c1"># &quot;lambda u: ...&quot; is a Python lambda function -- a compact</span>
+        <span class="c1"># way to define a small, unnamed function inline.</span>
+        <span class="c1"># This one takes u as input and returns 1/lambda_func(u).</span>
+        <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">lambda_func</span><span class="p">(</span><span class="n">u</span><span class="p">),</span>
+        <span class="mi">0</span><span class="p">,</span>  <span class="c1"># lower limit of integration</span>
+        <span class="n">t</span>   <span class="c1"># upper limit of integration</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span> <span class="nf">cumulative_hazard_piecewise</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">t_boundaries</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fast Lambda(t) for piecewise-constant lambda.</span>
+
+<span class="sd">    No quadrature needed -- just a running sum over intervals.</span>
+<span class="sd">    For each interval [t_k, t_{k+1}) with population size lambda_k,</span>
+<span class="sd">    the contribution to the integral is (interval width) / lambda_k.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Lambda</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)):</span>
+        <span class="n">t_lo</span> <span class="o">=</span> <span class="n">t_boundaries</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">t_hi</span> <span class="o">=</span> <span class="n">t_boundaries</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;=</span> <span class="n">t_lo</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">t_hi</span><span class="p">)</span> <span class="o">-</span> <span class="n">t_lo</span>
+        <span class="n">Lambda</span> <span class="o">+=</span> <span class="n">dt</span> <span class="o">/</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;=</span> <span class="n">t_hi</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">Lambda</span>
+
+<span class="c1"># Verify: for constant lambda=1, Lambda(t) should equal t,</span>
+<span class="c1"># because integral_0^t 1/1 du = t.</span>
+<span class="n">t_test</span> <span class="o">=</span> <span class="mf">2.5</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Lambda(</span><span class="si">{</span><span class="n">t_test</span><span class="si">}</span><span class="s2">) with lambda=1: &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cumulative_hazard</span><span class="p">(</span><span class="n">t_test</span><span class="p">,</span><span class="w"> </span><span class="k">lambda</span><span class="w"> </span><span class="n">u</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (expected: </span><span class="si">{</span><span class="n">t_test</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="c1"># For lambda=2, Lambda(t) = t/2 (half the rate, twice as slow).</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Lambda(</span><span class="si">{</span><span class="n">t_test</span><span class="si">}</span><span class="s2">) with lambda=2: &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cumulative_hazard</span><span class="p">(</span><span class="n">t_test</span><span class="p">,</span><span class="w"> </span><span class="k">lambda</span><span class="w"> </span><span class="n">u</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (expected: </span><span class="si">{</span><span class="n">t_test</span><span class="o">/</span><span class="mi">2</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>The density.</strong> To obtain the probability density of coalescence at <em>exactly</em>
+time <span class="math notranslate nohighlight">\(t\)</span>, we differentiate the survival function. The density
+<span class="math notranslate nohighlight">\(f(t) = -\frac{d}{dt} S(t)\)</span> tells us “how much probability mass is
+concentrated at time <span class="math notranslate nohighlight">\(t\)</span>”:</p>
+<div class="math notranslate nohighlight">
+\[f(t) = -\frac{d}{dt} e^{-\Lambda(t)}\]</div>
+<p>By the chain rule (the derivative of <span class="math notranslate nohighlight">\(f(g(x))\)</span> is <span class="math notranslate nohighlight">\(f'(g(x)) \cdot g'(x)\)</span>),
+with the outer function <span class="math notranslate nohighlight">\(e^{-(\cdot)}\)</span> and the inner function <span class="math notranslate nohighlight">\(\Lambda(t)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[f(t) = -\left(-\Lambda'(t)\right) e^{-\Lambda(t)} = \Lambda'(t) \cdot e^{-\Lambda(t)}\]</div>
+<p>By the fundamental theorem of calculus, the derivative of
+<span class="math notranslate nohighlight">\(\Lambda(t) = \int_0^t \frac{du}{\lambda(u)}\)</span> with respect to <span class="math notranslate nohighlight">\(t\)</span>
+is simply the integrand evaluated at <span class="math notranslate nohighlight">\(t\)</span>: <span class="math notranslate nohighlight">\(\Lambda'(t) = 1/\lambda(t)\)</span>.
+Therefore:</p>
+<div class="math notranslate nohighlight">
+\[f(t) = \frac{1}{\lambda(t)} e^{-\Lambda(t)}\]</div>
+<p><strong>Intuition:</strong> The density at time <span class="math notranslate nohighlight">\(t\)</span> is the probability of having
+survived to <span class="math notranslate nohighlight">\(t\)</span> (the <span class="math notranslate nohighlight">\(e^{-\Lambda(t)}\)</span> term) times the instantaneous
+coalescence rate at <span class="math notranslate nohighlight">\(t\)</span> (the <span class="math notranslate nohighlight">\(1/\lambda(t)\)</span> term). Same structure as
+the constant-population case, just with a time-varying rate.</p>
+<div class="admonition-calculus-aside-from-cdf-to-density-step-by-step admonition">
+<p class="admonition-title">Calculus aside: from CDF to density, step by step</p>
+<p>The survival function is <span class="math notranslate nohighlight">\(S(t) = P(T &gt; t) = e^{-\Lambda(t)}\)</span> and
+the CDF is <span class="math notranslate nohighlight">\(F(t) = 1 - S(t)\)</span>. The density is obtained by
+differentiating:</p>
+<div class="math notranslate nohighlight">
+\[f(t) = F'(t) = -S'(t)
+= -\frac{d}{dt} e^{-\Lambda(t)}\]</div>
+<p>To differentiate <span class="math notranslate nohighlight">\(e^{-\Lambda(t)}\)</span>, apply the chain rule: the
+derivative of <span class="math notranslate nohighlight">\(e^{g(t)}\)</span> is <span class="math notranslate nohighlight">\(e^{g(t)} \cdot g'(t)\)</span>, where
+<span class="math notranslate nohighlight">\(g(t) = -\Lambda(t)\)</span>. So <span class="math notranslate nohighlight">\(g'(t) = -\Lambda'(t) = -1/\lambda(t)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[f(t) = -\left[e^{-\Lambda(t)} \cdot \left(-\frac{1}{\lambda(t)}\right)\right]
+= \frac{1}{\lambda(t)} e^{-\Lambda(t)}\]</div>
+<p>For constant <span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span>, we have <span class="math notranslate nohighlight">\(\Lambda(t) = t\)</span>, so
+<span class="math notranslate nohighlight">\(f(t) = e^{-t}\)</span> – the standard exponential density, which is the
+familiar coalescence time distribution for two lineages in a
+constant-size population (as derived in <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">quad</span>
+
+<span class="k">def</span> <span class="nf">coalescent_density</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coalescence time density under variable population size.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float</span>
+<span class="sd">        Time.</span>
+<span class="sd">    lambda_func : callable</span>
+<span class="sd">        lambda_func(u) returns relative population size at time u.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float</span>
+<span class="sd">        Density f(t).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute Lambda(t) = integral_0^t 1/lambda(u) du</span>
+    <span class="c1"># using numerical integration (quad).</span>
+    <span class="c1"># The &quot;lambda u:&quot; defines a small inline function that takes u</span>
+    <span class="c1"># and returns 1/lambda_func(u).</span>
+    <span class="c1"># quad returns (integral_value, error_estimate); we use _ to</span>
+    <span class="c1"># discard the error estimate since we only need the integral.</span>
+    <span class="n">Lambda_t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">lambda_func</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">lambda_func</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">Lambda_t</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">coalescent_survival</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Probability that coalescence has NOT occurred by time t.&quot;&quot;&quot;</span>
+    <span class="n">Lambda_t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">lambda_func</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">Lambda_t</span><span class="p">)</span>
+
+<span class="c1"># Example: constant population (lambda = 1)</span>
+<span class="n">t_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">lam_val</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="p">[(</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;constant N&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;2x larger N&quot;</span><span class="p">)]:</span>
+    <span class="c1"># &quot;lambda u: lam_val&quot; creates a function that always returns lam_val,</span>
+    <span class="c1"># regardless of what u is -- i.e., a constant population size.</span>
+    <span class="n">densities</span> <span class="o">=</span> <span class="p">[</span><span class="n">coalescent_density</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="n">lam_val</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">t_vals</span><span class="p">]</span>
+    <span class="n">mean_t</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="n">d</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">t_vals</span><span class="p">,</span> <span class="n">densities</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="n">t_vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">t_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: mean coalescence time ~ </span><span class="si">{</span><span class="n">mean_t</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;(expected: </span><span class="si">{</span><span class="n">lam_val</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-the-transition-density-under-variable-n-t">
+<h2>Step 2: The Transition Density Under Variable N(t)<a class="headerlink" href="#step-2-the-transition-density-under-variable-n-t" title="Link to this heading"></a></h2>
+<p>Now we arrive at the central equation of PSMC – the transition density. This
+is the tick-to-tick mechanism of the PSMC watch: when a recombination occurs
+between adjacent genomic positions <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(a+1\)</span>, the coalescence
+time changes from <span class="math notranslate nohighlight">\(s\)</span> (at position <span class="math notranslate nohighlight">\(a\)</span>) to <span class="math notranslate nohighlight">\(t\)</span> (at position
+<span class="math notranslate nohighlight">\(a+1\)</span>). The transition density <span class="math notranslate nohighlight">\(q(t \mid s)\)</span> tells us the
+probability density of the new time <span class="math notranslate nohighlight">\(t\)</span>, given that the old time was
+<span class="math notranslate nohighlight">\(s\)</span>.</p>
+<p>We already derived this for constant <span class="math notranslate nohighlight">\(\lambda\)</span> in the <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">SMC prerequisite</span></a>.
+Here’s the generalization to variable <span class="math notranslate nohighlight">\(\lambda(t)\)</span>.</p>
+<p><strong>The physical process</strong>, step by step:</p>
+<ol class="arabic">
+<li><p>At position <span class="math notranslate nohighlight">\(a\)</span>, the two lineages coalesce at time <span class="math notranslate nohighlight">\(s\)</span>.</p></li>
+<li><p>A recombination occurs somewhere on the branch, at time <span class="math notranslate nohighlight">\(u\)</span>. Under the
+SMC model (see <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">The Sequentially Markov Coalescent</span></a>), <span class="math notranslate nohighlight">\(u\)</span> is uniform on <span class="math notranslate nohighlight">\([0, s]\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[P_1(u \mid s) = \frac{1}{s}\]</div>
+</li>
+<li><p>From time <span class="math notranslate nohighlight">\(u\)</span>, the detached lineage floats up and re-coalesces. Under
+variable population size, the re-coalescence density is:</p>
+<div class="math notranslate nohighlight">
+\[P_2(t \mid u) = \frac{1}{\lambda(t)} \exp\left(-\int_u^t \frac{dv}{\lambda(v)}\right)\]</div>
+<p>This is just the coalescence density starting from time <span class="math notranslate nohighlight">\(u\)</span> instead of 0.
+The exponential term is the probability of surviving from <span class="math notranslate nohighlight">\(u\)</span> to <span class="math notranslate nohighlight">\(t\)</span>
+without coalescing, and the <span class="math notranslate nohighlight">\(1/\lambda(t)\)</span> factor is the instantaneous
+rate of coalescing right at time <span class="math notranslate nohighlight">\(t\)</span>.</p>
+</li>
+<li><p>The total transition density (conditioned on recombination) is obtained by
+<strong>marginalizing over</strong> <span class="math notranslate nohighlight">\(u\)</span> – that is, summing up the contributions
+from all possible recombination times <span class="math notranslate nohighlight">\(u\)</span>. Physically, this means we
+account for every possible place along the branch where the recombination
+could have struck: near the tips (small <span class="math notranslate nohighlight">\(u\)</span>), near the coalescence
+point (large <span class="math notranslate nohighlight">\(u\)</span>), or anywhere in between. Each location gives a
+different “starting point” for the re-coalescence process, and we weight
+them all equally (since <span class="math notranslate nohighlight">\(u\)</span> is uniform on <span class="math notranslate nohighlight">\([0, s]\)</span>) and add
+them up:</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[q(t \mid s) = \int_0^{\min(s,t)} P_2(t \mid u) \cdot P_1(u \mid s) \, du
+= \frac{1}{\lambda(t)} \int_0^{\min(s,t)} \frac{1}{s} \cdot e^{-\int_u^t \frac{dv}{\lambda(v)}} \, du\]</div>
+<p>This is Equation 5 from Li and Durbin’s paper, and Theorem 1 in <code class="docutils literal notranslate"><span class="pre">psmc.tex</span></code>.</p>
+<p><strong>Why</strong> <span class="math notranslate nohighlight">\(\min(s, t)\)</span> <strong>?</strong> The recombination time <span class="math notranslate nohighlight">\(u\)</span> must satisfy
+both <span class="math notranslate nohighlight">\(u \leq s\)</span> (it’s on the branch of length <span class="math notranslate nohighlight">\(s\)</span>) and <span class="math notranslate nohighlight">\(u \leq t\)</span>
+(re-coalescence at <span class="math notranslate nohighlight">\(t\)</span> must come after recombination at <span class="math notranslate nohighlight">\(u\)</span>).</p>
+<div class="admonition-computing-the-double-integral-step-by-step admonition">
+<p class="admonition-title">Computing the double integral step by step</p>
+<p>The transition density involves an outer integral over the recombination
+point <span class="math notranslate nohighlight">\(u\)</span> and an inner integral (inside the exponential) for the
+cumulative hazard from <span class="math notranslate nohighlight">\(u\)</span> to <span class="math notranslate nohighlight">\(t\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[q(t \mid s) = \frac{1}{\lambda(t)} \int_0^{\min(s,t)}
+   \underbrace{\frac{1}{s}}_{\text{uniform recomb.}}
+   \cdot \exp\!\left(\underbrace{-\int_u^t \frac{dv}{\lambda(v)}}_{\text{survival from } u \text{ to } t}\right) du\]</div>
+<p><strong>For piecewise-constant</strong> <span class="math notranslate nohighlight">\(\lambda\)</span>: the inner integral
+<span class="math notranslate nohighlight">\(\int_u^t 1/\lambda(v)\,dv\)</span> again reduces to a sum over intervals.
+This means the exponential term can be expressed as a product of per-interval
+survival factors, avoiding expensive quadrature in the inner loop. The
+outer integral over <span class="math notranslate nohighlight">\(u\)</span> then splits into sub-integrals within each
+time interval, each of which has a closed-form solution (integrals of the
+form <span class="math notranslate nohighlight">\(\int e^{-au}\,du = -\frac{1}{a} e^{-au}\)</span>). This is how the
+exact discrete formulas in the next chapter are derived.</p>
+<p><strong>For general smooth</strong> <span class="math notranslate nohighlight">\(\lambda\)</span>: we need nested numerical
+quadrature (<code class="docutils literal notranslate"><span class="pre">quad</span></code> inside <code class="docutils literal notranslate"><span class="pre">quad</span></code>), which is slower but exact to
+machine precision.</p>
+</div>
+<div class="admonition-probability-aside-the-law-of-total-probability admonition">
+<p class="admonition-title">Probability aside: the law of total probability</p>
+<p>The transition density is a direct application of the <strong>law of total
+probability</strong>. Conditioning on the (unobserved) recombination time <span class="math notranslate nohighlight">\(u\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[q(t \mid s) = \int_0^{\min(s,t)} P_2(t \mid u) \, P_1(u \mid s) \, du\]</div>
+<p>Each factor has a clear probabilistic interpretation:
+<span class="math notranslate nohighlight">\(P_1(u \mid s) = 1/s\)</span> is the prior on the recombination breakpoint
+(uniform on the branch), and <span class="math notranslate nohighlight">\(P_2(t \mid u)\)</span> is the re-coalescence
+density (a coalescent started at time <span class="math notranslate nohighlight">\(u\)</span>). We <strong>marginalize</strong> over
+all possible <span class="math notranslate nohighlight">\(u\)</span> to get the marginal density of the new coalescence
+time. “Marginalizing” means integrating out a variable we cannot observe
+– in this case, we do not know exactly where on the branch the
+recombination struck, so we average over all possibilities, weighted by
+their probability.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">psmc_transition_density_general</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PSMC transition density q(t|s) under variable population size.</span>
+
+<span class="sd">    This is the probability density of the new coalescence time being t,</span>
+<span class="sd">    given that the old coalescence time was s and a recombination occurred.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float</span>
+<span class="sd">        New coalescence time.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Previous coalescence time.</span>
+<span class="sd">    lambda_func : callable</span>
+<span class="sd">        Relative population size function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    q : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">integrand</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
+        <span class="c1"># For each candidate recombination time u, compute:</span>
+        <span class="c1">#   (1/s) * exp(-integral_u^t 1/lambda(v) dv)</span>
+        <span class="c1"># The inner quad call computes the cumulative hazard from u to t.</span>
+        <span class="c1"># Again, _ discards the error estimate from quad.</span>
+        <span class="n">integral</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">lambda_func</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">u</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">integral</span><span class="p">)</span>
+
+    <span class="c1"># The outer quad call integrates over all recombination times u</span>
+    <span class="c1"># from 0 to min(s, t). result is the integral value; _ discards</span>
+    <span class="c1"># the error estimate.</span>
+    <span class="n">result</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">integrand</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span> <span class="o">/</span> <span class="n">lambda_func</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+<span class="c1"># Verify: for constant lambda, this should match the closed-form</span>
+<span class="n">s</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">t_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Comparing general formula to closed-form (constant lambda=1):&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]:</span>
+    <span class="c1"># &quot;lambda u: 1.0&quot; is a constant function returning 1.0 for any u.</span>
+    <span class="n">q_general</span> <span class="o">=</span> <span class="n">psmc_transition_density_general</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="c1"># Closed-form for constant lambda=1:</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">q_closed</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">q_closed</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">s</span><span class="p">))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  t=</span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">: general=</span><span class="si">{</span><span class="n">q_general</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;closed=</span><span class="si">{</span><span class="n">q_closed</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, diff=</span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">q_general</span><span class="o">-</span><span class="n">q_closed</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-normalization-it-integrates-to-1">
+<h2>Step 3: Normalization – It Integrates to 1<a class="headerlink" href="#step-3-normalization-it-integrates-to-1" title="Link to this heading"></a></h2>
+<p><strong>Where we are so far.</strong> In Steps 1 and 2, we derived the coalescence density
+under variable population size (the probability of coalescing at a specific time)
+and the transition density (the probability of transitioning to a new coalescence
+time after a recombination event). Now we must verify a crucial mathematical
+property: that the transition density <span class="math notranslate nohighlight">\(q(t \mid s)\)</span> is a valid probability
+density.</p>
+<p>For a function to be a valid probability density, it must integrate to 1 over its
+entire domain. This means that if we add up the probabilities of all possible
+outcomes (here, all possible new coalescence times <span class="math notranslate nohighlight">\(t\)</span> from 0 to infinity),
+the total must be exactly 1 – because <em>something</em> has to happen, and the total
+probability of all possibilities is always 100%. If the integral were less than 1,
+probability mass would be “leaking” somewhere; if it were greater than 1, we would
+be double-counting. Either would make the HMM built on top of this density
+mathematically inconsistent.</p>
+<p>A crucial property: <span class="math notranslate nohighlight">\(q(t \mid s)\)</span> integrates to 1 over <span class="math notranslate nohighlight">\(t \in [0, \infty)\)</span>.
+This is not obvious! Let’s prove it, because understanding the proof reveals the
+structure of the formula.</p>
+<p>The trick is a change of variables. Define <span class="math notranslate nohighlight">\(\tilde{t}\)</span> such that:</p>
+<div class="math notranslate nohighlight">
+\[\phi'(\tilde{u}) \cdot \frac{1}{\lambda(\phi(\tilde{u}))} = 1, \qquad \phi(0) = 0\]</div>
+<p>In other words, <span class="math notranslate nohighlight">\(\tilde{t} = \Lambda(t)\)</span> is the “coalescent time measured in
+units of constant population size.” This is a time-warping transformation: it
+stretches intervals where the population is large (slow coalescence) and compresses
+intervals where the population is small (fast coalescence). Under this
+transformation, the coalescence rate becomes constant (rate 1), and the integral
+reduces to the constant-population case, which we already know integrates to 1
+from the <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">SMC prerequisite</span></a>.</p>
+<p><strong>Why is this important?</strong> It means <span class="math notranslate nohighlight">\(q(t|s)\)</span> is a valid probability density
+– essential for the HMM to be well-defined. If the transition density did not
+integrate to 1, the forward algorithm (which multiplies transition probabilities
+at each step) would produce values that drift away from true probabilities,
+making all downstream inference meaningless.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Numerical verification: q(t|s) integrates to 1</span>
+<span class="k">def</span> <span class="nf">verify_normalization</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">t_max</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify that q(t|s) integrates to 1.</span>
+
+<span class="sd">    Uses quad to numerically integrate the transition density over</span>
+<span class="sd">    t from a small positive number (to avoid division by zero at t=0)</span>
+<span class="sd">    up to t_max (a stand-in for infinity).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># quad with limit=100 allows up to 100 subdivisions for</span>
+    <span class="c1"># adaptive integration on difficult integrands.</span>
+    <span class="n">result</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span>
+        <span class="c1"># lambda t: ... creates an inline function of t that calls</span>
+        <span class="c1"># our transition density function.</span>
+        <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">psmc_transition_density_general</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">),</span>
+        <span class="mf">0.001</span><span class="p">,</span> <span class="n">t_max</span><span class="p">,</span>
+        <span class="n">limit</span><span class="o">=</span><span class="mi">100</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="c1"># Test with various population size functions</span>
+<span class="n">test_cases</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;Constant N&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Doubled N&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Bottleneck&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">0.1</span> <span class="k">if</span> <span class="mf">0.5</span> <span class="o">&lt;</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="k">else</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Growth&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)),</span>
+<span class="p">]</span>
+
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">lam</span> <span class="ow">in</span> <span class="n">test_cases</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]:</span>
+        <span class="n">integral</span> <span class="o">=</span> <span class="n">verify_normalization</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">lam</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">, s=</span><span class="si">{</span><span class="n">s</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">: integral = </span><span class="si">{</span><span class="n">integral</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-the-stationary-distribution">
+<h2>Step 4: The Stationary Distribution<a class="headerlink" href="#step-4-the-stationary-distribution" title="Link to this heading"></a></h2>
+<p>The <strong>stationary distribution</strong> <span class="math notranslate nohighlight">\(\pi(t)\)</span> is the probability density of
+the coalescence time at a single position, marginalized over all possible histories.
+It answers: “if I pick a random position on the genome, what is the distribution of
+its coalescence time?”</p>
+<p>Think of it as the long-run equilibrium where the watch runs steadily. If the PSMC
+process has been running for a very long time along the genome, and we sample a
+position at random, <span class="math notranslate nohighlight">\(\pi(t)\)</span> tells us how likely we are to find coalescence
+time <span class="math notranslate nohighlight">\(t\)</span>. No matter what coalescence time the process started with, after
+enough recombination events it settles into this steady-state distribution.</p>
+<p><strong>Why does the stationary distribution matter for the HMM?</strong> In a Hidden Markov
+Model, we need to specify the probability distribution of the <em>first</em> hidden
+state. The stationary distribution <span class="math notranslate nohighlight">\(\pi(t)\)</span> serves as this <strong>initial state
+distribution</strong>: we assume the first genomic position is drawn from the long-run
+equilibrium. This is a natural choice because a random position in the genome
+has no special relationship to the beginning of the sequence – it is just
+another position in a long chain of transitions. Using <span class="math notranslate nohighlight">\(\pi(t)\)</span> as the
+initial distribution is equivalent to assuming the process has been running
+long enough to reach equilibrium before we start observing.</p>
+<p>For the PSMC transition density with variable <span class="math notranslate nohighlight">\(\lambda(t)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\pi(t) = \frac{t}{C_\pi \lambda(t)} e^{-\Lambda(t)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(C_\pi\)</span> is the normalization constant:</p>
+<div class="math notranslate nohighlight">
+\[C_\pi = \int_0^\infty e^{-\Lambda(u)} \, du\]</div>
+<p><strong>Where does the</strong> <span class="math notranslate nohighlight">\(t\)</span> <strong>in the numerator come from?</strong> This is the key
+insight. The transition <span class="math notranslate nohighlight">\(q(t|s)\)</span> involves integrating the recombination
+position <span class="math notranslate nohighlight">\(u\)</span> uniformly on <span class="math notranslate nohighlight">\([0, s]\)</span>. In the stationary state, we
+average over <span class="math notranslate nohighlight">\(s\)</span> as well. The factor <span class="math notranslate nohighlight">\(t\)</span> arises because a
+recombination on a branch of length <span class="math notranslate nohighlight">\(t\)</span> is <span class="math notranslate nohighlight">\(t\)</span> times as likely as on a
+branch of length 1 – longer branches “catch” more recombinations.</p>
+<p>More formally, <span class="math notranslate nohighlight">\(\pi(t)\)</span> is the density such that:</p>
+<div class="math notranslate nohighlight">
+\[\int_0^\infty q(t \mid s) \pi(s) \, ds = \pi(t)\]</div>
+<p>This is a fixed-point equation: if the coalescence time distribution is
+<span class="math notranslate nohighlight">\(\pi\)</span>, then after one recombination event, the distribution is still
+<span class="math notranslate nohighlight">\(\pi\)</span>. The proof uses Lemma 2 from <code class="docutils literal notranslate"><span class="pre">psmc.tex</span></code> (the stationary
+distribution lemma), with <span class="math notranslate nohighlight">\(g(u) = 1\)</span> and <span class="math notranslate nohighlight">\(h(u) = 1/\lambda(u)\)</span>.</p>
+<div class="admonition-probability-aside-stationary-distributions-and-markov-chains admonition">
+<p class="admonition-title">Probability aside: stationary distributions and Markov chains</p>
+<p>The equation <span class="math notranslate nohighlight">\(\int q(t|s)\,\pi(s)\,ds = \pi(t)\)</span> is the
+continuous-state analogue of <span class="math notranslate nohighlight">\(\boldsymbol{\pi}^T \mathbf{Q} = \boldsymbol{\pi}^T\)</span>
+for discrete Markov chains (as introduced in the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM prerequisite</span></a>).
+The transition kernel <span class="math notranslate nohighlight">\(q(t|s)\)</span> plays the role of the transition
+matrix, and the integral replaces matrix multiplication. A distribution
+satisfying this equation is an <strong>invariant measure</strong> (or equilibrium) of
+the chain: once the process reaches <span class="math notranslate nohighlight">\(\pi\)</span>, it stays there forever.</p>
+<p>The extra factor of <span class="math notranslate nohighlight">\(t\)</span> in the numerator of <span class="math notranslate nohighlight">\(\pi(t)\)</span> compared
+to the coalescence density <span class="math notranslate nohighlight">\(f(t)\)</span> reflects a <strong>size-biased sampling</strong>
+effect. Recombination is more likely to hit a longer branch (probability
+proportional to <span class="math notranslate nohighlight">\(t\)</span>), so the stationary distribution over-represents
+long coalescence times relative to the raw density <span class="math notranslate nohighlight">\(f(t)\)</span>. This is
+the same phenomenon as the “waiting time paradox” (or inspection paradox)
+in renewal theory: if you arrive at a random time, you are more likely to
+land in a long inter-arrival interval.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">stationary_distribution</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">C_pi</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stationary distribution pi(t) of coalescence time.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float</span>
+<span class="sd">        Time.</span>
+<span class="sd">    lambda_func : callable</span>
+<span class="sd">    C_pi : float, optional</span>
+<span class="sd">        Normalization constant. Computed if not provided.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pi_t : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">C_pi</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">C_pi</span> <span class="o">=</span> <span class="n">compute_C_pi</span><span class="p">(</span><span class="n">lambda_func</span><span class="p">)</span>
+
+    <span class="c1"># Compute Lambda(t) via numerical integration.</span>
+    <span class="c1"># _ discards the error estimate returned by quad.</span>
+    <span class="n">Lambda_t</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">lambda_func</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_pi</span> <span class="o">*</span> <span class="n">lambda_func</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">Lambda_t</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">compute_C_pi</span><span class="p">(</span><span class="n">lambda_func</span><span class="p">,</span> <span class="n">t_max</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the normalization constant C_pi.</span>
+
+<span class="sd">    C_pi = integral_0^inf exp(-Lambda(u)) du</span>
+
+<span class="sd">    We approximate the upper limit of infinity with t_max=20, which</span>
+<span class="sd">    is safe because the integrand decays exponentially.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">integrand</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
+        <span class="c1"># For each u, compute Lambda(u) and then exp(-Lambda(u)).</span>
+        <span class="n">Lambda_u</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">lambda_func</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">Lambda_u</span><span class="p">)</span>
+
+    <span class="c1"># Integrate the survival function from 0 to t_max.</span>
+    <span class="n">C_pi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">integrand</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">t_max</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">C_pi</span>
+
+<span class="c1"># For constant population lambda=1:</span>
+<span class="c1"># pi(t) = t * exp(-t) / C_pi</span>
+<span class="c1"># C_pi = integral_0^inf exp(-t) dt = [-exp(-t)]_0^inf = 0 - (-1) = 1</span>
+<span class="c1"># So pi(t) = t * exp(-t) -- the Gamma(2,1) distribution!</span>
+<span class="n">C_pi_const</span> <span class="o">=</span> <span class="n">compute_C_pi</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;C_pi (constant pop): </span><span class="si">{</span><span class="n">C_pi_const</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (expected: 1.0)&quot;</span><span class="p">)</span>
+
+<span class="c1"># The mean coalescence time under constant population:</span>
+<span class="c1"># E[T] = integral_0^inf t * pi(t) dt = integral_0^inf t^2 * exp(-t) dt / C_pi</span>
+<span class="c1"># = Gamma(3) / C_pi = 2! / 1 = 2</span>
+<span class="n">mean_T</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span>
+    <span class="c1"># lambda t: ... creates a function that evaluates</span>
+    <span class="c1"># t * pi(t), which we integrate to get the expected value.</span>
+    <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span> <span class="o">*</span> <span class="n">stationary_distribution</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">C_pi_const</span><span class="p">),</span>
+    <span class="mi">0</span><span class="p">,</span> <span class="mi">20</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean coalescence time (constant pop): </span><span class="si">{</span><span class="n">mean_T</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> (expected: 2.0)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Verify pi(t) is indeed stationary: integral q(t|s)*pi(s)ds = pi(t)</span>
+<span class="k">def</span> <span class="nf">verify_stationarity</span><span class="p">(</span><span class="n">t_test</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">C_pi</span><span class="p">,</span> <span class="n">s_max</span><span class="o">=</span><span class="mi">15</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that pi is the fixed point of q.</span>
+
+<span class="sd">    If pi is truly stationary, then applying one step of the</span>
+<span class="sd">    transition density and averaging over all starting states s</span>
+<span class="sd">    (weighted by pi(s)) should give back pi(t).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lhs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">psmc_transition_density_general</span><span class="p">(</span><span class="n">t_test</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">)</span>
+                  <span class="o">*</span> <span class="n">stationary_distribution</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">C_pi</span><span class="p">),</span>
+        <span class="mf">0.001</span><span class="p">,</span> <span class="n">s_max</span><span class="p">)</span>
+    <span class="n">rhs</span> <span class="o">=</span> <span class="n">stationary_distribution</span><span class="p">(</span><span class="n">t_test</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">C_pi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span>
+
+<span class="k">for</span> <span class="n">t_val</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]:</span>
+    <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span> <span class="o">=</span> <span class="n">verify_stationarity</span><span class="p">(</span><span class="n">t_val</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">C_pi_const</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t=</span><span class="si">{</span><span class="n">t_val</span><span class="si">}</span><span class="s2">: integral q*pi = </span><span class="si">{</span><span class="n">lhs</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, pi(t) = </span><span class="si">{</span><span class="n">rhs</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;ratio = </span><span class="si">{</span><span class="n">lhs</span><span class="o">/</span><span class="n">rhs</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-the-gamma-2-1-distribution admonition">
+<p class="admonition-title">The Gamma(2,1) distribution</p>
+<p>For constant population size (<span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span>), the stationary
+distribution is <span class="math notranslate nohighlight">\(\pi(t) = t e^{-t}\)</span>, which is the <span class="math notranslate nohighlight">\(\text{Gamma}(2, 1)\)</span>
+distribution. Its mean is 2, matching the well-known result that the expected
+pairwise coalescence time is <span class="math notranslate nohighlight">\(2N\)</span> generations (or 2 in coalescent units of
+<span class="math notranslate nohighlight">\(2N_0\)</span>), as established in <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>.</p>
+</div>
+</section>
+<section id="step-5-including-no-recombination-the-full-transition">
+<h2>Step 5: Including No-Recombination (The Full Transition)<a class="headerlink" href="#step-5-including-no-recombination-the-full-transition" title="Link to this heading"></a></h2>
+<p><strong>Where we are so far.</strong> We have derived the coalescence density (Step 1), the
+transition density conditioned on recombination (Step 2), proved it integrates
+to 1 (Step 3), and found the stationary distribution (Step 4). All of these
+describe what happens <em>when</em> a recombination occurs. But recombination does not
+happen at every genomic position – in fact, for most adjacent positions, no
+recombination occurs at all. Now we need to account for both possibilities:
+recombination or no recombination.</p>
+<p>The density <span class="math notranslate nohighlight">\(q(t|s)\)</span> describes what happens <em>given</em> a recombination. But at
+each genomic position, recombination may or may not occur. The probability of
+recombination on a branch of length <span class="math notranslate nohighlight">\(s\)</span> is <span class="math notranslate nohighlight">\(1 - e^{-\rho s}\)</span> (Poisson
+process with rate <span class="math notranslate nohighlight">\(\rho\)</span> per unit branch length per bin).</p>
+<p>The <strong>full transition</strong> includes both possibilities:</p>
+<div class="math notranslate nohighlight">
+\[p(t \mid s) = (1 - e^{-\rho s}) \, q(t \mid s) + e^{-\rho s} \, \delta(t - s)\]</div>
+<ul class="simple">
+<li><p>With probability <span class="math notranslate nohighlight">\(1 - e^{-\rho s}\)</span>: recombination occurs, and the new time
+is drawn from <span class="math notranslate nohighlight">\(q(t|s)\)</span>.</p></li>
+<li><p>With probability <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span>: no recombination, and the time stays at
+<span class="math notranslate nohighlight">\(s\)</span> (represented by the Dirac delta <span class="math notranslate nohighlight">\(\delta(t - s)\)</span>).</p></li>
+</ul>
+<p>The <strong>Dirac delta</strong> <span class="math notranslate nohighlight">\(\delta(t - s)\)</span> is a mathematical device that represents
+a “spike” of probability concentrated at a single point <span class="math notranslate nohighlight">\(t = s\)</span>. It is not
+a function in the ordinary sense – it is zero everywhere except at <span class="math notranslate nohighlight">\(t = s\)</span>,
+where it is infinitely tall, but its total integral is exactly 1. You can think of
+it as the limit of a very narrow, very tall bell curve that shrinks to zero width
+while keeping its total area equal to 1. When multiplied by a probability
+<span class="math notranslate nohighlight">\(e^{-\rho s}\)</span>, it means “with probability <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span>, the new
+coalescence time is <em>exactly</em> <span class="math notranslate nohighlight">\(s\)</span> – not approximately <span class="math notranslate nohighlight">\(s\)</span>, but
+precisely <span class="math notranslate nohighlight">\(s\)</span>.”</p>
+<p>The key property of the Dirac delta is its behavior under integration: for any
+function <span class="math notranslate nohighlight">\(f\)</span>,</p>
+<div class="math notranslate nohighlight">
+\[\int_{-\infty}^{\infty} f(t) \, \delta(t - s) \, dt = f(s)\]</div>
+<p>In other words, integrating against the Dirac delta “picks out” the value of
+<span class="math notranslate nohighlight">\(f\)</span> at the spike location.</p>
+<div class="admonition-probability-aside-mixture-distributions admonition">
+<p class="admonition-title">Probability aside: mixture distributions</p>
+<p>The full transition <span class="math notranslate nohighlight">\(p(t|s)\)</span> is a <strong>mixture</strong> of a continuous density
+and a point mass. This is a common construction in probability:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}T' \sim \begin{cases} q(\cdot \mid s) &amp; \text{with prob } 1 - e^{-\rho s} \\
+\delta_s &amp; \text{with prob } e^{-\rho s} \end{cases}\end{split}\]</div>
+<p>When computing expectations under <span class="math notranslate nohighlight">\(p(t|s)\)</span>, the Dirac delta contributes
+the “no change” case: <span class="math notranslate nohighlight">\(E[g(T')] = (1 - e^{-\rho s})\int g(t)\,q(t|s)\,dt + e^{-\rho s}\,g(s)\)</span>.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">full_transition_density</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Full transition density p(t|s) including no-recombination.</span>
+
+<span class="sd">    For the Dirac delta part (t == s), returns the point mass weight</span>
+<span class="sd">    separately. For t != s, returns the continuous part.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    continuous : float</span>
+<span class="sd">        The continuous part of the density at t.</span>
+<span class="sd">    point_mass : float</span>
+<span class="sd">        The weight of the point mass at t = s (nonzero only when</span>
+<span class="sd">        |t - s| &lt; tol).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">recomb_prob</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">s</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">:</span>
+        <span class="c1"># Point mass contribution: e^{-rho*s} * delta(t-s)</span>
+        <span class="c1"># Cannot return density at the point mass; return (continuous, point_mass)</span>
+        <span class="n">q_ts</span> <span class="o">=</span> <span class="n">psmc_transition_density_general</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">recomb_prob</span> <span class="o">*</span> <span class="n">q_ts</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">recomb_prob</span> <span class="o">*</span> <span class="n">psmc_transition_density_general</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">),</span> <span class="mf">0.0</span>
+
+<span class="c1"># The probability of recombination depends on branch length s</span>
+<span class="k">for</span> <span class="n">s_val</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">]:</span>
+    <span class="n">p_rec</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.001</span> <span class="o">*</span> <span class="n">s_val</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;s=</span><span class="si">{</span><span class="n">s_val</span><span class="si">}</span><span class="s2">: P(recombination) = </span><span class="si">{</span><span class="n">p_rec</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>The full stationary distribution</strong> <span class="math notranslate nohighlight">\(\sigma(t)\)</span> satisfies:</p>
+<div class="math notranslate nohighlight">
+\[\sigma(t) = \frac{\pi(t)}{C_\sigma(1 - e^{-\rho t})}\]</div>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[C_\sigma = \int_0^\infty \frac{\pi(t)}{1 - e^{-\rho t}} \, dt\]</div>
+<p><strong>Why does</strong> <span class="math notranslate nohighlight">\(\sigma(t)\)</span> <strong>differ from</strong> <span class="math notranslate nohighlight">\(\pi(t)\)</span> <strong>?</strong> The
+distribution <span class="math notranslate nohighlight">\(\pi(t)\)</span> is the stationary distribution of <span class="math notranslate nohighlight">\(q(t|s)\)</span>,
+the transition density <em>conditioned on recombination</em>. But at stationarity,
+whether or not a recombination occurs also depends on the coalescence time
+(through the factor <span class="math notranslate nohighlight">\(1 - e^{-\rho s}\)</span>). Longer coalescence times have
+higher recombination probability, so they “churn” more and their stationary weight
+<span class="math notranslate nohighlight">\(\sigma(t)\)</span> is increased relative to <span class="math notranslate nohighlight">\(\pi(t)\)</span> by the factor
+<span class="math notranslate nohighlight">\(1/(1 - e^{-\rho t})\)</span>.</p>
+<div class="admonition-probability-aside-detailed-balance-and-reweighting admonition">
+<p class="admonition-title">Probability aside: detailed balance and reweighting</p>
+<p>The relationship between <span class="math notranslate nohighlight">\(\sigma\)</span> and <span class="math notranslate nohighlight">\(\pi\)</span> is an example of
+<strong>importance reweighting</strong>. The full chain (with skip-probability
+<span class="math notranslate nohighlight">\(e^{-\rho s}\)</span>) has a different stationary distribution than the
+sub-chain restricted to steps where recombination occurs. The reweighting
+factor <span class="math notranslate nohighlight">\(1/(1 - e^{-\rho t})\)</span> compensates for the fact that states
+with short coalescence times are “stickier” (less likely to recombine),
+so they need higher stationary weight to account for all the silent
+no-recombination steps.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">full_stationary</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">C_pi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">C_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Full stationary distribution sigma(t).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float</span>
+<span class="sd">    lambda_func : callable</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Recombination rate per bin.</span>
+<span class="sd">    C_pi, C_sigma : float, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">C_pi</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">C_pi</span> <span class="o">=</span> <span class="n">compute_C_pi</span><span class="p">(</span><span class="n">lambda_func</span><span class="p">)</span>
+    <span class="n">pi_t</span> <span class="o">=</span> <span class="n">stationary_distribution</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">C_pi</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">C_sigma</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">C_sigma</span> <span class="o">=</span> <span class="n">compute_C_sigma</span><span class="p">(</span><span class="n">lambda_func</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">C_pi</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pi_t</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_sigma</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">t</span><span class="p">)))</span>
+
+<span class="k">def</span> <span class="nf">compute_C_sigma</span><span class="p">(</span><span class="n">lambda_func</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">C_pi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">t_max</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute C_sigma = integral pi(t) / (1 - exp(-rho*t)) dt.</span>
+
+<span class="sd">    The lower limit is slightly above 0 (1e-6) to avoid division</span>
+<span class="sd">    by zero, since 1 - exp(-rho*t) -&gt; 0 as t -&gt; 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">C_pi</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">C_pi</span> <span class="o">=</span> <span class="n">compute_C_pi</span><span class="p">(</span><span class="n">lambda_func</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">integrand</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">stationary_distribution</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">C_pi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span>
+
+    <span class="c1"># _ discards the error estimate from quad.</span>
+    <span class="n">C_sigma</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">integrand</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">t_max</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">C_sigma</span>
+
+<span class="c1"># Test: the probability of recombination at any site is 1/C_sigma</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="mf">0.001</span>
+<span class="n">C_pi</span> <span class="o">=</span> <span class="n">compute_C_pi</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="n">C_sigma</span> <span class="o">=</span> <span class="n">compute_C_sigma</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">C_pi</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;C_sigma = </span><span class="si">{</span><span class="n">C_sigma</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;P(recombination) = 1/C_sigma = </span><span class="si">{</span><span class="mf">1.0</span><span class="o">/</span><span class="n">C_sigma</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-approximating-c-sigma">
+<h2>Step 6: Approximating C_sigma<a class="headerlink" href="#step-6-approximating-c-sigma" title="Link to this heading"></a></h2>
+<p>For small <span class="math notranslate nohighlight">\(\rho\)</span> (which is the typical regime – recombination rates are
+very low per base pair), <span class="math notranslate nohighlight">\(C_\sigma\)</span> has a clean approximation:</p>
+<div class="math notranslate nohighlight">
+\[C_\sigma = \frac{1}{C_\pi \rho} + \frac{1}{2} + o(\rho)\]</div>
+<p>The notation <span class="math notranslate nohighlight">\(o(\rho)\)</span> means “terms that go to zero faster than <span class="math notranslate nohighlight">\(\rho\)</span>
+as <span class="math notranslate nohighlight">\(\rho \to 0\)</span>” – in other words, for small <span class="math notranslate nohighlight">\(\rho\)</span>, these terms are
+negligible.</p>
+<p><strong>Derivation.</strong> Starting from the definition and using a Taylor expansion to
+approximate <span class="math notranslate nohighlight">\(1/(1 - e^{-\rho t})\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}C_\sigma &amp;= \int_0^\infty \frac{\pi(t)}{1 - e^{-\rho t}} \, dt \\
+&amp;= \int_0^\infty \frac{t}{C_\pi \lambda(t)(1 - e^{-\rho t})} e^{-\Lambda(t)} \, dt\end{split}\]</div>
+<p>A <strong>Taylor expansion</strong> (also called a Taylor series) approximates a function near
+a point by a polynomial. The idea is that any smooth function can be written as a
+sum of powers of its argument. For <span class="math notranslate nohighlight">\(e^{-x} \approx 1 - x + x^2/2 - \cdots\)</span>
+when <span class="math notranslate nohighlight">\(x\)</span> is small, we get <span class="math notranslate nohighlight">\(1 - e^{-\rho t} \approx \rho t - (\rho t)^2/2 + \cdots \approx \rho t\)</span>
+for small <span class="math notranslate nohighlight">\(\rho t\)</span>. Taking the reciprocal:</p>
+<div class="math notranslate nohighlight">
+\[\frac{1}{1 - e^{-\rho t}} \approx \frac{1}{\rho t}\left(1 + \frac{\rho t}{2} + \cdots\right)\]</div>
+<p>This approximation works because <span class="math notranslate nohighlight">\(1 - e^{-x} \approx x\)</span> for small <span class="math notranslate nohighlight">\(x\)</span>,
+and we are then expanding <span class="math notranslate nohighlight">\(1/(x - x^2/2 + \cdots)\)</span> using the geometric
+series <span class="math notranslate nohighlight">\(1/(1 - r) \approx 1 + r + \cdots\)</span>.</p>
+<p>Substituting into the integral for <span class="math notranslate nohighlight">\(C_\sigma\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[C_\sigma &amp;\approx \frac{1}{C_\pi \rho} \int_0^\infty \frac{1}{\lambda(t)} e^{-\Lambda(t)} \, dt
++ \frac{1}{2} \int_0^\infty \pi(t) \, dt + o(\rho)\]</div>
+<p>Now we use two facts:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\int_0^\infty \frac{1}{\lambda(t)} e^{-\Lambda(t)} dt = 1\)</span>: this is the
+integral of the coalescence density <span class="math notranslate nohighlight">\(f(t)\)</span> over all time, which must be 1
+because coalescing at <em>some</em> time is certain.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\int_0^\infty \pi(t) dt = 1\)</span>: this is the normalization of the stationary
+distribution (it is a probability density, so it integrates to 1).</p></li>
+</ul>
+<p>Therefore:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}C_\sigma &amp;= \frac{1}{C_\pi \rho} \cdot 1 + \frac{1}{2} \cdot 1 + o(\rho) \\
+&amp;= \frac{1}{C_\pi \rho} + \frac{1}{2} + o(\rho)\end{split}\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify the approximation C_sigma ~ 1/(C_pi * rho) + 0.5</span>
+<span class="n">C_pi</span> <span class="o">=</span> <span class="n">compute_C_pi</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">rho</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]:</span>
+    <span class="n">C_sigma_exact</span> <span class="o">=</span> <span class="n">compute_C_sigma</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">C_pi</span><span class="p">)</span>
+    <span class="n">C_sigma_approx</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_pi</span> <span class="o">*</span> <span class="n">rho</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rho=</span><span class="si">{</span><span class="n">rho</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">: exact=</span><span class="si">{</span><span class="n">C_sigma_exact</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;approx=</span><span class="si">{</span><span class="n">C_sigma_approx</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;relative error=</span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">C_sigma_exact</span><span class="o">-</span><span class="n">C_sigma_approx</span><span class="p">)</span><span class="o">/</span><span class="n">C_sigma_exact</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-7-the-rate-of-pairwise-difference">
+<h2>Step 7: The Rate of Pairwise Difference<a class="headerlink" href="#step-7-the-rate-of-pairwise-difference" title="Link to this heading"></a></h2>
+<p><strong>Where we are so far.</strong> We have built the complete transition machinery of the
+PSMC watch: the transition density (how coalescence times change from position
+to position), the stationary distribution (the long-run equilibrium), and the
+full transition including no-recombination events. Now we need the final piece:
+the <strong>emission model</strong> – how the hidden coalescence time produces the observed
+data (heterozygous or homozygous sites).</p>
+<p>How many heterozygous sites do we expect? If the coalescence time is <span class="math notranslate nohighlight">\(t\)</span>, the
+probability of at least one mutation in a bin is <span class="math notranslate nohighlight">\(1 - e^{-\theta t}\)</span> (two
+lineages, each of length <span class="math notranslate nohighlight">\(t/2\)</span> … wait, let’s be careful.</p>
+<p>Actually, in coalescent units where <span class="math notranslate nohighlight">\(t\)</span> measures the <strong>total</strong> time of the
+pairwise coalescent (time from present to MRCA), the expected number of mutations
+on the two branches is <span class="math notranslate nohighlight">\(\theta t\)</span> (both lineages have length <span class="math notranslate nohighlight">\(t\)</span>, but
+the mutation rate <span class="math notranslate nohighlight">\(\theta\)</span> is already scaled to account for both). So the
+probability of at least one mutation (heterozygous site) in a bin is:</p>
+<div class="math notranslate nohighlight">
+\[P(X_a = 1 \mid T_a = t) = 1 - e^{-\theta t}\]</div>
+<div class="admonition-probability-aside-the-poisson-model-of-mutations admonition">
+<p class="admonition-title">Probability aside: the Poisson model of mutations</p>
+<p>Why <span class="math notranslate nohighlight">\(1 - e^{-\theta t}\)</span> and not just <span class="math notranslate nohighlight">\(\theta t\)</span>?  Mutations
+along the two lineages of total length <span class="math notranslate nohighlight">\(t\)</span> follow a Poisson process
+with rate <span class="math notranslate nohighlight">\(\theta\)</span>. The probability of <strong>at least one</strong> mutation (i.e.,
+a heterozygous site) is <span class="math notranslate nohighlight">\(1 - P(\text{zero mutations}) = 1 - e^{-\theta t}\)</span>.
+For small <span class="math notranslate nohighlight">\(\theta t\)</span> this is approximately <span class="math notranslate nohighlight">\(\theta t\)</span> (first-order
+Taylor expansion: <span class="math notranslate nohighlight">\(e^{-x} \approx 1 - x\)</span> when <span class="math notranslate nohighlight">\(x \ll 1\)</span>), but the
+exponential form is exact and avoids overcounting when <span class="math notranslate nohighlight">\(\theta t\)</span> is not
+small.</p>
+<p>This is the same Poisson mutation model introduced in
+<a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>, where we showed that mutations on a branch of
+length <span class="math notranslate nohighlight">\(\ell\)</span> follow a Poisson distribution with mean
+<span class="math notranslate nohighlight">\(\theta\ell/2\)</span>. Here, the total branch length for two lineages
+coalescing at time <span class="math notranslate nohighlight">\(t\)</span> is <span class="math notranslate nohighlight">\(2 \times t = 2t\)</span> (each lineage has
+length <span class="math notranslate nohighlight">\(t\)</span>), giving an expected mutation count of
+<span class="math notranslate nohighlight">\(\theta/2 \times 2t = \theta t\)</span>. The probability of zero mutations
+is <span class="math notranslate nohighlight">\(e^{-\theta t}\)</span>, so the probability of at least one is
+<span class="math notranslate nohighlight">\(1 - e^{-\theta t}\)</span>.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Emission probability as a function of coalescence time</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="mf">0.001</span>
+<span class="k">for</span> <span class="n">t_val</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">]:</span>
+    <span class="n">p_het</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">theta</span> <span class="o">*</span> <span class="n">t_val</span><span class="p">)</span>
+    <span class="c1"># Linear approximation: e^{-x} ~ 1 - x, so 1 - e^{-x} ~ x</span>
+    <span class="n">p_het_approx</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">t_val</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t=</span><span class="si">{</span><span class="n">t_val</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2">: P(het) = </span><span class="si">{</span><span class="n">p_het</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;linear approx = </span><span class="si">{</span><span class="n">p_het_approx</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;error = </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">p_het</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">p_het_approx</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Averaging over the stationary distribution of <span class="math notranslate nohighlight">\(T\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[P(X_a = 1) = \int_0^\infty (1 - e^{-\theta t}) \sigma(t) \, dt\]</div>
+<p>This integral computes the <strong>expected heterozygosity</strong>: we weight the per-site
+mutation probability by the probability that a random genomic site has
+coalescence time <span class="math notranslate nohighlight">\(t\)</span>, then integrate over all possible times.</p>
+<p>For small <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\rho\)</span>, this simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[P(X_a = 1) \approx C_\pi \theta \cdot [1 + o(\rho + \theta)]\]</div>
+<p><strong>Intuition:</strong> The expected number of heterozygous sites is proportional to
+<span class="math notranslate nohighlight">\(\theta\)</span> (mutation rate) and <span class="math notranslate nohighlight">\(C_\pi\)</span> (which is the “effective
+coalescence time” – it captures how population size history affects the average
+time to MRCA). Larger <span class="math notranslate nohighlight">\(C_\pi\)</span> means longer average coalescence times, hence
+more heterozygosity.</p>
+<p>This gives us a way to <strong>estimate</strong> <span class="math notranslate nohighlight">\(\theta\)</span> from the observed fraction of
+heterozygous sites:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\theta} \approx \frac{\text{fraction of het sites}}{C_\pi}\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># For constant population: C_pi = 1, so P(het) ~ theta</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="mf">0.001</span>  <span class="c1"># typical for humans at 100bp bins</span>
+<span class="n">C_pi</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">p_het_approx</span> <span class="o">=</span> <span class="n">C_pi</span> <span class="o">*</span> <span class="n">theta</span>
+<span class="n">p_het_exact</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">theta</span> <span class="o">*</span> <span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># for T = 1 (mean under Exp(1))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Approximate P(het): </span><span class="si">{</span><span class="n">p_het_approx</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using mean T: </span><span class="si">{</span><span class="n">p_het_exact</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Initial estimate of theta from data</span>
+<span class="k">def</span> <span class="nf">estimate_theta_initial</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate theta_0 from the observed fraction of het sites.</span>
+
+<span class="sd">    Uses the exact inversion: if P(het) = 1 - exp(-theta), then</span>
+<span class="sd">    theta = -log(1 - P(het)).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">frac_het</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="c1"># -log(1 - frac_het) is the exact solution of 1 - exp(-theta) = frac_het</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">frac_het</span><span class="p">)</span>
+
+<span class="c1"># Test on simulated data</span>
+<span class="n">theta_hat</span> <span class="o">=</span> <span class="n">estimate_theta_initial</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">True theta: </span><span class="si">{</span><span class="mf">0.001</span><span class="si">}</span><span class="s2">, Estimated: </span><span class="si">{</span><span class="n">theta_hat</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="putting-it-all-together">
+<h2>Putting It All Together<a class="headerlink" href="#putting-it-all-together" title="Link to this heading"></a></h2>
+<p>Here’s a summary of the continuous-time PSMC model – all seven steps in one table:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Quantity</p></th>
+<th class="head"><p>Formula</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Coalescence rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(1/\lambda(t)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Cumulative hazard</p></td>
+<td><p><span class="math notranslate nohighlight">\(\Lambda(t) = \int_0^t \frac{du}{\lambda(u)}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Coalescence density</p></td>
+<td><p><span class="math notranslate nohighlight">\(f(t) = \frac{1}{\lambda(t)} e^{-\Lambda(t)}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Transition density (given recomb.)</p></td>
+<td><p><span class="math notranslate nohighlight">\(q(t|s) = \frac{1}{\lambda(t)} \int_0^{\min(s,t)} \frac{1}{s} e^{-\int_u^t \frac{dv}{\lambda(v)}} du\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Full transition</p></td>
+<td><p><span class="math notranslate nohighlight">\(p(t|s) = (1 - e^{-\rho s}) q(t|s) + e^{-\rho s} \delta(t-s)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Stationary dist. (recomb.)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\pi(t) = \frac{t}{C_\pi \lambda(t)} e^{-\Lambda(t)}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Stationary dist. (full)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\sigma(t) = \frac{\pi(t)}{C_\sigma(1 - e^{-\rho t})}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Normalization</p></td>
+<td><p><span class="math notranslate nohighlight">\(C_\pi = \int_0^\infty e^{-\Lambda(u)} du\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Approx. normalization</p></td>
+<td><p><span class="math notranslate nohighlight">\(C_\sigma \approx \frac{1}{C_\pi \rho} + \frac{1}{2}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Emission probability</p></td>
+<td><p><span class="math notranslate nohighlight">\(P(X_a = 1 \mid T_a = t) = 1 - e^{-\theta t}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>These equations form the mathematical foundation. But they’re continuous – and
+an HMM needs discrete states. In the next chapter, we discretize time.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-verify-the-stationary-property admonition">
+<p class="admonition-title">Exercise 1: Verify the stationary property</p>
+<p>Numerically verify that <span class="math notranslate nohighlight">\(\int_0^\infty q(t|s) \pi(s) ds = \pi(t)\)</span> for
+several values of <span class="math notranslate nohighlight">\(t\)</span> and several population size functions (constant,
+exponential growth, bottleneck).</p>
+</div>
+<div class="admonition-exercise-2-explore-the-effect-of-population-size-on-math-pi-t admonition">
+<p class="admonition-title">Exercise 2: Explore the effect of population size on <span class="math notranslate nohighlight">\(\pi(t)\)</span></p>
+<p>Plot <span class="math notranslate nohighlight">\(\pi(t)\)</span> for:
+(a) constant <span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span>,
+(b) a bottleneck <span class="math notranslate nohighlight">\(\lambda(t) = 0.1\)</span> for <span class="math notranslate nohighlight">\(t \in [1, 2]\)</span> and 1 elsewhere,
+(c) exponential growth <span class="math notranslate nohighlight">\(\lambda(t) = e^{t}\)</span>.</p>
+<p>How does each demographic event shift the distribution of coalescence times?</p>
+</div>
+<div class="admonition-exercise-3-estimate-math-c-pi-for-a-bottleneck-model admonition">
+<p class="admonition-title">Exercise 3: Estimate <span class="math notranslate nohighlight">\(C_\pi\)</span> for a bottleneck model</p>
+<p>For <span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span> for <span class="math notranslate nohighlight">\(t &lt; 1\)</span>, <span class="math notranslate nohighlight">\(\lambda(t) = 0.1\)</span> for
+<span class="math notranslate nohighlight">\(t \in [1, 2]\)</span>, and <span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span> for <span class="math notranslate nohighlight">\(t &gt; 2\)</span>:</p>
+<ol class="loweralpha simple">
+<li><p>Compute <span class="math notranslate nohighlight">\(C_\pi\)</span> numerically.</p></li>
+<li><p>What does a smaller <span class="math notranslate nohighlight">\(C_\pi\)</span> mean for the expected heterozygosity?</p></li>
+<li><p>How would you detect this bottleneck from the data?</p></li>
+</ol>
+</div>
+<p>Next: <a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a> – turning the continuous model into an HMM.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of PSMC" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="discretization.html" class="btn btn-neutral float-right" title="Discretizing Time" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

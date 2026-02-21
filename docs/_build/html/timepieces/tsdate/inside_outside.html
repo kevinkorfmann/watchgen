@@ -1,0 +1,999 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inside-Outside Belief Propagation &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Variational Gamma (Expectation Propagation)" href="variational_gamma.html" />
+    <link rel="prev" title="The Mutation Likelihood" href="mutation_likelihood.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece VII: tsdate</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece VII: tsdate</a></li>
+      <li class="breadcrumb-item active">Inside-Outside Belief Propagation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="mutation_likelihood.html" class="btn btn-neutral float-left" title="The Mutation Likelihood" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="variational_gamma.html" class="btn btn-neutral float-right" title="Variational Gamma (Expectation Propagation)" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="inside-outside-belief-propagation">
+<span id="tsdate-inside-outside"></span><h1>Inside-Outside Belief Propagation<a class="headerlink" href="#inside-outside-belief-propagation" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The first algorithm: pass messages up the tree, then back down, and every
+node knows its place in time.</em></p>
+</div></blockquote>
+<p>With the coalescent prior (<a class="reference internal" href="coalescent_prior.html#tsdate-coalescent-prior"><span class="std std-ref">The Coalescent Prior</span></a>) and the mutation
+likelihood (<a class="reference internal" href="mutation_likelihood.html#tsdate-mutation-likelihood"><span class="std std-ref">The Mutation Likelihood</span></a>) in hand, we have both halves
+of Bayes’ rule. The challenge now is <em>combining</em> them. Each node’s age
+depends on the ages of its parents and children through the edge likelihoods,
+creating a coupled system that cannot be solved node-by-node.</p>
+<p>The inside-outside method is tsdate’s original dating algorithm (Wohns et al.,
+2022). It discretizes time into a grid, represents each node’s posterior as a
+probability vector over grid points, and propagates information through the tree
+using two passes: <strong>inside</strong> (leaves to root) and <strong>outside</strong> (root to leaves).</p>
+<p>This is the same algorithmic idea as the forward-backward algorithm for HMMs,
+adapted to tree structures. In the watch metaphor, it is <strong>messages flowing
+through the gear train</strong>: each gear tells its neighbors what time it thinks it
+is, and after two complete sweeps (one upward, one downward), every gear has
+heard from every other gear and settled into its calibrated position.</p>
+<div class="admonition-probability-aside-belief-propagation-on-trees-vs-graphs admonition">
+<p class="admonition-title">Probability Aside – Belief propagation on trees vs. graphs</p>
+<p>Belief propagation (BP) on a tree-shaped graphical model gives <em>exact</em>
+marginal distributions in exactly two passes. The inside pass collects
+evidence from leaves to root; the outside pass distributes it back. The
+algorithm is sometimes called the “sum-product algorithm.” On a graph
+with loops (like a tree sequence, where nodes are shared across local
+trees), BP becomes <em>loopy BP</em> – an approximation. Loopy BP has no
+guarantee of convergence or exactness, but in practice it works well for
+the sparse, tree-like graphs that tree sequences produce.</p>
+</div>
+<section id="step-1-discretize-time">
+<h2>Step 1: Discretize Time<a class="headerlink" href="#step-1-discretize-time" title="Link to this heading"></a></h2>
+<p>The first decision: what grid of timepoints to use?</p>
+<p>tsdate creates a grid <span class="math notranslate nohighlight">\(\mathbf{g} = (g_0, g_1, \ldots, g_{K-1})\)</span> spanning
+from 0 to some maximum time. The grid can be:</p>
+<ul class="simple">
+<li><p><strong>Linear</strong>: equally spaced in time</p></li>
+<li><p><strong>Logarithmic</strong>: more resolution near the present, less in the deep past</p></li>
+</ul>
+<p>Logarithmic is the default, because most nodes are relatively young and we want
+fine resolution there.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">make_time_grid</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">Ne</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">num_points</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">grid_type</span><span class="o">=</span><span class="s2">&quot;logarithmic&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a time grid for the inside-outside algorithm.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of samples (sets the expected TMRCA).</span>
+<span class="sd">    Ne : float</span>
+<span class="sd">        Effective population size.</span>
+<span class="sd">    num_points : int</span>
+<span class="sd">        Number of grid points.</span>
+<span class="sd">    grid_type : str</span>
+<span class="sd">        &quot;linear&quot; or &quot;logarithmic&quot;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grid : np.ndarray</span>
+<span class="sd">        Array of timepoints, starting at 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Expected TMRCA under standard coalescent: 2*Ne*(1 - 1/n)</span>
+    <span class="n">expected_tmrca</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Ne</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">t_max</span> <span class="o">=</span> <span class="n">expected_tmrca</span> <span class="o">*</span> <span class="mi">4</span>  <span class="c1"># go well beyond expected TMRCA</span>
+
+    <span class="k">if</span> <span class="n">grid_type</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">t_max</span><span class="p">,</span> <span class="n">num_points</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Log-spaced: more points near 0, fewer far out</span>
+        <span class="c1"># Start from a small positive number to avoid log(0)</span>
+        <span class="n">t_min</span> <span class="o">=</span> <span class="n">t_max</span> <span class="o">/</span> <span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">num_points</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="n">t_min</span><span class="p">,</span> <span class="n">t_max</span><span class="p">,</span> <span class="n">num_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)])</span>
+
+<span class="c1"># Example</span>
+<span class="n">grid</span> <span class="o">=</span> <span class="n">make_time_grid</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">num_points</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grid: </span><span class="si">{</span><span class="n">grid</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span><span class="si">}</span><span class="s2"> ... </span><span class="si">{</span><span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grid spans [0, </span><span class="si">{</span><span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">] with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span><span class="si">}</span><span class="s2"> points&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-the-likelihood-matrix">
+<h2>Step 2: The Likelihood Matrix<a class="headerlink" href="#step-2-the-likelihood-matrix" title="Link to this heading"></a></h2>
+<p>For each edge <span class="math notranslate nohighlight">\(e\)</span>, we need the likelihood of the observed mutations
+<span class="math notranslate nohighlight">\(m_e\)</span> as a function of the parent and child times. On the discrete grid,
+this becomes a <span class="math notranslate nohighlight">\(K \times K\)</span> <strong>lower-triangular matrix</strong> <span class="math notranslate nohighlight">\(L_e\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[L_e[i, j] = P(m_e \mid t_{\text{parent}} = g_i, t_{\text{child}} = g_j)
+= \text{Poisson}(m_e; \lambda_e \cdot (g_i - g_j))\]</div>
+<p>for <span class="math notranslate nohighlight">\(i &gt; j\)</span> (parent older than child), and <span class="math notranslate nohighlight">\(L_e[i, j] = 0\)</span> otherwise.</p>
+<p>This matrix is the discrete version of the bivariate edge factor <span class="math notranslate nohighlight">\(\phi_e\)</span>
+we met in the likelihood chapter. Each entry answers: “if the parent were at
+grid point <span class="math notranslate nohighlight">\(i\)</span> and the child at grid point <span class="math notranslate nohighlight">\(j\)</span>, how likely are the
+observed mutations?”</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">poisson</span>
+
+<span class="k">def</span> <span class="nf">edge_likelihood_matrix</span><span class="p">(</span><span class="n">m_e</span><span class="p">,</span> <span class="n">lambda_e</span><span class="p">,</span> <span class="n">grid</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the likelihood matrix for an edge on the time grid.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m_e : int</span>
+<span class="sd">        Mutation count on this edge.</span>
+<span class="sd">    lambda_e : float</span>
+<span class="sd">        Span-weighted mutation rate (mu * span_bp).</span>
+<span class="sd">    grid : np.ndarray</span>
+<span class="sd">        Time grid.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    L : np.ndarray, shape (K, K)</span>
+<span class="sd">        L[i, j] = P(m_e | parent_time=grid[i], child_time=grid[j])</span>
+<span class="sd">        Lower triangular (i &gt;= j).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># j &lt;= i (child younger than parent)</span>
+            <span class="n">delta_t</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">grid</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">delta_t</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">expected</span> <span class="o">=</span> <span class="n">lambda_e</span> <span class="o">*</span> <span class="n">delta_t</span>       <span class="c1"># Poisson mean</span>
+                <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">poisson</span><span class="o">.</span><span class="n">pmf</span><span class="p">(</span><span class="n">m_e</span><span class="p">,</span> <span class="n">expected</span><span class="p">)</span>  <span class="c1"># evaluate PMF</span>
+            <span class="k">elif</span> <span class="n">m_e</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># delta_t = 0, only possible if no mutations</span>
+                <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="k">return</span> <span class="n">L</span>
+
+<span class="c1"># Example</span>
+<span class="n">grid</span> <span class="o">=</span> <span class="n">make_time_grid</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">num_points</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">L</span> <span class="o">=</span> <span class="n">edge_likelihood_matrix</span><span class="p">(</span><span class="n">m_e</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">lambda_e</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="n">grid</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Likelihood matrix shape: </span><span class="si">{</span><span class="n">L</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max likelihood at parent_idx, child_idx = </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">argmax</span><span class="p">(),</span><span class="w"> </span><span class="n">L</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-storage-optimization admonition">
+<p class="admonition-title">Storage optimization</p>
+<p>tsdate doesn’t actually store full <span class="math notranslate nohighlight">\(K \times K\)</span> matrices. Instead, it
+stores the lower triangle as a flattened 1D array of size <span class="math notranslate nohighlight">\(K(K+1)/2\)</span>.
+This halves the memory requirement.</p>
+</div>
+</section>
+<section id="step-3-the-inside-pass-leaves-to-root">
+<h2>Step 3: The Inside Pass (Leaves to Root)<a class="headerlink" href="#step-3-the-inside-pass-leaves-to-root" title="Link to this heading"></a></h2>
+<p>Now we arrive at the heart of the algorithm. The inside pass computes, for
+each node <span class="math notranslate nohighlight">\(u\)</span>, the probability of all the data <em>below</em> <span class="math notranslate nohighlight">\(u\)</span>,
+conditioned on <span class="math notranslate nohighlight">\(u\)</span>’s age:</p>
+<div class="math notranslate nohighlight">
+\[\text{inside}(u, g_i) = P(\mathbf{D}_{\text{below } u} \mid t_u = g_i)\]</div>
+<p>Think of this as each gear reporting upward: “given that I am at grid point
+<span class="math notranslate nohighlight">\(i\)</span>, here is the total evidence from everything below me.” The messages
+flow from the leaves (known time 0) up to the root, accumulating mutation
+evidence along the way.</p>
+<p>For <strong>leaf nodes</strong> (samples at time 0):</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{inside}(\text{leaf}, g_i) = \begin{cases}
+1 &amp; \text{if } g_i = 0 \\
+0 &amp; \text{otherwise}
+\end{cases}\end{split}\]</div>
+<p>For <strong>internal nodes</strong>, the inside value combines information from all child
+edges. If node <span class="math notranslate nohighlight">\(u\)</span> has children <span class="math notranslate nohighlight">\(v_1, v_2, \ldots\)</span> connected by
+edges <span class="math notranslate nohighlight">\(e_1, e_2, \ldots\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\text{inside}(u, g_i) = \prod_{\text{child } v_c}
+\underbrace{\sum_{j=0}^{i} L_{e_c}[i, j] \cdot \text{inside}(v_c, g_j)}_{\text{message from child } v_c}\]</div>
+<p><strong>Intuition</strong>: For each child, sum over all possible child times (weighted by
+the edge likelihood and the child’s inside value), then multiply across
+children. This is exactly the same logic as the forward algorithm in an HMM,
+but on a tree instead of a chain.</p>
+<div class="admonition-calculus-aside-discrete-marginalization admonition">
+<p class="admonition-title">Calculus Aside – Discrete marginalization</p>
+<p>The inner sum <span class="math notranslate nohighlight">\(\sum_{j=0}^{i} L_e[i,j] \cdot \text{inside}(v, g_j)\)</span>
+is the discrete analogue of the integral
+<span class="math notranslate nohighlight">\(\int_0^{t_u} \phi_e(t_u, t_v) \cdot q(t_v) \, dt_v\)</span> that we met
+in the likelihood chapter. On the grid, the integral becomes a
+matrix-vector product: multiply the likelihood matrix row by the child’s
+inside vector, then sum. The product over children is the “product rule”
+for independent subtrees.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">inside_pass</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">,</span> <span class="n">mut_per_edge</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute inside values for all nodes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ts : tskit.TreeSequence</span>
+<span class="sd">    grid : np.ndarray</span>
+<span class="sd">        Time grid of K points.</span>
+<span class="sd">    mutation_rate : float</span>
+<span class="sd">    mut_per_edge : np.ndarray</span>
+<span class="sd">        Mutation count per edge.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    inside : np.ndarray, shape (num_nodes, K)</span>
+<span class="sd">        inside[u, i] = P(data below u | t_u = grid[i]).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">inside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">ts</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>  <span class="c1"># start at 1 (multiplicative identity)</span>
+
+    <span class="c1"># Initialize leaves: delta at time 0</span>
+    <span class="k">for</span> <span class="n">sample_id</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">samples</span><span class="p">():</span>
+        <span class="n">inside</span><span class="p">[</span><span class="n">sample_id</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">0.0</span>       <span class="c1"># zero everywhere...</span>
+        <span class="n">inside</span><span class="p">[</span><span class="n">sample_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>       <span class="c1"># ...except at grid point 0 (present)</span>
+
+    <span class="c1"># Process edges from leaves to root (bottom-up)</span>
+    <span class="c1"># We need a topological ordering: process children before parents</span>
+    <span class="c1"># tsdate uses the edge table sorted by child time</span>
+
+    <span class="c1"># Build adjacency: for each parent, collect (child, edge_id)</span>
+    <span class="n">children_of</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">edge</span><span class="o">.</span><span class="n">parent</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">children_of</span><span class="p">:</span>
+            <span class="n">children_of</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">parent</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">children_of</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">parent</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">edge</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+
+    <span class="c1"># Topological order: process nodes with smallest time first</span>
+    <span class="n">node_order</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">),</span>
+                       <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="n">ts</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">node_order</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">samples</span><span class="p">():</span>
+            <span class="k">continue</span>  <span class="c1"># already initialized</span>
+
+        <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">children_of</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="k">for</span> <span class="n">child_id</span><span class="p">,</span> <span class="n">edge_id</span> <span class="ow">in</span> <span class="n">children_of</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="n">m_e</span> <span class="o">=</span> <span class="n">mut_per_edge</span><span class="p">[</span><span class="n">edge_id</span><span class="p">]</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">edge</span><span class="p">(</span><span class="n">edge_id</span><span class="p">)</span>
+            <span class="n">span</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">edge</span><span class="o">.</span><span class="n">left</span>
+            <span class="n">lambda_e</span> <span class="o">=</span> <span class="n">mutation_rate</span> <span class="o">*</span> <span class="n">span</span>
+
+            <span class="c1"># Build the K x K likelihood matrix for this edge</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="n">edge_likelihood_matrix</span><span class="p">(</span><span class="n">m_e</span><span class="p">,</span> <span class="n">lambda_e</span><span class="p">,</span> <span class="n">grid</span><span class="p">)</span>
+
+            <span class="c1"># Message from child to parent:</span>
+            <span class="c1"># msg[i] = sum_j L[i,j] * inside[child, j]</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># only j &lt;= i (child younger than parent)</span>
+                    <span class="n">msg</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">inside</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+
+            <span class="c1"># Multiply into parent&#39;s inside value (product over children)</span>
+            <span class="n">inside</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*=</span> <span class="n">msg</span>
+
+        <span class="c1"># Normalize to prevent underflow (does not change relative values)</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="n">inside</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">inside</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/=</span> <span class="n">total</span>
+
+    <span class="k">return</span> <span class="n">inside</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-the-outside-pass-root-to-leaves">
+<h2>Step 4: The Outside Pass (Root to Leaves)<a class="headerlink" href="#step-4-the-outside-pass-root-to-leaves" title="Link to this heading"></a></h2>
+<p>With the inside pass complete, every node knows about the evidence below it.
+But nodes also need evidence from <em>above</em> – what do the parent, grandparent,
+and sibling subtrees say? The outside pass sends this information downward.</p>
+<p>The outside pass computes, for each node <span class="math notranslate nohighlight">\(u\)</span>, the probability of all the
+data <em>above</em> <span class="math notranslate nohighlight">\(u\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\text{outside}(u, g_i) = P(\mathbf{D}_{\text{above } u} \mid t_u = g_i)\]</div>
+<p>For <strong>root nodes</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\text{outside}(\text{root}, g_i) = \text{prior}(\text{root}, g_i)\]</div>
+<p>The prior comes from the conditional coalescent (Gear 1,
+<a class="reference internal" href="coalescent_prior.html#tsdate-coalescent-prior"><span class="std std-ref">The Coalescent Prior</span></a>).</p>
+<p>For <strong>non-root nodes</strong>, the outside value is computed by combining the parent’s
+outside value, the edge likelihood, and the inside values of <em>sibling</em> subtrees:</p>
+<div class="math notranslate nohighlight">
+\[\text{outside}(v, g_j) = \sum_{i=j}^{K-1}
+L_e[i, j] \cdot \text{outside}(u, g_i) \cdot
+\prod_{\text{sibling } v' \neq v} \text{msg}_{v' \to u}(g_i)\]</div>
+<p><strong>Intuition</strong>: To know what the data above <span class="math notranslate nohighlight">\(v\)</span> tells us about <span class="math notranslate nohighlight">\(v\)</span>’s
+age, we need:</p>
+<ol class="arabic simple">
+<li><p>The information from above the parent <span class="math notranslate nohighlight">\(u\)</span> (the outside of <span class="math notranslate nohighlight">\(u\)</span>)</p></li>
+<li><p>The information from sibling subtrees (the inside messages from siblings)</p></li>
+<li><p>The edge likelihood connecting <span class="math notranslate nohighlight">\(u\)</span> to <span class="math notranslate nohighlight">\(v\)</span></p></li>
+</ol>
+<p>In the gear train, the outside message is the force transmitted <em>downward</em>
+from the mainspring (root) through the gear train. Each gear receives torque
+from above (its parent’s outside) modulated by the sibling gears’ evidence
+(their inside messages).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">outside_pass</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">,</span> <span class="n">mut_per_edge</span><span class="p">,</span> <span class="n">inside</span><span class="p">,</span> <span class="n">prior_grid</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute outside values for all nodes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ts : tskit.TreeSequence</span>
+<span class="sd">    grid : np.ndarray</span>
+<span class="sd">    mutation_rate : float</span>
+<span class="sd">    mut_per_edge : np.ndarray</span>
+<span class="sd">    inside : np.ndarray, shape (num_nodes, K)</span>
+<span class="sd">    prior_grid : np.ndarray</span>
+<span class="sd">        Prior for each node.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    outside : np.ndarray, shape (num_nodes, K)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">outside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">ts</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+
+    <span class="c1"># Initialize roots with coalescent prior</span>
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">is_root</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
+            <span class="n">outside</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">prior_grid</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>  <span class="c1"># prior is the &quot;outside&quot; for the root</span>
+
+    <span class="c1"># Process nodes from root to leaves (top-down -- oldest first)</span>
+    <span class="n">node_order</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">),</span>
+                       <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="o">-</span><span class="n">ts</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>  <span class="c1"># oldest first</span>
+
+    <span class="c1"># Build parent lookup</span>
+    <span class="n">parent_of</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># (child, edge_id) -&gt; parent</span>
+    <span class="n">children_of</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="n">parent_of</span><span class="p">[(</span><span class="n">edge</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">parent</span>
+        <span class="k">if</span> <span class="n">edge</span><span class="o">.</span><span class="n">parent</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">children_of</span><span class="p">:</span>
+            <span class="n">children_of</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">parent</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">children_of</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">parent</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">edge</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">node_order</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">children_of</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Compute the &quot;inside messages&quot; from each child to u</span>
+        <span class="n">child_messages</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">child_id</span><span class="p">,</span> <span class="n">edge_id</span> <span class="ow">in</span> <span class="n">children_of</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="n">m_e</span> <span class="o">=</span> <span class="n">mut_per_edge</span><span class="p">[</span><span class="n">edge_id</span><span class="p">]</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">edge</span><span class="p">(</span><span class="n">edge_id</span><span class="p">)</span>
+            <span class="n">span</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">edge</span><span class="o">.</span><span class="n">left</span>
+            <span class="n">lambda_e</span> <span class="o">=</span> <span class="n">mutation_rate</span> <span class="o">*</span> <span class="n">span</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="n">edge_likelihood_matrix</span><span class="p">(</span><span class="n">m_e</span><span class="p">,</span> <span class="n">lambda_e</span><span class="p">,</span> <span class="n">grid</span><span class="p">)</span>
+
+            <span class="c1"># Standard inside message: sum over child times</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">msg</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">inside</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+
+            <span class="n">child_messages</span><span class="p">[(</span><span class="n">child_id</span><span class="p">,</span> <span class="n">edge_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">msg</span>
+
+        <span class="c1"># For each child, compute outside using parent outside</span>
+        <span class="c1"># and all other children&#39;s messages (siblings)</span>
+        <span class="k">for</span> <span class="n">child_id</span><span class="p">,</span> <span class="n">edge_id</span> <span class="ow">in</span> <span class="n">children_of</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="n">m_e</span> <span class="o">=</span> <span class="n">mut_per_edge</span><span class="p">[</span><span class="n">edge_id</span><span class="p">]</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">edge</span><span class="p">(</span><span class="n">edge_id</span><span class="p">)</span>
+            <span class="n">span</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">edge</span><span class="o">.</span><span class="n">left</span>
+            <span class="n">lambda_e</span> <span class="o">=</span> <span class="n">mutation_rate</span> <span class="o">*</span> <span class="n">span</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="n">edge_likelihood_matrix</span><span class="p">(</span><span class="n">m_e</span><span class="p">,</span> <span class="n">lambda_e</span><span class="p">,</span> <span class="n">grid</span><span class="p">)</span>
+
+            <span class="c1"># Parent contribution: outside[u] * product of sibling messages</span>
+            <span class="n">parent_contrib</span> <span class="o">=</span> <span class="n">outside</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">other_child</span><span class="p">,</span> <span class="n">other_eid</span> <span class="ow">in</span> <span class="n">children_of</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">other_eid</span> <span class="o">!=</span> <span class="n">edge_id</span><span class="p">:</span>
+                    <span class="c1"># Multiply in sibling&#39;s inside message</span>
+                    <span class="n">parent_contrib</span> <span class="o">*=</span> <span class="n">child_messages</span><span class="p">[(</span><span class="n">other_child</span><span class="p">,</span> <span class="n">other_eid</span><span class="p">)]</span>
+
+            <span class="c1"># Message from parent to child (downward):</span>
+            <span class="c1"># msg[j] = sum_i L[i,j] * parent_contrib[i]</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">K</span><span class="p">):</span>  <span class="c1"># i &gt;= j (parent older than child)</span>
+                    <span class="n">msg</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">parent_contrib</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="n">outside</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*=</span> <span class="n">msg</span>  <span class="c1"># accumulate outside evidence</span>
+
+            <span class="c1"># Normalize</span>
+            <span class="n">total</span> <span class="o">=</span> <span class="n">outside</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">outside</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/=</span> <span class="n">total</span>
+
+    <span class="k">return</span> <span class="n">outside</span>
+
+<span class="k">def</span> <span class="nf">is_root</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">node_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a node is a root (has no parent edges).&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">edge</span><span class="o">.</span><span class="n">child</span> <span class="o">==</span> <span class="n">node_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">ts</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span><span class="o">.</span><span class="n">time</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-combine-to-get-the-posterior">
+<h2>Step 5: Combine to Get the Posterior<a class="headerlink" href="#step-5-combine-to-get-the-posterior" title="Link to this heading"></a></h2>
+<p>With the inside and outside values computed, combining them is straightforward.
+The marginal posterior for each node is the product of inside and outside,
+weighted by the prior:</p>
+<div class="math notranslate nohighlight">
+\[P(t_u = g_i \mid \mathbf{D}) \propto \text{inside}(u, g_i) \cdot \text{outside}(u, g_i)\]</div>
+<p>This is the fundamental identity of the sum-product algorithm: the marginal
+at a variable is the product of all evidence arriving from below (inside) and
+all evidence arriving from above (outside).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_posteriors</span><span class="p">(</span><span class="n">inside</span><span class="p">,</span> <span class="n">outside</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Combine inside and outside to get marginal posteriors.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inside : np.ndarray, shape (num_nodes, K)</span>
+<span class="sd">    outside : np.ndarray, shape (num_nodes, K)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior : np.ndarray, shape (num_nodes, K)</span>
+<span class="sd">        posterior[u, :] is the marginal posterior distribution over</span>
+<span class="sd">        grid points for node u.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">posterior</span> <span class="o">=</span> <span class="n">inside</span> <span class="o">*</span> <span class="n">outside</span>  <span class="c1"># element-wise product</span>
+
+    <span class="c1"># Normalize each node&#39;s posterior to sum to 1</span>
+    <span class="n">row_sums</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">row_sums</span><span class="p">[</span><span class="n">row_sums</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># avoid division by zero</span>
+    <span class="n">posterior</span> <span class="o">/=</span> <span class="n">row_sums</span>
+
+    <span class="k">return</span> <span class="n">posterior</span>
+
+<span class="k">def</span> <span class="nf">posterior_mean</span><span class="p">(</span><span class="n">posterior</span><span class="p">,</span> <span class="n">grid</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute posterior mean age for each node.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    posterior : np.ndarray, shape (num_nodes, K)</span>
+<span class="sd">    grid : np.ndarray, shape (K,)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    means : np.ndarray, shape (num_nodes,)</span>
+<span class="sd">        E[t_u | D] for each node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">posterior</span> <span class="o">@</span> <span class="n">grid</span>  <span class="c1"># weighted sum: sum_i posterior[u,i] * grid[i]</span>
+</pre></div>
+</div>
+</section>
+<section id="why-this-works-the-belief-propagation-guarantee">
+<h2>Why This Works: The Belief Propagation Guarantee<a class="headerlink" href="#why-this-works-the-belief-propagation-guarantee" title="Link to this heading"></a></h2>
+<p>On a <strong>tree</strong> (no loops), the inside-outside algorithm gives <strong>exact</strong> marginal
+posteriors. This is a classical result from graphical models: belief propagation
+on trees converges in exactly two passes.</p>
+<p>But a tree <em>sequence</em> is not a tree. When a node appears in multiple local
+trees, it creates loops in the factor graph. For example, if node <span class="math notranslate nohighlight">\(u\)</span> is
+the parent of <span class="math notranslate nohighlight">\(v\)</span> in one genomic region and the grandparent of <span class="math notranslate nohighlight">\(v\)</span>
+in another, there are two paths between <span class="math notranslate nohighlight">\(u\)</span> and <span class="math notranslate nohighlight">\(v\)</span> – a loop.</p>
+<p>On loopy graphs, belief propagation is <strong>approximate</strong>. It may:</p>
+<ul class="simple">
+<li><p>Converge to a fixed point that’s close to the true posterior (common in practice)</p></li>
+<li><p>Oscillate (rare for this type of graph)</p></li>
+<li><p>Over-count evidence from repeated paths (the main source of error)</p></li>
+</ul>
+<p>tsdate mitigates this by processing edges in the tree sequence’s natural
+ordering, which respects the temporal structure and minimizes loop effects.</p>
+<div class="admonition-probability-aside-why-loops-cause-trouble admonition">
+<p class="admonition-title">Probability Aside – Why loops cause trouble</p>
+<p>On a tree, each piece of evidence (each mutation on each edge) is counted
+exactly once in every node’s posterior. On a graph with loops, messages
+can “circulate” around a loop: node A tells B, B tells C, C tells A
+what A originally said – as if the same evidence were counted twice.
+This is called “double-counting” and it makes loopy BP an approximation.
+In tree sequences the loops arise because a single ancestor participates
+in different local trees. The loops are typically short (length 2 or 3),
+and empirically the approximation is good.</p>
+</div>
+</section>
+<section id="log-space-computation">
+<h2>Log-Space Computation<a class="headerlink" href="#log-space-computation" title="Link to this heading"></a></h2>
+<p>In practice, the inside and outside values can span many orders of magnitude.
+tsdate performs all computations in <strong>log space</strong> to prevent underflow:</p>
+<div class="math notranslate nohighlight">
+\[\log \text{inside}(u, g_i) = \sum_{\text{children}} \log \left(
+\sum_j \exp\left(\log L_e[i,j] + \log \text{inside}(v, g_j)\right)
+\right)\]</div>
+<p>The inner log-sum-exp is computed using the standard numerical trick:</p>
+<div class="math notranslate nohighlight">
+\[\log \sum_j e^{x_j} = x_{\max} + \log \sum_j e^{x_j - x_{\max}}\]</div>
+<div class="admonition-calculus-aside-the-log-sum-exp-trick admonition">
+<p class="admonition-title">Calculus Aside – The log-sum-exp trick</p>
+<p>Naively computing <span class="math notranslate nohighlight">\(\log(\sum_j e^{x_j})\)</span> can overflow (if any
+<span class="math notranslate nohighlight">\(x_j\)</span> is very large) or underflow (if all <span class="math notranslate nohighlight">\(x_j\)</span> are very
+negative). The trick: factor out <span class="math notranslate nohighlight">\(e^{x_{\max}}\)</span> to get
+<span class="math notranslate nohighlight">\(x_{\max} + \log(\sum_j e^{x_j - x_{\max}})\)</span>. Now every exponent
+is <span class="math notranslate nohighlight">\(\leq 0\)</span>, preventing overflow, and at least one exponent is 0,
+preventing underflow. This is the single most important numerical trick
+in probabilistic computation, and it appears throughout tsdate.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">logsumexp</span>
+
+<span class="k">def</span> <span class="nf">inside_pass_logspace</span><span class="p">(</span><span class="n">inside_log</span><span class="p">,</span> <span class="n">L_log</span><span class="p">,</span> <span class="n">K</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute a single inside message in log space.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inside_log : np.ndarray, shape (K,)</span>
+<span class="sd">        Log inside values for child node.</span>
+<span class="sd">    L_log : np.ndarray, shape (K, K)</span>
+<span class="sd">        Log likelihood matrix.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    msg_log : np.ndarray, shape (K,)</span>
+<span class="sd">        Log message from child to parent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">msg_log</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>    <span class="c1"># start at log(0) = -inf</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+        <span class="n">terms</span> <span class="o">=</span> <span class="n">L_log</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">inside_log</span><span class="p">[:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># log(L * inside) = log(L) + log(inside)</span>
+        <span class="n">msg_log</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span>               <span class="c1"># log-sum-exp for numerical stability</span>
+    <span class="k">return</span> <span class="n">msg_log</span>
+</pre></div>
+</div>
+</section>
+<section id="the-standardization-trick">
+<h2>The Standardization Trick<a class="headerlink" href="#the-standardization-trick" title="Link to this heading"></a></h2>
+<p>tsdate also uses <strong>standardization</strong>: after each message computation, the
+maximum value is subtracted. This keeps all values in a numerically safe range
+without changing the relative proportions.</p>
+<div class="math notranslate nohighlight">
+\[\tilde{f}(g_i) = f(g_i) - \max_i f(g_i)\]</div>
+<p>In log space, this means <span class="math notranslate nohighlight">\(\max_i \tilde{f}(g_i) = 0\)</span>.</p>
+</section>
+<section id="putting-it-all-together">
+<h2>Putting It All Together<a class="headerlink" href="#putting-it-all-together" title="Link to this heading"></a></h2>
+<p>Here’s the complete inside-outside algorithm, assembling all the pieces from
+above into a single pipeline.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">inside_outside_date</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">,</span> <span class="n">Ne</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">num_points</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Date a tree sequence using the inside-outside algorithm.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ts : tskit.TreeSequence</span>
+<span class="sd">        Input tree sequence (topology from tsinfer).</span>
+<span class="sd">    mutation_rate : float</span>
+<span class="sd">        Per-bp per-generation mutation rate.</span>
+<span class="sd">    Ne : float</span>
+<span class="sd">        Effective population size.</span>
+<span class="sd">    num_points : int</span>
+<span class="sd">        Number of time grid points.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    node_times : np.ndarray</span>
+<span class="sd">        Posterior mean age for each node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 0: Setup -- build the time grid</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">make_time_grid</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">Ne</span><span class="p">,</span> <span class="n">num_points</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+
+    <span class="c1"># Count mutations per edge (used by both passes)</span>
+    <span class="n">mut_per_edge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">num_edges</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">mut</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">mutations</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">mut</span><span class="o">.</span><span class="n">edge</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mut_per_edge</span><span class="p">[</span><span class="n">mut</span><span class="o">.</span><span class="n">edge</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Build prior for each node (from coalescent theory, Gear 1)</span>
+    <span class="n">prior</span> <span class="o">=</span> <span class="n">build_discrete_prior</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">Ne</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Inside pass (leaves to root) -- evidence flows upward</span>
+    <span class="n">inside</span> <span class="o">=</span> <span class="n">inside_pass</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">,</span> <span class="n">mut_per_edge</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Outside pass (root to leaves) -- evidence flows downward</span>
+    <span class="n">outside</span> <span class="o">=</span> <span class="n">outside_pass</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">,</span> <span class="n">mut_per_edge</span><span class="p">,</span>
+                           <span class="n">inside</span><span class="p">,</span> <span class="n">prior</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Combine inside and outside to get marginal posteriors</span>
+    <span class="n">posterior</span> <span class="o">=</span> <span class="n">compute_posteriors</span><span class="p">(</span><span class="n">inside</span><span class="p">,</span> <span class="n">outside</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Extract posterior means as point estimates</span>
+    <span class="n">node_times</span> <span class="o">=</span> <span class="n">posterior_mean</span><span class="p">(</span><span class="n">posterior</span><span class="p">,</span> <span class="n">grid</span><span class="p">)</span>
+
+    <span class="c1"># Fix leaf times at 0 (samples have known ages)</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">samples</span><span class="p">():</span>
+        <span class="n">node_times</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">return</span> <span class="n">node_times</span>
+
+<span class="k">def</span> <span class="nf">build_discrete_prior</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">Ne</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a discrete prior for each node on the time grid.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">gamma</span>
+
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">prior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">ts</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">samples</span><span class="p">()):</span>
+            <span class="c1"># Sample nodes are fixed at time 0</span>
+            <span class="n">prior</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">prior</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Count descendants (simplified: assume binary tree)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">j</span> <span class="o">*</span> <span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mf">4.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">j</span> <span class="o">*</span> <span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">mean</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">var</span>          <span class="c1"># gamma shape from method of moments</span>
+        <span class="n">beta_param</span> <span class="o">=</span> <span class="n">mean</span> <span class="o">/</span> <span class="n">var</span>        <span class="c1"># gamma rate from method of moments</span>
+
+        <span class="c1"># Evaluate gamma pdf at grid points</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">prior</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">a</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="n">beta_param</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">prior</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># internal nodes can&#39;t be at time 0</span>
+
+        <span class="c1"># Normalize to a proper probability distribution</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="n">prior</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">prior</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/=</span> <span class="n">total</span>
+
+    <span class="k">return</span> <span class="n">prior</span>
+</pre></div>
+</div>
+</section>
+<section id="limitations-of-inside-outside">
+<h2>Limitations of Inside-Outside<a class="headerlink" href="#limitations-of-inside-outside" title="Link to this heading"></a></h2>
+<p>The inside-outside method works well but has some limitations that motivated
+the development of the variational gamma method:</p>
+<ol class="arabic simple">
+<li><p><strong>Grid resolution</strong>: The posterior is only as fine as the grid. With
+<span class="math notranslate nohighlight">\(K=20\)</span> points, you can’t distinguish between times that fall in the
+same grid cell.</p></li>
+<li><p><strong>Quadratic per edge</strong>: Computing the likelihood matrix is <span class="math notranslate nohighlight">\(O(K^2)\)</span>.
+For large <span class="math notranslate nohighlight">\(K\)</span>, this becomes expensive.</p></li>
+<li><p><strong>Loopy BP</strong>: On tree sequences with many shared nodes, the approximation
+may degrade.</p></li>
+<li><p><strong>No natural way to handle constraints</strong>: Enforcing <span class="math notranslate nohighlight">\(t_u &gt; t_v\)</span> on
+the grid requires zeroing out entries, which can lose probability mass.</p></li>
+</ol>
+<p>These limitations motivated the development of the <strong>variational gamma method</strong>
+(<a class="reference internal" href="variational_gamma.html#tsdate-variational-gamma"><span class="std std-ref">Variational Gamma (Expectation Propagation)</span></a>), which works in continuous time and avoids
+the grid entirely. Instead of a probability vector of <span class="math notranslate nohighlight">\(K\)</span> values per
+node, it stores just two numbers (<span class="math notranslate nohighlight">\(\alpha\)</span>, <span class="math notranslate nohighlight">\(\beta\)</span>), and instead
+of matrix-vector products, it uses moment matching – a fundamentally different
+(and faster) way of passing messages through the gear train.</p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>The inside-outside algorithm dates nodes by:</p>
+<ol class="arabic simple">
+<li><p><strong>Discretizing</strong> time into a grid of <span class="math notranslate nohighlight">\(K\)</span> points</p></li>
+<li><p><strong>Inside pass</strong>: propagating mutation likelihoods upward from leaves to roots</p></li>
+<li><p><strong>Outside pass</strong>: propagating prior and sibling information downward</p></li>
+<li><p><strong>Combining</strong>: multiplying inside and outside to get marginal posteriors</p></li>
+</ol>
+<p>The key equations:</p>
+<div class="math notranslate nohighlight">
+\[\text{inside}(u, g_i) = \prod_{\text{children}} \sum_j L_e[i,j] \cdot \text{inside}(v, g_j)\]</div>
+<div class="math notranslate nohighlight">
+\[\text{outside}(v, g_j) = \sum_i L_e[i,j] \cdot \text{outside}(u, g_i) \cdot \prod_{\text{siblings}} \text{msg}(g_i)\]</div>
+<div class="math notranslate nohighlight">
+\[P(t_u = g_i \mid \mathbf{D}) \propto \text{inside}(u, g_i) \cdot \text{outside}(u, g_i)\]</div>
+<p>In the watch metaphor, the inside pass is like winding the mainspring from the
+bottom – evidence accumulates upward from the leaves. The outside pass
+releases that energy back down through the gear train. After both passes,
+every gear (node) has felt the full tension of the data from every direction,
+and its position (age) is set.</p>
+<p>Next: the modern default method, variational gamma, which replaces the grid with
+continuous gamma approximations (<a class="reference internal" href="variational_gamma.html#tsdate-variational-gamma"><span class="std std-ref">Variational Gamma (Expectation Propagation)</span></a>).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mutation_likelihood.html" class="btn btn-neutral float-left" title="The Mutation Likelihood" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="variational_gamma.html" class="btn btn-neutral float-right" title="Variational Gamma (Expectation Propagation)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1 @@
+.venv/bin/python scripts/build_pdf.py 2>&1 | tail -15

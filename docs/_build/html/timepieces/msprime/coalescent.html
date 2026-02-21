@@ -1,0 +1,1227 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Coalescent Process &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Segments &amp; the Fenwick Tree" href="segments_and_fenwick.html" />
+    <link rel="prev" title="Overview of msprime" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece III: msprime</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of msprime</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece III: msprime</a></li>
+      <li class="breadcrumb-item active">The Coalescent Process</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of msprime" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="segments_and_fenwick.html" class="btn btn-neutral float-right" title="Segments &amp; the Fenwick Tree" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-coalescent-process">
+<span id="coalescent-process"></span><h1>The Coalescent Process<a class="headerlink" href="#the-coalescent-process" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The escapement of the mechanism: how lineages find common ancestors.</em></p>
+</div></blockquote>
+<p>The coalescent is the mathematical foundation of msprime. Before we can
+simulate anything, we need to understand the stochastic process that governs
+how lineages merge backwards in time. We build this from the very bottom:
+starting with two lineages, then <span class="math notranslate nohighlight">\(n\)</span>, then adding recombination.</p>
+<p>If you have worked through the <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter, much of
+the mathematics here will be familiar – but the emphasis is different. There,
+we developed the theory for its own sake. Here, we are building toward a
+<em>simulation algorithm</em>: every formula we derive will become a line of code
+in <a class="reference internal" href="hudson_algorithm.html#hudson-algorithm"><span class="std std-ref">Hudson’s Algorithm</span></a>, the main simulation loop – the ticking of the
+clock.</p>
+<p>Think of this chapter as calibrating the escapement: we need to know exactly
+how fast the gears should turn before we can assemble the movement.</p>
+<section id="step-1-two-lineages-no-recombination">
+<h2>Step 1: Two Lineages, No Recombination<a class="headerlink" href="#step-1-two-lineages-no-recombination" title="Link to this heading"></a></h2>
+<p>Start with the simplest possible case: two haploid genomes sampled from a
+population of constant size <span class="math notranslate nohighlight">\(N\)</span>. Going one generation back, what is the
+probability that these two genomes share a parent?</p>
+<p>In a haploid Wright-Fisher population of size <span class="math notranslate nohighlight">\(N\)</span>, each individual in
+generation <span class="math notranslate nohighlight">\(t\)</span> chose its parent uniformly at random from the <span class="math notranslate nohighlight">\(N\)</span>
+individuals in generation <span class="math notranslate nohighlight">\(t-1\)</span>. So the probability that our two samples
+chose the <strong>same</strong> parent is:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{same parent}) = \frac{1}{N}\]</div>
+<p>and the probability they chose <strong>different</strong> parents is:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{different parents}) = 1 - \frac{1}{N}\]</div>
+<p>If they didn’t coalesce in the first generation, the problem resets: we now
+have two lineages one generation further back, in the same population. The
+process is memoryless.</p>
+<div class="admonition-probability-aside-the-memoryless-property admonition">
+<p class="admonition-title">Probability Aside – The memoryless property</p>
+<p>A random variable <span class="math notranslate nohighlight">\(T\)</span> is <strong>memoryless</strong> if
+<span class="math notranslate nohighlight">\(P(T &gt; s + t \mid T &gt; s) = P(T &gt; t)\)</span> for all <span class="math notranslate nohighlight">\(s, t \geq 0\)</span>.
+Knowing that no coalescence has happened so far gives you no information
+about how much longer you will wait. Among continuous distributions, only
+the exponential has this property. Among discrete distributions, only the
+geometric has it. This is why the coalescent waiting time (geometric in
+discrete time, exponential in continuous time) resets perfectly after each
+failed generation.</p>
+</div>
+<p><strong>Waiting time distribution.</strong> Let <span class="math notranslate nohighlight">\(T_2\)</span> be the number of generations
+until the two lineages coalesce. The probability that they first coalesce in
+generation <span class="math notranslate nohighlight">\(g\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[P(T_2 = g) = \left(1 - \frac{1}{N}\right)^{g-1} \cdot \frac{1}{N}\]</div>
+<p>This is a <strong>geometric distribution</strong> with success probability <span class="math notranslate nohighlight">\(1/N\)</span>.</p>
+<p><strong>The continuous-time approximation.</strong> For large <span class="math notranslate nohighlight">\(N\)</span>, we can approximate
+this discrete geometric distribution with a continuous exponential. Measure
+time in units of <span class="math notranslate nohighlight">\(N\)</span> generations: let <span class="math notranslate nohighlight">\(t = g / N\)</span>. Then:</p>
+<div class="math notranslate nohighlight">
+\[P(T_2 &gt; t) = \left(1 - \frac{1}{N}\right)^{Nt} \approx e^{-t}\]</div>
+<p>as <span class="math notranslate nohighlight">\(N \to \infty\)</span>. So in units of <span class="math notranslate nohighlight">\(N\)</span> generations, the coalescence
+time of two lineages is approximately <span class="math notranslate nohighlight">\(\text{Exponential}(1)\)</span>.</p>
+<div class="admonition-calculus-aside-the-exponential-limit admonition">
+<p class="admonition-title">Calculus Aside – The exponential limit</p>
+<p>The key identity is <span class="math notranslate nohighlight">\(\lim_{N \to \infty} (1 - 1/N)^N = e^{-1}\)</span>.
+More generally, <span class="math notranslate nohighlight">\(\lim_{N \to \infty} (1 - c/N)^{Nt} = e^{-ct}\)</span>.
+This follows from taking the logarithm:
+<span class="math notranslate nohighlight">\(Nt \cdot \ln(1 - c/N) \approx Nt \cdot (-c/N) = -ct\)</span> as
+<span class="math notranslate nohighlight">\(N \to \infty\)</span>, using the first-order Taylor expansion
+<span class="math notranslate nohighlight">\(\ln(1 - x) \approx -x\)</span> for small <span class="math notranslate nohighlight">\(x\)</span>. For
+<span class="math notranslate nohighlight">\(N = 10{,}000\)</span>, the error is about <span class="math notranslate nohighlight">\(0.005\%\)</span> – far smaller
+than any biological uncertainty.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">simulate_coalescence_time_discrete</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">n_replicates</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate coalescence time for 2 lineages in discrete generations.</span>
+
+<span class="sd">    Each generation, the two lineages independently choose a parent</span>
+<span class="sd">    uniformly from N individuals. If they pick the same one, they coalesce.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_replicates</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_replicates</span><span class="p">):</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># With probability 1/N, the two lineages pick the same parent</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">N</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="n">times</span><span class="p">[</span><span class="n">rep</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span>
+    <span class="k">return</span> <span class="n">times</span>
+
+<span class="k">def</span> <span class="nf">simulate_coalescence_time_continuous</span><span class="p">(</span><span class="n">n_replicates</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate coalescence time for 2 lineages (exponential).</span>
+
+<span class="sd">    In the continuous-time limit, the waiting time is Exp(1)</span>
+<span class="sd">    in coalescent units (units of N generations).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_replicates</span><span class="p">)</span>
+
+<span class="c1"># Compare: discrete (in units of N generations) vs continuous</span>
+<span class="n">N</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">discrete_times</span> <span class="o">=</span> <span class="n">simulate_coalescence_time_discrete</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">/</span> <span class="n">N</span>  <span class="c1"># rescale to coalescent units</span>
+<span class="n">continuous_times</span> <span class="o">=</span> <span class="n">simulate_coalescence_time_continuous</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Discrete:   mean = </span><span class="si">{</span><span class="n">discrete_times</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;var = </span><span class="si">{</span><span class="n">discrete_times</span><span class="o">.</span><span class="n">var</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Continuous: mean = </span><span class="si">{</span><span class="n">continuous_times</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;var = </span><span class="si">{</span><span class="n">continuous_times</span><span class="o">.</span><span class="n">var</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Theory:     mean = 1.0000, var = 1.0000&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With the two-lineage case in hand, we can now generalize to <span class="math notranslate nohighlight">\(n\)</span> lineages.
+The key insight is that each <em>pair</em> of lineages races independently to coalesce,
+and with <span class="math notranslate nohighlight">\(k\)</span> lineages there are <span class="math notranslate nohighlight">\(\binom{k}{2}\)</span> such pairs.</p>
+</section>
+<section id="step-2-multiple-lineages-no-recombination">
+<h2>Step 2: Multiple Lineages, No Recombination<a class="headerlink" href="#step-2-multiple-lineages-no-recombination" title="Link to this heading"></a></h2>
+<p>Now take <span class="math notranslate nohighlight">\(k\)</span> lineages in a population of size <span class="math notranslate nohighlight">\(N\)</span>. Going one
+generation back, any pair could coalesce. How many pairs are there?</p>
+<div class="math notranslate nohighlight">
+\[\binom{k}{2} = \frac{k(k-1)}{2}\]</div>
+<p>Each pair independently has probability <span class="math notranslate nohighlight">\(1/N\)</span> of coalescing. For large
+<span class="math notranslate nohighlight">\(N\)</span>, the probability that <em>any</em> pair coalesces is approximately:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{any coalescence}) \approx \frac{\binom{k}{2}}{N}\]</div>
+<p>(We ignore the possibility of two simultaneous coalescences, which has
+probability <span class="math notranslate nohighlight">\(O(1/N^2)\)</span>.)</p>
+<div class="admonition-probability-aside-why-we-can-ignore-simultaneous-events admonition">
+<p class="admonition-title">Probability Aside – Why we can ignore simultaneous events</p>
+<p>The probability that exactly one pair coalesces is
+<span class="math notranslate nohighlight">\(\binom{k}{2} \cdot \frac{1}{N} \cdot (1 - \frac{1}{N})^{\binom{k}{2}-1} \approx \binom{k}{2}/N\)</span>.
+The probability that two or more pairs coalesce simultaneously is
+<span class="math notranslate nohighlight">\(O(\binom{k}{2}^2 / N^2)\)</span>. For <span class="math notranslate nohighlight">\(k = 100\)</span> and <span class="math notranslate nohighlight">\(N = 10{,}000\)</span>,
+the single-event probability is about <span class="math notranslate nohighlight">\(0.5\)</span>, while the
+double-event probability is about <span class="math notranslate nohighlight">\(0.0025\)</span> – negligible. In the
+continuous-time limit (<span class="math notranslate nohighlight">\(N \to \infty\)</span>), simultaneous events have
+probability exactly zero.</p>
+</div>
+<p><strong>The continuous-time limit.</strong> In units of <span class="math notranslate nohighlight">\(N\)</span> generations, the waiting
+time until the next coalescence among <span class="math notranslate nohighlight">\(k\)</span> lineages is:</p>
+<div class="math notranslate nohighlight">
+\[T_k \sim \text{Exponential}\left(\binom{k}{2}\right)\]</div>
+<p>with mean <span class="math notranslate nohighlight">\(\frac{1}{\binom{k}{2}} = \frac{2}{k(k-1)}\)</span>.</p>
+<p><strong>The full coalescent process</strong> for <span class="math notranslate nohighlight">\(n\)</span> samples:</p>
+<ol class="arabic simple">
+<li><p>Start with <span class="math notranslate nohighlight">\(k = n\)</span> lineages</p></li>
+<li><p>Wait <span class="math notranslate nohighlight">\(T_k \sim \text{Exp}(\binom{k}{2})\)</span> time units</p></li>
+<li><p>Choose a random pair to coalesce: <span class="math notranslate nohighlight">\(k \to k - 1\)</span></p></li>
+<li><p>Repeat until <span class="math notranslate nohighlight">\(k = 1\)</span></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">simulate_coalescent</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n_replicates</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate the standard coalescent for n samples.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Coalescence times (in coalescent units of N generations).</span>
+<span class="sd">    pairs : list of (int, int)</span>
+<span class="sd">        Which pair coalesced at each event.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">all_results</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_replicates</span><span class="p">):</span>
+        <span class="n">lineages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>  <span class="c1"># each lineage gets a unique ID</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">pairs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">lineages</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lineages</span><span class="p">)</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># binom(k, 2) -- the coalescence rate</span>
+            <span class="c1"># Wait exponential time with this rate</span>
+            <span class="n">t</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+            <span class="c1"># Choose random pair to coalesce</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lineages</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+            <span class="n">pairs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">lineages</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lineages</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+            <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="c1"># Merge: replace i with new node, remove j</span>
+            <span class="n">new_node</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">lineages</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">lineages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_node</span>
+            <span class="n">lineages</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+
+        <span class="n">all_results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">times</span><span class="p">,</span> <span class="n">pairs</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">all_results</span>
+
+<span class="c1"># Simulate and show the coalescent for n=5</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">simulate_coalescent</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_replicates</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">times</span><span class="p">,</span> <span class="n">pairs</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Coalescent for n=5:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">pairs</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  k=</span><span class="si">{</span><span class="mi">5</span><span class="o">-</span><span class="n">i</span><span class="si">}</span><span class="s2">: t=</span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, lineages </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2"> coalesce&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="expected-time-to-mrca">
+<h3>Expected time to MRCA<a class="headerlink" href="#expected-time-to-mrca" title="Link to this heading"></a></h3>
+<p>The total time to the Most Recent Common Ancestor (MRCA) is:</p>
+<div class="math notranslate nohighlight">
+\[T_{\text{MRCA}} = \sum_{k=2}^{n} T_k\]</div>
+<p>Since each <span class="math notranslate nohighlight">\(T_k\)</span> is independent with mean <span class="math notranslate nohighlight">\(\frac{2}{k(k-1)}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[E[T_{\text{MRCA}}] = \sum_{k=2}^{n} \frac{2}{k(k-1)}
+= 2\sum_{k=2}^{n} \left(\frac{1}{k-1} - \frac{1}{k}\right)
+= 2\left(1 - \frac{1}{n}\right)\]</div>
+<p><strong>This is remarkable.</strong> The expected MRCA time approaches 2 (in units of
+<span class="math notranslate nohighlight">\(N\)</span> generations) regardless of how large <span class="math notranslate nohighlight">\(n\)</span> is. Adding more
+samples barely changes the total tree height.</p>
+<div class="admonition-calculus-aside-telescoping-sums admonition">
+<p class="admonition-title">Calculus Aside – Telescoping sums</p>
+<p>The partial fraction decomposition
+<span class="math notranslate nohighlight">\(\frac{2}{k(k-1)} = 2\left(\frac{1}{k-1} - \frac{1}{k}\right)\)</span>
+gives a <strong>telescoping sum</strong>: most terms cancel in pairs.</p>
+<div class="math notranslate nohighlight">
+\[\sum_{k=2}^{n} 2\left(\frac{1}{k-1} - \frac{1}{k}\right)
+= 2\left[\left(\frac{1}{1} - \frac{1}{2}\right) + \left(\frac{1}{2} - \frac{1}{3}\right) + \cdots + \left(\frac{1}{n-1} - \frac{1}{n}\right)\right]
+= 2\left(1 - \frac{1}{n}\right)\]</div>
+<p>Everything except the first and last terms cancels. This is a standard
+technique in combinatorics and analysis; watch for it whenever you see
+partial fractions of the form <span class="math notranslate nohighlight">\(1/[k(k-1)]\)</span>.</p>
+</div>
+<p><strong>Why?</strong> With many lineages, the coalescence
+rate <span class="math notranslate nohighlight">\(\binom{k}{2} \sim k^2/2\)</span> is so high that events happen almost
+instantly. Most of the time is spent waiting for the last few lineages to merge.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">expected_tmrca</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expected MRCA time for n samples (in coalescent units).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">expected_total_branch_length</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expected total branch length of the coalescent tree.</span>
+
+<span class="sd">    This equals 2 * H_{n-1}, where H_k is the k-th harmonic number.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n=</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">&gt;5d</span><span class="si">}</span><span class="s2">: E[T_MRCA] = </span><span class="si">{</span><span class="n">expected_tmrca</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;E[total length] = </span><span class="si">{</span><span class="n">expected_total_branch_length</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We now know how to simulate <em>when</em> events happen (exponential waiting times)
+and <em>what</em> happens (a random pair coalesces). But in the real simulation,
+coalescence is not the only possible event. Recombination and migration also
+compete for the clock’s next tick. To handle this competition, we need the
+<strong>exponential race</strong>.</p>
+</section>
+</section>
+<section id="step-3-the-exponential-race">
+<h2>Step 3: The Exponential Race<a class="headerlink" href="#step-3-the-exponential-race" title="Link to this heading"></a></h2>
+<p>The coalescent with recombination involves multiple types of events
+(coalescence, recombination, migration) happening at different rates.
+The simulation needs to determine which event happens next. This is where
+the <strong>exponential race</strong> comes in.</p>
+<p><strong>Fact.</strong> If <span class="math notranslate nohighlight">\(X_1 \sim \text{Exp}(\lambda_1)\)</span> and
+<span class="math notranslate nohighlight">\(X_2 \sim \text{Exp}(\lambda_2)\)</span> are independent, then:</p>
+<ol class="arabic simple">
+<li><p><span class="math notranslate nohighlight">\(\min(X_1, X_2) \sim \text{Exp}(\lambda_1 + \lambda_2)\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(P(X_1 &lt; X_2) = \frac{\lambda_1}{\lambda_1 + \lambda_2}\)</span></p></li>
+</ol>
+<p><strong>Proof of (1).</strong> <span class="math notranslate nohighlight">\(P(\min(X_1, X_2) &gt; t) = P(X_1 &gt; t) P(X_2 &gt; t) = e^{-\lambda_1 t} e^{-\lambda_2 t} = e^{-(\lambda_1 + \lambda_2)t}\)</span>.</p>
+<p><strong>Proof of (2).</strong></p>
+<div class="math notranslate nohighlight">
+\[P(X_1 &lt; X_2) = \int_0^\infty P(X_2 &gt; t) \cdot f_{X_1}(t) \, dt
+= \int_0^\infty e^{-\lambda_2 t} \cdot \lambda_1 e^{-\lambda_1 t} \, dt
+= \lambda_1 \int_0^\infty e^{-(\lambda_1 + \lambda_2) t} \, dt
+= \frac{\lambda_1}{\lambda_1 + \lambda_2}\]</div>
+<div class="admonition-calculus-aside-evaluating-the-integral admonition">
+<p class="admonition-title">Calculus Aside – Evaluating the integral</p>
+<p>The integral <span class="math notranslate nohighlight">\(\int_0^\infty e^{-\alpha t}\,dt = 1/\alpha\)</span> for
+<span class="math notranslate nohighlight">\(\alpha &gt; 0\)</span> is one of the most important integrals in probability.
+It follows immediately from the antiderivative
+<span class="math notranslate nohighlight">\(\int e^{-\alpha t}\,dt = -\frac{1}{\alpha}e^{-\alpha t} + C\)</span> and
+the fact that <span class="math notranslate nohighlight">\(e^{-\alpha t} \to 0\)</span> as <span class="math notranslate nohighlight">\(t \to \infty\)</span>. In
+the proof above, <span class="math notranslate nohighlight">\(\alpha = \lambda_1 + \lambda_2\)</span>.</p>
+</div>
+<p>This extends to any number of competing exponentials: the minimum of
+<span class="math notranslate nohighlight">\(\text{Exp}(\lambda_1), \ldots, \text{Exp}(\lambda_m)\)</span> is
+<span class="math notranslate nohighlight">\(\text{Exp}(\sum_i \lambda_i)\)</span>, and event <span class="math notranslate nohighlight">\(i\)</span> wins with
+probability <span class="math notranslate nohighlight">\(\lambda_i / \sum_j \lambda_j\)</span>.</p>
+<p><strong>This is the simulation engine.</strong> At each step, msprime computes:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\lambda_{\text{coal}}\)</span> = total coalescence rate</p></li>
+<li><p><span class="math notranslate nohighlight">\(\lambda_{\text{recomb}}\)</span> = total recombination rate</p></li>
+<li><p><span class="math notranslate nohighlight">\(\lambda_{\text{mig}}\)</span> = total migration rate</p></li>
+</ul>
+<p>Then draws the minimum, advances time, and executes the winning event. This
+is the heartbeat of <a class="reference internal" href="hudson_algorithm.html#hudson-algorithm"><span class="std std-ref">Hudson’s Algorithm</span></a> – the main simulation loop,
+the ticking of the clock.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">exponential_race</span><span class="p">(</span><span class="o">*</span><span class="n">rates</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate an exponential race.</span>
+
+<span class="sd">    Each &quot;competitor&quot; proposes a random waiting time drawn from</span>
+<span class="sd">    Exp(rate_i). The competitor with the shortest time wins.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rates : floats</span>
+<span class="sd">        Rate of each competing process.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    winner : int</span>
+<span class="sd">        Index of the process that fired first.</span>
+<span class="sd">    time : float</span>
+<span class="sd">        Waiting time until the first event.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">rate</span> <span class="ow">in</span> <span class="n">rates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rate</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Draw a random waiting time: higher rate -&gt; shorter wait on average</span>
+            <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>  <span class="c1"># rate=0 means this event never fires</span>
+
+    <span class="n">winner</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">winner</span><span class="p">,</span> <span class="n">times</span><span class="p">[</span><span class="n">winner</span><span class="p">]</span>
+
+<span class="c1"># Example: coalescence (rate=10) vs recombination (rate=5)</span>
+<span class="n">wins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span>
+    <span class="n">w</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">exponential_race</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="n">wins</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Coalescence wins: </span><span class="si">{</span><span class="n">wins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">% &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;(expected: </span><span class="si">{</span><span class="mi">10</span><span class="o">/</span><span class="mi">15</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recombination wins: </span><span class="si">{</span><span class="n">wins</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">% &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;(expected: </span><span class="si">{</span><span class="mi">5</span><span class="o">/</span><span class="mi">15</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-a-practical-subtlety admonition">
+<p class="admonition-title">A practical subtlety</p>
+<p>msprime does <strong>not</strong> actually compute the minimum of several exponential
+random variables. Instead, it draws each exponential independently and
+takes the minimum. This is mathematically equivalent but allows each
+rate to be computed separately (e.g., coalescence rates per population,
+migration rates per population pair), which is important for the
+implementation.</p>
+</div>
+<p>With the exponential race in our toolkit, we are ready to add the crucial
+complication that makes the coalescent interesting (and computationally
+challenging): recombination.</p>
+</section>
+<section id="step-4-adding-recombination">
+<h2>Step 4: Adding Recombination<a class="headerlink" href="#step-4-adding-recombination" title="Link to this heading"></a></h2>
+<p>Now the crucial complication. In the standard coalescent without recombination,
+each lineage is a single indivisible entity. With recombination, a lineage can
+<strong>split</strong>: part of the genome traces back through one parent, part through
+the other.</p>
+<p>Going backwards in time, a recombination event on a lineage at position
+<span class="math notranslate nohighlight">\(x\)</span> produces:</p>
+<ul class="simple">
+<li><p>A <strong>left lineage</strong> carrying ancestry for positions <span class="math notranslate nohighlight">\([0, x)\)</span></p></li>
+<li><p>A <strong>right lineage</strong> carrying ancestry for positions <span class="math notranslate nohighlight">\([x, L)\)</span></p></li>
+</ul>
+<p>This increases the number of lineages by one.</p>
+<p><strong>Rate of recombination.</strong> A lineage carrying a segment of length <span class="math notranslate nohighlight">\(\ell\)</span>
+has a recombination rate of <span class="math notranslate nohighlight">\(\rho \cdot \ell / L\)</span> per coalescent time
+unit, where <span class="math notranslate nohighlight">\(\rho = 4N_e r L\)</span> is the population-scaled recombination
+rate for the whole genome. Equivalently, the per-base-pair rate in coalescent
+units is <span class="math notranslate nohighlight">\(\rho / L\)</span>.</p>
+<p>The <strong>total</strong> recombination rate across all lineages is:</p>
+<div class="math notranslate nohighlight">
+\[\lambda_{\text{recomb}} = \frac{\rho}{L} \sum_{i=1}^{k} \ell_i\]</div>
+<p>where <span class="math notranslate nohighlight">\(\ell_i\)</span> is the total length of ancestry carried by lineage
+<span class="math notranslate nohighlight">\(i\)</span>.</p>
+<div class="admonition-why-recombination-rate-depends-on-segment-length admonition">
+<p class="admonition-title">Why recombination rate depends on segment length</p>
+<p>A recombination can only matter where the lineage carries ancestral
+material. If a lineage has already lost some genomic segments through
+prior coalescence events, recombination in those lost regions has no
+effect. Only the remaining “active” segments contribute to the rate.</p>
+</div>
+<div class="admonition-closing-a-confusion-gap-why-does-recombination-increase-the-lineage-count admonition">
+<p class="admonition-title">Closing a confusion gap – Why does recombination <em>increase</em> the lineage count?</p>
+<p>In forward time, recombination takes <em>two</em> parental chromosomes and
+shuffles them into <em>one</em> offspring chromosome. But in the coalescent, we
+trace ancestry <em>backwards</em>. A present-day chromosome that was formed by
+recombination has <em>two</em> parents – one for the left half and one for the
+right half. Tracing backwards, one lineage becomes two. This is the
+fundamental asymmetry of the backward view: coalescence <em>reduces</em> the
+lineage count (two children share one parent), while recombination
+<em>increases</em> it (one child has two parents for different genomic regions).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">coalescent_with_recombination_simple</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">max_events</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A simple (but slow) coalescent with recombination.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Sample size.</span>
+<span class="sd">    L : float</span>
+<span class="sd">        Genome length.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Population-scaled recombination rate (4*Ne*r*L).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    events : list of (time, event_type, details)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Each lineage is a list of (left, right) segments</span>
+    <span class="c1"># Initially, every lineage carries the full genome [0, L).</span>
+    <span class="n">lineages</span> <span class="o">=</span> <span class="p">[[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_events</span><span class="p">):</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lineages</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="c1"># Coalescence rate: any pair of k lineages can coalesce</span>
+        <span class="n">coal_rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="c1"># Recombination rate: proportional to total ancestry length</span>
+        <span class="n">total_length</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="nb">sum</span><span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">l</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">segs</span><span class="p">)</span> <span class="k">for</span> <span class="n">segs</span> <span class="ow">in</span> <span class="n">lineages</span>
+        <span class="p">)</span>
+        <span class="n">recomb_rate</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">total_length</span> <span class="o">/</span> <span class="n">L</span>
+
+        <span class="c1"># Exponential race between coalescence and recombination</span>
+        <span class="n">winner</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">exponential_race</span><span class="p">(</span><span class="n">coal_rate</span><span class="p">,</span> <span class="n">recomb_rate</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">dt</span>
+
+        <span class="k">if</span> <span class="n">winner</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Coalescence: pick two random lineages and merge</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+            <span class="n">merged</span> <span class="o">=</span> <span class="n">merge_segments</span><span class="p">(</span><span class="n">lineages</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lineages</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+            <span class="n">lineages</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+            <span class="n">lineages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span>
+            <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="s1">&#39;coal&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lineages</span><span class="p">)))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Recombination: pick a lineage weighted by length,</span>
+            <span class="c1"># then pick a breakpoint</span>
+            <span class="n">lengths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sum</span><span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">l</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">segs</span><span class="p">)</span> <span class="k">for</span> <span class="n">segs</span> <span class="ow">in</span> <span class="n">lineages</span><span class="p">]</span>
+            <span class="n">probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+
+            <span class="c1"># Pick a random position within the segments</span>
+            <span class="n">bp</span> <span class="o">=</span> <span class="n">pick_random_breakpoint</span><span class="p">(</span><span class="n">lineages</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">L</span><span class="p">)</span>
+            <span class="n">left_segs</span><span class="p">,</span> <span class="n">right_segs</span> <span class="o">=</span> <span class="n">split_at_breakpoint</span><span class="p">(</span><span class="n">lineages</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">bp</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">left_segs</span> <span class="ow">and</span> <span class="n">right_segs</span><span class="p">:</span>
+                <span class="n">lineages</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">left_segs</span>
+                <span class="n">lineages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">right_segs</span><span class="p">)</span>
+                <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="s1">&#39;recomb&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lineages</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">events</span>
+
+<span class="k">def</span> <span class="nf">merge_segments</span><span class="p">(</span><span class="n">segs_a</span><span class="p">,</span> <span class="n">segs_b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge two segment lists (simplified: just concatenate and sort).&quot;&quot;&quot;</span>
+    <span class="n">all_segs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">segs_a</span> <span class="o">+</span> <span class="n">segs_b</span><span class="p">)</span>
+    <span class="c1"># Merge overlapping intervals (coalescence reduces segment count)</span>
+    <span class="n">merged</span> <span class="o">=</span> <span class="p">[</span><span class="n">all_segs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">all_segs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="n">l</span> <span class="o">&lt;=</span> <span class="n">merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">max</span><span class="p">(</span><span class="n">merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">r</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">merged</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">merged</span>
+
+<span class="k">def</span> <span class="nf">pick_random_breakpoint</span><span class="p">(</span><span class="n">segs</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pick a random breakpoint within the segment list.&quot;&quot;&quot;</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">l</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">segs</span><span class="p">)</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total</span><span class="p">)</span>
+    <span class="n">cumulative</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">segs</span><span class="p">:</span>
+        <span class="n">cumulative</span> <span class="o">+=</span> <span class="n">r</span> <span class="o">-</span> <span class="n">l</span>
+        <span class="k">if</span> <span class="n">cumulative</span> <span class="o">&gt;=</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">bp</span> <span class="o">=</span> <span class="n">r</span> <span class="o">-</span> <span class="p">(</span><span class="n">cumulative</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">bp</span>
+    <span class="k">return</span> <span class="n">segs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">split_at_breakpoint</span><span class="p">(</span><span class="n">segs</span><span class="p">,</span> <span class="n">bp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split segments at breakpoint bp into left and right.&quot;&quot;&quot;</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">segs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="n">bp</span><span class="p">:</span>
+            <span class="n">left</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>       <span class="c1"># entirely left of breakpoint</span>
+        <span class="k">elif</span> <span class="n">l</span> <span class="o">&gt;=</span> <span class="n">bp</span><span class="p">:</span>
+            <span class="n">right</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>      <span class="c1"># entirely right of breakpoint</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">left</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">bp</span><span class="p">))</span>      <span class="c1"># straddles: split into two pieces</span>
+            <span class="n">right</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">bp</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span>
+
+<span class="c1"># Simulate</span>
+<span class="n">events</span> <span class="o">=</span> <span class="n">coalescent_with_recombination_simple</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total events: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">etype</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">events</span><span class="p">[:</span><span class="mi">10</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  t=</span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">etype</span><span class="si">:</span><span class="s2">&gt;6s</span><span class="si">}</span><span class="s2">, lineages=</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This simple implementation works, but it is slow: computing the total segment
+length requires iterating over all segments every step. In
+<a class="reference internal" href="segments_and_fenwick.html#segments-fenwick"><span class="std std-ref">Segments &amp; the Fenwick Tree</span></a>, we will replace this with a Fenwick tree – a clever
+indexing mechanism for fast event scheduling – that maintains the total in
+<span class="math notranslate nohighlight">\(O(\log n)\)</span> time.</p>
+</section>
+<section id="step-5-the-coalescent-with-recombination-in-detail">
+<h2>Step 5: The Coalescent with Recombination in Detail<a class="headerlink" href="#step-5-the-coalescent-with-recombination-in-detail" title="Link to this heading"></a></h2>
+<p>Let’s be more precise about the rates. In a population of effective size
+<span class="math notranslate nohighlight">\(N_e\)</span>, with <span class="math notranslate nohighlight">\(k\)</span> lineages, each carrying some genomic segments:</p>
+<p><strong>Coalescence rate:</strong></p>
+<p>In the standard (Hudson) model, any pair of <span class="math notranslate nohighlight">\(k\)</span> lineages can coalesce:</p>
+<div class="math notranslate nohighlight">
+\[\lambda_{\text{coal}} = \frac{\binom{k}{2}}{N_e} = \frac{k(k-1)}{2N_e}\]</div>
+<p>In coalescent time units (measured in <span class="math notranslate nohighlight">\(N_e\)</span> generations), the <span class="math notranslate nohighlight">\(N_e\)</span>
+cancels and the rate is simply <span class="math notranslate nohighlight">\(\binom{k}{2}\)</span>.</p>
+<div class="admonition-smc-and-smc-approximations admonition">
+<p class="admonition-title">SMC and SMC’ approximations</p>
+<p>In the Sequentially Markov Coalescent (SMC), not all <span class="math notranslate nohighlight">\(\binom{k}{2}\)</span>
+pairs can coalesce – only those whose ancestral segments <strong>overlap</strong>
+genomically. This reduces the rate but also the state space, making
+inference algorithms (like PSMC and SINGER) tractable.</p>
+<ul class="simple">
+<li><p><strong>SMC</strong> (McVean &amp; Cardin, 2005): After a recombination, the new lineage
+can only re-coalesce with lineages that share a marginal tree at the
+breakpoint.</p></li>
+<li><p><strong>SMC’</strong> (Marjoram &amp; Wall, 2006): Relaxes SMC slightly to allow
+re-coalescence with lineages that have contiguous ancestral segments.</p></li>
+<li><p><strong>SMC(k)</strong>: A parameterized family that interpolates between SMC and
+the full coalescent. msprime implements this using “hulls” – bounding
+boxes of each lineage’s ancestry.</p></li>
+</ul>
+</div>
+<p><strong>Recombination rate:</strong></p>
+<p>A lineage carrying total ancestral material of length <span class="math notranslate nohighlight">\(\ell\)</span> (summed
+over all its segments) experiences recombination at rate:</p>
+<div class="math notranslate nohighlight">
+\[\lambda_{\text{recomb, lineage}} = \frac{\ell}{L} \cdot \frac{\rho}{2}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\rho = 4N_e r L\)</span> is the population-scaled total recombination rate.
+In practice, with a position-dependent recombination rate map <span class="math notranslate nohighlight">\(r(x)\)</span>,
+the recombination “mass” of a segment <span class="math notranslate nohighlight">\([a, b)\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[m(a, b) = \int_a^b r(x) \, dx\]</div>
+<p>and the total recombination rate is proportional to the total mass across all
+segments.</p>
+<div class="admonition-calculus-aside-from-rate-function-to-mass admonition">
+<p class="admonition-title">Calculus Aside – From rate function to mass</p>
+<p>The integral <span class="math notranslate nohighlight">\(m(a,b) = \int_a^b r(x)\,dx\)</span> is simply the area under
+the recombination rate curve between positions <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span>.
+When the rate is constant (<span class="math notranslate nohighlight">\(r(x) = r\)</span>), this reduces to
+<span class="math notranslate nohighlight">\(m(a,b) = r \cdot (b - a)\)</span>. When the rate varies (e.g.,
+recombination hotspots), the integral accounts for the fact that some
+base pairs contribute more to the recombination probability than others.
+In <a class="reference internal" href="segments_and_fenwick.html#segments-fenwick"><span class="std std-ref">Segments &amp; the Fenwick Tree</span></a>, we will store these masses in a Fenwick tree
+so that the total can be maintained efficiently as segments are created
+and destroyed.</p>
+</div>
+<p><strong>The breakpoint</strong> is chosen uniformly over the total recombination mass
+(not uniformly over genomic position). This naturally concentrates breakpoints
+in recombination hotspots.</p>
+<p>Now that we have the recombination machinery, there is one more ingredient
+needed for realistic simulations: the effect of changing population size on
+coalescence waiting times.</p>
+</section>
+<section id="step-6-the-coalescent-waiting-time-with-growth">
+<h2>Step 6: The Coalescent Waiting Time with Growth<a class="headerlink" href="#step-6-the-coalescent-waiting-time-with-growth" title="Link to this heading"></a></h2>
+<p>When the population size changes through time, the coalescence rate changes
+too. A key case is <strong>exponential growth</strong>:</p>
+<div class="math notranslate nohighlight">
+\[N(t) = N_0 \cdot e^{-\alpha t}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha &gt; 0\)</span> is the growth rate and <span class="math notranslate nohighlight">\(t\)</span> is measured backwards
+(so the population was smaller in the past for <span class="math notranslate nohighlight">\(\alpha &gt; 0\)</span>).</p>
+<p>The coalescence rate with <span class="math notranslate nohighlight">\(k\)</span> lineages at time <span class="math notranslate nohighlight">\(t\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[\lambda(t) = \frac{\binom{k}{2}}{N(t)} = \frac{\binom{k}{2}}{N_0 e^{-\alpha t}}\]</div>
+<p>The waiting time is no longer a simple exponential. We need the cumulative
+hazard: the integral of the rate from the current time <span class="math notranslate nohighlight">\(t_0\)</span> to some
+future time <span class="math notranslate nohighlight">\(t_0 + w\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\Lambda(w) = \int_{t_0}^{t_0 + w} \frac{\binom{k}{2}}{N_0 e^{-\alpha s}} \, ds\]</div>
+<p>The survival function is <span class="math notranslate nohighlight">\(P(W &gt; w) = \exp(-\Lambda(w))\)</span>. To sample from
+this distribution, we use the inversion method.</p>
+<div class="admonition-probability-aside-the-inversion-method admonition">
+<p class="admonition-title">Probability Aside – The inversion method</p>
+<p>To sample from a distribution with survival function <span class="math notranslate nohighlight">\(S(w) = e^{-\Lambda(w)}\)</span>,
+we draw <span class="math notranslate nohighlight">\(U \sim \text{Uniform}(0,1)\)</span> and solve <span class="math notranslate nohighlight">\(S(W) = U\)</span>, i.e.,
+<span class="math notranslate nohighlight">\(\Lambda(W) = -\ln(U)\)</span>. Since <span class="math notranslate nohighlight">\(-\ln(U) \sim \text{Exp}(1)\)</span>,
+this is equivalent to drawing <span class="math notranslate nohighlight">\(E \sim \text{Exp}(1)\)</span> and solving
+<span class="math notranslate nohighlight">\(\Lambda(W) = E\)</span>. The advantage is that we can solve for <span class="math notranslate nohighlight">\(W\)</span>
+analytically when <span class="math notranslate nohighlight">\(\Lambda\)</span> has a closed-form inverse.</p>
+</div>
+<p><strong>Deriving the waiting time formula.</strong> Let <span class="math notranslate nohighlight">\(c = \binom{k}{2}\)</span>. We draw
+<span class="math notranslate nohighlight">\(U \sim \text{Exp}(2c)\)</span> (the waiting time under constant size
+<span class="math notranslate nohighlight">\(N_0 = 1\)</span>). Then we need to solve:</p>
+<div class="math notranslate nohighlight">
+\[U = \int_{t_0}^{t_0 + W} \frac{c}{N(s)} \, ds\]</div>
+<p>For constant size: <span class="math notranslate nohighlight">\(W = N_0 \cdot U / c \cdot 2 = N_0 \cdot U\)</span>, which
+gives <span class="math notranslate nohighlight">\(\text{Exp}(c / N_0)\)</span>.</p>
+<p>For exponential growth, using <span class="math notranslate nohighlight">\(N(s) = N_0 e^{-\alpha(s - t_0)}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[U = \frac{c}{N_0} \int_0^W e^{\alpha s} \, ds = \frac{c}{N_0 \alpha}(e^{\alpha W} - 1)\]</div>
+<div class="admonition-calculus-aside-evaluating-the-growth-integral admonition">
+<p class="admonition-title">Calculus Aside – Evaluating the growth integral</p>
+<p>The integral <span class="math notranslate nohighlight">\(\int_0^W e^{\alpha s}\,ds\)</span> has antiderivative
+<span class="math notranslate nohighlight">\(\frac{1}{\alpha}e^{\alpha s}\)</span>. Evaluating:</p>
+<div class="math notranslate nohighlight">
+\[\int_0^W e^{\alpha s}\,ds = \frac{1}{\alpha}\left[e^{\alpha W} - e^{0}\right] = \frac{e^{\alpha W} - 1}{\alpha}\]</div>
+<p>This integral appears frequently in demographic models. When
+<span class="math notranslate nohighlight">\(\alpha \to 0\)</span>, l’Hopital’s rule gives
+<span class="math notranslate nohighlight">\(\frac{e^{\alpha W} - 1}{\alpha} \to W\)</span>, recovering the
+constant-size case.</p>
+</div>
+<p>Solving for <span class="math notranslate nohighlight">\(W\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[e^{\alpha W} = 1 + \frac{\alpha N_0 U}{c}\]</div>
+<p>Taking the logarithm:</p>
+<div class="math notranslate nohighlight">
+\[W = \frac{1}{\alpha} \ln\left(1 + \alpha N_0 U \cdot \frac{1}{c}\right)\]</div>
+<p>This is valid only if <span class="math notranslate nohighlight">\(1 + \alpha N_0 U / c &gt; 0\)</span>. When <span class="math notranslate nohighlight">\(\alpha &lt; 0\)</span>
+(population was <em>larger</em> in the past), the argument can become zero or negative,
+meaning the population was so large that coalescence never occurs within the
+growth epoch – the simulation must wait for a demographic event that changes
+the growth rate.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">math</span>
+
+<span class="k">def</span> <span class="nf">coalescent_waiting_time_constant</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Waiting time for k lineages, constant population size N.&quot;&quot;&quot;</span>
+    <span class="n">rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># binom(k,2)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">rate</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">N</span> <span class="o">*</span> <span class="n">u</span>  <span class="c1"># scale from coalescent units to generations</span>
+
+<span class="k">def</span> <span class="nf">coalescent_waiting_time_growth</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">N0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">t0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Waiting time for k lineages, exponential growth.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k : int</span>
+<span class="sd">        Number of lineages.</span>
+<span class="sd">    N0 : float</span>
+<span class="sd">        Current population size.</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Growth rate (positive = population was smaller in the past).</span>
+<span class="sd">    t0 : float</span>
+<span class="sd">        Current time.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    w : float</span>
+<span class="sd">        Waiting time (can be inf if coalescence doesn&#39;t occur).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># binom(k,2)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">rate</span><span class="p">))</span>  <span class="c1"># draw from Exp(2c)</span>
+
+    <span class="k">if</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">N0</span> <span class="o">*</span> <span class="n">u</span>  <span class="c1"># constant-size case</span>
+
+    <span class="n">dt</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># already at t0</span>
+    <span class="c1"># Apply the inversion formula derived above</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">N0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span>
+    <span class="k">if</span> <span class="n">z</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>  <span class="c1"># coalescence doesn&#39;t happen in this epoch</span>
+
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="n">alpha</span>
+
+<span class="c1"># Compare waiting times: constant vs growing population</span>
+<span class="n">N0</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span> <span class="mf">0.01</span>
+<span class="n">k</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">n_reps</span> <span class="o">=</span> <span class="mi">10000</span>
+
+<span class="n">const_times</span> <span class="o">=</span> <span class="p">[</span><span class="n">coalescent_waiting_time_constant</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">N0</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_reps</span><span class="p">)]</span>
+<span class="n">growth_times</span> <span class="o">=</span> <span class="p">[</span><span class="n">coalescent_waiting_time_growth</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">N0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_reps</span><span class="p">)]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Constant N=</span><span class="si">{</span><span class="n">N0</span><span class="si">}</span><span class="s2">: mean waiting time = </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">const_times</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> gen&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Growth alpha=</span><span class="si">{</span><span class="n">alpha</span><span class="si">}</span><span class="s2">: mean waiting time = </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">growth_times</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> gen&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(Growth concentrates coalescences in the recent past)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-the-formula-in-msprime-s-code admonition">
+<p class="admonition-title">The formula in msprime’s code</p>
+<p>In the reference implementation (<code class="docutils literal notranslate"><span class="pre">algorithms.py</span></code>), the waiting time
+with growth is computed in <code class="docutils literal notranslate"><span class="pre">Population._get_common_ancestor_waiting_time</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">u</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">expovariate</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="p">)</span>
+<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">growth_rate</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_size</span> <span class="o">*</span> <span class="n">u</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">growth_rate</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_size</span>
+        <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">growth_rate</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span>
+    <span class="k">if</span> <span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">growth_rate</span>
+</pre></div>
+</div>
+<p>This matches our derivation exactly.</p>
+</div>
+<p>With coalescence, recombination, and variable population size all accounted
+for, there is one more biological mechanism to add: gene conversion.</p>
+</section>
+<section id="step-7-gene-conversion">
+<h2>Step 7: Gene Conversion<a class="headerlink" href="#step-7-gene-conversion" title="Link to this heading"></a></h2>
+<p>Gene conversion is a recombination-like event with a twist: instead of
+exchanging everything to one side of a breakpoint, it copies a short
+<strong>tract</strong> of DNA (typically a few hundred base pairs) from one homolog
+to the other.</p>
+<p>Going backwards in time, a gene conversion event produces two lineages:</p>
+<ul class="simple">
+<li><p>One carrying a short segment (the converted tract)</p></li>
+<li><p>One carrying everything except that tract</p></li>
+</ul>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Before gene conversion (going backwards):
+
+Lineage:  ==========================================
+                        | gene conversion at position x
+                        | with tract length l
+
+After:
+Lineage 1: ============     ========================
+                       |   |
+Lineage 2:             =====
+                       x   x+l
+</pre></div>
+</div>
+<p>The <strong>rate</strong> of gene conversion initiation is proportional to the total
+genomic mass of the lineage, just like recombination. The <strong>tract length</strong>
+is drawn from a geometric distribution (discrete genome) or exponential
+distribution (continuous genome):</p>
+<div class="math notranslate nohighlight">
+\[\ell \sim \text{Geometric}(1/\bar{\ell}) \quad \text{or} \quad
+\ell \sim \text{Exponential}(\bar{\ell})\]</div>
+<p>where <span class="math notranslate nohighlight">\(\bar{\ell}\)</span> is the mean tract length (typically ~300-500 bp in
+humans).</p>
+<p>Additionally, gene conversion can occur <strong>to the left</strong> of the first ancestral
+segment, producing a lineage that extends the ancestry leftward:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Before:        ===== ======= ====
+               |
+Gene conversion starting to the left:
+
+After:
+Lineage 1:     ===== ======= ====
+Lineage 2: ====
+           |        |
+           (new)    (original start)
+</pre></div>
+</div>
+<p>This “left extension” has a separate rate proportional to the number of
+ancestors times the mean gene conversion rate times the tract length.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">gene_conversion_event</span><span class="p">(</span><span class="n">segments</span><span class="p">,</span> <span class="n">gc_position</span><span class="p">,</span> <span class="n">tract_length</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate a gene conversion event.</span>
+
+<span class="sd">    Gene conversion removes a short tract from the main lineage and</span>
+<span class="sd">    places it on a new lineage. This is like recombination, but</span>
+<span class="sd">    instead of splitting left/right, it punches a &quot;hole&quot; in the middle.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    segments : list of (left, right)</span>
+<span class="sd">        Segments of the lineage.</span>
+<span class="sd">    gc_position : float</span>
+<span class="sd">        Starting position of the gene conversion.</span>
+<span class="sd">    tract_length : float</span>
+<span class="sd">        Length of the converted tract.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    main_segs : list of (left, right)</span>
+<span class="sd">        Remaining segments of the main lineage.</span>
+<span class="sd">    tract_segs : list of (left, right)</span>
+<span class="sd">        Segments of the gene conversion tract lineage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gc_left</span> <span class="o">=</span> <span class="n">gc_position</span>
+    <span class="n">gc_right</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">gc_position</span> <span class="o">+</span> <span class="n">tract_length</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+
+    <span class="n">main_segs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">tract_segs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">segments</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="n">gc_left</span> <span class="ow">or</span> <span class="n">l</span> <span class="o">&gt;=</span> <span class="n">gc_right</span><span class="p">:</span>
+            <span class="c1"># Entirely outside tract: stays with main</span>
+            <span class="n">main_segs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">l</span> <span class="o">&gt;=</span> <span class="n">gc_left</span> <span class="ow">and</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="n">gc_right</span><span class="p">:</span>
+            <span class="c1"># Entirely inside tract: goes to tract lineage</span>
+            <span class="n">tract_segs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="n">gc_left</span> <span class="ow">and</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="n">gc_right</span><span class="p">:</span>
+            <span class="c1"># Straddles both sides: split into three pieces</span>
+            <span class="n">main_segs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">gc_left</span><span class="p">))</span>
+            <span class="n">tract_segs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">gc_left</span><span class="p">,</span> <span class="n">gc_right</span><span class="p">))</span>
+            <span class="n">main_segs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">gc_right</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="n">gc_left</span><span class="p">:</span>
+            <span class="c1"># Overlaps left boundary only</span>
+            <span class="n">main_segs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">gc_left</span><span class="p">))</span>
+            <span class="n">tract_segs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">gc_left</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Overlaps right boundary only</span>
+            <span class="n">tract_segs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">gc_right</span><span class="p">))</span>
+            <span class="n">main_segs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">gc_right</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">main_segs</span><span class="p">,</span> <span class="n">tract_segs</span>
+
+<span class="c1"># Example</span>
+<span class="n">segs</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span> <span class="p">(</span><span class="mi">700</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)]</span>
+<span class="n">main</span><span class="p">,</span> <span class="n">tract</span> <span class="o">=</span> <span class="n">gene_conversion_event</span><span class="p">(</span><span class="n">segs</span><span class="p">,</span> <span class="n">gc_position</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">tract_length</span><span class="o">=</span><span class="mi">350</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original: </span><span class="si">{</span><span class="n">segs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Main:     </span><span class="si">{</span><span class="n">main</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tract:    </span><span class="si">{</span><span class="n">tract</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With all event types defined, let us now summarize the complete rate table.</p>
+</section>
+<section id="step-8-putting-it-together-event-rates-summary">
+<h2>Step 8: Putting It Together – Event Rates Summary<a class="headerlink" href="#step-8-putting-it-together-event-rates-summary" title="Link to this heading"></a></h2>
+<p>At any point in the simulation, with <span class="math notranslate nohighlight">\(k\)</span> lineages in a population of
+size <span class="math notranslate nohighlight">\(N(t)\)</span>, the competing event rates are:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 40.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Event</p></th>
+<th class="head"><p>Rate</p></th>
+<th class="head"><p>Effect</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Coalescence</p></td>
+<td><p><span class="math notranslate nohighlight">\(\binom{k}{2} / N(t)\)</span></p></td>
+<td><p>Two lineages merge (<span class="math notranslate nohighlight">\(k \to k-1\)</span>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Recombination</p></td>
+<td><p><span class="math notranslate nohighlight">\(\sum_i m_i^{\text{recomb}}\)</span></p></td>
+<td><p>One lineage splits (<span class="math notranslate nohighlight">\(k \to k+1\)</span>)</p></td>
+</tr>
+<tr class="row-even"><td><p>Gene conversion (within)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\sum_i m_i^{\text{gc}}\)</span></p></td>
+<td><p>One lineage splits (<span class="math notranslate nohighlight">\(k \to k+1\)</span>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Gene conversion (left)</p></td>
+<td><p><span class="math notranslate nohighlight">\(k \cdot \bar{g} \cdot \bar{\ell}\)</span></p></td>
+<td><p>One lineage splits (<span class="math notranslate nohighlight">\(k \to k+1\)</span>)</p></td>
+</tr>
+<tr class="row-even"><td><p>Migration</p></td>
+<td><p><span class="math notranslate nohighlight">\(k_j \cdot M_{j \to j'}\)</span></p></td>
+<td><p>One lineage moves between populations</p></td>
+</tr>
+</tbody>
+</table>
+<p>where <span class="math notranslate nohighlight">\(m_i^{\text{recomb}}\)</span> is the recombination mass of lineage
+<span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(m_i^{\text{gc}}\)</span> is the gene conversion mass.</p>
+<p>The simulation draws independent exponential waiting times for each event
+type, takes the minimum, advances time, and executes the winning event.
+This is the exponential race in full generality, and it drives the main loop
+of <a class="reference internal" href="hudson_algorithm.html#hudson-algorithm"><span class="std std-ref">Hudson’s Algorithm</span></a>.</p>
+<div class="admonition-termination-condition admonition">
+<p class="admonition-title">Termination condition</p>
+<p>The simulation terminates when every genomic position has found its MRCA.
+This is tracked by an overlap counter <span class="math notranslate nohighlight">\(S[x]\)</span> that records how many
+lineages carry ancestral material at position <span class="math notranslate nohighlight">\(x\)</span>. When
+<span class="math notranslate nohighlight">\(S[x] = 1\)</span> for all <span class="math notranslate nohighlight">\(x\)</span>, we’re done. (In practice, msprime
+uses <code class="docutils literal notranslate"><span class="pre">S[x]</span> <span class="pre">=</span> <span class="pre">0</span></code> after a final decrement, stored in an AVL tree keyed
+by genomic position.) We will build this overlap counter in
+<a class="reference internal" href="segments_and_fenwick.html#segments-fenwick"><span class="std std-ref">Segments &amp; the Fenwick Tree</span></a>.</p>
+</div>
+<p>We now have the complete mathematical specification of the coalescent with
+recombination. Every rate, every distribution, every event type is defined.
+But simulating this efficiently requires clever data structures – which
+brings us to the next chapter.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-verify-the-coalescent admonition">
+<p class="admonition-title">Exercise 1: Verify the coalescent</p>
+<p>Simulate 10,000 coalescent trees with <span class="math notranslate nohighlight">\(n = 10\)</span>. Compute the mean
+and variance of <span class="math notranslate nohighlight">\(T_{\text{MRCA}}\)</span>. Compare to the theoretical
+values: <span class="math notranslate nohighlight">\(E[T_{\text{MRCA}}] = 2(1 - 1/n)\)</span>,
+<span class="math notranslate nohighlight">\(\text{Var}(T_{\text{MRCA}}) = \sum_{k=2}^n 4/[k(k-1)]^2\)</span>.</p>
+</div>
+<div class="admonition-exercise-2-the-exponential-race admonition">
+<p class="admonition-title">Exercise 2: The exponential race</p>
+<p>Implement the exponential race for 3 competing events with rates 1, 2, 3.
+Verify empirically that event <span class="math notranslate nohighlight">\(i\)</span> wins with probability
+<span class="math notranslate nohighlight">\(\lambda_i / \sum \lambda_j\)</span>, and the minimum has rate
+<span class="math notranslate nohighlight">\(\sum \lambda_j\)</span>.</p>
+</div>
+<div class="admonition-exercise-3-coalescent-with-recombination admonition">
+<p class="admonition-title">Exercise 3: Coalescent with recombination</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">coalescent_with_recombination_simple</span></code> to simulate 1000 genealogies
+with <span class="math notranslate nohighlight">\(n = 5\)</span>, <span class="math notranslate nohighlight">\(L = 10^4\)</span>, and varying <span class="math notranslate nohighlight">\(\rho\)</span>. Plot
+the number of recombination events as a function of <span class="math notranslate nohighlight">\(\rho\)</span>. Compare
+to the theoretical expectation: <span class="math notranslate nohighlight">\(E[\text{recomb events}] \approx \rho \cdot \sum_{k=2}^n 1/(k-1)\)</span>.</p>
+</div>
+<div class="admonition-exercise-4-growth-vs-constant-size admonition">
+<p class="admonition-title">Exercise 4: Growth vs. constant size</p>
+<p>Simulate coalescent trees under (a) constant <span class="math notranslate nohighlight">\(N = 10{,}000\)</span> and
+(b) exponential growth with <span class="math notranslate nohighlight">\(N_0 = 10{,}000\)</span>, <span class="math notranslate nohighlight">\(\alpha = 0.01\)</span>.
+Plot the distributions of <span class="math notranslate nohighlight">\(T_{\text{MRCA}}\)</span>. How does growth affect
+the shape of the genealogy?</p>
+</div>
+<p>Next: <a class="reference internal" href="segments_and_fenwick.html#segments-fenwick"><span class="std std-ref">Segments &amp; the Fenwick Tree</span></a> – the linked-list track that follows each
+lineage’s ancestral material, and the Fenwick tree – a clever indexing
+mechanism for fast event scheduling.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of msprime" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="segments_and_fenwick.html" class="btn btn-neutral float-right" title="Segments &amp; the Fenwick Tree" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

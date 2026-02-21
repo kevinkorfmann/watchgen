@@ -1,0 +1,1317 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Sampling &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="ARG Rescaling" href="arg_rescaling.html" />
+    <link rel="prev" title="Branch Sampling" href="branch_sampling.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece VI: SINGER</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece VI: SINGER</a></li>
+      <li class="breadcrumb-item active">Time Sampling</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="branch_sampling.html" class="btn btn-neutral float-left" title="Branch Sampling" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="arg_rescaling.html" class="btn btn-neutral float-right" title="ARG Rescaling" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="time-sampling">
+<span id="id1"></span><h1>Time Sampling<a class="headerlink" href="#time-sampling" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The branch tells you where. The time tells you when.</em></p>
+</div></blockquote>
+<p>In the <a class="reference internal" href="branch_sampling.html#branch-sampling"><span class="std std-ref">previous chapter</span></a>, we built the largest gear in
+the SINGER mechanism: the branch sampling HMM that determines <em>which branch</em>
+of the marginal tree the new lineage joins at each genomic bin. That gear
+found the right slot in the movement. Now we need to set the depth – the
+precise <em>time</em> at which the new lineage coalesces within that branch.</p>
+<p>Think of it this way. Branch sampling told us which floor of the building to
+go to; time sampling tells us exactly where on that floor to stand. Or, in the
+watch metaphor: the branch sampling gear engaged the right tooth; now we need
+to set how deeply the tooth meshes – the depth of engagement that determines
+the beat rate.</p>
+<p>After branch sampling gives us a sequence of joining branches along the genome,
+time sampling determines the <strong>coalescence time</strong> within each branch. This is
+formulated as a second HMM, closely related to the Pairwise Sequentially Markov
+Coalescent (<a class="reference internal" href="../psmc/index.html#psmc-timepiece"><span class="std std-ref">PSMC</span></a>).</p>
+<section id="the-setup">
+<h2>The Setup<a class="headerlink" href="#the-setup" title="Link to this heading"></a></h2>
+<p>From branch sampling, we have a sequence of full joining branches
+<span class="math notranslate nohighlight">\(b_1, b_2, \ldots, b_L\)</span>, one per genomic bin. Each branch <span class="math notranslate nohighlight">\(b_\ell\)</span>
+spans a time interval <span class="math notranslate nohighlight">\([x_\ell, y_\ell)\)</span>.</p>
+<p>The time sampling HMM needs to sample a joining time <span class="math notranslate nohighlight">\(T_\ell \in [x_\ell, y_\ell)\)</span>
+at each bin <span class="math notranslate nohighlight">\(\ell\)</span>, consistent with the coalescent dynamics and the observed
+mutations.</p>
+<div class="admonition-partial-branches admonition">
+<p class="admonition-title">Partial branches</p>
+<p>Although the branch sampling HMM uses both full and partial branch states,
+only the <strong>full joining branches</strong> are passed to the time sampling step.
+Partial branches are used internally by branch sampling to ensure correctness,
+but the final sampled sequence consists entirely of full branches.</p>
+</div>
+<div class="admonition-probability-aside-time-sampling-as-a-conditional-hmm admonition">
+<p class="admonition-title">Probability Aside – Time Sampling as a Conditional HMM</p>
+<p>Time sampling is a <strong>conditional HMM</strong>: the state space at each bin is
+<em>determined by</em> the branch sampling output. At bin <span class="math notranslate nohighlight">\(\ell\)</span>, the hidden
+state is a sub-interval of <span class="math notranslate nohighlight">\([x_\ell, y_\ell)\)</span>, the time range of the
+joining branch <span class="math notranslate nohighlight">\(b_\ell\)</span>. The state space changes from bin to bin
+because the joining branch changes.</p>
+<p>This is conceptually different from a standard HMM where the state space
+is fixed across all positions. Here, the state space adapts to the branch
+assignment – a form of <strong>hierarchical inference</strong> where the first HMM
+(branch sampling) constrains the second HMM (time sampling).</p>
+</div>
+</section>
+<section id="step-1-discretizing-the-time-interval">
+<h2>Step 1: Discretizing the Time Interval<a class="headerlink" href="#step-1-discretizing-the-time-interval" title="Link to this heading"></a></h2>
+<p>The time interval <span class="math notranslate nohighlight">\([x_\ell, y_\ell)\)</span> for each branch is partitioned into
+<span class="math notranslate nohighlight">\(d\)</span> sub-intervals:</p>
+<div class="math notranslate nohighlight">
+\[[t_{\ell,0}, t_{\ell,1}), \quad [t_{\ell,1}, t_{\ell,2}), \quad \ldots, \quad [t_{\ell,d-1}, t_{\ell,d})\]</div>
+<p>where <span class="math notranslate nohighlight">\(t_{\ell,0} = x_\ell\)</span> and <span class="math notranslate nohighlight">\(t_{\ell,d} = y_\ell\)</span>.</p>
+<p>The partition is <strong>uniform with respect to the exponential distribution</strong> with
+rate 1. By default, SINGER uses 5% quantile spacing (so <span class="math notranslate nohighlight">\(d = 20\)</span>).</p>
+<p><strong>Why not uniform in time?</strong> Under the coalescent, coalescence times are
+approximately exponentially distributed, meaning events are concentrated toward
+the present (<span class="math notranslate nohighlight">\(t = 0\)</span>). A uniform-in-time partition would waste many
+sub-intervals on ancient times where little happens, and have too few
+sub-intervals near the present where the density is highest. Uniform-in-CDF
+spacing gives each sub-interval equal probability mass, so each sub-interval
+is equally “important” for the inference.</p>
+<div class="admonition-probability-aside-quantile-spacing-and-equal-information-content admonition">
+<p class="admonition-title">Probability Aside – Quantile Spacing and Equal Information Content</p>
+<p>This is the same principle we encountered in <a class="reference internal" href="../psmc/discretization.html#psmc-discretization"><span class="std std-ref">PSMC’s time discretization</span></a>, where log-spaced intervals were chosen to give each
+interval roughly equal statistical weight. Here, SINGER uses <strong>quantile
+spacing</strong> of the exponential distribution restricted to <span class="math notranslate nohighlight">\([x, y)\)</span>.</p>
+<p>The idea: if a random variable <span class="math notranslate nohighlight">\(T\)</span> has CDF <span class="math notranslate nohighlight">\(F(t)\)</span>, the
+<span class="math notranslate nohighlight">\(k\)</span>-th quantile is the value <span class="math notranslate nohighlight">\(t\)</span> such that
+<span class="math notranslate nohighlight">\(F(t) = k/d\)</span>. Spacing the boundaries at quantiles ensures that
+each sub-interval captures <span class="math notranslate nohighlight">\(1/d\)</span> of the probability mass – each
+sub-interval is equally likely to contain the coalescence time.</p>
+<p>For the exponential distribution <span class="math notranslate nohighlight">\(\text{Exp}(1)\)</span>, the CDF is
+<span class="math notranslate nohighlight">\(F(t) = 1 - e^{-t}\)</span>. The quantiles of the exponential are
+<span class="math notranslate nohighlight">\(t_k = -\ln(1 - k/d)\)</span>, which gives denser spacing near <span class="math notranslate nohighlight">\(t = 0\)</span>
+(where <span class="math notranslate nohighlight">\(F\)</span> is steep) and sparser spacing for large <span class="math notranslate nohighlight">\(t\)</span> (where
+<span class="math notranslate nohighlight">\(F\)</span> is flat). This matches the concentration of coalescence events
+near the present.</p>
+</div>
+<p><strong>Deriving the partition boundaries.</strong> The CDF of <span class="math notranslate nohighlight">\(\text{Exp}(1)\)</span> is
+<span class="math notranslate nohighlight">\(F(t) = 1 - e^{-t}\)</span>. We want the <span class="math notranslate nohighlight">\(k\)</span>-th quantile of the
+<span class="math notranslate nohighlight">\(\text{Exp}(1)\)</span> distribution <strong>restricted to</strong> <span class="math notranslate nohighlight">\([x, y)\)</span>.</p>
+<p>The conditional CDF on <span class="math notranslate nohighlight">\([x, y)\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[F_{[x,y)}(t) = \frac{F(t) - F(x)}{F(y) - F(x)} = \frac{e^{-x} - e^{-t}}{e^{-x} - e^{-y}}, \quad x \leq t &lt; y\]</div>
+<div class="admonition-calculus-aside-conditional-cdf-by-truncation admonition">
+<p class="admonition-title">Calculus Aside – Conditional CDF by Truncation</p>
+<p>The conditional CDF <span class="math notranslate nohighlight">\(F_{[x,y)}(t)\)</span> is obtained by <strong>restricting</strong> the
+original distribution to the interval <span class="math notranslate nohighlight">\([x, y)\)</span>. This is Bayes’ rule
+applied to continuous distributions:</p>
+<div class="math notranslate nohighlight">
+\[F_{[x,y)}(t) = P(T \leq t \mid x \leq T &lt; y)
+= \frac{P(x \leq T \leq t)}{P(x \leq T &lt; y)}
+= \frac{F(t) - F(x)}{F(y) - F(x)}\]</div>
+<p>The numerator is the probability mass between <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(t\)</span>; the
+denominator is the total mass in the allowed interval. This ensures
+<span class="math notranslate nohighlight">\(F_{[x,y)}(x) = 0\)</span> and <span class="math notranslate nohighlight">\(F_{[x,y)}(y) = 1\)</span>, as required for a
+valid CDF on <span class="math notranslate nohighlight">\([x, y)\)</span>.</p>
+</div>
+<p>Setting this equal to <span class="math notranslate nohighlight">\(k/d\)</span> (for the <span class="math notranslate nohighlight">\(k\)</span>-th boundary out of <span class="math notranslate nohighlight">\(d\)</span>
+equally-spaced quantiles):</p>
+<div class="math notranslate nohighlight">
+\[\frac{e^{-x} - e^{-t_k}}{e^{-x} - e^{-y}} = \frac{k}{d}\]</div>
+<p>Solving for <span class="math notranslate nohighlight">\(e^{-t_k}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[e^{-t_k} = e^{-x} - \frac{k}{d}(e^{-x} - e^{-y})\]</div>
+<p>Taking <span class="math notranslate nohighlight">\(-\ln\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[t_{\ell,k} = -\ln\left(e^{-x} - \frac{k}{d}(e^{-x} - e^{-y})\right)\]</div>
+<p><strong>Verification</strong>: At <span class="math notranslate nohighlight">\(k = 0\)</span>, <span class="math notranslate nohighlight">\(t_0 = -\ln(e^{-x}) = x\)</span> <span class="math notranslate nohighlight">\(\checkmark\)</span>.
+At <span class="math notranslate nohighlight">\(k = d\)</span>, <span class="math notranslate nohighlight">\(t_d = -\ln(e^{-x} - (e^{-x} - e^{-y})) = -\ln(e^{-y}) = y\)</span> <span class="math notranslate nohighlight">\(\checkmark\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">partition_branch</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Partition a branch [x, y) into d sub-intervals.</span>
+
+<span class="sd">    Uses uniform spacing in the exponential CDF, so sub-intervals</span>
+<span class="sd">    have equal probability mass under Exp(1).  This gives denser</span>
+<span class="sd">    spacing near the present (x) and sparser spacing toward the</span>
+<span class="sd">    past (y), matching where coalescence events are most likely.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x, y : float</span>
+<span class="sd">        Lower and upper time of the branch.</span>
+<span class="sd">    d : int</span>
+<span class="sd">        Number of sub-intervals.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    boundaries : ndarray of shape (d + 1,)</span>
+<span class="sd">        Time boundaries [t_0, t_1, ..., t_d].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exp_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># e^{-x}: survival probability at lower endpoint</span>
+    <span class="n">exp_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">y</span><span class="p">)</span>  <span class="c1"># e^{-y}: survival probability at upper endpoint</span>
+    <span class="c1"># fractions = [0, 1/d, 2/d, ..., 1]: the quantile levels</span>
+    <span class="n">fractions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Linear interpolation between exp_x and exp_y, then invert</span>
+    <span class="c1"># via -log to get the time boundaries</span>
+    <span class="n">boundaries</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">exp_x</span> <span class="o">-</span> <span class="n">fractions</span> <span class="o">*</span> <span class="p">(</span><span class="n">exp_x</span> <span class="o">-</span> <span class="n">exp_y</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">boundaries</span>
+
+<span class="c1"># Example: branch [0.1, 2.0], 10 sub-intervals</span>
+<span class="n">boundaries</span> <span class="o">=</span> <span class="n">partition_branch</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sub-interval boundaries:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [</span><span class="si">{</span><span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">) width=</span><span class="si">{</span><span class="n">width</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Notice that the sub-intervals are narrower near <span class="math notranslate nohighlight">\(x = 0.1\)</span> (the present)
+and wider near <span class="math notranslate nohighlight">\(y = 2.0\)</span> (the past). This is exactly the exponential
+quantile spacing at work.</p>
+<p>Representative time for each sub-interval:</p>
+<div class="math notranslate nohighlight">
+\[\exp(-\tau_{\ell,i}) = \frac{\exp(-t_{\ell,i}) + \exp(-t_{\ell,i+1})}{2}\]</div>
+<div class="admonition-calculus-aside-why-average-in-exponential-space admonition">
+<p class="admonition-title">Calculus Aside – Why Average in Exponential Space?</p>
+<p>The representative time <span class="math notranslate nohighlight">\(\tau_i\)</span> is defined so that
+<span class="math notranslate nohighlight">\(e^{-\tau_i}\)</span> is the average of <span class="math notranslate nohighlight">\(e^{-t_i}\)</span> and
+<span class="math notranslate nohighlight">\(e^{-t_{i+1}}\)</span>. This is <em>not</em> the same as averaging the times
+directly (which would give the arithmetic midpoint <span class="math notranslate nohighlight">\((t_i + t_{i+1})/2\)</span>).</p>
+<p>Averaging in exponential space means <span class="math notranslate nohighlight">\(\tau_i\)</span> is the time whose
+“survival weight” <span class="math notranslate nohighlight">\(e^{-\tau_i}\)</span> is the midpoint of the survival
+weights at the endpoints. Since the coalescent density is proportional to
+<span class="math notranslate nohighlight">\(e^{-t}\)</span>, this choice ensures that <span class="math notranslate nohighlight">\(\tau_i\)</span> sits at the
+“center of mass” of the sub-interval under the exponential distribution –
+a better representative than the arithmetic midpoint.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">representative_times</span><span class="p">(</span><span class="n">boundaries</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute representative time for each sub-interval.</span>
+
+<span class="sd">    The representative time sits at the center of mass of the</span>
+<span class="sd">    sub-interval under the exponential distribution, not at the</span>
+<span class="sd">    arithmetic midpoint.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    boundaries : ndarray of shape (d + 1,)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    taus : ndarray of shape (d,)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">taus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+        <span class="c1"># Average in survival-probability space, then invert</span>
+        <span class="n">avg_exp</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">taus</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">avg_exp</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">taus</span>
+
+<span class="n">taus</span> <span class="o">=</span> <span class="n">representative_times</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Representative times:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tau</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">taus</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Sub-interval </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: tau = </span><span class="si">{</span><span class="n">tau</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With the branch partitioned into sub-intervals, each with a representative time,
+we now need the transition model: how does the coalescence time change from one
+bin to the next? This is where the PSMC transition density enters.</p>
+</section>
+<section id="step-2-the-psmc-transition-density">
+<h2>Step 2: The PSMC Transition Density<a class="headerlink" href="#step-2-the-psmc-transition-density" title="Link to this heading"></a></h2>
+<p>The core transition in time sampling comes from the PSMC model. If you have
+worked through <a class="reference internal" href="../psmc/continuous_model.html#psmc-continuous"><span class="std std-ref">the PSMC continuous model</span></a>, the
+transition density below will be familiar – it is the same formula that
+describes how coalescence times change between adjacent genomic positions due to
+recombination. Here we use it in a slightly different context: instead of
+transitioning between time intervals of arbitrary range <span class="math notranslate nohighlight">\([0, \infty)\)</span>, we
+transition within the time range of a specific joining branch.</p>
+<p>When the joining branch spans <span class="math notranslate nohighlight">\([0, \infty)\)</span> (the simple case first), the
+transition density from time <span class="math notranslate nohighlight">\(s\)</span> to time <span class="math notranslate nohighlight">\(t\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}q_0(t \mid s) = \int_0^{s \wedge t} \frac{1}{s} e^{-(t-u)} du =
+\begin{cases}
+\frac{1}{s}[1 - e^{-t}] &amp; t &lt; s \\
+\frac{1}{s}[e^{-(t-s)} - e^{-t}] &amp; t \geq s
+\end{cases}\end{split}\]</div>
+<div class="admonition-probability-aside-the-recombination-recoalescence-model admonition">
+<p class="admonition-title">Probability Aside – The Recombination-Recoalescence Model</p>
+<p>This transition density models the process of <strong>recombination followed by
+re-coalescence</strong>. Here is the physical picture:</p>
+<ol class="arabic simple">
+<li><p>The current coalescence time is <span class="math notranslate nohighlight">\(s\)</span>. The lineage has a branch from
+<span class="math notranslate nohighlight">\(0\)</span> to <span class="math notranslate nohighlight">\(s\)</span> connecting it to the tree.</p></li>
+<li><p>A recombination occurs at a uniform random position <span class="math notranslate nohighlight">\(u\)</span> on this
+branch, i.e., <span class="math notranslate nohighlight">\(u \sim \text{Uniform}(0, s)\)</span>. The lineage is
+“cut” at time <span class="math notranslate nohighlight">\(u\)</span>.</p></li>
+<li><p>From time <span class="math notranslate nohighlight">\(u\)</span>, the detached lineage must re-coalesce with the
+remaining tree. Under the standard coalescent, it waits an
+<span class="math notranslate nohighlight">\(\text{Exp}(1)\)</span> time before finding a new partner. The new
+coalescence time is <span class="math notranslate nohighlight">\(t = u + W\)</span> where <span class="math notranslate nohighlight">\(W \sim \text{Exp}(1)\)</span>.</p></li>
+</ol>
+<p>The density <span class="math notranslate nohighlight">\(q_0(t|s)\)</span> integrates over all possible recombination
+points <span class="math notranslate nohighlight">\(u \in [0, \min(s,t)]\)</span>, weighting each by the uniform
+density <span class="math notranslate nohighlight">\(1/s\)</span> and the exponential re-coalescence density
+<span class="math notranslate nohighlight">\(e^{-(t-u)}\)</span>.</p>
+<p>The <span class="math notranslate nohighlight">\(\min(s,t)\)</span> in the integration limit arises because recombination
+can only happen on the existing branch <span class="math notranslate nohighlight">\([0, s]\)</span>, and must happen
+before the new coalescence time <span class="math notranslate nohighlight">\(t\)</span>.</p>
+</div>
+<p><strong>Intuition</strong>: A recombination occurs somewhere on the branch below time <span class="math notranslate nohighlight">\(s\)</span>,
+uniformly at time <span class="math notranslate nohighlight">\(u \in [0, s]\)</span>. From <span class="math notranslate nohighlight">\(u\)</span>, the new lineage waits
+an <span class="math notranslate nohighlight">\(\text{Exp}(1)\)</span> time before re-coalescing at time <span class="math notranslate nohighlight">\(t\)</span>.</p>
+<p>Including the possibility of no recombination:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}q_\rho(t \mid s) =
+\begin{cases}
+\frac{1 - e^{-\rho s}}{s}[1 - e^{-t}] &amp; t &lt; s \\[6pt]
+e^{-\rho s} &amp; t = s \text{ (point mass: no recombination)} \\[6pt]
+\frac{1 - e^{-\rho s}}{s}[e^{-(t-s)} - e^{-t}] &amp; t &gt; s
+\end{cases}\end{split}\]</div>
+<div class="admonition-probability-aside-the-point-mass-at-math-t-s admonition">
+<p class="admonition-title">Probability Aside – The Point Mass at <span class="math notranslate nohighlight">\(t = s\)</span></p>
+<p>The term <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span> at <span class="math notranslate nohighlight">\(t = s\)</span> is a <strong>point mass</strong> – a
+discrete probability sitting at a single point in an otherwise continuous
+distribution. It represents the event “no recombination occurred,” which
+has probability <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span> (the survival probability of a Poisson
+process with rate <span class="math notranslate nohighlight">\(\rho\)</span> over a branch of length <span class="math notranslate nohighlight">\(s\)</span>).</p>
+<p>When no recombination occurs, the coalescence time stays exactly at <span class="math notranslate nohighlight">\(s\)</span>.
+This is a <strong>mixed distribution</strong>: part continuous (the recombination cases)
+and part discrete (the no-recombination case). Such mixtures are common
+in population genetics – they arise whenever a process either “happens”
+(continuous outcome) or “doesn’t happen” (discrete point mass).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">psmc_transition_density</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PSMC transition density q_rho(t | s).</span>
+
+<span class="sd">    This is the probability density of the new coalescence time t,</span>
+<span class="sd">    given the old coalescence time s and recombination rate rho.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : float</span>
+<span class="sd">        Target time.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Source time.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Recombination rate per bin.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    density : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Probability that recombination occurred on the branch [0, s]</span>
+    <span class="n">p_recomb</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">s</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-12</span><span class="p">:</span>
+        <span class="c1"># Point mass (no recombination): probability e^{-rho*s}</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">s</span><span class="p">:</span>
+        <span class="c1"># New coalescence is shallower (more recent) than old</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">p_recomb</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># New coalescence is deeper (more ancient) than old</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">p_recomb</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">s</span><span class="p">))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The CDF:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}Q_\rho(t \mid s) = \int_0^t q_\rho(x \mid s) \, dx =
+\begin{cases}
+\frac{1 - e^{-\rho s}}{s}[t + e^{-t} - 1] &amp; t &lt; s \\[6pt]
+\frac{1 - e^{-\rho s}}{s}[s - e^{-(t-s)} + e^{-t}] + e^{-\rho s} &amp; t \geq s
+\end{cases}\end{split}\]</div>
+<div class="admonition-calculus-aside-deriving-the-cdf-from-the-density admonition">
+<p class="admonition-title">Calculus Aside – Deriving the CDF from the Density</p>
+<p>The CDF is the integral of the density from 0 to <span class="math notranslate nohighlight">\(t\)</span>. For the
+<span class="math notranslate nohighlight">\(t &lt; s\)</span> case:</p>
+<div class="math notranslate nohighlight">
+\[Q(t|s) = \int_0^t \frac{p}{s}(1 - e^{-x})\,dx
+= \frac{p}{s}\left[x + e^{-x}\right]_0^t
+= \frac{p}{s}\left[(t + e^{-t}) - (0 + 1)\right]
+= \frac{p}{s}[t + e^{-t} - 1]\]</div>
+<p>The integral of <span class="math notranslate nohighlight">\(1 - e^{-x}\)</span> is <span class="math notranslate nohighlight">\(x + e^{-x}\)</span> (the antiderivative
+of 1 is <span class="math notranslate nohighlight">\(x\)</span>, and the antiderivative of <span class="math notranslate nohighlight">\(-e^{-x}\)</span> is <span class="math notranslate nohighlight">\(e^{-x}\)</span>).</p>
+<p>For the <span class="math notranslate nohighlight">\(t \geq s\)</span> case, we must add the point mass <span class="math notranslate nohighlight">\(e^{-\rho s}\)</span>
+at <span class="math notranslate nohighlight">\(t = s\)</span> and integrate the <span class="math notranslate nohighlight">\(t &gt; s\)</span> density from <span class="math notranslate nohighlight">\(s\)</span> to
+<span class="math notranslate nohighlight">\(t\)</span>. The algebra is similar but includes the exponential shift
+<span class="math notranslate nohighlight">\(e^{-(t-s)}\)</span>.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">psmc_transition_cdf</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PSMC transition CDF Q_rho(t | s).</span>
+
+<span class="sd">    The cumulative distribution function: P(T_new &lt;= t | T_old = s).</span>
+<span class="sd">    Includes both the continuous density (recombination cases) and</span>
+<span class="sd">    the point mass at t = s (no recombination).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_recomb</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+    <span class="n">p_no_recomb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">s</span><span class="p">:</span>
+        <span class="c1"># Only the t &lt; s continuous density contributes</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">p_recomb</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># The t &lt; s density (integrated to s), plus the point mass,</span>
+        <span class="c1"># plus the t &gt; s density (integrated from s to t)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">p_recomb</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">s</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">))</span> <span class="o">+</span> <span class="n">p_no_recomb</span>
+
+<span class="c1"># Verify: CDF at infinity should be 1</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CDF(100 | s=1, rho=0.5) = </span><span class="si">{</span><span class="n">psmc_transition_cdf</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now that we have the continuous transition density and CDF, we can compute the
+discrete transition probabilities between time sub-intervals.</p>
+</section>
+<section id="step-3-transition-probabilities-between-sub-intervals">
+<h2>Step 3: Transition Probabilities Between Sub-Intervals<a class="headerlink" href="#step-3-transition-probabilities-between-sub-intervals" title="Link to this heading"></a></h2>
+<p>The transition from sub-interval <span class="math notranslate nohighlight">\([t_{\ell-1,i}, t_{\ell-1,i+1})\)</span> to
+<span class="math notranslate nohighlight">\([t_{\ell,j}, t_{\ell,j+1})\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[q_{i,j}^{\ell-1,\ell} = \frac{Q_\rho(t_{\ell,j+1} \mid \tau_{\ell-1,i}) - Q_\rho(t_{\ell,j} \mid \tau_{\ell-1,i})}{Q_\rho(y_\ell \mid \tau_{\ell-1,i}) - Q_\rho(x_\ell \mid \tau_{\ell-1,i})}\]</div>
+<p><strong>Why the denominator?</strong> The PSMC CDF <span class="math notranslate nohighlight">\(Q_\rho\)</span> covers the full range
+<span class="math notranslate nohighlight">\([0, \infty)\)</span>, but we need the time to land in <span class="math notranslate nohighlight">\([x_\ell, y_\ell)\)</span> (the
+joining branch interval). The denominator
+<span class="math notranslate nohighlight">\(Q_\rho(y_\ell \mid \tau) - Q_\rho(x_\ell \mid \tau)\)</span> is the total
+probability mass that falls in this interval. Dividing by it gives us the
+<strong>conditional</strong> transition probability:</p>
+<div class="math notranslate nohighlight">
+\[P(T_\ell \in [t_j, t_{j+1}) \mid T_\ell \in [x_\ell, y_\ell), T_{\ell-1} = \tau_i)
+= \frac{Q_\rho(t_{j+1} \mid \tau_i) - Q_\rho(t_j \mid \tau_i)}{Q_\rho(y_\ell \mid \tau_i) - Q_\rho(x_\ell \mid \tau_i)}\]</div>
+<div class="admonition-probability-aside-conditioning-by-normalization admonition">
+<p class="admonition-title">Probability Aside – Conditioning by Normalization</p>
+<p>This formula is a direct application of <strong>conditional probability</strong>:</p>
+<div class="math notranslate nohighlight">
+\[P(A \mid B) = \frac{P(A \cap B)}{P(B)}\]</div>
+<p>Here, <span class="math notranslate nohighlight">\(A\)</span> is “the new time falls in sub-interval <span class="math notranslate nohighlight">\(j\)</span>” and
+<span class="math notranslate nohighlight">\(B\)</span> is “the new time falls in the branch interval <span class="math notranslate nohighlight">\([x, y)\)</span>.”
+Since sub-interval <span class="math notranslate nohighlight">\(j\)</span> is contained within <span class="math notranslate nohighlight">\([x, y)\)</span>, the
+intersection <span class="math notranslate nohighlight">\(A \cap B = A\)</span>, so the numerator is just
+<span class="math notranslate nohighlight">\(P(A)\)</span> (the CDF difference for sub-interval <span class="math notranslate nohighlight">\(j\)</span>), and the
+denominator is <span class="math notranslate nohighlight">\(P(B)\)</span> (the CDF difference for the whole branch).</p>
+<p>This conditioning is necessary because the PSMC transition density was
+derived for an unconstrained time range <span class="math notranslate nohighlight">\([0, \infty)\)</span>, but the
+branch sampling HMM has already determined that the coalescence must
+occur within the specific branch <span class="math notranslate nohighlight">\([x_\ell, y_\ell)\)</span>.</p>
+</div>
+<p>This is simply Bayes’ rule applied to restrict the distribution to the allowed
+interval. By construction, summing over all sub-intervals <span class="math notranslate nohighlight">\(j\)</span> gives:</p>
+<div class="math notranslate nohighlight">
+\[\sum_{j=0}^{d-1} q_{i,j} = \frac{Q_\rho(y_\ell \mid \tau_i) - Q_\rho(x_\ell \mid \tau_i)}{Q_\rho(y_\ell \mid \tau_i) - Q_\rho(x_\ell \mid \tau_i)} = 1 \quad \checkmark\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">time_transition_matrix</span><span class="p">(</span><span class="n">boundaries_prev</span><span class="p">,</span> <span class="n">taus_prev</span><span class="p">,</span> <span class="n">boundaries_next</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute transition matrix between time sub-intervals.</span>
+
+<span class="sd">    Each entry Q[i, j] gives the probability of transitioning from</span>
+<span class="sd">    sub-interval i at the previous bin to sub-interval j at the</span>
+<span class="sd">    current bin, conditioned on the coalescence falling within the</span>
+<span class="sd">    current branch interval.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    boundaries_prev : ndarray of shape (d_prev + 1,)</span>
+<span class="sd">        Sub-interval boundaries at bin ell-1.</span>
+<span class="sd">    taus_prev : ndarray of shape (d_prev,)</span>
+<span class="sd">        Representative times at bin ell-1.</span>
+<span class="sd">    boundaries_next : ndarray of shape (d_next + 1,)</span>
+<span class="sd">        Sub-interval boundaries at bin ell.</span>
+<span class="sd">    rho : float</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Q : ndarray of shape (d_prev, d_next)</span>
+<span class="sd">        Transition matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d_prev</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">taus_prev</span><span class="p">)</span>
+    <span class="n">d_next</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries_next</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">d_prev</span><span class="p">,</span> <span class="n">d_next</span><span class="p">))</span>
+
+    <span class="c1"># Branch interval boundaries for normalization</span>
+    <span class="n">x_ell</span> <span class="o">=</span> <span class="n">boundaries_next</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>   <span class="c1"># lower bound of joining branch</span>
+    <span class="n">y_ell</span> <span class="o">=</span> <span class="n">boundaries_next</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># upper bound of joining branch</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d_prev</span><span class="p">):</span>
+        <span class="c1"># Denominator: total mass in the branch interval [x, y)</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="p">(</span><span class="n">psmc_transition_cdf</span><span class="p">(</span><span class="n">y_ell</span><span class="p">,</span> <span class="n">taus_prev</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">rho</span><span class="p">)</span> <span class="o">-</span>
+                 <span class="n">psmc_transition_cdf</span><span class="p">(</span><span class="n">x_ell</span><span class="p">,</span> <span class="n">taus_prev</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">rho</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">denom</span> <span class="o">&lt;</span> <span class="mf">1e-15</span><span class="p">:</span>
+            <span class="n">Q</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">d_next</span>  <span class="c1"># uniform fallback for degenerate cases</span>
+            <span class="k">continue</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d_next</span><span class="p">):</span>
+            <span class="c1"># Numerator: mass in sub-interval j</span>
+            <span class="n">numer</span> <span class="o">=</span> <span class="p">(</span><span class="n">psmc_transition_cdf</span><span class="p">(</span><span class="n">boundaries_next</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span>
+                                         <span class="n">taus_prev</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">rho</span><span class="p">)</span> <span class="o">-</span>
+                     <span class="n">psmc_transition_cdf</span><span class="p">(</span><span class="n">boundaries_next</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
+                                         <span class="n">taus_prev</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">rho</span><span class="p">))</span>
+            <span class="n">Q</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">numer</span> <span class="o">/</span> <span class="n">denom</span>  <span class="c1"># conditional probability</span>
+
+    <span class="k">return</span> <span class="n">Q</span>
+
+<span class="c1"># Example: same branch for two adjacent bins</span>
+<span class="n">boundaries</span> <span class="o">=</span> <span class="n">partition_branch</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">taus</span> <span class="o">=</span> <span class="n">representative_times</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span>
+<span class="n">Q</span> <span class="o">=</span> <span class="n">time_transition_matrix</span><span class="p">(</span><span class="n">boundaries</span><span class="p">,</span> <span class="n">taus</span><span class="p">,</span> <span class="n">boundaries</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Transition matrix shape:&quot;</span><span class="p">,</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Row sums:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="mi">6</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">First row:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The transition matrix is now ready. For the common case where the joining branch
+is the same at adjacent bins (no branch change), the matrix has a special
+structure that enables a dramatic speedup. That is the subject of the next section.</p>
+</section>
+<section id="step-4-the-linearization-trick">
+<h2>Step 4: The Linearization Trick<a class="headerlink" href="#step-4-the-linearization-trick" title="Link to this heading"></a></h2>
+<p>For <strong>Type A transitions</strong> (same joining branch, no change in partial ARG), the
+transition matrix has a special symmetry structure that allows <span class="math notranslate nohighlight">\(O(d)\)</span> forward
+computation instead of <span class="math notranslate nohighlight">\(O(d^2)\)</span>.</p>
+<p>This is analogous to the efficient transition matrix computation in
+<a class="reference internal" href="../psmc/discretization.html#psmc-discretization"><span class="std std-ref">PSMC discretization</span></a>, where the factorization of
+<span class="math notranslate nohighlight">\(q_{kl}\)</span> into source-dependent and target-dependent terms enabled
+efficient matrix-vector products. Here, a similar algebraic structure emerges.</p>
+<p>From the PSMC transition formula, two key properties hold when the state space
+is the same at both bins (i.e., <span class="math notranslate nohighlight">\(t_{\ell-1,k} = t_{\ell,k}\)</span> for all <span class="math notranslate nohighlight">\(k\)</span>):</p>
+<p><strong>Property 1</strong>: For all <span class="math notranslate nohighlight">\(i &gt; j\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[q_{i,j} = q_{j+1,j}\]</div>
+<p>(All states above sub-interval <span class="math notranslate nohighlight">\(j\)</span> have the same transition probability to <span class="math notranslate nohighlight">\(j\)</span>.)</p>
+<p><strong>Proof of Property 1.</strong> When <span class="math notranslate nohighlight">\(i &gt; j\)</span>, we have <span class="math notranslate nohighlight">\(\tau_i &gt; t_{j+1}\)</span> (the
+source time is above the target interval). From the PSMC transition CDF, when
+the source time <span class="math notranslate nohighlight">\(\tau\)</span> exceeds the target interval <span class="math notranslate nohighlight">\([t_j, t_{j+1})\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[Q_\rho(t \mid \tau) = \frac{1 - e^{-\rho\tau}}{\tau}(1 - e^{-t}) \quad \text{for } t &lt; \tau\]</div>
+<p>The numerator of <span class="math notranslate nohighlight">\(q_{i,j}\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[Q_\rho(t_{j+1} \mid \tau_i) - Q_\rho(t_j \mid \tau_i)
+= \frac{1 - e^{-\rho\tau_i}}{\tau_i}\left[(1 - e^{-t_{j+1}}) - (1 - e^{-t_j})\right]
+= \frac{1 - e^{-\rho\tau_i}}{\tau_i}(e^{-t_j} - e^{-t_{j+1}})\]</div>
+<p>The denominator <span class="math notranslate nohighlight">\(Q_\rho(y \mid \tau_i) - Q_\rho(x \mid \tau_i)\)</span> also depends
+on <span class="math notranslate nohighlight">\(\tau_i\)</span>. However, the key observation is that when <span class="math notranslate nohighlight">\(\tau_i\)</span> and
+<span class="math notranslate nohighlight">\(\tau_{j+1}\)</span> are both above <span class="math notranslate nohighlight">\(t_{j+1}\)</span>, the factors
+<span class="math notranslate nohighlight">\(\frac{1-e^{-\rho\tau}}{\tau}\)</span> in both numerator and denominator are
+evaluated in the same regime (<span class="math notranslate nohighlight">\(t &lt; \tau\)</span>). After normalization, the
+<span class="math notranslate nohighlight">\(\tau\)</span>-dependent prefactor cancels, leaving a result that depends only on
+<span class="math notranslate nohighlight">\(t_j\)</span> and <span class="math notranslate nohighlight">\(t_{j+1}\)</span>. Hence <span class="math notranslate nohighlight">\(q_{i,j} = q_{j+1,j}\)</span> for all <span class="math notranslate nohighlight">\(i &gt; j\)</span>.</p>
+<p><strong>Property 2</strong>: For all <span class="math notranslate nohighlight">\(i &lt; j\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\frac{q_{i,j}}{q_{i,j-1}} = \kappa_j := \frac{e^{-t_j} - e^{-t_{j+1}}}{e^{-t_{j-1}} - e^{-t_j}}\]</div>
+<p>(The ratio doesn’t depend on <span class="math notranslate nohighlight">\(i\)</span>.)</p>
+<p><strong>Proof of Property 2.</strong> When <span class="math notranslate nohighlight">\(i &lt; j\)</span>, we have <span class="math notranslate nohighlight">\(\tau_i &lt; t_j\)</span> (the
+source time is below the target interval). In this case, both
+<span class="math notranslate nohighlight">\(Q_\rho(t_j \mid \tau_i)\)</span> and <span class="math notranslate nohighlight">\(Q_\rho(t_{j+1} \mid \tau_i)\)</span> use the
+<span class="math notranslate nohighlight">\(t \geq s\)</span> formula:</p>
+<div class="math notranslate nohighlight">
+\[Q_\rho(t \mid \tau_i) = \frac{1-e^{-\rho\tau_i}}{\tau_i}[\tau_i - e^{-(t-\tau_i)} + e^{-t}] + e^{-\rho\tau_i}\]</div>
+<p>The difference <span class="math notranslate nohighlight">\(Q_\rho(t_{j+1} \mid \tau_i) - Q_\rho(t_j \mid \tau_i)\)</span> involves:</p>
+<div class="math notranslate nohighlight">
+\[= \frac{1-e^{-\rho\tau_i}}{\tau_i}[(-e^{-(t_{j+1}-\tau_i)} + e^{-t_{j+1}}) - (-e^{-(t_j-\tau_i)} + e^{-t_j})]\]</div>
+<p>The terms <span class="math notranslate nohighlight">\(e^{-(t-\tau_i)} = e^{\tau_i} \cdot e^{-t}\)</span>, so:</p>
+<div class="math notranslate nohighlight">
+\[= \frac{1-e^{-\rho\tau_i}}{\tau_i}(1 - e^{\tau_i})(e^{-t_{j+1}} - e^{-t_j})\]</div>
+<p>The ratio <span class="math notranslate nohighlight">\(q_{i,j}/q_{i,j-1}\)</span> then becomes:</p>
+<div class="math notranslate nohighlight">
+\[\frac{q_{i,j}}{q_{i,j-1}} = \frac{e^{-t_j} - e^{-t_{j+1}}}{e^{-t_{j-1}} - e^{-t_j}} = \kappa_j\]</div>
+<p>The <span class="math notranslate nohighlight">\(\tau_i\)</span>-dependent prefactor cancels in the ratio, confirming that
+<span class="math notranslate nohighlight">\(\kappa_j\)</span> is independent of <span class="math notranslate nohighlight">\(i\)</span>.</p>
+<div class="admonition-probability-aside-why-these-properties-enable-linear-time admonition">
+<p class="admonition-title">Probability Aside – Why These Properties Enable Linear Time</p>
+<p>Properties 1 and 2 together mean the transition matrix has a very special
+structure. Property 1 says the lower triangle is “column-constant”: all
+entries below the diagonal in column <span class="math notranslate nohighlight">\(j\)</span> are the same value
+<span class="math notranslate nohighlight">\(q_{j+1,j}\)</span>. Property 2 says the upper triangle has a “geometric
+ratio” structure: moving one column to the right multiplies by a fixed
+ratio <span class="math notranslate nohighlight">\(\kappa_j\)</span>.</p>
+<p>This structure means we can replace the naive <span class="math notranslate nohighlight">\(O(d^2)\)</span> matrix-vector
+multiply <span class="math notranslate nohighlight">\(\alpha_{j}^{(\text{new})} = \sum_i \alpha_i^{(\text{old})} q_{i,j}\)</span>
+with an <span class="math notranslate nohighlight">\(O(d)\)</span> recursion using running sums. The sum over <span class="math notranslate nohighlight">\(i &gt; j\)</span>
+(using Property 1) becomes a single accumulation, and the sum over <span class="math notranslate nohighlight">\(i &lt; j\)</span>
+(using Property 2) becomes a recursion involving <span class="math notranslate nohighlight">\(\kappa_j\)</span>.</p>
+</div>
+<p>These properties enable the following linear-time recursion:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_j(\ell+1) = e_j(\ell+1) \left[S_j + \alpha_j(\ell) \cdot q_{j,j} + A_j \cdot q_{j+1,j}\right]\]</div>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[S_j = \alpha_{j-1}(\ell) \cdot q_{j-1,j} + \kappa_j \cdot S_{j-1} \qquad (S_0 = 0)\]</div>
+<div class="math notranslate nohighlight">
+\[A_j = \alpha_{j+1}(\ell) + A_{j+1} \qquad (A_{d-1} = 0)\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_linearized</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">emissions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Linear-time forward step for Type A transitions.</span>
+
+<span class="sd">    Exploits Properties 1 and 2 to compute the forward step in</span>
+<span class="sd">    O(d) time instead of O(d^2).  The result is identical to the</span>
+<span class="sd">    standard matrix-vector product alpha_prev @ Q * emissions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha_prev : ndarray of shape (d,)</span>
+<span class="sd">        Forward probabilities at previous bin.</span>
+<span class="sd">    Q : ndarray of shape (d, d)</span>
+<span class="sd">        Transition matrix (Type A: same state space).</span>
+<span class="sd">    emissions : ndarray of shape (d,)</span>
+<span class="sd">        Emission probabilities at current bin.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha_curr : ndarray of shape (d,)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">)</span>
+    <span class="n">boundaries</span> <span class="o">=</span> <span class="n">partition_branch</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>  <span class="c1"># placeholder</span>
+
+    <span class="c1"># Compute kappa values: the geometric ratio from Property 2</span>
+    <span class="c1"># kappa[j] = q[i,j] / q[i,j-1] for any i &lt; j</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="n">kappa</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="c1"># Compute S_j (from below): accumulates contributions from i &lt; j</span>
+    <span class="c1"># S_j = alpha_{j-1} * q_{j-1,j} + kappa_j * S_{j-1}</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="n">S</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha_prev</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">Q</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">kappa</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">S</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Compute A_j (from above): accumulates contributions from i &gt; j</span>
+    <span class="c1"># A_j = alpha_{j+1} + A_{j+1}</span>
+    <span class="c1"># By Property 1, all i &gt; j contribute the same q_{j+1,j}, so</span>
+    <span class="c1"># we just need the sum of alpha values above j</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">A</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha_prev</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">A</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Forward probabilities: combine below, diagonal, and above</span>
+    <span class="n">alpha_curr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+        <span class="n">alpha_curr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">emissions</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">S</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">alpha_prev</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Q</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">A</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Q</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">d</span><span class="o">-</span><span class="mi">1</span>
+            <span class="k">else</span> <span class="n">S</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">alpha_prev</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Q</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">alpha_curr</span>
+
+<span class="c1"># Verify: linear vs quadratic should give same answer</span>
+<span class="n">d</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">alpha_prev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">dirichlet</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+<span class="n">emissions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+
+<span class="c1"># Quadratic (standard): alpha_prev @ Q gives the matrix-vector product</span>
+<span class="n">alpha_quad</span> <span class="o">=</span> <span class="n">emissions</span> <span class="o">*</span> <span class="p">(</span><span class="n">alpha_prev</span> <span class="o">@</span> <span class="n">Q</span><span class="p">)</span>
+
+<span class="c1"># Linear: uses the O(d) recursion</span>
+<span class="n">alpha_lin</span> <span class="o">=</span> <span class="n">forward_linearized</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">emissions</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Quadratic:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">alpha_quad</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Linear:   &quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">alpha_lin</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Max difference:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">alpha_quad</span> <span class="o">-</span> <span class="n">alpha_lin</span><span class="p">)))</span>
+</pre></div>
+</div>
+<div class="admonition-why-does-this-matter admonition">
+<p class="admonition-title">Why does this matter?</p>
+<p>Time sampling is not the computational bottleneck of SINGER (branch sampling
+is), but the linearization is mathematically elegant and demonstrates a general
+principle: <strong>exploit structure in transition matrices</strong> to reduce complexity.
+This is the same principle that makes PSMC’s transition matrix efficient (see
+<a class="reference internal" href="../psmc/discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>) and that powers the Li-Stephens model’s
+<span class="math notranslate nohighlight">\(O(K)\)</span> forward algorithm (see <a class="reference internal" href="../lshmm/haploid_algorithms.html#haploid-algorithms"><span class="std std-ref">Haploid LS HMM Algorithms</span></a>).</p>
+</div>
+<p>With the linearized forward step for the common case, we now need to handle the
+two less common cases: when the partial ARG changes (Type B) and when the
+joining branch changes (Type C).</p>
+</section>
+<section id="step-5-type-b-and-type-c-transitions">
+<h2>Step 5: Type B and Type C Transitions<a class="headerlink" href="#step-5-type-b-and-type-c-transitions" title="Link to this heading"></a></h2>
+<p>Not all transitions are Type A. There are three types:</p>
+<section id="type-a-neither-branch-nor-partial-arg-changes">
+<h3>Type A: Neither branch nor partial ARG changes<a class="headerlink" href="#type-a-neither-branch-nor-partial-arg-changes" title="Link to this heading"></a></h3>
+<p>This is the common case (most bins). The state space is identical at both bins,
+and we use the linearized forward algorithm.</p>
+</section>
+<section id="type-b-partial-arg-changes-recombination-hitchhiking">
+<h3>Type B: Partial ARG changes (recombination hitchhiking)<a class="headerlink" href="#type-b-partial-arg-changes-recombination-hitchhiking" title="Link to this heading"></a></h3>
+<p>The partial ARG has a recombination between these bins, so the joining branch may
+change by hitchhiking. Some time sub-intervals from the previous bin map to the
+new joining branch, others don’t (they map to a different branch that wasn’t
+selected).</p>
+<div class="admonition-probability-aside-what-is-hitchhiking-in-this-context admonition">
+<p class="admonition-title">Probability Aside – What is Hitchhiking in This Context?</p>
+<p>“Hitchhiking” here means that the new lineage’s joining point changes <em>not</em>
+because of its own recombination, but because the <em>existing</em> partial ARG
+rearranges. When the partial ARG has a recombination between two bins, the
+marginal tree topology changes, and the branch that the new lineage was
+joining may split into pieces or merge with other branches. The new lineage
+“hitchhikes” on this rearrangement – its joining point moves passively.</p>
+<p>This is different from Type C (below), where the new lineage’s <em>own</em>
+recombination causes the branch change.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">type_b_transition</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">,</span> <span class="n">boundaries_prev</span><span class="p">,</span> <span class="n">boundaries_next</span><span class="p">,</span>
+                       <span class="n">mapped_intervals</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle Type B transition (recombination hitchhiking).</span>
+
+<span class="sd">    When the partial ARG has a recombination, some sub-intervals</span>
+<span class="sd">    from the previous bin map directly to sub-intervals in the</span>
+<span class="sd">    current bin (the new lineage hitchhikes on the existing</span>
+<span class="sd">    recombination), while others do not (wrong branch).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha_prev : ndarray</span>
+<span class="sd">        Forward probabilities at previous bin.</span>
+<span class="sd">    boundaries_prev : ndarray</span>
+<span class="sd">        Time boundaries at previous bin.</span>
+<span class="sd">    boundaries_next : ndarray</span>
+<span class="sd">        Time boundaries at current bin.</span>
+<span class="sd">    mapped_intervals : list of (prev_idx, next_idx) or None</span>
+<span class="sd">        Maps previous sub-intervals to current ones.</span>
+<span class="sd">        None means the interval doesn&#39;t contribute (wrong branch).</span>
+<span class="sd">    rho : float</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha_curr : ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d_next</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries_next</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">alpha_curr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d_next</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">prev_idx</span><span class="p">,</span> <span class="n">mapping</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mapped_intervals</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">next_idx</span> <span class="o">=</span> <span class="n">mapping</span>
+            <span class="c1"># Forward probability transfers directly: the new lineage</span>
+            <span class="c1"># stays at the same time, just in the new tree&#39;s coordinates</span>
+            <span class="n">alpha_curr</span><span class="p">[</span><span class="n">next_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">alpha_prev</span><span class="p">[</span><span class="n">prev_idx</span><span class="p">]</span>
+
+    <span class="c1"># Sub-intervals not covered by hitchhiking get zero forward probability</span>
+    <span class="c1"># from the hitchhiked states but may receive probability from</span>
+    <span class="c1"># the transition matrix for newly created states</span>
+
+    <span class="k">return</span> <span class="n">alpha_curr</span>
+</pre></div>
+</div>
+</section>
+<section id="type-c-joining-branch-changes-new-recombination">
+<h3>Type C: Joining branch changes (new recombination)<a class="headerlink" href="#type-c-joining-branch-changes-new-recombination" title="Link to this heading"></a></h3>
+<p>A recombination in the new lineage causes a branch switch. The transition is
+computed by setting <span class="math notranslate nohighlight">\(\rho = \infty\)</span> in the PSMC CDF (since we already
+condition on having a recombination):</p>
+<div class="admonition-probability-aside-why-math-rho-to-infty admonition">
+<p class="admonition-title">Probability Aside – Why <span class="math notranslate nohighlight">\(\rho \to \infty\)</span>?</p>
+<p>In a Type C transition, we already know that a recombination occurred (it was
+determined by the branch sampling step). The PSMC transition density
+<span class="math notranslate nohighlight">\(q_\rho(t|s)\)</span> includes both the probability of recombination
+(<span class="math notranslate nohighlight">\(1 - e^{-\rho s}\)</span>) and the re-coalescence density. Since we are
+conditioning on recombination having occurred, we need the density
+<span class="math notranslate nohighlight">\(q_0(t|s)\)</span> alone – the re-coalescence part without the recombination
+probability.</p>
+<p>Setting <span class="math notranslate nohighlight">\(\rho \to \infty\)</span> makes <span class="math notranslate nohighlight">\(1 - e^{-\rho s} \to 1\)</span>, so the
+recombination is certain, and the point mass at <span class="math notranslate nohighlight">\(t = s\)</span> vanishes
+(<span class="math notranslate nohighlight">\(e^{-\rho s} \to 0\)</span>). The result is exactly the conditional
+density given recombination.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">type_c_transition</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">,</span> <span class="n">taus_prev</span><span class="p">,</span> <span class="n">boundaries_next</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle Type C transition (new recombination in the new lineage).</span>
+
+<span class="sd">    When rho -&gt; infinity, the transition is just the unconditional</span>
+<span class="sd">    coalescence density restricted to the new branch.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha_prev : ndarray of shape (d_prev,)</span>
+<span class="sd">    taus_prev : ndarray of shape (d_prev,)</span>
+<span class="sd">    boundaries_next : ndarray of shape (d_next + 1,)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha_curr : ndarray of shape (d_next,)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d_prev</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">alpha_prev</span><span class="p">)</span>
+    <span class="n">d_next</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries_next</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c1"># With rho -&gt; infinity, the no-recombination term vanishes</span>
+    <span class="c1"># and we use the conditional transition q_0(t|s)</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="n">time_transition_matrix</span><span class="p">(</span>
+        <span class="kc">None</span><span class="p">,</span>  <span class="c1"># boundaries don&#39;t matter for rho=infinity</span>
+        <span class="n">taus_prev</span><span class="p">,</span>
+        <span class="n">boundaries_next</span><span class="p">,</span>
+        <span class="n">rho</span><span class="o">=</span><span class="mf">1e10</span>  <span class="c1"># approximate infinity: e^{-1e10 * s} is essentially 0</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Standard matrix-vector multiply: sum over source sub-intervals</span>
+    <span class="n">alpha_curr</span> <span class="o">=</span> <span class="n">alpha_prev</span> <span class="o">@</span> <span class="n">Q</span>
+    <span class="k">return</span> <span class="n">alpha_curr</span>
+</pre></div>
+</div>
+<p>We now have all three transition types. Let us assemble them into the complete
+time sampling algorithm.</p>
+</section>
+</section>
+<section id="step-6-the-complete-time-sampling-algorithm">
+<h2>Step 6: The Complete Time Sampling Algorithm<a class="headerlink" href="#step-6-the-complete-time-sampling-algorithm" title="Link to this heading"></a></h2>
+<p>This is the moment where all the components snap together. The time sampling
+algorithm takes the branch sequence from <a class="reference internal" href="branch_sampling.html#branch-sampling"><span class="std std-ref">branch sampling</span></a>,
+partitions each branch into sub-intervals, runs a forward algorithm with the
+appropriate transition type at each step, and then traces back to sample a
+sequence of coalescence times.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">time_sampling</span><span class="p">(</span><span class="n">joining_branches</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">partial_arg</span><span class="p">,</span> <span class="n">new_haplotype</span><span class="p">,</span>
+                   <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the time sampling HMM.</span>
+
+<span class="sd">    This is the second stage of SINGER&#39;s threading algorithm.</span>
+<span class="sd">    Given the branch sequence from branch sampling, it determines</span>
+<span class="sd">    the exact coalescence time within each branch.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    joining_branches : list of BranchState</span>
+<span class="sd">        Sampled joining branches from branch sampling.</span>
+<span class="sd">    bins : list</span>
+<span class="sd">        Genomic bin boundaries.</span>
+<span class="sd">    partial_arg : object</span>
+<span class="sd">        The partial ARG.</span>
+<span class="sd">    new_haplotype : ndarray</span>
+<span class="sd">        Alleles of the new haplotype.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Mutation rate.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Recombination rate per bin.</span>
+<span class="sd">    d : int</span>
+<span class="sd">        Number of time sub-intervals per branch.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sampled_times : ndarray of shape (L,)</span>
+<span class="sd">        Sampled joining time at each bin.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span>
+
+    <span class="c1"># Build state spaces: partition each branch into sub-intervals</span>
+    <span class="n">all_boundaries</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_taus</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ell</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span><span class="p">):</span>
+        <span class="n">branch</span> <span class="o">=</span> <span class="n">joining_branches</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span>
+        <span class="n">boundaries</span> <span class="o">=</span> <span class="n">partition_branch</span><span class="p">(</span><span class="n">branch</span><span class="o">.</span><span class="n">lower_time</span><span class="p">,</span>
+                                       <span class="n">branch</span><span class="o">.</span><span class="n">upper_time</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+        <span class="n">taus</span> <span class="o">=</span> <span class="n">representative_times</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span>
+        <span class="n">all_boundaries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span>
+        <span class="n">all_taus</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">taus</span><span class="p">)</span>
+
+    <span class="c1"># Forward algorithm (same structure as the HMM forward pass</span>
+    <span class="c1"># from the prerequisite chapter, but with time sub-intervals</span>
+    <span class="c1"># as states instead of discrete categories)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span><span class="p">)]</span>
+
+    <span class="c1"># Initialize: uniform prior within the branch</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">d</span>  <span class="c1"># each sub-interval equally likely a priori</span>
+        <span class="c1"># Multiply by emission probability</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="n">compute_time_emission</span><span class="p">(</span>
+            <span class="n">new_haplotype</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">all_taus</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">],</span>
+            <span class="n">joining_branches</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">theta</span><span class="p">,</span> <span class="n">partial_arg</span><span class="p">,</span> <span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Normalize to prevent underflow</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/=</span> <span class="n">total</span>
+
+    <span class="c1"># Recursion: classify each transition and apply the right formula</span>
+    <span class="k">for</span> <span class="n">ell</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+        <span class="c1"># Determine transition type by comparing adjacent branches</span>
+        <span class="n">branch_changed</span> <span class="o">=</span> <span class="p">(</span><span class="n">joining_branches</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span><span class="o">.</span><span class="n">child</span> <span class="o">!=</span>
+                           <span class="n">joining_branches</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">child</span> <span class="ow">or</span>
+                           <span class="n">joining_branches</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span>
+                           <span class="n">joining_branches</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+
+        <span class="n">has_existing_recomb</span> <span class="o">=</span> <span class="n">check_recombination</span><span class="p">(</span><span class="n">partial_arg</span><span class="p">,</span>
+                                                   <span class="n">bins</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">bins</span><span class="p">[</span><span class="n">ell</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">branch_changed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">has_existing_recomb</span><span class="p">:</span>
+            <span class="c1"># Type A: same branch, no existing recombination</span>
+            <span class="c1"># Use the efficient linearized forward step</span>
+            <span class="n">Q</span> <span class="o">=</span> <span class="n">time_transition_matrix</span><span class="p">(</span><span class="n">all_boundaries</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                        <span class="n">all_taus</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                        <span class="n">all_boundaries</span><span class="p">[</span><span class="n">ell</span><span class="p">],</span> <span class="n">rho</span><span class="p">)</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">@</span> <span class="n">Q</span>
+        <span class="k">elif</span> <span class="n">has_existing_recomb</span><span class="p">:</span>
+            <span class="c1"># Type B: partial ARG changed (hitchhiking)</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">=</span> <span class="n">handle_type_b</span><span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">all_boundaries</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                        <span class="n">all_boundaries</span><span class="p">[</span><span class="n">ell</span><span class="p">],</span> <span class="n">partial_arg</span><span class="p">,</span>
+                                        <span class="n">bins</span><span class="p">[</span><span class="n">ell</span><span class="p">],</span> <span class="n">rho</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Type C: new recombination (branch changed)</span>
+            <span class="c1"># Use rho = infinity (condition on recombination)</span>
+            <span class="n">Q</span> <span class="o">=</span> <span class="n">time_transition_matrix</span><span class="p">(</span><span class="n">all_boundaries</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                        <span class="n">all_taus</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                        <span class="n">all_boundaries</span><span class="p">[</span><span class="n">ell</span><span class="p">],</span>
+                                        <span class="n">rho</span><span class="o">=</span><span class="mf">1e10</span><span class="p">)</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">@</span> <span class="n">Q</span>
+
+        <span class="c1"># Emission: multiply by P(observation | time)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="n">compute_time_emission</span><span class="p">(</span>
+                <span class="n">new_haplotype</span><span class="p">[</span><span class="n">ell</span><span class="p">],</span> <span class="n">all_taus</span><span class="p">[</span><span class="n">ell</span><span class="p">][</span><span class="n">j</span><span class="p">],</span>
+                <span class="n">joining_branches</span><span class="p">[</span><span class="n">ell</span><span class="p">],</span> <span class="n">theta</span><span class="p">,</span> <span class="n">partial_arg</span><span class="p">,</span> <span class="n">bins</span><span class="p">[</span><span class="n">ell</span><span class="p">])</span>
+
+        <span class="c1"># Normalize to prevent underflow</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">/=</span> <span class="n">total</span>
+
+    <span class="c1"># Stochastic traceback: sample a time sequence from the posterior</span>
+    <span class="n">sampled_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+
+    <span class="c1"># Sample last bin from the final forward distribution</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">alpha</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+    <span class="n">sampled_times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_taus</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="c1"># Trace backwards (same logic as branch sampling traceback)</span>
+    <span class="k">for</span> <span class="n">ell</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># ... (similar to branch sampling traceback)</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">/</span> <span class="n">alpha</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+        <span class="n">sampled_times</span><span class="p">[</span><span class="n">ell</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_taus</span><span class="p">[</span><span class="n">ell</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">sampled_times</span>
+</pre></div>
+</div>
+</section>
+<section id="step-7-inference-of-recombination-times">
+<h2>Step 7: Inference of Recombination Times<a class="headerlink" href="#step-7-inference-of-recombination-times" title="Link to this heading"></a></h2>
+<p>The threading algorithm infers where recombinations happen (when the joining branch
+changes) but not the exact timing of the recombination breakpoint on the branch.</p>
+<p>Under the SMC (see <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">the SMC prerequisite chapter</span></a>), given a
+recombination breakpoint at time <span class="math notranslate nohighlight">\(x\)</span>, the probability density of the
+re-coalescence event being at time <span class="math notranslate nohighlight">\(v\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[p(x) = e^{-(v - x)}\]</div>
+<p>for <span class="math notranslate nohighlight">\(l &lt; x &lt; u\)</span>, where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(l\)</span> = lower node age of the recombining branch</p></li>
+<li><p><span class="math notranslate nohighlight">\(u\)</span> = min(joining time before recombination, joining time after)</p></li>
+</ul>
+<div class="admonition-probability-aside-the-smc-recombination-model admonition">
+<p class="admonition-title">Probability Aside – The SMC Recombination Model</p>
+<p>Under the Sequentially Markov Coalescent (SMC), a recombination event on a
+branch at time <span class="math notranslate nohighlight">\(x\)</span> produces a “floating” lineage that must re-coalesce
+at some time <span class="math notranslate nohighlight">\(v &gt; x\)</span>. The waiting time <span class="math notranslate nohighlight">\(v - x\)</span> follows an
+<span class="math notranslate nohighlight">\(\text{Exp}(1)\)</span> distribution (standard coalescent waiting time with
+one additional lineage; see <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">coalescent theory</span></a>).</p>
+<p>The constraint <span class="math notranslate nohighlight">\(x &lt; u = \min(v_{\text{before}}, v_{\text{after}})\)</span>
+comes from the requirement that the recombination must occur <em>below</em> both
+the old and new coalescence times. If it occurred above either, the
+genealogy would be inconsistent.</p>
+</div>
+<p>SINGER uses the <strong>median</strong> of this distribution as the recombination time:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sample_recombination_time</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">joining_time_before</span><span class="p">,</span>
+                               <span class="n">joining_time_after</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample the time of a recombination breakpoint.</span>
+
+<span class="sd">    Uses the median of the SMC recombination time distribution</span>
+<span class="sd">    as a point estimate.  The median is chosen over the mean</span>
+<span class="sd">    because it is more robust to the exponential tail.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lower : float</span>
+<span class="sd">        Lower node age of the recombining branch.</span>
+<span class="sd">    upper : float</span>
+<span class="sd">        Upper bound: min of joining times.</span>
+<span class="sd">    joining_time_before : float</span>
+<span class="sd">    joining_time_after : float</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    recomb_time : float</span>
+<span class="sd">        Sampled recombination time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">joining_time_before</span><span class="p">,</span> <span class="n">joining_time_after</span><span class="p">)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">joining_time_before</span><span class="p">,</span> <span class="n">joining_time_after</span><span class="p">)</span>
+
+    <span class="c1"># Under SMC: p(x) proportional to exp(-(v - x)) for l &lt; x &lt; u</span>
+    <span class="c1"># This is an exponential distribution shifted and truncated</span>
+    <span class="c1"># CDF: F(x) = [exp(-(v-x)) - exp(-(v-l))] / [exp(-(v-u)) - exp(-(v-l))]</span>
+
+    <span class="c1"># Use the median: F(x) = 0.5</span>
+    <span class="n">F_target</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="c1"># Solve: exp(-(v-x)) = exp(-(v-l)) + 0.5*(exp(-(v-u)) - exp(-(v-l)))</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">lower</span><span class="p">))</span>   <span class="c1"># CDF at lower bound</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">u</span><span class="p">))</span>       <span class="c1"># CDF at upper bound</span>
+    <span class="n">midpoint</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">F_target</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span>  <span class="c1"># linear interpolation in exp space</span>
+
+    <span class="k">if</span> <span class="n">midpoint</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">lower</span> <span class="o">+</span> <span class="n">u</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># fallback: arithmetic midpoint</span>
+
+    <span class="n">recomb_time</span> <span class="o">=</span> <span class="n">v</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">midpoint</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">recomb_time</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span>  <span class="c1"># ensure within valid range</span>
+
+<span class="c1"># Example</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">sample_recombination_time</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recombination time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Recap.</strong> Time sampling is now complete. Starting from the branch sequence
+produced by <a class="reference internal" href="branch_sampling.html#branch-sampling"><span class="std std-ref">branch sampling</span></a>, we have:</p>
+<ol class="arabic simple">
+<li><p><strong>Discretized</strong> each branch into sub-intervals with equal coalescent
+probability mass (Step 1)</p></li>
+<li><p>Built the <strong>PSMC transition density</strong> that models how coalescence times
+change between bins (Step 2)</p></li>
+<li><p>Computed <strong>transition probabilities</strong> between sub-intervals, conditioned on
+the joining branch (Step 3)</p></li>
+<li><p>Exploited the <strong>linearization trick</strong> for efficient <span class="math notranslate nohighlight">\(O(d)\)</span> forward
+computation in the common case (Step 4)</p></li>
+<li><p>Handled <strong>Type B and Type C transitions</strong> for the less common cases (Step 5)</p></li>
+<li><p>Assembled the <strong>complete algorithm</strong>: forward pass plus stochastic
+traceback (Step 6)</p></li>
+<li><p>Inferred <strong>recombination times</strong> using the SMC model (Step 7)</p></li>
+</ol>
+<p>Together, branch sampling and time sampling form the <strong>threading algorithm</strong> –
+the procedure that adds one haplotype to an existing partial ARG. The output is
+a complete ARG with coalescence times on every node. But these times were
+estimated under a constant-population assumption. To correct for this, we need
+to recalibrate the beat rate of the watch using the mutation data. That is the
+subject of the next chapter.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-verify-the-psmc-transition admonition">
+<p class="admonition-title">Exercise 1: Verify the PSMC transition</p>
+<p>Implement the full PSMC transition density and CDF. Verify numerically
+that the density integrates to <span class="math notranslate nohighlight">\(1 - e^{-\rho s}\)</span> (the probability
+of recombination), and the CDF approaches 1 as <span class="math notranslate nohighlight">\(t \to \infty\)</span>.</p>
+</div>
+<div class="admonition-exercise-2-implement-linearized-forward admonition">
+<p class="admonition-title">Exercise 2: Implement linearized forward</p>
+<p>Verify Properties 1 and 2 numerically for a concrete transition matrix.
+Then implement the <span class="math notranslate nohighlight">\(O(d)\)</span> forward step and verify it gives the same
+result as the <span class="math notranslate nohighlight">\(O(d^2)\)</span> version.</p>
+</div>
+<div class="admonition-exercise-3-end-to-end-time-sampling admonition">
+<p class="admonition-title">Exercise 3: End-to-end time sampling</p>
+<p>Using a simple simulated tree sequence (via <code class="docutils literal notranslate"><span class="pre">msprime</span></code>), run branch sampling
+followed by time sampling. Compare the inferred coalescence times to the
+true times from the simulation.</p>
+</div>
+<p>Next: <a class="reference internal" href="arg_rescaling.html#arg-rescaling"><span class="std std-ref">ARG Rescaling</span></a> – calibrating the clock to the mutation data.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="branch_sampling.html" class="btn btn-neutral float-left" title="Branch Sampling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="arg_rescaling.html" class="btn btn-neutral float-right" title="ARG Rescaling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

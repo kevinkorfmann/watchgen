@@ -1,0 +1,1067 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCMC Sampling &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Timepiece V: tsinfer" href="../tsinfer/index.html" />
+    <link rel="prev" title="Emission Probabilities" href="emission_probabilities.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece IV: ARGweaver</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece IV: ARGweaver</a></li>
+      <li class="breadcrumb-item active">MCMC Sampling</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="emission_probabilities.html" class="btn btn-neutral float-left" title="Emission Probabilities" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../tsinfer/index.html" class="btn btn-neutral float-right" title="Timepiece V: tsinfer" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mcmc-sampling">
+<span id="argweaver-mcmc"></span><h1>MCMC Sampling<a class="headerlink" href="#mcmc-sampling" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The mainspring: wind it up, let it tick, and each tick produces a new
+sample from the posterior — a complete genealogical history of your data.</em></p>
+</div></blockquote>
+<p>This chapter describes how ARGweaver’s gears — time discretization, transitions,
+and emissions — mesh together into a complete MCMC (Markov Chain Monte Carlo)
+sampler. The MCMC explores the space of ARGs by repeatedly removing one chromosome’s
+thread and re-sampling it from the conditional posterior.</p>
+<p>We have now forged every individual gear:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="time_discretization.html#argweaver-time-discretization"><span class="std std-ref">Time Discretization</span></a> — the tick marks on the dial</p></li>
+<li><p><a class="reference internal" href="transition_probabilities.html#argweaver-transitions"><span class="std std-ref">Transition Probabilities</span></a> — the gear train that advances the hidden state</p></li>
+<li><p><a class="reference internal" href="emission_probabilities.html#argweaver-emissions"><span class="std std-ref">Emission Probabilities</span></a> — the escapement that couples the mechanism to data</p></li>
+</ul>
+<p>In this chapter, we assemble them into a working watch and wind the mainspring.</p>
+<section id="the-gibbs-sampling-strategy">
+<h2>The Gibbs Sampling Strategy<a class="headerlink" href="#the-gibbs-sampling-strategy" title="Link to this heading"></a></h2>
+<p>ARGweaver uses <strong>Gibbs sampling</strong> (a special case of MCMC) rather than the
+Metropolis-Hastings framework used by SINGER’s SGPR. The difference is fundamental:</p>
+<ul class="simple">
+<li><p><strong>Metropolis-Hastings</strong> (SINGER): propose a new state, compute an acceptance ratio,
+accept or reject.</p></li>
+<li><p><strong>Gibbs sampling</strong> (ARGweaver): sample the new state <em>exactly</em> from the conditional
+posterior. No accept/reject step needed — every proposal is accepted.</p></li>
+</ul>
+<p>This is possible because the discrete-time HMM allows exact computation of the
+conditional posterior <span class="math notranslate nohighlight">\(P(\text{thread}_k \mid \text{ARG}_{-k}, \mathbf{D})\)</span>
+via the forward–backward algorithm.</p>
+<div class="admonition-closing-the-confusion-gap-what-is-gibbs-sampling admonition">
+<p class="admonition-title">Closing the confusion gap — What is Gibbs sampling?</p>
+<p>Gibbs sampling is a strategy for sampling from a joint probability distribution
+<span class="math notranslate nohighlight">\(P(x_1, x_2, \ldots, x_n)\)</span> when the joint distribution is too complex to
+sample from directly, but the <em>conditional</em> distributions
+<span class="math notranslate nohighlight">\(P(x_k \mid x_1, \ldots, x_{k-1}, x_{k+1}, \ldots, x_n)\)</span> are tractable.</p>
+<p>The algorithm is:</p>
+<ol class="arabic simple">
+<li><p>Start with some initial values <span class="math notranslate nohighlight">\((x_1^{(0)}, x_2^{(0)}, \ldots, x_n^{(0)})\)</span></p></li>
+<li><p>For each iteration <span class="math notranslate nohighlight">\(t\)</span>:</p>
+<ol class="loweralpha simple">
+<li><p>Sample <span class="math notranslate nohighlight">\(x_1^{(t)} \sim P(x_1 \mid x_2^{(t-1)}, x_3^{(t-1)}, \ldots, x_n^{(t-1)})\)</span></p></li>
+<li><p>Sample <span class="math notranslate nohighlight">\(x_2^{(t)} \sim P(x_2 \mid x_1^{(t)}, x_3^{(t-1)}, \ldots, x_n^{(t-1)})\)</span></p></li>
+<li><p>…and so on for all variables.</p></li>
+</ol>
+</li>
+<li><p>After many iterations, the samples <span class="math notranslate nohighlight">\((x_1^{(t)}, \ldots, x_n^{(t)})\)</span> are
+drawn from (approximately) the joint distribution <span class="math notranslate nohighlight">\(P(x_1, \ldots, x_n)\)</span>.</p></li>
+</ol>
+<p>In ARGweaver, the “variables” are the threads of the <span class="math notranslate nohighlight">\(n\)</span> chromosomes. At
+each iteration, one thread <span class="math notranslate nohighlight">\(x_k\)</span> is removed and re-sampled from its
+conditional posterior <span class="math notranslate nohighlight">\(P(\text{thread}_k \mid \text{all other threads}, \text{data})\)</span>.
+This conditional is exactly the posterior of an HMM — the forward algorithm
+computes it, and stochastic traceback produces a sample.</p>
+<p>The watch metaphor captures this perfectly: Gibbs sampling is <strong>systematically
+removing and replacing each gear</strong>. You pull out one gear (remove a chromosome’s
+thread), examine the space it left (the partial ARG), manufacture a new gear that
+fits exactly (sample from the conditional posterior via the HMM), and insert it.
+After cycling through all gears, the watch is in a new valid configuration.</p>
+</div>
+<div class="admonition-why-gibbs-works-here admonition">
+<p class="admonition-title">Why Gibbs works here</p>
+<p>The conditional distribution of one chromosome’s thread, given the rest of the ARG
+and the data, is exactly the posterior of an HMM with known parameters. The forward
+algorithm computes this posterior in <span class="math notranslate nohighlight">\(O(L \cdot S^2)\)</span> time, and stochastic
+traceback produces an exact sample. This is the same as “sampling from the full
+conditional” in Gibbs sampling theory.</p>
+<p>The guarantee: if you cycle through all chromosomes and re-sample each one’s thread,
+the stationary distribution of the Markov chain is the joint posterior
+<span class="math notranslate nohighlight">\(P(\mathcal{G} \mid \mathbf{D})\)</span>.</p>
+</div>
+<div class="admonition-probability-aside-why-gibbs-converges-to-the-correct-distribution admonition">
+<p class="admonition-title">Probability Aside — Why Gibbs converges to the correct distribution</p>
+<p>Gibbs sampling satisfies <strong>detailed balance</strong> with respect to the target
+distribution <span class="math notranslate nohighlight">\(\pi(\mathbf{x}) = P(\mathcal{G} \mid \mathbf{D})\)</span>. For a
+single-variable update of <span class="math notranslate nohighlight">\(x_k\)</span>, the transition probability from
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span> to <span class="math notranslate nohighlight">\(\mathbf{x}'\)</span> (which differs only in coordinate
+<span class="math notranslate nohighlight">\(k\)</span>) is <span class="math notranslate nohighlight">\(T(\mathbf{x} \to \mathbf{x}') = P(x_k' \mid \mathbf{x}_{-k})\)</span>.
+Detailed balance requires <span class="math notranslate nohighlight">\(\pi(\mathbf{x}) T(\mathbf{x} \to \mathbf{x}') = \pi(\mathbf{x}') T(\mathbf{x}' \to \mathbf{x})\)</span>.
+Since <span class="math notranslate nohighlight">\(T(\mathbf{x} \to \mathbf{x}') = P(x_k' \mid \mathbf{x}_{-k}) = \pi(\mathbf{x}') / \pi(\mathbf{x}_{-k})\)</span>
+and <span class="math notranslate nohighlight">\(T(\mathbf{x}' \to \mathbf{x}) = P(x_k \mid \mathbf{x}_{-k}) = \pi(\mathbf{x}) / \pi(\mathbf{x}_{-k})\)</span>,
+both sides equal <span class="math notranslate nohighlight">\(\pi(\mathbf{x}) \pi(\mathbf{x}') / \pi(\mathbf{x}_{-k})\)</span>.
+Detailed balance holds, so <span class="math notranslate nohighlight">\(\pi\)</span> is stationary.</p>
+</div>
+</section>
+<section id="sampling-the-initial-tree">
+<h2>Sampling the Initial Tree<a class="headerlink" href="#sampling-the-initial-tree" title="Link to this heading"></a></h2>
+<p>Before the MCMC begins, ARGweaver needs an initial ARG. It builds one by threading
+haplotypes sequentially, starting from a coalescent tree for the first pair.</p>
+<p>The initial tree is sampled from a <strong>coalescent with variable population sizes</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">exp</span>
+
+<span class="k">def</span> <span class="nf">sample_tree</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">popsizes</span><span class="p">,</span> <span class="n">times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sample a coalescent tree using a discrete-time coalescent.</span>
+
+<span class="sd">    Starting with k lineages at time 0, simulate coalescence events</span>
+<span class="sd">    through the time grid. At each time interval, the coalescence rate</span>
+<span class="sd">    depends on the number of lineages and the local population size.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k : int</span>
+<span class="sd">        Number of lineages (chromosomes).</span>
+<span class="sd">    popsizes : list of float</span>
+<span class="sd">        Effective population size at each time interval.</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of float</span>
+<span class="sd">        Coalescence times (one per coalescence event).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ntimes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+    <span class="n">coal_times</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">timei</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">popsizes</span><span class="p">[</span><span class="n">timei</span><span class="p">]</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">k2</span> <span class="o">=</span> <span class="n">k</span>  <span class="c1"># current number of lineages</span>
+
+    <span class="k">while</span> <span class="n">k2</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># Coalescent rate: k2 choose 2 pairs, each coalescing at rate 1/(2N).</span>
+        <span class="c1"># This is the standard coalescent rate from :ref:`coalescent_theory`.</span>
+        <span class="n">coal_rate</span> <span class="o">=</span> <span class="p">(</span><span class="n">k2</span> <span class="o">*</span> <span class="p">(</span><span class="n">k2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="c1"># Sample waiting time to next coalescence (exponential distribution)</span>
+        <span class="n">t2</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">expovariate</span><span class="p">(</span><span class="n">coal_rate</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">timei</span> <span class="o">&lt;</span> <span class="n">ntimes</span> <span class="o">-</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">t</span> <span class="o">+</span> <span class="n">t2</span> <span class="o">&gt;</span> <span class="n">times</span><span class="p">[</span><span class="n">timei</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="c1"># Crossed into next time interval; update population size.</span>
+            <span class="c1"># Do NOT record a coalescence --- the lineage survived this</span>
+            <span class="c1"># interval and moves on to the next one with a new N_e.</span>
+            <span class="n">timei</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">timei</span><span class="p">]</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">popsizes</span><span class="p">[</span><span class="n">timei</span><span class="p">]</span>
+            <span class="k">continue</span>
+
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">t2</span>
+        <span class="n">coal_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">k2</span> <span class="o">-=</span> <span class="mi">1</span>  <span class="c1"># one fewer lineage after coalescence</span>
+
+    <span class="k">return</span> <span class="n">coal_times</span>
+</pre></div>
+</div>
+<p>After discretizing the initial tree to the time grid, the algorithm threads additional
+haplotypes one at a time using the HMM.</p>
+<div class="admonition-closing-the-confusion-gap-why-start-with-a-pairwise-coalescence admonition">
+<p class="admonition-title">Closing the confusion gap — Why start with a pairwise coalescence?</p>
+<p>The simplest possible ARG has two haplotypes: just a single tree with one
+coalescence event. ARGweaver starts here because (a) sampling a two-haplotype
+coalescence requires no HMM at all (just draw a coalescence time from the
+coalescent prior), and (b) once you have an ARG for two haplotypes, you can
+thread a third using the full HMM machinery. The ARG grows from 2 to 3 to 4
+to <span class="math notranslate nohighlight">\(n\)</span> haplotypes, each step using the HMM to find where the new lineage
+best fits. This initial ARG is <em>not</em> a posterior sample — it is just a starting
+point for the MCMC. The burn-in phase (below) lets the chain forget this initial
+configuration.</p>
+</div>
+</section>
+<section id="sampling-sprs-from-the-dsmc">
+<h2>Sampling SPRs from the DSMC<a class="headerlink" href="#sampling-sprs-from-the-dsmc" title="Link to this heading"></a></h2>
+<p>Once the initial tree is built, the ARG is extended along the genome by sampling
+recombination events (SPRs) from the Discrete SMC. At each position, there’s a
+chance of recombination; if it occurs, the tree changes via an SPR.</p>
+<p>The five steps of sampling an SPR mirror the transition probability derivation in
+<a class="reference internal" href="transition_probabilities.html#argweaver-transitions"><span class="std std-ref">Transition Probabilities</span></a>: first determine <em>whether</em> a recombination occurs,
+then <em>where</em> on the tree and <em>when</em> in time, and finally <em>where</em> the lineage
+re-coalesces.</p>
+<section id="step-1-sample-recombination-position">
+<h3>Step 1: Sample Recombination Position<a class="headerlink" href="#step-1-sample-recombination-position" title="Link to this heading"></a></h3>
+<p>Recombination events are a Poisson process along the genome with rate
+<span class="math notranslate nohighlight">\(\rho \cdot L\)</span> per base pair, where <span class="math notranslate nohighlight">\(L\)</span> is the total tree length.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sample_next_recomb</span><span class="p">(</span><span class="n">treelen</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sample the distance to the next recombination event.</span>
+
+<span class="sd">    The waiting time (in base pairs) is exponential with rate</span>
+<span class="sd">    rho * treelen.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    treelen : float</span>
+<span class="sd">        Total tree length.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Per-base recombination rate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Distance in base pairs to the next recombination.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rate</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">treelen</span> <span class="o">*</span> <span class="n">rho</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>  <span class="c1"># guard against zero tree length</span>
+    <span class="c1"># Exponential waiting time: the mean distance between recombination</span>
+    <span class="c1"># events is 1 / (rho * treelen) base pairs.</span>
+    <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">expovariate</span><span class="p">(</span><span class="n">rate</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-sample-recombination-time">
+<h3>Step 2: Sample Recombination Time<a class="headerlink" href="#step-2-sample-recombination-time" title="Link to this heading"></a></h3>
+<p>Given that recombination occurs, the time is weighted by the amount of branch
+material at each time interval:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{recomb at time } k) \propto n_{\text{branches}}[k] \cdot \Delta t_k\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sample_recomb_time</span><span class="p">(</span><span class="n">nbranches</span><span class="p">,</span> <span class="n">time_steps</span><span class="p">,</span> <span class="n">root_age_index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sample which time interval the recombination falls in.</span>
+
+<span class="sd">    Probability is proportional to the amount of branch material</span>
+<span class="sd">    at each time interval: nbranches[k] * time_steps[k].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nbranches : list of int</span>
+<span class="sd">        Number of branches at each time interval.</span>
+<span class="sd">    time_steps : list of float</span>
+<span class="sd">        Time step sizes.</span>
+<span class="sd">    root_age_index : int</span>
+<span class="sd">        Time index of the root (recombination can only happen below).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        Time index of the recombination.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Weight each interval by total branch material = count * duration.</span>
+    <span class="c1"># More branches and longer intervals mean more opportunity for</span>
+    <span class="c1"># recombination to land in that interval.</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="n">nbranches</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">time_steps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+               <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">root_age_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="o">/</span> <span class="n">total</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weights</span><span class="p">]</span>
+
+    <span class="c1"># Sample from categorical distribution using inverse CDF.</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">probs</span><span class="p">):</span>
+        <span class="n">cumsum</span> <span class="o">+=</span> <span class="n">p</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="n">cumsum</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">i</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">probs</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-sample-recombination-node">
+<h3>Step 3: Sample Recombination Node<a class="headerlink" href="#step-3-sample-recombination-node" title="Link to this heading"></a></h3>
+<p>Given the time, the recombination branch is chosen <strong>uniformly</strong> among all branches
+that exist at that time index (excluding the root):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sample_recomb_node</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">recomb_time_index</span><span class="p">,</span> <span class="n">root_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sample which branch the recombination falls on.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    states : set of (str, int)</span>
+<span class="sd">        Valid coalescent states.</span>
+<span class="sd">    recomb_time_index : int</span>
+<span class="sd">        Time index of the recombination.</span>
+<span class="sd">    root_name : str</span>
+<span class="sd">        Name of the root node (excluded from recombination).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        Name of the node below the recombination point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Filter to branches that exist at this time, excluding the root</span>
+    <span class="c1"># (recombination above the root has no effect since there is only</span>
+    <span class="c1"># one lineage there).</span>
+    <span class="n">branches</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">timei</span> <span class="ow">in</span> <span class="n">states</span>
+                <span class="k">if</span> <span class="n">timei</span> <span class="o">==</span> <span class="n">recomb_time_index</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">!=</span> <span class="n">root_name</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">branches</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-sample-coalescence-time">
+<h3>Step 4: Sample Coalescence Time<a class="headerlink" href="#step-4-sample-coalescence-time" title="Link to this heading"></a></h3>
+<p>After the recombination, the detached lineage must re-coalesce. It floats upward
+through the time grid, with a chance to coalesce at each interval — the same
+discrete coalescent process used in the transition probabilities.</p>
+<div class="admonition-probability-aside-the-coalescent-race admonition">
+<p class="admonition-title">Probability Aside — The coalescent race</p>
+<p>Re-coalescence is a “race” between the detached lineage and the existing tree.
+At each time interval, the detached lineage has <span class="math notranslate nohighlight">\(n_{\text{branches}}[j]\)</span>
+potential partners. The probability of coalescing with any one of them in a small
+time interval <span class="math notranslate nohighlight">\(\Delta t\)</span> is approximately
+<span class="math notranslate nohighlight">\(n_{\text{branches}}[j] \cdot \Delta t / (2N_j)\)</span>. If the lineage fails to
+coalesce, it moves to the next interval and tries again.</p>
+<p>This is the same discrete-coalescent process that generates the re-coalescence
+distribution in the transition probability derivation
+(<a class="reference internal" href="transition_probabilities.html#argweaver-transitions"><span class="std std-ref">Transition Probabilities</span></a>). The only difference is that here we are <em>sampling</em>
+from the distribution (using random numbers) rather than <em>computing</em> it
+(enumerating all possibilities).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sample_coal_time</span><span class="p">(</span><span class="n">recomb_time_index</span><span class="p">,</span> <span class="n">nbranches</span><span class="p">,</span> <span class="n">popsizes</span><span class="p">,</span>
+                     <span class="n">coal_times</span><span class="p">,</span> <span class="n">ntimes</span><span class="p">,</span> <span class="n">recomb_node</span><span class="p">,</span> <span class="n">states</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sample the re-coalescence time after a recombination.</span>
+
+<span class="sd">    The lineage starts at recomb_time_index and moves upward,</span>
+<span class="sd">    with a hazard of coalescing at each time interval proportional</span>
+<span class="sd">    to the number of available lineages / (2 * Ne).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    recomb_time_index : int</span>
+<span class="sd">        Time index where recombination occurred.</span>
+<span class="sd">    nbranches : list of int</span>
+<span class="sd">        Number of branches at each time interval.</span>
+<span class="sd">    popsizes : list of float</span>
+<span class="sd">        Population sizes at each time interval.</span>
+<span class="sd">    coal_times : list of float</span>
+<span class="sd">        Interleaved time points and midpoints.</span>
+<span class="sd">    ntimes : int</span>
+<span class="sd">        Number of time intervals.</span>
+<span class="sd">    recomb_node : object</span>
+<span class="sd">        The recombination node (used to adjust lineage count).</span>
+<span class="sd">    states : set of (str, int)</span>
+<span class="sd">        Valid coalescent states.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        Time index of re-coalescence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="n">recomb_time_index</span>
+    <span class="n">last_kj</span> <span class="o">=</span> <span class="n">nbranches</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+
+    <span class="k">while</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">ntimes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">kj</span> <span class="o">=</span> <span class="n">nbranches</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+        <span class="c1"># Adjust: if the recomb node passes through this interval,</span>
+        <span class="c1"># it shouldn&#39;t count as an available coalescence partner.</span>
+        <span class="c1"># (A lineage cannot coalesce with itself.)</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">recomb_node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="n">states</span> <span class="ow">and</span>
+                <span class="n">recomb_node</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;</span> <span class="n">times</span><span class="p">[</span><span class="n">j</span><span class="p">]):</span>
+            <span class="n">kj</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="k">assert</span> <span class="n">kj</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="c1"># Compute exposure in this interval using the interleaved</span>
+        <span class="c1"># coal_times structure (see :ref:`argweaver_time_discretization`).</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="p">(</span><span class="n">coal_times</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">coal_times</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">j</span><span class="p">])</span> <span class="o">*</span> <span class="n">kj</span>
+        <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="n">recomb_time_index</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">+=</span> <span class="p">(</span><span class="n">coal_times</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">coal_times</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">last_kj</span>
+
+        <span class="c1"># Trial: coalesce in this interval?</span>
+        <span class="c1"># Draw a Bernoulli trial with success probability = coal_prob.</span>
+        <span class="n">coal_prob</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">A</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">popsizes</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">coal_prob</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="c1"># Survived this interval; move to the next tick mark on the dial.</span>
+        <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">last_kj</span> <span class="o">=</span> <span class="n">kj</span>
+
+    <span class="k">return</span> <span class="n">j</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-sample-coalescence-node">
+<h3>Step 5: Sample Coalescence Node<a class="headerlink" href="#step-5-sample-coalescence-node" title="Link to this heading"></a></h3>
+<p>Given the coalescence time, the branch is chosen uniformly among valid branches
+at that time, excluding the recombination node itself and certain relatives:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sample_coal_node</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">coal_time_index</span><span class="p">,</span> <span class="n">recomb_node</span><span class="p">,</span> <span class="n">tree</span><span class="p">,</span> <span class="n">times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sample which branch the re-coalescing lineage joins.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    states : set of (str, int)</span>
+<span class="sd">        Valid coalescent states.</span>
+<span class="sd">    coal_time_index : int</span>
+<span class="sd">        Time index of the re-coalescence.</span>
+<span class="sd">    recomb_node : object</span>
+<span class="sd">        The node where recombination occurred.</span>
+<span class="sd">    tree : tree object</span>
+<span class="sd">        The local tree.</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        Name of the node below the coalescence point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">coal_time</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">coal_time_index</span><span class="p">]</span>
+
+    <span class="c1"># Build exclusion set: the recomb node and its descendants</span>
+    <span class="c1"># at the same time (since coal points collapse).</span>
+    <span class="c1"># The lineage cannot re-coalesce with the subtree it just</span>
+    <span class="c1"># detached from --- that would create a trivial recombination.</span>
+    <span class="n">exclude</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">walk</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+        <span class="n">exclude</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">age</span> <span class="o">==</span> <span class="n">coal_time</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="n">walk</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+    <span class="n">walk</span><span class="p">(</span><span class="n">recomb_node</span><span class="p">)</span>
+
+    <span class="c1"># Also exclude the recomb node&#39;s parent at its time</span>
+    <span class="n">exclude_parent</span> <span class="o">=</span> <span class="p">(</span><span class="n">recomb_node</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                      <span class="n">times</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">recomb_node</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">age</span><span class="p">))</span>
+
+    <span class="c1"># Filter valid branches: must be at the right time index</span>
+    <span class="c1"># and not in the exclusion set.</span>
+    <span class="n">branches</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">timei</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">timei</span> <span class="ow">in</span> <span class="n">states</span>
+                <span class="k">if</span> <span class="n">timei</span> <span class="o">==</span> <span class="n">coal_time_index</span>
+                <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exclude</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">timei</span><span class="p">)</span> <span class="o">!=</span> <span class="n">exclude_parent</span><span class="p">]</span>
+
+    <span class="n">chosen</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">branches</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">chosen</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><em>Recap of the five sampling steps:</em> We sample (1) the genomic position of the
+recombination, (2) the time interval, (3) the specific branch, (4) the re-coalescence
+time, and (5) the re-coalescence branch. Together, these define one SPR that transforms
+the local tree into a new local tree at the next recombination breakpoint.</p>
+</section>
+</section>
+<section id="the-full-mcmc-loop">
+<h2>The Full MCMC Loop<a class="headerlink" href="#the-full-mcmc-loop" title="Link to this heading"></a></h2>
+<p>With all the pieces in place, the full MCMC loop is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">argweaver_mcmc</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">popsizes</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span>
+                   <span class="n">num_iters</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">burn_in</span><span class="o">=</span><span class="mi">200</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the ARGweaver MCMC sampler.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sequences : dict of {str: str}</span>
+<span class="sd">        Aligned haplotype sequences.</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points.</span>
+<span class="sd">    popsizes : list of float</span>
+<span class="sd">        Population sizes at each time interval.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Per-base recombination rate.</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Per-base mutation rate.</span>
+<span class="sd">    num_iters : int</span>
+<span class="sd">        Number of MCMC iterations.</span>
+<span class="sd">    burn_in : int</span>
+<span class="sd">        Number of burn-in iterations to discard.</span>
+
+<span class="sd">    Yields</span>
+<span class="sd">    ------</span>
+<span class="sd">    arg : ARG object</span>
+<span class="sd">        Sampled ARG (one per iteration after burn-in).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sequences</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+    <span class="c1"># ---- Step 1: Build initial ARG ----</span>
+    <span class="c1"># Thread haplotypes one at a time, starting from a pairwise</span>
+    <span class="c1"># coalescence. This is NOT a posterior sample --- just a</span>
+    <span class="c1"># starting point for the Markov chain.</span>
+    <span class="n">arg</span> <span class="o">=</span> <span class="n">build_initial_arg</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">popsizes</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+
+    <span class="c1"># ---- Step 2: MCMC iterations ----</span>
+    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iters</span><span class="p">):</span>
+        <span class="c1"># Choose a random chromosome to re-thread.</span>
+        <span class="c1"># This is the &quot;remove a gear&quot; step in the watch metaphor.</span>
+        <span class="n">remove_idx</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">remove_name</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="n">remove_idx</span><span class="p">]</span>
+
+        <span class="c1"># Remove this chromosome&#39;s thread from the ARG.</span>
+        <span class="c1"># This yields a partial ARG for n-1 haplotypes ---</span>
+        <span class="c1"># the &quot;space left by the removed gear.&quot;</span>
+        <span class="n">partial_arg</span> <span class="o">=</span> <span class="n">remove_thread</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">remove_name</span><span class="p">)</span>
+
+        <span class="c1"># Build the HMM for re-threading.</span>
+        <span class="c1"># States: (branch, time_index) at each genomic position</span>
+        <span class="c1"># Transitions: normal (within same tree) or switch (at breakpoints)</span>
+        <span class="c1"># Emissions: parsimony-based likelihood</span>
+        <span class="c1"># This assembles the time grid, transitions, and emissions</span>
+        <span class="c1"># from the previous three chapters.</span>
+        <span class="n">hmm</span> <span class="o">=</span> <span class="n">build_threading_hmm</span><span class="p">(</span>
+            <span class="n">partial_arg</span><span class="p">,</span> <span class="n">sequences</span><span class="p">[</span><span class="n">remove_name</span><span class="p">],</span>
+            <span class="n">times</span><span class="p">,</span> <span class="n">popsizes</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">mu</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Run forward algorithm (see :ref:`argweaver_transitions`).</span>
+        <span class="n">forward_probs</span> <span class="o">=</span> <span class="n">forward_algorithm</span><span class="p">(</span><span class="n">hmm</span><span class="p">)</span>
+
+        <span class="c1"># Stochastic traceback: sample a thread from the posterior.</span>
+        <span class="c1"># This is the &quot;manufacture a new gear&quot; step --- the new</span>
+        <span class="c1"># thread is drawn from the exact conditional distribution.</span>
+        <span class="n">new_thread</span> <span class="o">=</span> <span class="n">stochastic_traceback</span><span class="p">(</span><span class="n">forward_probs</span><span class="p">,</span> <span class="n">hmm</span><span class="p">)</span>
+
+        <span class="c1"># Add the new thread back into the ARG.</span>
+        <span class="c1"># The &quot;insert the new gear&quot; step.</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="n">add_thread</span><span class="p">(</span><span class="n">partial_arg</span><span class="p">,</span> <span class="n">remove_name</span><span class="p">,</span>
+                         <span class="n">sequences</span><span class="p">[</span><span class="n">remove_name</span><span class="p">],</span> <span class="n">new_thread</span><span class="p">)</span>
+
+        <span class="c1"># Yield sample (after burn-in).</span>
+        <span class="c1"># The first burn_in iterations are discarded because the</span>
+        <span class="c1"># chain has not yet converged to the stationary distribution.</span>
+        <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;=</span> <span class="n">burn_in</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">arg</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>MCMC Loop Diagram:
+
+Iteration i:
++---------+     +---------+     +---------+     +---------+
+| Current |     | Remove  |     | Build   |     | Sample  |
+| ARG     | --&gt; | thread  | --&gt; | HMM for | --&gt; | new     |
+| (n haps)|     | for k   |     | thread k|     | thread  |
++---------+     +---------+     +---------+     +---------+
+                                                     |
+                     +-------------------------------+
+                     |
+                     v
+                +---------+
+                | Add new |
+                | thread  | --&gt; ARG for iteration i+1
+                | to ARG  |
+                +---------+
+</pre></div>
+</div>
+</section>
+<section id="comparison-with-singer-s-sgpr">
+<h2>Comparison with SINGER’s SGPR<a class="headerlink" href="#comparison-with-singer-s-sgpr" title="Link to this heading"></a></h2>
+<p>ARGweaver and SINGER both use iterative re-threading, but their MCMC strategies
+differ in important ways:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 26.3%" />
+<col style="width: 36.8%" />
+<col style="width: 36.8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Property</p></th>
+<th class="head"><p>ARGweaver</p></th>
+<th class="head"><p>SINGER (SGPR)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Update unit</strong></p></td>
+<td><p>Single chromosome (leaf)</p></td>
+<td><p>Sub-graph (can include internal nodes)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Proposal mechanism</strong></p></td>
+<td><p>Exact conditional (Gibbs)</p></td>
+<td><p>Data-informed proposal (MH)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Accept/reject</strong></p></td>
+<td><p>Always accepted</p></td>
+<td><p>Metropolis-Hastings ratio</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Acceptance rate</strong></p></td>
+<td><p>100% (by construction)</p></td>
+<td><p>High (~90%+) due to informed proposal</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Time model</strong></p></td>
+<td><p>Discrete (finite grid)</p></td>
+<td><p>Continuous</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>HMM structure</strong></p></td>
+<td><p>Single HMM (branch + time)</p></td>
+<td><p>Two HMMs (branch, then time)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Per-iteration cost</strong></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(L \cdot S^2)\)</span> where <span class="math notranslate nohighlight">\(S \sim k \cdot n_t\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(L \cdot k)\)</span> per HMM</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Scaling with</strong> <span class="math notranslate nohighlight">\(k\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(k^2 n_t^2)\)</span> per site</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(k)\)</span> per site (approximate)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Mixing</strong></p></td>
+<td><p>Slower (one leaf at a time)</p></td>
+<td><p>Faster (sub-graphs span multiple nodes)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-the-mixing-tradeoff admonition">
+<p class="admonition-title">The mixing tradeoff</p>
+<p>ARGweaver re-threads one chromosome at a time, which means it takes <span class="math notranslate nohighlight">\(n\)</span>
+iterations to give every chromosome a chance to move. SINGER’s SGPR can modify
+multiple nodes simultaneously, potentially exploring the posterior more efficiently.</p>
+<p>However, ARGweaver’s exact conditional sampling means every update is statistically
+“perfect” given the rest of the ARG — there’s no wasted computation from rejected
+proposals. SINGER compensates for its approximate proposals with very high
+acceptance rates from data-informed sampling.</p>
+<p>In practice, both methods produce good posterior samples. ARGweaver is better
+suited for smaller sample sizes (<span class="math notranslate nohighlight">\(n &lt; 50\)</span>) with high accuracy requirements.
+SINGER scales to much larger sample sizes.</p>
+</div>
+<div class="admonition-probability-aside-metropolis-hastings-vs-gibbs-acceptance-rates admonition">
+<p class="admonition-title">Probability Aside — Metropolis-Hastings vs. Gibbs acceptance rates</p>
+<p>In Metropolis-Hastings, the acceptance probability for a proposal <span class="math notranslate nohighlight">\(x' \sim q(x' \mid x)\)</span> is</p>
+<div class="math notranslate nohighlight">
+\[\alpha(x \to x') = \min\!\left(1, \frac{\pi(x') \, q(x \mid x')}{\pi(x) \, q(x' \mid x)}\right)\]</div>
+<p>If the proposal distribution <span class="math notranslate nohighlight">\(q\)</span> equals the conditional posterior <span class="math notranslate nohighlight">\(\pi(x' \mid x_{-k})\)</span>,
+then <span class="math notranslate nohighlight">\(\alpha = 1\)</span> always — this is exactly Gibbs sampling. The Gibbs sampler
+is the special case of MH where the proposal is so good that nothing is ever rejected.</p>
+<p>SINGER’s MH proposals are data-informed but not exactly equal to the conditional
+posterior (because SINGER uses continuous time and approximate two-HMM decoupling).
+The resulting acceptance rates are high (~90%+) but not 100%, meaning some
+computation is “wasted” on rejected proposals. ARGweaver wastes no computation on
+rejections, but each proposal is more expensive to compute (larger state space).</p>
+</div>
+</section>
+<section id="convergence-and-diagnostics">
+<h2>Convergence and Diagnostics<a class="headerlink" href="#convergence-and-diagnostics" title="Link to this heading"></a></h2>
+<p>Like any MCMC, ARGweaver needs monitoring to ensure convergence:</p>
+<p><strong>Burn-in</strong>: The initial ARG (built by sequential threading) may not be representative
+of the posterior. Discard the first several hundred iterations.</p>
+<p><strong>Thinning</strong>: Consecutive samples are correlated (they differ by only one chromosome’s
+thread). Thin by keeping every <span class="math notranslate nohighlight">\(n\)</span>-th sample (where <span class="math notranslate nohighlight">\(n\)</span> is the number
+of haplotypes) to reduce autocorrelation.</p>
+<p><strong>Diagnostics</strong>:</p>
+<ul class="simple">
+<li><p><strong>Joint log-likelihood</strong> <span class="math notranslate nohighlight">\(\log P(\mathbf{D} \mid \mathcal{G})\)</span>: should stabilize</p></li>
+<li><p><strong>Total tree length</strong>: should fluctuate around an equilibrium</p></li>
+<li><p><strong>Pairwise TMRCA</strong> between specific pairs: check for convergence at specific loci</p></li>
+</ul>
+<div class="admonition-closing-the-confusion-gap-why-burn-in-and-thinning admonition">
+<p class="admonition-title">Closing the confusion gap — Why burn-in and thinning?</p>
+<p><strong>Burn-in</strong> addresses the fact that the MCMC starts from an arbitrary initial ARG
+(the one built by sequential threading). This initial ARG may be far from the
+high-probability region of the posterior. The chain needs time to “forget” its
+starting point and reach the stationary distribution. Discarding early samples
+(the burn-in period) avoids contaminating your estimates with these unrepresentative
+samples.</p>
+<p><strong>Thinning</strong> addresses autocorrelation: consecutive MCMC samples differ by only
+one chromosome’s thread, so they are highly correlated. If you keep every sample,
+your effective sample size (the number of independent samples) is much smaller than
+the total number of samples. By keeping only every <span class="math notranslate nohighlight">\(n\)</span>-th sample (one per
+“sweep” through all chromosomes), you reduce this correlation. A sweep is like
+one full rotation of the watch’s second hand — every gear has been replaced once.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_log_likelihood</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the joint log-likelihood of the data given the ARG.</span>
+
+<span class="sd">    This sums the log emission probability at every site for the</span>
+<span class="sd">    actual topology encoded in the ARG. Useful as an MCMC diagnostic.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg : ARG object</span>
+<span class="sd">        The current ARG sample.</span>
+<span class="sd">    sequences : dict of {str: str}</span>
+<span class="sd">        Observed sequences.</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Mutation rate.</span>
+<span class="sd">    times : list of float</span>
+<span class="sd">        Discretized time points.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Joint log-likelihood.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">total_ll</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">),</span> <span class="n">tree</span> <span class="ow">in</span> <span class="n">iter_local_trees</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="c1"># Branch length: distance from node to parent.</span>
+                <span class="c1"># Floored to avoid log(0).</span>
+                <span class="n">blen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">get_dist</span><span class="p">(),</span> <span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">)</span>
+                <span class="c1"># Under Jukes-Cantor: P(no mut) = exp(-mu*blen)</span>
+                <span class="c1"># P(specific mut) = 1/3 * (1 - exp(-mu*blen))</span>
+                <span class="n">parent_base</span> <span class="o">=</span> <span class="n">sequences</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                            <span class="s1">&#39;N&#39;</span><span class="p">)</span>  <span class="c1"># internal</span>
+                <span class="n">child_base</span> <span class="o">=</span> <span class="n">sequences</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">parent_base</span> <span class="o">==</span> <span class="n">child_base</span><span class="p">:</span>
+                    <span class="n">total_ll</span> <span class="o">+=</span> <span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">blen</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">total_ll</span> <span class="o">+=</span> <span class="n">log</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">blen</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">total_ll</span>
+</pre></div>
+</div>
+<p><em>Final recap:</em> ARGweaver is a digital watch. Its time grid
+(<a class="reference internal" href="time_discretization.html#argweaver-time-discretization"><span class="std std-ref">Time Discretization</span></a>) provides the tick marks; its transition
+probabilities (<a class="reference internal" href="transition_probabilities.html#argweaver-transitions"><span class="std std-ref">Transition Probabilities</span></a>) are the gear train; its emission
+probabilities (<a class="reference internal" href="emission_probabilities.html#argweaver-emissions"><span class="std std-ref">Emission Probabilities</span></a>) are the escapement; and its Gibbs
+sampler (this chapter) is the mainspring. Each MCMC iteration removes one gear
+(thread), manufactures an exact replacement via the HMM, and inserts it. After
+many ticks, the watch reads the correct time — posterior samples of the ARG.</p>
+<p>For the continuous-time alternative, see SINGER. For the simpler case of a single
+diploid genome (no ARG, just a sequence of coalescence times), see PSMC in
+<a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>. For the shared theoretical foundations, see <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">The Sequentially Markov Coalescent</span></a>
+and <a class="reference internal" href="../../prerequisites/args.html#args"><span class="std std-ref">Ancestral Recombination Graphs</span></a>.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-gibbs-vs-metropolis-hastings admonition">
+<p class="admonition-title">Exercise 1: Gibbs vs. Metropolis-Hastings</p>
+<p>Prove that Gibbs sampling satisfies detailed balance. That is, show that if
+the update for variable <span class="math notranslate nohighlight">\(x_k\)</span> samples from <span class="math notranslate nohighlight">\(P(x_k \mid x_{-k})\)</span>,
+then the joint distribution <span class="math notranslate nohighlight">\(P(x_1, \ldots, x_n)\)</span> is a stationary
+distribution of the resulting Markov chain.</p>
+</div>
+<div class="admonition-exercise-2-mixing-time-analysis admonition">
+<p class="admonition-title">Exercise 2: Mixing time analysis</p>
+<p>Consider an ARG with <span class="math notranslate nohighlight">\(n = 10\)</span> chromosomes and <span class="math notranslate nohighlight">\(L = 10{,}000\)</span> sites.
+How many MCMC iterations are needed for every chromosome to be re-threaded at
+least once (in expectation)? This is the coupon collector problem —
+the expected number is <span class="math notranslate nohighlight">\(n \cdot H_n\)</span> where <span class="math notranslate nohighlight">\(H_n\)</span> is the <span class="math notranslate nohighlight">\(n\)</span>-th
+harmonic number.</p>
+</div>
+<div class="admonition-exercise-3-implement-the-full-loop admonition">
+<p class="admonition-title">Exercise 3: Implement the full loop</p>
+<p>Using the building blocks from previous chapters (time discretization, transitions,
+emissions), implement a simplified version of the MCMC loop for a small example
+(4 haplotypes, 100 sites). Run 1000 iterations and plot the total tree length
+at a specific site over iterations. Does it converge?</p>
+</div>
+<div class="admonition-exercise-4-singer-comparison admonition">
+<p class="admonition-title">Exercise 4: SINGER comparison</p>
+<p>For the same dataset, run both an ARGweaver-style Gibbs sampler and a
+SINGER-style MH sampler (using simplified transition/emission models). Compare:
+(a) wallclock time per iteration, (b) effective sample size after 1000 iterations,
+(c) autocorrelation of pairwise TMRCA at a fixed site. Which sampler is more
+efficient per iteration? Per unit of wallclock time?</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="emission_probabilities.html" class="btn btn-neutral float-left" title="Emission Probabilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../tsinfer/index.html" class="btn btn-neutral float-right" title="Timepiece V: tsinfer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

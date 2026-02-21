@@ -1,0 +1,923 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview of PSMC &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="The Continuous-Time PSMC Model" href="continuous_model.html" />
+    <link rel="prev" title="Timepiece I: PSMC" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece I: PSMC</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece I: PSMC</a></li>
+      <li class="breadcrumb-item active">Overview of PSMC</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="index.html" class="btn btn-neutral float-left" title="Timepiece I: PSMC" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="continuous_model.html" class="btn btn-neutral float-right" title="The Continuous-Time PSMC Model" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview-of-psmc">
+<span id="psmc-overview"></span><h1>Overview of PSMC<a class="headerlink" href="#overview-of-psmc" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>Before assembling the watch, lay out every part and understand what it does.</em></p>
+</div></blockquote>
+<p>Imagine holding the simplest watch that still tells useful time. It has just two
+hands – no complications, no chronograph, no moon phase. Yet those two hands,
+driven by a precise internal mechanism, can tell you something profound: what
+time it is. The PSMC is exactly this kind of instrument. It takes the two
+haploid copies of a single diploid genome – just two “hands” – and from
+nothing more than the pattern of similarities and differences between them,
+reads out the population size history of an entire species stretching back
+hundreds of thousands of years.</p>
+<p>This chapter lays out every part of the PSMC on the watchmaker’s bench. We will
+not assemble anything yet. Instead, we will name each gear, explain what it does,
+and show how the parts fit together into a working mechanism. The actual assembly
+– the derivations, the code, the verification – happens in the chapters that
+follow.</p>
+<p>If you have not yet worked through the prerequisite chapters on
+<a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">coalescent theory</span></a>, <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">hidden Markov models</span></a>,
+and <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">the SMC approximation</span></a>, now is a good time. Those chapters
+built the fundamental tools – the escapement, the gear train, and the Markov
+property – that PSMC assembles into its first complete Timepiece.</p>
+<section id="what-does-psmc-do">
+<h2>What Does PSMC Do?<a class="headerlink" href="#what-does-psmc-do" title="Link to this heading"></a></h2>
+<p>Given a single diploid genome, PSMC infers the <strong>effective population size</strong>
+<span class="math notranslate nohighlight">\(N(t)\)</span> as a function of time.</p>
+<div class="admonition-what-is-effective-population-size admonition">
+<p class="admonition-title">What is “effective population size”?</p>
+<p>The <strong>effective population size</strong> <span class="math notranslate nohighlight">\(N_e\)</span> is not a head-count of every
+individual alive at some moment in the past. It is a more subtle quantity:
+the size of an idealized population (a Wright-Fisher population, as described
+in <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>) that would produce the same patterns of genetic
+variation as the real population. Real populations have unequal sex ratios,
+overlapping generations, population structure, and many other complications.
+The effective population size absorbs all of these complications into a single
+number that captures their net effect on genetic drift.</p>
+<p>Concretely, when PSMC reports <span class="math notranslate nohighlight">\(N(t) = 50{,}000\)</span> at some time in the
+past, it means: “the level of genetic diversity in this genome is consistent
+with a population that behaved, genetically speaking, as if it had 50,000
+randomly mating diploid individuals at that time.” The actual census population
+could have been larger (if population structure reduced effective mixing) or
+smaller (though this is less common).</p>
+<p>Think of it this way: the effective population size is like the “effective
+temperature” of a room. A room might have a heater in one corner and a window
+in another, but the thermometer on the wall gives you a single number that
+summarizes the thermal environment. The effective population size similarly
+summarizes the genetic environment.</p>
+</div>
+<p>The input to PSMC is deceptively simple: a sequence of 0s and 1s, where 0 means
+“homozygous” (the two chromosome copies are identical in this region) and 1
+means “heterozygous” (they differ). Each entry corresponds to a genomic <strong>bin</strong>
+– a window of <span class="math notranslate nohighlight">\(s\)</span> base pairs (typically <span class="math notranslate nohighlight">\(s = 100\)</span>).</p>
+<div class="admonition-what-is-a-bin-and-why-do-we-bin-the-data admonition">
+<p class="admonition-title">What is a “bin” and why do we bin the data?</p>
+<p>A <strong>bin</strong> is simply a contiguous window of <span class="math notranslate nohighlight">\(s\)</span> base pairs along the
+genome. We divide the entire genome into non-overlapping bins and summarize
+each one with a single bit: 1 if at least one heterozygous site exists
+within the window, 0 otherwise.</p>
+<p>Why not work at single-base-pair resolution? Two reasons. First,
+<strong>computational tractability</strong>: a human genome has roughly 3 billion base
+pairs, and running the HMM forward-backward algorithm on a sequence of 3
+billion positions would be extremely slow. Binning into 100-bp windows
+reduces the sequence length by a factor of 100, to about 30 million – still
+long, but manageable. Second, <strong>information content</strong>: at the per-site level,
+mutations are very rare (roughly 1 in 1,000 base pairs is heterozygous in
+humans), so most individual sites are uninformative 0s. Binning aggregates
+the signal without losing much information, because the probability of a bin
+being heterozygous is a smooth function of the coalescence time (as we will
+see in the emission probability below).</p>
+</div>
+<div class="math notranslate nohighlight">
+\[\text{Input: } X_1, X_2, \ldots, X_L \in \{0, 1\}\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Output: } \hat{N}(t) = N_0 \hat{\lambda}(t), \quad t \in [0, t_{\max}]\]</div>
+<p>where <span class="math notranslate nohighlight">\(N_0\)</span> is a reference population size and <span class="math notranslate nohighlight">\(\lambda(t)\)</span> is the
+relative population size at time <span class="math notranslate nohighlight">\(t\)</span> (so <span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span> means the
+population is at its reference size, <span class="math notranslate nohighlight">\(\lambda(t) = 2\)</span> means twice as large,
+etc.).</p>
+</section>
+<section id="the-core-physical-picture">
+<h2>The Core Physical Picture<a class="headerlink" href="#the-core-physical-picture" title="Link to this heading"></a></h2>
+<p>At every position along the genome, your two chromosome copies share a most recent
+common ancestor (MRCA). The time to this MRCA is the <strong>coalescence time</strong> <span class="math notranslate nohighlight">\(T\)</span>
+– a concept we developed in detail in <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Copy 1 --------+
+                |  &lt;-- coalescence time T
+Copy 2 --------+
+                |
+              MRCA
+                |
+              (past)
+</pre></div>
+</div>
+<p>This is why PSMC is a “two-hand watch.” Each chromosome copy is one hand.
+Their meeting point in the past – the MRCA – is the time being measured.
+The heterozygous sites scattered along the genome are the tick marks on the
+dial: each one records a mutation that occurred since the two copies diverged.
+More tick marks in a region means the hands were further apart (longer coalescence
+time); fewer tick marks means they were closer together (shorter coalescence time).</p>
+<p>Three things determine the pattern of heterozygosity along the genome:</p>
+<ol class="arabic simple">
+<li><p><strong>Mutations accumulate proportionally to time.</strong> A site is heterozygous if a
+mutation occurred on either lineage since the MRCA. Longer coalescence time
+<span class="math notranslate nohighlight">\(T\)</span> = more opportunity for mutations = more heterozygous sites. This is
+the link between the hidden quantity (time) and the observable quantity
+(heterozygosity) – the gearing ratio that connects the internal mechanism to
+the dial.</p></li>
+<li><p><strong>Recombination reshuffles the genealogy.</strong> At recombination breakpoints, the
+genealogy changes: the two copies may trace back to a different MRCA with a
+different coalescence time. So <span class="math notranslate nohighlight">\(T\)</span> varies along the genome. As we saw in
+the <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">SMC chapter</span></a>, the SMC approximation makes this variation Markov:
+the coalescence time at the next bin depends only on the coalescence time at the
+current bin, not on the entire history.</p></li>
+<li><p><strong>Population size shapes the distribution of</strong> <span class="math notranslate nohighlight">\(T\)</span>. In a large population,
+it takes longer for two lineages to find a common ancestor (there are many
+individuals, so the chance of sharing a parent is low). In a small population
+(a bottleneck), coalescence happens quickly. The distribution of <span class="math notranslate nohighlight">\(T\)</span> is
+therefore an imprint of the population size history <span class="math notranslate nohighlight">\(N(t)\)</span>. This is the
+fundamental insight that makes PSMC possible: the genome remembers its
+demographic past in the pattern of coalescence times, and that pattern is
+visible through the lens of heterozygosity.</p></li>
+</ol>
+</section>
+<section id="why-a-hidden-markov-model">
+<h2>Why a Hidden Markov Model?<a class="headerlink" href="#why-a-hidden-markov-model" title="Link to this heading"></a></h2>
+<p>We have a sequence of coalescence times <span class="math notranslate nohighlight">\(T_1, T_2, \ldots, T_L\)</span> – one per
+genomic bin – that we cannot directly observe. What we <em>can</em> observe is the
+heterozygosity pattern <span class="math notranslate nohighlight">\(X_1, X_2, \ldots, X_L\)</span>. The coalescence times
+evolve along the genome (changing at recombination breakpoints), and at each bin,
+the coalescence time “emits” an observation (heterozygous or homozygous) with a
+probability that depends on the time.</p>
+<p>This is precisely the situation that Hidden Markov Models are designed to handle,
+as we developed in the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>. Recall the structure:</p>
+<ul class="simple">
+<li><p>A sequence of <strong>hidden states</strong> that evolve according to a Markov chain</p></li>
+<li><p>At each position, the hidden state <strong>emits</strong> an observation</p></li>
+<li><p>We observe the emissions and want to infer the hidden states (or, in PSMC’s
+case, the parameters that govern the hidden state dynamics)</p></li>
+</ul>
+<p>The HMM is the <strong>gear train</strong> connecting the escapement (the coalescent process
+that generates coalescence times) to the dial (the population size history we
+read off at the end). It transmits information from the raw observations through
+a series of precise computational steps – forward-backward, expectation,
+maximization – and converts it into an estimate of <span class="math notranslate nohighlight">\(N(t)\)</span>.</p>
+<p>The analogy to watchmaking is almost exact. In a mechanical watch, the
+escapement (a balance wheel oscillating back and forth) produces a regular beat.
+The gear train takes that beat and translates it into the smooth sweep of hands
+across a dial. In PSMC, the coalescent process (lineages coalescing at rates
+governed by population size) produces a pattern of coalescence times. The HMM
+takes that pattern and translates it into an estimate of the population size
+function <span class="math notranslate nohighlight">\(\lambda(t)\)</span>.</p>
+<p>Here is how the PSMC maps onto the HMM framework:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>HMM Component</p></th>
+<th class="head"><p>In PSMC</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Hidden states</strong></p></td>
+<td><p>Discretized coalescence time intervals <span class="math notranslate nohighlight">\([t_k, t_{k+1})\)</span>. The
+continuous coalescence time is approximated by a finite set of intervals,
+turning the problem from infinite-dimensional to finite.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Observations</strong></p></td>
+<td><p>Heterozygous (1) or homozygous (0) at each genomic bin. These are the
+tick marks on the watch dial.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Transitions</strong></p></td>
+<td><p>How coalescence time changes between adjacent bins. This is governed by
+the recombination rate and the population size history, as derived in the
+<a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">SMC chapter</span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Emissions</strong></p></td>
+<td><p>Probability of seeing a het/hom given coalescence time <span class="math notranslate nohighlight">\(T = t\)</span>.
+Longer coalescence times produce more heterozygous sites, because
+mutations have had more time to accumulate.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Parameters to estimate</strong></p></td>
+<td><p><span class="math notranslate nohighlight">\(\theta_0\)</span> (mutation rate), <span class="math notranslate nohighlight">\(\rho_0\)</span> (recombination rate),
+<span class="math notranslate nohighlight">\(\lambda_k\)</span> (relative population sizes in each time interval)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="terminology">
+<h2>Terminology<a class="headerlink" href="#terminology" title="Link to this heading"></a></h2>
+<p>Before going further, let us establish the notation we will use throughout the
+PSMC chapters. Every symbol here has a concrete physical meaning – take a moment
+to understand each one, because they will reappear in every derivation that follows.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 75.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Term</p></th>
+<th class="head"><p>Definition</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Coalescence time</strong> <span class="math notranslate nohighlight">\(T_a\)</span></p></td>
+<td><p>The time to the MRCA of the two haplotypes at genomic position <span class="math notranslate nohighlight">\(a\)</span>,
+measured in coalescent time units (multiples of <span class="math notranslate nohighlight">\(2N_0\)</span> generations,
+as established in <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>). This is the hidden variable
+that PSMC seeks to infer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Heterozygous site</strong></p></td>
+<td><p>A position where the two haplotypes differ (<span class="math notranslate nohighlight">\(X_a = 1\)</span>). Each
+heterozygous site is evidence of a mutation that occurred since the MRCA –
+a tick mark on the dial.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Homozygous site</strong></p></td>
+<td><p>A position where the two haplotypes are identical (<span class="math notranslate nohighlight">\(X_a = 0\)</span>). The
+absence of a tick mark – either no mutation occurred, or (very rarely)
+two mutations at the same site cancelled each other out.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Bin</strong></p></td>
+<td><p>A genomic window of <span class="math notranslate nohighlight">\(s\)</span> base pairs (default <span class="math notranslate nohighlight">\(s = 100\)</span>).
+<span class="math notranslate nohighlight">\(X_a = 1\)</span> if at least one heterozygous site exists in the bin;
+<span class="math notranslate nohighlight">\(X_a = 0\)</span> otherwise. Bins are the resolution at which PSMC reads
+the genome.</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\theta_0\)</span></p></td>
+<td><p>Population-scaled mutation rate per bin: <span class="math notranslate nohighlight">\(4N_0 \mu s\)</span>, where
+<span class="math notranslate nohighlight">\(\mu\)</span> is the per-base-pair per-generation mutation rate and
+<span class="math notranslate nohighlight">\(s\)</span> is the bin size. This parameter controls how rapidly tick marks
+accumulate on the dial as coalescence time increases.</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\rho_0\)</span></p></td>
+<td><p>Population-scaled recombination rate per bin: <span class="math notranslate nohighlight">\(4N_0 r s\)</span>, where
+<span class="math notranslate nohighlight">\(r\)</span> is the per-base-pair per-generation recombination rate. This
+parameter controls how frequently the genealogy changes between adjacent
+bins – how often the hidden state transitions.</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\lambda(t)\)</span></p></td>
+<td><p>Relative population size at time <span class="math notranslate nohighlight">\(t\)</span>: <span class="math notranslate nohighlight">\(N(t) = N_0 \lambda(t)\)</span>.
+This is what PSMC ultimately estimates. A value of <span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span>
+means the population is at its reference size; <span class="math notranslate nohighlight">\(\lambda(t) = 2\)</span>
+means twice as large; <span class="math notranslate nohighlight">\(\lambda(t) = 0.5\)</span> means half as large.</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\Lambda(t)\)</span></p></td>
+<td><p>Cumulative coalescence intensity:
+<span class="math notranslate nohighlight">\(\Lambda(t) = \int_0^t \frac{du}{\lambda(u)}\)</span>. This quantity
+measures the cumulative “difficulty” of avoiding coalescence up to time
+<span class="math notranslate nohighlight">\(t\)</span>. When the population is small (<span class="math notranslate nohighlight">\(\lambda(u)\)</span> is small),
+coalescence is likely and <span class="math notranslate nohighlight">\(\Lambda\)</span> increases rapidly. When the
+population is large, <span class="math notranslate nohighlight">\(\Lambda\)</span> increases slowly. You can think of
+<span class="math notranslate nohighlight">\(\Lambda(t)\)</span> as a “stretched clock” – it runs fast during
+bottlenecks and slow during expansions. This will be derived carefully in
+the <a class="reference internal" href="continuous_model.html#psmc-continuous"><span class="std std-ref">continuous model chapter</span></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(N_0\)</span></p></td>
+<td><p>Reference effective population size. This is a scaling parameter: PSMC
+estimates relative sizes <span class="math notranslate nohighlight">\(\lambda(t)\)</span>, and <span class="math notranslate nohighlight">\(N_0\)</span> converts
+them to absolute sizes. In practice, <span class="math notranslate nohighlight">\(N_0\)</span> is recovered from the
+estimated <span class="math notranslate nohighlight">\(\theta_0\)</span> via <span class="math notranslate nohighlight">\(N_0 = \theta_0 / (4\mu s)\)</span>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(t\)</span></p></td>
+<td><p>Time measured in coalescent time units: multiples of <span class="math notranslate nohighlight">\(2N_0\)</span>
+generations. As established in <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>, this is the
+natural timescale of the coalescent, where the coalescence rate for two
+lineages in a constant-size population is exactly 1.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-why-measure-time-in-units-of-math-2n-0-generations admonition">
+<p class="admonition-title">Why measure time in units of <span class="math notranslate nohighlight">\(2N_0\)</span> generations?</p>
+<p>This is the natural timescale of the coalescent, as we derived in
+<a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>. In a diploid population of size <span class="math notranslate nohighlight">\(N\)</span>, the
+expected time for two randomly chosen gene copies to coalesce is <span class="math notranslate nohighlight">\(2N\)</span>
+generations. By measuring time in these units, the coalescence rate becomes 1
+when <span class="math notranslate nohighlight">\(\lambda(t) = 1\)</span>, which simplifies all the math. The coalescence
+rate at time <span class="math notranslate nohighlight">\(t\)</span> is <span class="math notranslate nohighlight">\(1/\lambda(t)\)</span>: larger populations mean lower
+coalescence rates.</p>
+</div>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<p>PSMC estimates three types of parameters. Together, they fully specify the HMM
+and determine the population size history.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Symbol</p></th>
+<th class="head"><p>Physical meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Mutation rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(\theta_0\)</span></p></td>
+<td><p>Controls the density of tick marks on the dial. A higher <span class="math notranslate nohighlight">\(\theta_0\)</span>
+means more heterozygous sites per unit coalescence time, making the
+coalescence time easier to “read” from the data.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Recombination rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(\rho_0\)</span></p></td>
+<td><p>Controls how frequently the genealogy changes along the genome. A higher
+<span class="math notranslate nohighlight">\(\rho_0\)</span> means more transitions between coalescence time states,
+which provides more independent “readings” of the population size at
+different times.</p></td>
+</tr>
+<tr class="row-even"><td><p>Population sizes</p></td>
+<td><p><span class="math notranslate nohighlight">\(\lambda_0, \ldots, \lambda_n\)</span></p></td>
+<td><p>The relative population size in each time interval. These are the primary
+quantities of interest – the numbers that will be plotted as the
+population size history.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-what-does-piecewise-constant-mean admonition">
+<p class="admonition-title">What does “piecewise constant” mean?</p>
+<p>PSMC assumes that <span class="math notranslate nohighlight">\(\lambda(t)\)</span> is a <strong>piecewise constant function</strong>.
+This means the time axis is divided into <span class="math notranslate nohighlight">\(n + 1\)</span> intervals
+<span class="math notranslate nohighlight">\([t_0, t_1), [t_1, t_2), \ldots, [t_n, t_{n+1})\)</span>, and within each
+interval the relative population size is a single constant value
+<span class="math notranslate nohighlight">\(\lambda_k\)</span>.</p>
+<p>Picture a staircase. Each step is flat (constant population size within an
+interval), and the steps can be at different heights (different population
+sizes in different intervals). The function jumps from one height to the next
+at the interval boundaries but is constant in between.</p>
+<p>This is not a biological assumption – nobody believes population size
+actually changed in discrete jumps. It is a <strong>computational convenience</strong>:
+it turns the problem of estimating a continuous function <span class="math notranslate nohighlight">\(\lambda(t)\)</span>
+(which has infinitely many degrees of freedom) into the problem of estimating
+a finite set of numbers <span class="math notranslate nohighlight">\(\lambda_0, \ldots, \lambda_n\)</span>. More intervals
+give finer resolution but risk overfitting to noise. Fewer intervals are more
+robust but might miss real demographic events.</p>
+<p>The intervals are chosen to be approximately <strong>log-spaced</strong> in time, giving
+fine resolution in the recent past (where the data is most informative) and
+coarse resolution in the distant past. Adjacent intervals can share the same
+<span class="math notranslate nohighlight">\(\lambda\)</span> parameter to further reduce overfitting – this is what the
+<code class="docutils literal notranslate"><span class="pre">-p</span></code> pattern in the PSMC software controls.</p>
+</div>
+<div class="admonition-why-is-the-ratio-math-theta-0-rho-0-fixed admonition">
+<p class="admonition-title">Why is the ratio <span class="math notranslate nohighlight">\(\theta_0 / \rho_0\)</span> fixed?</p>
+<p>PSMC typically fixes the ratio <span class="math notranslate nohighlight">\(\theta_0 / \rho_0\)</span> (the default value
+is 5) rather than estimating both rates independently. The reason is
+<strong>identifiability</strong>: from a single diploid genome, it is very difficult to
+separately estimate the mutation rate and the recombination rate. Both
+parameters affect the data in partially overlapping ways – increasing the
+mutation rate makes the sequence “look” similar to decreasing the
+recombination rate, and vice versa.</p>
+<p>By fixing their ratio, PSMC essentially says: “I know the relative rates of
+mutation and recombination from external evidence (e.g., pedigree studies),
+and I will use that knowledge as a constraint.” This reduces the number of
+free parameters by one and makes the remaining parameters (the overall scale
+<span class="math notranslate nohighlight">\(\theta_0\)</span> and the population sizes <span class="math notranslate nohighlight">\(\lambda_k\)</span>) better
+identifiable.</p>
+<p>In the watch metaphor, fixing <span class="math notranslate nohighlight">\(\theta_0 / \rho_0\)</span> is like knowing the
+gear ratio between two wheels in advance. You still need to determine how
+fast the mainspring unwinds, but you know exactly how the two wheels relate
+to each other.</p>
+</div>
+</section>
+<section id="the-data-from-bam-to-binary-sequence">
+<h2>The Data: From BAM to Binary Sequence<a class="headerlink" href="#the-data-from-bam-to-binary-sequence" title="Link to this heading"></a></h2>
+<p>The input to PSMC is prepared in two steps. The process converts a complex
+genomic dataset into the simple binary sequence that the HMM operates on.</p>
+<ol class="arabic simple">
+<li><p><strong>Call consensus</strong>: From aligned reads (a BAM file), generate a diploid
+consensus sequence where each base is labeled as heterozygous or homozygous.
+This step uses standard variant calling tools and quality filters to
+distinguish genuine heterozygous sites from sequencing errors.</p></li>
+<li><p><strong>Bin</strong>: Divide the genome into non-overlapping windows of <span class="math notranslate nohighlight">\(s\)</span> base
+pairs (default 100). Mark a bin as “1” if it contains at least one
+heterozygous site, “0” otherwise. Bins with insufficient data (low coverage
+or poor mapping quality) are marked as “N” and excluded from the analysis.</p></li>
+</ol>
+<p>The following code simulates this process. Instead of starting from real genomic
+data, we simulate the underlying coalescent process directly, which lets us
+verify that PSMC can recover the true parameters.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">simulate_psmc_input</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">lambda_func</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate a PSMC input sequence.</span>
+
+<span class="sd">    This simulates the process that generates the data PSMC sees:</span>
+<span class="sd">    - Draw coalescence times along the genome using the SMC</span>
+<span class="sd">    - Given each coalescence time, flip a coin for het/hom</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Number of bins.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Mutation rate per bin (theta_0).</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Recombination rate per bin (rho_0).</span>
+<span class="sd">    lambda_func : callable</span>
+<span class="sd">        lambda_func(t) returns relative population size at time t.</span>
+<span class="sd">        This is a Python function (see the &quot;lambda&quot; explanation below).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    seq : ndarray of shape (L,), dtype=int</span>
+<span class="sd">        Binary sequence: 0 = homozygous, 1 = heterozygous.</span>
+<span class="sd">    coal_times : ndarray of shape (L,)</span>
+<span class="sd">        True coalescence times (for verification).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># np.zeros(L, dtype=int) creates an array of L integers, all initially 0.</span>
+    <span class="n">seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">coal_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+
+    <span class="c1"># Draw first coalescence time from stationary distribution.</span>
+    <span class="c1"># For constant lambda: T ~ Exp(1).</span>
+    <span class="c1"># np.random.exponential(scale) draws a random number from the</span>
+    <span class="c1"># exponential distribution with the given scale (= 1/rate).</span>
+    <span class="c1"># So scale=1.0 gives rate=1, matching the coalescent with constant</span>
+    <span class="c1"># population size (see coalescent_theory).</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># simplified: constant pop</span>
+    <span class="n">coal_times</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span><span class="p">):</span>
+        <span class="c1"># Emission: het with prob 1 - exp(-theta * t).</span>
+        <span class="c1"># This is the probability that at least one mutation occurred</span>
+        <span class="c1"># in a bin of &#39;theta&#39; expected mutations over coalescence time t.</span>
+        <span class="c1"># It comes from the Poisson model of mutations: the probability</span>
+        <span class="c1"># of zero mutations is exp(-theta * t), so the probability of</span>
+        <span class="c1"># at least one is 1 - exp(-theta * t).</span>
+        <span class="n">p_het</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">theta</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># np.random.binomial(1, p) performs a single Bernoulli trial:</span>
+        <span class="c1"># it returns 1 with probability p and 0 with probability 1-p.</span>
+        <span class="c1"># This is the &quot;coin flip&quot; that determines whether the bin is</span>
+        <span class="c1"># heterozygous. The name &quot;binomial&quot; comes from the binomial</span>
+        <span class="c1"># distribution; with n=1 trial, it reduces to a Bernoulli trial.</span>
+        <span class="n">seq</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p_het</span><span class="p">)</span>
+        <span class="n">coal_times</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+
+        <span class="k">if</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Recombination? The probability of at least one recombination</span>
+            <span class="c1"># on the pair of branches (total length 2t, rate rho/2 each)</span>
+            <span class="c1"># is 1 - exp(-rho * t). See the SMC chapter for the derivation.</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">t</span><span class="p">):</span>
+                <span class="c1"># Recombination occurred. Pick a time u uniformly on [0, t]</span>
+                <span class="c1"># (the recombination can strike anywhere on the branch).</span>
+                <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+                <span class="c1"># Re-coalescence: starting from time u, wait an Exp(1) time</span>
+                <span class="c1"># for the detached lineage to find the other lineage again.</span>
+                <span class="c1"># np.random.exponential(1.0) draws from Exp(rate=1),</span>
+                <span class="c1"># where the scale parameter equals 1/rate = 1.0.</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">u</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="c1"># If no recombination, t stays the same (the coalescence time</span>
+            <span class="c1"># carries over to the next bin unchanged).</span>
+
+    <span class="k">return</span> <span class="n">seq</span><span class="p">,</span> <span class="n">coal_times</span>
+
+<span class="c1"># Simulate a short genome.</span>
+<span class="c1"># np.random.seed(42) makes the random number generator reproducible:</span>
+<span class="c1"># you will get the same output every time you run this code.</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="c1"># lambda t: 1.0 is a Python &quot;lambda function&quot; -- an anonymous, one-line</span>
+<span class="c1"># function. It takes one argument (t) and returns 1.0 regardless of t.</span>
+<span class="c1"># This represents a constant population size (lambda(t) = 1 for all t).</span>
+<span class="n">seq</span><span class="p">,</span> <span class="n">times</span> <span class="o">=</span> <span class="n">simulate_psmc_input</span><span class="p">(</span><span class="mi">10000</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.0005</span><span class="p">,</span>
+                                  <span class="n">lambda_func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sequence length: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fraction heterozygous: </span><span class="si">{</span><span class="n">seq</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean coalescence time: </span><span class="si">{</span><span class="n">times</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-flow-in-detail">
+<h2>The Flow in Detail<a class="headerlink" href="#the-flow-in-detail" title="Link to this heading"></a></h2>
+<p>Now that we have named all the parts, let us see how they mesh together into a
+working mechanism. The flow below shows the complete PSMC pipeline, from raw
+data to population size history. Each step uses concepts from the prerequisite
+chapters; we note the connections explicitly.</p>
+<p>The process is iterative: PSMC starts with an initial guess for the population
+sizes, builds an HMM from that guess, uses the forward-backward algorithm to
+compute expected statistics of the hidden coalescence times, then updates its
+guess to better explain the data. This cycle repeats until convergence. This is
+the <strong>Expectation-Maximization (EM) algorithm</strong> – a general-purpose method for
+estimating parameters of models with hidden variables.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Diploid genome
+      |
+      v
+Call consensus + bin into 0/1/N
+(Convert the raw genome into a binary sequence that the HMM can read)
+      |
+      v
+X = (0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, ...)
+      |
+      v
+Choose time intervals t_0 &lt; t_1 &lt; ... &lt; t_n  (log-spaced discretization)
+Initialize lambda_k = 1 for all k             (start with constant population)
+      |
+      v
++-----&gt; Build transition matrix p_{kl}
+|       (How likely is the coalescence time to change from interval k
+|        to interval l between adjacent bins? Uses the SMC transition
+|        density from the SMC chapter, discretized into intervals.)
+|
+|       Build emission probabilities e_k(0), e_k(1)
+|       (How likely is a bin to be het/hom given coalescence time in
+|        interval k? Uses the Poisson mutation model.)
+|             |
+|             v
+|       Forward-backward algorithm on X
+|       (Compute the probability of each hidden state at each position,
+|        given the observations. This is the HMM machinery from the
+|        HMM chapter, applied to the PSMC&#39;s specific states and emissions.)
+|             |
+|             v
+|       Compute expected counts (E-step)
+|       (How much time does the genome &quot;spend&quot; in each coalescence time
+|        interval? How many transitions occur between intervals?)
+|             |
+|             v
+|       Maximize Q to update theta, rho, lambda_k (M-step)
+|       (Given the expected counts, find the parameter values that
+|        maximize the expected log-likelihood.)
+|             |
+|       Converged?
+|       NO ---+
+|
+YES
+|
+v
+Output: theta_0, rho_0, lambda_0, ..., lambda_n
+|
+v
+Scale to real units: N(t) = theta_0 / (4 * mu * s) * lambda_k
+(Convert from coalescent time units back to years and individuals,
+ using the known per-generation mutation rate mu and generation time.)
+|
+v
+Plot N(t) vs time
+</pre></div>
+</div>
+<p>Each step in this pipeline corresponds to a chapter in the PSMC Timepiece:</p>
+<ul class="simple">
+<li><p><strong>Building the transition matrix</strong> requires deriving the continuous-time
+transition density under variable population size, then discretizing it.
+This is covered in <a class="reference internal" href="continuous_model.html#psmc-continuous"><span class="std std-ref">The Continuous-Time PSMC Model</span></a> and <a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>.</p></li>
+<li><p><strong>Forward-backward and EM</strong> apply the HMM algorithms from the
+<a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a> to PSMC’s specific model. The details are in
+<a class="reference internal" href="hmm_inference.html#psmc-hmm"><span class="std std-ref">The PSMC HMM and EM Algorithm</span></a>.</p></li>
+<li><p><strong>Scaling and interpretation</strong> are covered in <a class="reference internal" href="decoding.html#psmc-decoding"><span class="std std-ref">Decoding the Clock</span></a>.</p></li>
+</ul>
+</section>
+<section id="ready-to-build">
+<h2>Ready to Build<a class="headerlink" href="#ready-to-build" title="Link to this heading"></a></h2>
+<p>You now have the high-level blueprint. Every part is laid out on the bench, named,
+and explained. You know what the input looks like (a binary sequence of het/hom
+calls), what the output is (a piecewise-constant population size history), and
+what mechanism connects the two (an HMM whose hidden states are discretized
+coalescence times).</p>
+<p>In the following chapters, we build each gear from scratch:</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="continuous_model.html#psmc-continuous"><span class="std std-ref">The Continuous-Time PSMC Model</span></a> – The continuous-time transition density under
+variable <span class="math notranslate nohighlight">\(N(t)\)</span>. This generalizes the constant-population result
+from the <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">SMC chapter</span></a> to the case PSMC actually cares about:
+a population whose size changes over time. This is the escapement – the
+fundamental mathematical mechanism.</p></li>
+<li><p><a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a> – Discretizing time into intervals for the HMM.
+Continuous math must become finite computation before we can run algorithms
+on a computer. This chapter converts the continuous transition density into
+a discrete transition matrix.</p></li>
+<li><p><a class="reference internal" href="hmm_inference.html#psmc-hmm"><span class="std std-ref">The PSMC HMM and EM Algorithm</span></a> – The complete HMM and EM parameter estimation. With the
+transition matrix and emission probabilities in hand, we assemble the full
+inference engine and estimate <span class="math notranslate nohighlight">\(\theta_0\)</span>, <span class="math notranslate nohighlight">\(\rho_0\)</span>, and
+<span class="math notranslate nohighlight">\(\lambda_k\)</span>.</p></li>
+<li><p><a class="reference internal" href="decoding.html#psmc-decoding"><span class="std std-ref">Decoding the Clock</span></a> – Decoding, scaling, and interpreting the result.
+We convert from HMM parameters back to real-world units and learn to read
+the watch face.</p></li>
+</ol>
+<p>Each chapter derives the math, explains the intuition, implements the code,
+and verifies it works – following the watchmaker’s philosophy of building
+understanding gear by gear.</p>
+<p>Let us start with the foundation: the continuous-time model.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Timepiece I: PSMC" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="continuous_model.html" class="btn btn-neutral float-right" title="The Continuous-Time PSMC Model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

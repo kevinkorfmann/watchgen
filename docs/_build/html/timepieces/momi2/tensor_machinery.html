@@ -1,0 +1,747 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tensor Machinery &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Automatic Differentiation &amp; Inference" href="inference.html" />
+    <link rel="prev" title="The Moran Model" href="moran_model.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece X: momi2</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece X: momi2</a></li>
+      <li class="breadcrumb-item active">Tensor Machinery</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="moran_model.html" class="btn btn-neutral float-left" title="The Moran Model" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="inference.html" class="btn btn-neutral float-right" title="Automatic Differentiation &amp; Inference" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tensor-machinery">
+<span id="id1"></span><h1>Tensor Machinery<a class="headerlink" href="#tensor-machinery" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The gear train of the watch: assembling the expected SFS from a product of tensors, one demographic event at a time.</em></p>
+</div></blockquote>
+<blockquote class="epigraph">
+<div><p>“The expected SFS can be written as a tensor product over the events in the
+demographic history.”</p>
+<p class="attribution">—Kamm, Terhorst, Song, and Durbin (2017)</p>
+</div></blockquote>
+<section id="step-1-what-is-a-likelihood-tensor">
+<h2>Step 1: What Is a Likelihood Tensor?<a class="headerlink" href="#step-1-what-is-a-likelihood-tensor" title="Link to this heading"></a></h2>
+<p>At the heart of <code class="docutils literal notranslate"><span class="pre">momi2</span></code>’s computation is the <strong>likelihood tensor</strong> – a
+multi-dimensional array that tracks the probability of observing a given allele
+configuration across populations.</p>
+<p>For a single population with sample size <span class="math notranslate nohighlight">\(n\)</span>, the likelihood tensor is a
+vector <span class="math notranslate nohighlight">\(L\)</span> of length <span class="math notranslate nohighlight">\(n+1\)</span>, where <span class="math notranslate nohighlight">\(L_i\)</span> represents the
+probability weight associated with <span class="math notranslate nohighlight">\(i\)</span> derived alleles in the sample.</p>
+<p>For <span class="math notranslate nohighlight">\(k\)</span> populations with sample sizes <span class="math notranslate nohighlight">\(n_1, \ldots, n_k\)</span>, the
+likelihood tensor is a <span class="math notranslate nohighlight">\(k\)</span>-dimensional array of shape
+<span class="math notranslate nohighlight">\((n_1+1) \times \cdots \times (n_k+1)\)</span>.</p>
+<p>The tensor is initialized at the <strong>leaves</strong> of the demographic event tree (the
+sampled populations at present) and transformed by each event as we traverse
+the tree backward in time toward the root (the ancestral population).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">initialize_leaf_tensor</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the likelihood tensor for a leaf (sampled population).</span>
+
+<span class="sd">    For computing the full SFS, the initial tensor is the identity:</span>
+<span class="sd">    L_i = delta_{i, config[pop]}, iterated over all configurations.</span>
+
+<span class="sd">    For a single configuration (b_1, ..., b_k), population p</span>
+<span class="sd">    gets an indicator vector: L[b_p] = 1, all others 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># For the full expected SFS computation, momi2 uses a batch</span>
+    <span class="c1"># approach: all configurations are processed simultaneously.</span>
+    <span class="c1"># Here we show the single-config case for clarity.</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">L</span>  <span class="c1"># set L[b] = 1 for the desired allele count b</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-the-three-core-operations">
+<h2>Step 2: The Three Core Operations<a class="headerlink" href="#step-2-the-three-core-operations" title="Link to this heading"></a></h2>
+<p>Every computation in <code class="docutils literal notranslate"><span class="pre">momi2</span></code> is built from three tensor operations:</p>
+<p><strong>1. Matrix multiplication (Moran transition)</strong></p>
+<p>When the event tree passes through an epoch of duration <span class="math notranslate nohighlight">\(t\)</span> for population
+<span class="math notranslate nohighlight">\(k\)</span>, the likelihood tensor is multiplied along axis <span class="math notranslate nohighlight">\(k\)</span> by the Moran
+transition matrix <span class="math notranslate nohighlight">\(P(t)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[L'_{i_1, \ldots, i_k, \ldots} = \sum_{j_k} L_{i_1, \ldots, j_k, \ldots} \, P_{j_k, i_k}(t)\]</div>
+<p>This accounts for all possible drift and coalescence events during the epoch.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">apply_moran_transition</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply Moran transition to a specific axis of the tensor.&quot;&quot;&quot;</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">moran_transition</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>  <span class="c1"># (n+1) x (n+1) matrix</span>
+    <span class="c1"># move the target axis to the last position, multiply, move back</span>
+    <span class="n">tensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span> <span class="o">@</span> <span class="n">P</span>
+    <span class="n">tensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tensor</span>
+</pre></div>
+</div>
+<p><strong>2. Convolution (population merge)</strong></p>
+<p>When two populations merge into one (a split event, viewed backward), the
+lineages from both child populations enter a single ancestral population. The
+likelihood tensors from the two children are combined by <strong>convolution</strong>: the
+number of derived alleles in the ancestor is the sum of derived alleles from
+each child.</p>
+<p>For child populations with <span class="math notranslate nohighlight">\(n_1\)</span> and <span class="math notranslate nohighlight">\(n_2\)</span> lineages:</p>
+<div class="math notranslate nohighlight">
+\[L^{\text{anc}}_{i} = \sum_{j+k=i} L^{(1)}_{j} \cdot L^{(2)}_{k}\]</div>
+<p>In practice, <code class="docutils literal notranslate"><span class="pre">momi2</span></code> first multiplies each tensor by binomial coefficients,
+convolves via polynomial multiplication, then divides out the binomial
+coefficients:</p>
+<div class="math notranslate nohighlight">
+\[L^{\text{anc}}_{i} = \frac{1}{\binom{n_1+n_2}{i}} \sum_{j+k=i} \binom{n_1}{j} L^{(1)}_j \cdot \binom{n_2}{k} L^{(2)}_k\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">comb</span>
+
+<span class="k">def</span> <span class="nf">convolve_populations</span><span class="p">(</span><span class="n">L1</span><span class="p">,</span> <span class="n">L2</span><span class="p">,</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge two population tensors via convolution.</span>
+
+<span class="sd">    L1: likelihood vector for child population 1, length n1+1</span>
+<span class="sd">    L2: likelihood vector for child population 2, length n2+1</span>
+
+<span class="sd">    Returns: likelihood vector for ancestral population, length n1+n2+1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># weight by binomial coefficients</span>
+    <span class="n">b1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">comb</span><span class="p">(</span><span class="n">n1</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="n">b2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">comb</span><span class="p">(</span><span class="n">n2</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="n">weighted_L1</span> <span class="o">=</span> <span class="n">L1</span> <span class="o">*</span> <span class="n">b1</span>
+    <span class="n">weighted_L2</span> <span class="o">=</span> <span class="n">L2</span> <span class="o">*</span> <span class="n">b2</span>
+
+    <span class="c1"># convolve (polynomial multiplication)</span>
+    <span class="n">conv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">weighted_L1</span><span class="p">,</span> <span class="n">weighted_L2</span><span class="p">)</span>
+
+    <span class="c1"># divide out ancestral binomial coefficients</span>
+    <span class="n">n_anc</span> <span class="o">=</span> <span class="n">n1</span> <span class="o">+</span> <span class="n">n2</span>
+    <span class="n">b_anc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">comb</span><span class="p">(</span><span class="n">n_anc</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_anc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="n">L_anc</span> <span class="o">=</span> <span class="n">conv</span> <span class="o">/</span> <span class="n">b_anc</span>
+
+    <span class="k">return</span> <span class="n">L_anc</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verification: convolving two uniform vectors should produce a valid</span>
+<span class="c1"># probability distribution (after normalization)</span>
+<span class="n">n1</span><span class="p">,</span> <span class="n">n2</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span>
+<span class="n">L1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">L2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">L_anc</span> <span class="o">=</span> <span class="n">convolve_populations</span><span class="p">(</span><span class="n">L1</span><span class="p">,</span> <span class="n">L2</span><span class="p">,</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">L_anc</span><span class="p">)</span> <span class="o">==</span> <span class="n">n1</span> <span class="o">+</span> <span class="n">n2</span> <span class="o">+</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p><strong>3. Antidiagonal summation (coalescence within an epoch)</strong></p>
+<p>During each epoch, coalescence events reduce the number of lineages. The
+contribution of each epoch to the SFS is accumulated by contracting the
+likelihood tensor with the <strong>truncated SFS</strong> of that epoch (computed from the
+expected coalescence times <span class="math notranslate nohighlight">\(E[T_{jj}]\)</span> and the W-matrix):</p>
+<div class="math notranslate nohighlight">
+\[\text{sfs\_contribution} = \sum_{i} L_i \cdot \text{truncated\_sfs}_i\]</div>
+<p>This is where the accumulated SFS gets its entries: each epoch contributes
+mutations that occurred during that epoch, weighted by the likelihood of
+observing them in the current allele configuration.</p>
+</section>
+<section id="step-3-the-junction-tree-algorithm">
+<h2>Step 3: The Junction Tree Algorithm<a class="headerlink" href="#step-3-the-junction-tree-algorithm" title="Link to this heading"></a></h2>
+<p>A demographic model is a tree (or DAG, when admixture is present) of events.
+<code class="docutils literal notranslate"><span class="pre">momi2</span></code> processes this tree using a <strong>post-order traversal</strong> (leaves to root),
+which corresponds to moving backward in time from the present to the ancestral
+population.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Present (leaves)
+  |         |
+  Pop A     Pop B
+  |         |
+  |  Moran  |  Moran transition
+  |  trans.  |  (epoch 1)
+  |         |
+  +---------+
+       |
+   Merge (split event, backward)
+       |
+       |  Moran transition
+       |  (epoch 2)
+       |
+     Root (ancestral population)
+</pre></div>
+</div>
+<p>At each node in the tree:</p>
+<ol class="arabic simple">
+<li><p><strong>Leaf node</strong>: Initialize the likelihood tensor</p></li>
+<li><p><strong>Epoch boundary</strong>: Apply the Moran transition matrix for the elapsed time</p></li>
+<li><p><strong>Merge node</strong>: Convolve the likelihood tensors of the two child populations</p></li>
+<li><p><strong>Pulse node</strong>: Apply the admixture tensor (see Step 4)</p></li>
+<li><p><strong>Accumulate SFS</strong>: Add the current epoch’s contribution to the running SFS</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="k">def</span> <span class="nf">compute_expected_sfs</span><span class="p">(</span><span class="n">demography</span><span class="p">,</span> <span class="n">sample_sizes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the expected SFS by traversing the event tree.</span>
+
+<span class="sd">    Simplified sketch of momi2&#39;s algorithm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># build the event tree from the demographic model</span>
+    <span class="n">event_tree</span> <span class="o">=</span> <span class="n">demography</span><span class="o">.</span><span class="n">event_tree</span>
+
+    <span class="c1"># dictionary to hold likelihood tensors, keyed by population name</span>
+    <span class="n">tensors</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">sfs</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># accumulated expected SFS</span>
+
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">dfs_postorder_nodes</span><span class="p">(</span><span class="n">event_tree</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;leaf&#39;</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">sample_sizes</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">pop</span><span class="p">]</span>
+            <span class="n">tensors</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">pop</span><span class="p">]</span> <span class="o">=</span> <span class="n">initialize_leaf_tensor</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;epoch&#39;</span><span class="p">:</span>
+            <span class="n">pop</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">pop</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">scaled_time</span>  <span class="c1"># 2*T/N or integral for exp growth</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">tensors</span><span class="p">[</span><span class="n">pop</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="c1"># accumulate SFS contribution from this epoch</span>
+            <span class="n">trunc_sfs</span> <span class="o">=</span> <span class="n">compute_truncated_sfs</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">size_history</span><span class="p">)</span>
+            <span class="n">sfs</span> <span class="o">=</span> <span class="n">sfs</span> <span class="o">+</span> <span class="n">contract_with_truncated_sfs</span><span class="p">(</span><span class="n">tensors</span><span class="p">[</span><span class="n">pop</span><span class="p">],</span> <span class="n">trunc_sfs</span><span class="p">)</span>
+            <span class="c1"># apply Moran transition</span>
+            <span class="n">tensors</span><span class="p">[</span><span class="n">pop</span><span class="p">]</span> <span class="o">=</span> <span class="n">apply_moran_transition</span><span class="p">(</span>
+                <span class="n">tensors</span><span class="p">[</span><span class="n">pop</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;merge&#39;</span><span class="p">:</span>
+            <span class="n">child1</span><span class="p">,</span> <span class="n">child2</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">children</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">parent</span>
+            <span class="n">tensors</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">=</span> <span class="n">convolve_populations</span><span class="p">(</span>
+                <span class="n">tensors</span><span class="p">[</span><span class="n">child1</span><span class="p">],</span> <span class="n">tensors</span><span class="p">[</span><span class="n">child2</span><span class="p">],</span>
+                <span class="n">n1</span><span class="o">=</span><span class="n">tensors</span><span class="p">[</span><span class="n">child1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">n2</span><span class="o">=</span><span class="n">tensors</span><span class="p">[</span><span class="n">child2</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">tensors</span><span class="p">[</span><span class="n">child1</span><span class="p">],</span> <span class="n">tensors</span><span class="p">[</span><span class="n">child2</span><span class="p">]</span>
+
+        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;pulse&#39;</span><span class="p">:</span>
+            <span class="n">apply_admixture_tensor</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sfs</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-admixture-pulse-events">
+<h2>Step 4: Admixture (Pulse) Events<a class="headerlink" href="#step-4-admixture-pulse-events" title="Link to this heading"></a></h2>
+<p>Admixture is the most complex operation. When a fraction <span class="math notranslate nohighlight">\(f\)</span> of population
+<span class="math notranslate nohighlight">\(A\)</span>’s ancestry comes from population <span class="math notranslate nohighlight">\(B\)</span>, each lineage in <span class="math notranslate nohighlight">\(A\)</span>
+independently “jumps” to <span class="math notranslate nohighlight">\(B\)</span> with probability <span class="math notranslate nohighlight">\(f\)</span> (viewed backward
+in time).</p>
+<p>If population <span class="math notranslate nohighlight">\(A\)</span> has <span class="math notranslate nohighlight">\(n\)</span> lineages, the number that move to
+<span class="math notranslate nohighlight">\(B\)</span> follows a binomial distribution. This is encoded as a <strong>3-tensor</strong>
+<span class="math notranslate nohighlight">\(T\)</span> of shape <span class="math notranslate nohighlight">\((n+1) \times (n+1) \times (n+1)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[T_{i, j, k} = \binom{n}{k} \binom{k}{j} f^j (1-f)^{k-j} \cdot \mathbf{1}[i + j = k]\]</div>
+<p>where <span class="math notranslate nohighlight">\(k\)</span> is the original count in <span class="math notranslate nohighlight">\(A\)</span>, <span class="math notranslate nohighlight">\(j\)</span> lineages move to
+<span class="math notranslate nohighlight">\(B\)</span>, and <span class="math notranslate nohighlight">\(i = k - j\)</span> remain in <span class="math notranslate nohighlight">\(A\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">comb</span> <span class="k">as</span> <span class="n">binom</span>
+
+<span class="k">def</span> <span class="nf">admixture_tensor</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the admixture 3-tensor for a pulse event.</span>
+
+<span class="sd">    n: number of lineages in the receiving population</span>
+<span class="sd">    f: fraction of ancestry from the source population</span>
+
+<span class="sd">    Returns T of shape (n+1, n+1, n+1):</span>
+<span class="sd">    T[i, j, k] = probability that k lineages split into i staying and j moving</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">k</span> <span class="o">-</span> <span class="n">j</span>
+            <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">binom</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">f</span><span class="o">**</span><span class="n">j</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">f</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="n">j</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">T</span>
+
+<span class="k">def</span> <span class="nf">apply_admixture</span><span class="p">(</span><span class="n">L_A</span><span class="p">,</span> <span class="n">L_B</span><span class="p">,</span> <span class="n">n_A</span><span class="p">,</span> <span class="n">n_B</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply an admixture pulse: fraction f of A&#39;s ancestry comes from B.</span>
+
+<span class="sd">    Returns updated likelihood tensors for both populations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">admixture_tensor</span><span class="p">(</span><span class="n">n_A</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+    <span class="c1"># contract: new_L[i_A, i_B] = sum_k sum_j L_A[k] * L_B[i_B + j] * T[i_A, j, k]</span>
+    <span class="c1"># (simplified -- actual implementation handles multi-dimensional tensors)</span>
+    <span class="k">return</span> <span class="n">new_L_A</span><span class="p">,</span> <span class="n">new_L_B</span>
+</pre></div>
+</div>
+<div class="admonition-probability-aside-why-admixture-requires-a-3-tensor admonition">
+<p class="admonition-title">Probability Aside – Why admixture requires a 3-tensor</p>
+<p>In a population merge (split backward in time), every lineage from child
+<span class="math notranslate nohighlight">\(A\)</span> and every lineage from child <span class="math notranslate nohighlight">\(B\)</span> ends up in the same
+ancestral population. The operation is deterministic given the lineage counts.
+In admixture, however, each lineage <em>independently</em> chooses which source
+population to join. This stochastic splitting requires a full tensor to
+encode all possible binomial outcomes.</p>
+</div>
+</section>
+<section id="step-5-reducing-lineage-counts">
+<h2>Step 5: Reducing Lineage Counts<a class="headerlink" href="#step-5-reducing-lineage-counts" title="Link to this heading"></a></h2>
+<p>As we move backward in time, the number of lineages in a population can only
+decrease (due to coalescence). After a merge event, the ancestral population has
+<span class="math notranslate nohighlight">\(n_1 + n_2\)</span> lineages, which may be larger than needed for the computation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">momi2</span></code> can optionally reduce the lineage count via the <strong>hypergeometric
+quasi-inverse</strong>: a matrix that projects from <span class="math notranslate nohighlight">\(N\)</span> lineages down to
+<span class="math notranslate nohighlight">\(n &lt; N\)</span> lineages in a way that preserves the expected SFS. This is the
+reverse of the projection (downsampling) operation used in SFS analysis.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">hypergeom_quasi_inverse</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the quasi-inverse for reducing lineage count from N to n.</span>
+
+<span class="sd">    Returns a (N+1) x (n+1) matrix M such that applying M to a likelihood</span>
+<span class="sd">    vector of length N+1 produces a valid likelihood vector of length n+1,</span>
+<span class="sd">    preserving the expected SFS.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">hypergeom</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">M</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hypergeom</span><span class="o">.</span><span class="n">pmf</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">M</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-putting-it-all-together-a-two-population-example">
+<h2>Step 6: Putting It All Together – A Two-Population Example<a class="headerlink" href="#step-6-putting-it-all-together-a-two-population-example" title="Link to this heading"></a></h2>
+<p>Let’s trace through the tensor computation for a simple two-population model:
+populations A and B diverged at time <span class="math notranslate nohighlight">\(T\)</span> from an ancestral population,
+with constant sizes throughout.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Time 0 (present):  Pop A (n_A=5)    Pop B (n_B=5)
+                       |                  |
+                       | Moran(t_1)       | Moran(t_1)
+                       |                  |
+Time T (split):   -----+------------------+-----
+                               |
+                               | Moran(t_2)
+                               |
+Time infinity:           Ancestral (n=10)
+</pre></div>
+</div>
+<p>The computation proceeds:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">two_pop_divergence_sfs</span><span class="p">(</span><span class="n">n_A</span><span class="p">,</span> <span class="n">n_B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">N_A</span><span class="p">,</span> <span class="n">N_B</span><span class="p">,</span> <span class="n">N_anc</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute expected SFS for a simple two-population divergence model.&quot;&quot;&quot;</span>
+    <span class="n">sfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_A</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_B</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Step 1: Initialize leaf tensors</span>
+    <span class="c1"># (using identity for full SFS computation)</span>
+
+    <span class="c1"># Step 2: Apply Moran transitions for the recent epoch</span>
+    <span class="n">t_A</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">T</span> <span class="o">/</span> <span class="n">N_A</span>  <span class="c1"># scaled time for pop A</span>
+    <span class="n">t_B</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">T</span> <span class="o">/</span> <span class="n">N_B</span>  <span class="c1"># scaled time for pop B</span>
+
+    <span class="c1"># Accumulate SFS contributions from the recent epoch</span>
+    <span class="c1"># (mutations falling on branches within this epoch)</span>
+
+    <span class="c1"># Step 3: At the split, convolve the two population tensors</span>
+    <span class="c1"># Ancestral population has n_A + n_B lineages</span>
+
+    <span class="c1"># Step 4: Apply Moran transition for the ancestral epoch</span>
+    <span class="c1"># (going back to infinity -- all lineages coalesce)</span>
+
+    <span class="c1"># Step 5: Accumulate SFS contributions from the ancestral epoch</span>
+
+    <span class="k">return</span> <span class="n">sfs</span>
+</pre></div>
+</div>
+<div class="admonition-calculus-aside-convolution-as-polynomial-multiplication admonition">
+<p class="admonition-title">Calculus Aside – Convolution as polynomial multiplication</p>
+<p>The convolution operation for merging two populations is mathematically
+equivalent to multiplying two generating polynomials:</p>
+<div class="math notranslate nohighlight">
+\[G_1(x) = \sum_j \binom{n_1}{j} L^{(1)}_j x^j, \quad
+G_2(x) = \sum_k \binom{n_2}{k} L^{(2)}_k x^k\]</div>
+<p>The product <span class="math notranslate nohighlight">\(G_1(x) \cdot G_2(x)\)</span> has coefficients that give the
+convolved tensor, after dividing by the ancestral binomial coefficients.
+<code class="docutils literal notranslate"><span class="pre">momi2</span></code> exploits this by using <code class="docutils literal notranslate"><span class="pre">numpy.convolve</span></code> for the polynomial
+multiplication, giving <span class="math notranslate nohighlight">\(O(n \log n)\)</span> performance via FFT for large
+sample sizes.</p>
+</div>
+</section>
+<section id="step-7-how-momi2-handles-the-tensor-computation">
+<h2>Step 7: How momi2 Handles the Tensor Computation<a class="headerlink" href="#step-7-how-momi2-handles-the-tensor-computation" title="Link to this heading"></a></h2>
+<p>In the actual <code class="docutils literal notranslate"><span class="pre">momi2</span></code> implementation, the tensor computation is organized
+around the <code class="docutils literal notranslate"><span class="pre">LikelihoodTensor</span></code> and <code class="docutils literal notranslate"><span class="pre">LikelihoodTensorList</span></code> classes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simplified from momi/compute_sfs.py</span>
+
+<span class="k">class</span> <span class="nc">LikelihoodTensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stores a multi-dimensional likelihood tensor and accumulated SFS.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">liks</span><span class="p">,</span> <span class="n">sfs</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">liks</span> <span class="o">=</span> <span class="n">liks</span>  <span class="c1"># multi-dim array, one axis per population</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sfs</span> <span class="o">=</span> <span class="n">sfs</span>    <span class="c1"># accumulated scalar SFS contribution</span>
+
+    <span class="k">def</span> <span class="nf">matmul_last_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a matrix to the last axis (Moran transition).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">liks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">liks</span> <span class="o">@</span> <span class="n">matrix</span>
+
+    <span class="k">def</span> <span class="nf">add_last_axis_sfs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">truncated_sfs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Accumulate SFS contribution from current epoch.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sfs</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">liks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">truncated_sfs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">mul_trailing_binoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">divide</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Multiply (or divide) by binomial coefficients for convolution.&quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">liks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">binoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">comb</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+        <span class="k">if</span> <span class="n">divide</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">liks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">liks</span> <span class="o">/</span> <span class="n">binoms</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">liks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">liks</span> <span class="o">*</span> <span class="n">binoms</span>
+
+    <span class="k">def</span> <span class="nf">convolve_trailing_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convolve two likelihood tensors (population merge).&quot;&quot;&quot;</span>
+        <span class="c1"># implemented via optimized Cython in momi/convolution.pyx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">liks</span> <span class="o">=</span> <span class="n">convolve_sum_axes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">liks</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">liks</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The key performance optimizations in the real implementation:</p>
+<ul class="simple">
+<li><p><strong>Cython convolution</strong> (<code class="docutils literal notranslate"><span class="pre">convolution.pyx</span></code>): parallelized antidiagonal
+summation and convolution using OpenMP</p></li>
+<li><p><strong>Batched einsum</strong> (<code class="docutils literal notranslate"><span class="pre">einsum2/</span></code>): custom batched matrix multiplication that
+processes all configurations simultaneously</p></li>
+<li><p><strong>Memoized eigensystems</strong>: computed once per sample size, cached across all
+likelihood evaluations</p></li>
+</ul>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-manual-tensor-computation admonition">
+<p class="admonition-title">Exercise 1: Manual tensor computation</p>
+<p>For a two-population model with <span class="math notranslate nohighlight">\(n_A = n_B = 3\)</span> and a simple divergence
+at time <span class="math notranslate nohighlight">\(T\)</span>, manually trace the tensor operations. Start with indicator
+vectors at the leaves and apply each operation step by step.</p>
+</div>
+<div class="admonition-exercise-2-convolution-verification admonition">
+<p class="admonition-title">Exercise 2: Convolution verification</p>
+<p>Verify that <code class="docutils literal notranslate"><span class="pre">convolve_populations</span></code> correctly computes the merged likelihood
+for the case where both child populations have all derived alleles (i.e.,
+<span class="math notranslate nohighlight">\(L_1 = [0, 0, \ldots, 1]\)</span> and <span class="math notranslate nohighlight">\(L_2 = [0, 0, \ldots, 1]\)</span>).</p>
+</div>
+<div class="admonition-exercise-3-admixture-effects admonition">
+<p class="admonition-title">Exercise 3: Admixture effects</p>
+<p>For a pulse admixture event with fraction <span class="math notranslate nohighlight">\(f = 0.5\)</span>, compute the
+admixture tensor for <span class="math notranslate nohighlight">\(n = 4\)</span> and verify that the expected number of
+lineages moving to the source population is <span class="math notranslate nohighlight">\(n \cdot f = 2\)</span>.</p>
+</div>
+<div class="admonition-exercise-4-scaling-with-populations admonition">
+<p class="admonition-title">Exercise 4: Scaling with populations</p>
+<p>Compare the computational complexity of computing the expected SFS for
+<span class="math notranslate nohighlight">\(k\)</span> populations using (a) a <span class="math notranslate nohighlight">\(k\)</span>-dimensional grid (dadi-style)
+and (b) the tensor-tree approach (momi2-style). For what values of <span class="math notranslate nohighlight">\(k\)</span>
+and <span class="math notranslate nohighlight">\(n\)</span> does the tensor approach become advantageous?</p>
+</div>
+<p>Next: <a class="reference internal" href="inference.html#momi2-inference"><span class="std std-ref">Automatic Differentiation &amp; Inference</span></a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="moran_model.html" class="btn btn-neutral float-left" title="The Moran Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="inference.html" class="btn btn-neutral float-right" title="Automatic Differentiation &amp; Inference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

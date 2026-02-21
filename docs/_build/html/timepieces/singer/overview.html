@@ -1,0 +1,787 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview of SINGER &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Branch Sampling" href="branch_sampling.html" />
+    <link rel="prev" title="Timepiece VI: SINGER" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece VI: SINGER</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece VI: SINGER</a></li>
+      <li class="breadcrumb-item active">Overview of SINGER</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="index.html" class="btn btn-neutral float-left" title="Timepiece VI: SINGER" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="branch_sampling.html" class="btn btn-neutral float-right" title="Branch Sampling" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview-of-singer">
+<span id="singer-overview"></span><h1>Overview of SINGER<a class="headerlink" href="#overview-of-singer" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>Before assembling the watch, lay out every part and understand what it does.</em></p>
+</div></blockquote>
+<p>In traditional watchmaking, a “grand complication” is the most ambitious kind of
+timepiece – one that combines many independent complications (calendar, chronograph,
+minute repeater, tourbillon) into a single unified mechanism. Every gear must mesh
+with every other; every complication must share the same mainspring and beat rate.
+SINGER is the grand complication of population genetics. It takes the pieces we have
+built in earlier chapters – coalescent theory, HMMs, the SMC approximation, the
+PSMC transition density – and combines them into a single engine that reconstructs
+complete genealogical histories from DNA sequences.</p>
+<p>This overview chapter lays out the blueprint: what SINGER does, how it does it, and
+how the pieces fit together. The detailed derivations come in subsequent chapters.
+If you have worked through PSMC (<a class="reference internal" href="../psmc/index.html#psmc-timepiece"><span class="std std-ref">Timepiece I: PSMC</span></a>), you already have the
+conceptual foundation. SINGER extends that foundation from two haplotypes to many,
+from a single coalescence time track to a full ancestral recombination graph.</p>
+<section id="what-does-singer-do">
+<h2>What Does SINGER Do?<a class="headerlink" href="#what-does-singer-do" title="Link to this heading"></a></h2>
+<p>Given a set of <span class="math notranslate nohighlight">\(n\)</span> aligned DNA sequences (haplotypes), SINGER produces
+<strong>samples from the posterior distribution</strong> of Ancestral Recombination Graphs.</p>
+<div class="math notranslate nohighlight">
+\[\text{Input: } \mathbf{D} = \{d_1, d_2, \ldots, d_n\} \quad \text{(observed haplotypes)}\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Output: } \mathcal{G}^{(1)}, \mathcal{G}^{(2)}, \ldots, \mathcal{G}^{(M)} \sim P(\mathcal{G} \mid \mathbf{D})\]</div>
+<p>Each sampled ARG <span class="math notranslate nohighlight">\(\mathcal{G}^{(m)}\)</span> is a full genealogical history: a
+sequence of marginal trees along the genome, connected by recombination events,
+with coalescence times on every node.</p>
+<p>From these posterior samples, you can compute:</p>
+<ul class="simple">
+<li><p><strong>Pairwise coalescence times</strong> between any two samples at any genomic position</p></li>
+<li><p><strong>Allele ages</strong> – when mutations arose</p></li>
+<li><p><strong>Local effective population size</strong> through time</p></li>
+<li><p><strong>Signatures of natural selection</strong></p></li>
+</ul>
+<div class="admonition-probability-aside-what-is-a-posterior-distribution admonition">
+<p class="admonition-title">Probability Aside – What is a Posterior Distribution?</p>
+<p>If you are new to Bayesian statistics, “posterior distribution” deserves a careful
+explanation. The word “posterior” means “after” – it is the distribution of what
+you believe <em>after</em> seeing the data.</p>
+<p>In SINGER’s case:</p>
+<ul>
+<li><p><strong>Prior belief</strong>: Before looking at any DNA, we have a model of how genealogies
+are generated (the coalescent with recombination). This model says some ARGs are
+more probable than others – for example, ARGs consistent with a large population
+tend to have deeper coalescence times.</p></li>
+<li><p><strong>Data (likelihood)</strong>: The observed DNA sequences <span class="math notranslate nohighlight">\(\mathbf{D}\)</span> constrain
+which ARGs are plausible. An ARG that implies many mutations where none are
+observed is unlikely; one that explains the observed variation parsimoniously
+is more likely.</p></li>
+<li><p><strong>Posterior</strong>: The posterior distribution <span class="math notranslate nohighlight">\(P(\mathcal{G} \mid \mathbf{D})\)</span>
+combines prior and likelihood via Bayes’ rule:</p>
+<div class="math notranslate nohighlight">
+\[P(\mathcal{G} \mid \mathbf{D}) \propto P(\mathbf{D} \mid \mathcal{G}) \cdot P(\mathcal{G})\]</div>
+<p>This tells us: among all possible ARGs, which ones are consistent with <em>both</em>
+the coalescent model <em>and</em> the observed DNA? The posterior is a landscape over
+ARG space – some genealogies sit on peaks (high probability), most sit in
+valleys (negligible probability).</p>
+</li>
+</ul>
+<p>SINGER does not compute this posterior exactly (the space of all possible ARGs is
+astronomically large). Instead, it <strong>samples</strong> from it: each run produces a
+collection of ARGs, where more probable ARGs appear more often. This is the
+essence of Bayesian inference – you summarize your uncertainty by drawing
+representative examples from the posterior.</p>
+</div>
+<div class="admonition-probability-aside-what-is-mcmc admonition">
+<p class="admonition-title">Probability Aside – What is MCMC?</p>
+<p>SINGER uses <strong>Markov chain Monte Carlo (MCMC)</strong> to draw samples from the
+posterior distribution. MCMC is a general strategy for exploring a complex,
+high-dimensional space when you cannot enumerate all possibilities.</p>
+<p>The idea is simple: start with some initial guess (here, an initial ARG), then
+repeatedly make small random modifications. Each modification is accepted or
+rejected based on whether the new state is more or less probable under the
+posterior. Over many iterations, the sequence of accepted states traces out a
+random walk through ARG space that, in the long run, visits each ARG in
+proportion to its posterior probability.</p>
+<p>Think of it like a watchmaker who cannot see the whole mechanism at once.
+Instead, she makes one small adjustment at a time – swapping a gear, adjusting
+a spring – and checks whether the watch runs better or worse. Over many
+adjustments, the watch converges to an excellent state, even though no single
+adjustment was planned with full knowledge of the final result.</p>
+<p>In SINGER, each MCMC step removes one haplotype’s path through the ARG and
+re-threads it using the HMM machinery described below. The accept/reject
+decision ensures that the chain converges to the correct posterior distribution.</p>
+</div>
+</section>
+<section id="the-threading-idea">
+<h2>The Threading Idea<a class="headerlink" href="#the-threading-idea" title="Link to this heading"></a></h2>
+<p>SINGER’s core insight is to build the ARG <strong>one haplotype at a time</strong>. This is
+called <strong>threading</strong> – and the metaphor from watchmaking is precise. Threading
+a new haplotype into an existing ARG is like fitting a new gear into an existing
+movement: you need to find where it meshes (which branch it attaches to) and how
+deep it sits (at what time it joins).</p>
+<p>But what does this mean concretely? Let us walk through the process step by step.</p>
+<section id="a-step-by-step-walkthrough-of-threading">
+<h3>A Step-by-Step Walkthrough of Threading<a class="headerlink" href="#a-step-by-step-walkthrough-of-threading" title="Link to this heading"></a></h3>
+<p>Suppose you have already built an ARG for three haplotypes. At a given genomic
+position, the marginal tree might look like this:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>      MRCA
+     /    \
+    *      h3
+   / \
+ h1   h2
+
+time
+ ^
+ |
+ 0 (present)
+</pre></div>
+</div>
+<p>Now you want to add a fourth haplotype, <code class="docutils literal notranslate"><span class="pre">h4</span></code>. Threading means answering two
+questions at every position along the genome:</p>
+<ol class="arabic simple">
+<li><p><strong>Which branch does h4 join?</strong> There are five branches in this tree: the three
+leaf branches (leading to h1, h2, h3), the internal branch (from the h1-h2
+ancestor to the MRCA), and the root branch (above the MRCA). The observed DNA
+of h4 constrains the answer: if h4 looks genetically similar to h1 and h2, it
+probably joins somewhere in their subtree. The branch sampling HMM makes this
+choice.</p></li>
+<li><p><strong>At what time does h4 join?</strong> Once we know h4 attaches to, say, the h1-h2
+internal branch, we still need to know <em>when</em> along that branch the attachment
+occurs. A recent joining time means h4 diverged from h1/h2 recently (few
+mutations expected); a deep joining time means an ancient divergence (many
+mutations expected). The time sampling HMM makes this choice.</p></li>
+<li><p><strong>What happens at recombination breakpoints?</strong> As we move along the genome, the
+marginal tree changes at recombination points. At each such transition, h4 might
+switch to joining a different branch, or the same branch at a different time. The
+HMM transition probabilities, governed by the SMC
+(<a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">see the SMC chapter</span></a>), model these switches.</p></li>
+<li><p><strong>After threading</strong>, the four-haplotype ARG is complete at every position. The
+new lineage has been grafted in, with a specific branch and time at each bin.</p></li>
+</ol>
+<p>This process converts a high-dimensional combinatorial problem – searching over all
+possible ARGs for <span class="math notranslate nohighlight">\(n\)</span> haplotypes – into a sequence of local decisions that
+can be modeled as HMMs. Each threading step conditions on the partial ARG already
+built, so the space of possibilities at each step is manageable.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Pseudocode for SINGER initialization</span>
+<span class="k">def</span> <span class="nf">initialize_arg</span><span class="p">(</span><span class="n">haplotypes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build an initial ARG by threading haplotypes one at a time.</span>
+
+<span class="sd">    This is the starting point for the MCMC sampler. We grow the ARG</span>
+<span class="sd">    incrementally: start with two haplotypes (trivial), then add each</span>
+<span class="sd">    remaining haplotype using the branch + time sampling HMMs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">haplotypes</span><span class="p">)</span>
+
+    <span class="c1"># Start with the first two haplotypes (trivial tree: just a pair</span>
+    <span class="c1"># that coalesces at some random time drawn from the prior)</span>
+    <span class="n">arg</span> <span class="o">=</span> <span class="n">create_pairwise_arg</span><span class="p">(</span><span class="n">haplotypes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">haplotypes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Thread remaining haplotypes one by one</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="c1"># Step 1: Branch sampling - which branch to join?</span>
+        <span class="c1"># Uses an HMM where hidden states are branches in each</span>
+        <span class="c1"># marginal tree, and the observed data constrains the choice.</span>
+        <span class="n">joining_branches</span> <span class="o">=</span> <span class="n">sample_branches</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">haplotypes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c1"># Step 2: Time sampling - when to join?</span>
+        <span class="c1"># Uses a second HMM where hidden states are time sub-intervals</span>
+        <span class="c1"># within the chosen branch, governed by PSMC-like dynamics.</span>
+        <span class="n">joining_times</span> <span class="o">=</span> <span class="n">sample_times</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">haplotypes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">joining_branches</span><span class="p">)</span>
+
+        <span class="c1"># Step 3: Update the ARG by grafting the new haplotype in</span>
+        <span class="c1"># at the sampled branches and times across all genomic positions.</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="n">thread_haplotype</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">haplotypes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                               <span class="n">joining_branches</span><span class="p">,</span> <span class="n">joining_times</span><span class="p">)</span>
+
+        <span class="c1"># Step 4: Rescale coalescence times so that the mutation clock</span>
+        <span class="c1"># stays calibrated (more on this in the rescaling chapter).</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="n">rescale_arg</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">arg</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="a-narrative-overview-of-the-key-concepts">
+<h2>A Narrative Overview of the Key Concepts<a class="headerlink" href="#a-narrative-overview-of-the-key-concepts" title="Link to this heading"></a></h2>
+<p>Before we define terms precisely, here is the story in plain language.</p>
+<p>SINGER works with a <strong>partial ARG</strong> – the genealogical history of all haplotypes
+except the one currently being threaded. This partial ARG is a sequence of
+marginal trees along the genome, one per genomic bin. At each bin, the partial
+tree has branches (the edges connecting nodes), and the new haplotype must find
+its place among them.</p>
+<p>The <strong>new lineage</strong> is the branch connecting the new haplotype (a leaf at time
+zero) to the partial tree. It attaches to a <strong>joining branch</strong> at a <strong>joining
+point</strong>, which sits at a specific <strong>joining time</strong>. As we move along the genome,
+recombination can cause the joining branch and time to change, creating a path
+through the space of possible attachment points.</p>
+<p>The genome is divided into <strong>bins</strong> – small segments (typically around 1 base
+pair) that serve as the discrete positions of the HMMs. At each bin, SINGER
+considers the <strong>marginal tree</strong> (the genealogical tree at that position) and
+decides where the new lineage attaches.</p>
+</section>
+<section id="terminology">
+<h2>Terminology<a class="headerlink" href="#terminology" title="Link to this heading"></a></h2>
+<p>With that narrative in mind, here are the precise definitions:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 75.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Term</p></th>
+<th class="head"><p>Definition</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Partial ARG</strong></p></td>
+<td><p>The ARG for the first <span class="math notranslate nohighlight">\(n-1\)</span> haplotypes, before threading the <span class="math notranslate nohighlight">\(n\)</span>-th. Think of it as the existing watch movement before you add a new gear.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>New node</strong></p></td>
+<td><p>The leaf node being threaded onto the partial ARG (the haplotype being added)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>New lineage</strong></p></td>
+<td><p>The branch connecting the new node to the partial tree</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Joining branch</strong></p></td>
+<td><p>The branch in the partial tree that the new lineage attaches to</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Joining point</strong></p></td>
+<td><p>The specific location (time) on the joining branch where attachment occurs</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Joining time</strong> <span class="math notranslate nohighlight">\(T\)</span></p></td>
+<td><p>The time of the joining point; equivalently, the coalescence time between the new haplotype and its closest relative in the partial ARG at that position</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Bin</strong></p></td>
+<td><p>A segment of the genome; SINGER partitions the genome into equal-sized bins (default ~1 bp), which serve as the discrete “positions” of the HMM</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Marginal tree</strong></p></td>
+<td><p>The genealogical tree at a single genomic position</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="the-two-hmm-architecture">
+<h2>The Two-HMM Architecture<a class="headerlink" href="#the-two-hmm-architecture" title="Link to this heading"></a></h2>
+<p>SINGER <strong>decouples</strong> the inference into two stages: first choose the branch,
+then choose the time. This is the architectural decision that makes SINGER
+scalable to large sample sizes, and understanding <em>why</em> it works requires
+a moment of thought.</p>
+<section id="what-decoupling-means">
+<h3>What Decoupling Means<a class="headerlink" href="#what-decoupling-means" title="Link to this heading"></a></h3>
+<p>In principle, you could build a single HMM whose hidden states are all possible
+(branch, time) pairs at each genomic position – this is exactly what ARGweaver
+does (see <a class="reference internal" href="../argweaver/overview.html#argweaver-overview"><span class="std std-ref">Overview of ARGweaver</span></a>). But the number of such pairs grows rapidly
+with the number of haplotypes and the resolution of the time axis. For 100
+haplotypes with 20 time points, each marginal tree has roughly 200 branches,
+giving about 4,000 states per position. The HMM transition computation scales
+as the square of the state count, making this approach expensive.</p>
+<p>SINGER’s insight is to split the problem into two smaller HMMs:</p>
+<p><strong>Stage 1: Branch Sampling HMM</strong></p>
+<ul class="simple">
+<li><p>Hidden states: branches in the marginal tree (topology only – <em>where</em>)</p></li>
+<li><p>Observations: allelic states (0/1) at each bin</p></li>
+<li><p>Output: a sequence of joining branches along the genome</p></li>
+</ul>
+<p><strong>Stage 2: Time Sampling HMM</strong></p>
+<ul class="simple">
+<li><p>Hidden states: time sub-intervals within each joining branch (<em>when</em>)</p></li>
+<li><p>Observations: allelic states (0/1) at each bin</p></li>
+<li><p>Input: the joining branch sequence from Stage 1</p></li>
+<li><p>Output: joining times along the genome</p></li>
+</ul>
+<p>The first HMM has roughly <span class="math notranslate nohighlight">\(2n - 1\)</span> states per position (the number of
+branches in a tree with <span class="math notranslate nohighlight">\(n\)</span> leaves). The second HMM has roughly <span class="math notranslate nohighlight">\(d\)</span>
+states per position (the number of time sub-intervals, typically around 20). Both
+are much smaller than the <span class="math notranslate nohighlight">\((2n-1) \times d\)</span> joint state space.</p>
+</section>
+<section id="why-this-decomposition-is-natural">
+<h3>Why This Decomposition is Natural<a class="headerlink" href="#why-this-decomposition-is-natural" title="Link to this heading"></a></h3>
+<p>The two-stage design is not just a computational trick – it reflects a natural
+decomposition of the genealogical question into two orthogonal components:</p>
+<ul class="simple">
+<li><p><strong>Branch = topology = where.</strong> Choosing a branch determines the <em>topological</em>
+relationship between the new haplotype and the existing ones. It answers the
+question: “Who is this haplotype most closely related to at this genomic
+position?” This is primarily informed by patterns of shared and unshared
+mutations – the qualitative signal in the data.</p></li>
+<li><p><strong>Time = metric = when.</strong> Choosing a time within the branch determines the
+<em>metric</em> property: how long ago did the new haplotype and its closest relative
+diverge? This is primarily informed by the <em>density</em> of mutations – the
+quantitative signal.</p></li>
+</ul>
+<p>In watchmaking terms, this is like a two-stage adjustment mechanism. First you set
+the position of a gear (which slot does it go into?), then you fine-tune the depth
+(how far in does it sit?). The two adjustments are largely independent: the slot
+determines the coarse function, the depth determines the fine calibration.</p>
+<p>This decomposition also connects to the mathematical structure. The branch sampling
+HMM uses the SMC (<a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">see the SMC chapter</span></a>) to model how topology changes
+along the genome due to recombination. The time sampling HMM reuses the PSMC
+transition density (<a class="reference internal" href="../psmc/index.html#psmc-timepiece"><span class="std std-ref">Timepiece I: PSMC</span></a>) to model how coalescence times change
+– the same continuous-time Markov chain that PSMC uses for two haplotypes now
+governs the time dynamics within a single branch of the larger tree.</p>
+<div class="admonition-the-cost-of-decoupling admonition">
+<p class="admonition-title">The Cost of Decoupling</p>
+<p>Decoupling topology and times introduces a subtle problem: certain sequences
+of branch choices that look valid one bin at a time can be <em>impossible</em> when
+considered jointly across adjacent bins. This happens because of <strong>partial
+branch states</strong>.</p>
+<p>Here is the issue concretely. Suppose at bin <span class="math notranslate nohighlight">\(\ell\)</span>, the new lineage
+joins a branch <span class="math notranslate nohighlight">\(b\)</span> that spans the time interval <span class="math notranslate nohighlight">\([x, y)\)</span>. At the
+next bin <span class="math notranslate nohighlight">\(\ell + 1\)</span>, after a recombination event in the partial ARG
+changes the tree topology, branch <span class="math notranslate nohighlight">\(b\)</span> might no longer exist. A “full”
+branch state would require the lineage to land on a branch that spans its
+full original time range. But the only available branches in the new tree might
+cover only <em>part</em> of that range. SINGER introduces <strong>partial branch states</strong> –
+branches that are valid only over a sub-interval of their full span – to
+handle these transitions correctly. The branch sampling HMM includes both full
+and partial states, ensuring that every sampled branch sequence corresponds to
+a valid ARG. See <a class="reference internal" href="branch_sampling.html#branch-sampling"><span class="std std-ref">Branch Sampling</span></a> for the full treatment.</p>
+</div>
+</section>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<p>SINGER takes the following parameters. We explain each one in terms accessible to
+readers who may not be specialists in population genetics.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Symbol</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Mutation rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(\theta = 4N_e\mu\)</span></p></td>
+<td><p>The population-scaled mutation rate per base pair. This combines the per-generation, per-base mutation rate <span class="math notranslate nohighlight">\(\mu\)</span> with the effective population size <span class="math notranslate nohighlight">\(N_e\)</span> (see below). A higher <span class="math notranslate nohighlight">\(\theta\)</span> means more mutations are expected per unit of coalescent time, making the data more informative about genealogical relationships.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Recombination rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(\rho = 4N_e r \cdot m\)</span></p></td>
+<td><p>The population-scaled recombination rate per bin. Here <span class="math notranslate nohighlight">\(r\)</span> is the per-generation, per-base recombination rate and <span class="math notranslate nohighlight">\(m\)</span> is the bin size. Recombination breaks up the genealogy, so higher <span class="math notranslate nohighlight">\(\rho\)</span> means the marginal tree changes more frequently along the genome.</p></td>
+</tr>
+<tr class="row-even"><td><p>Effective pop. size</p></td>
+<td><p><span class="math notranslate nohighlight">\(N_e\)</span></p></td>
+<td><p>The <strong>effective population size</strong> – a reference parameter that sets the timescale of the coalescent. Intuitively, <span class="math notranslate nohighlight">\(N_e\)</span> is the size of an idealized population that would produce the same patterns of genetic variation as the real (complex, structured) population. It is <em>not</em> a census count of living individuals; it is a summary of the population’s genetic behavior. For humans, <span class="math notranslate nohighlight">\(N_e \approx 10{,}000\)</span>, even though the census population is billions, because bottlenecks and structure reduce the effective number of breeding individuals over evolutionary time.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Bin size</p></td>
+<td><p><span class="math notranslate nohighlight">\(m\)</span></p></td>
+<td><p>The genomic length of each bin (default: ~1 bp). Smaller bins give finer resolution but increase computational cost.</p></td>
+</tr>
+<tr class="row-even"><td><p>Pruning threshold</p></td>
+<td><p><span class="math notranslate nohighlight">\(\epsilon\)</span></p></td>
+<td><p>The forward probability threshold for including partial branch states (default: 1%). During the forward pass of the branch sampling HMM, any state whose forward probability falls below <span class="math notranslate nohighlight">\(\epsilon\)</span> times the total probability at that position is pruned – excluded from further computation. Think of it as a noise floor: branches that are extremely unlikely given the data so far are dropped to save time. A smaller <span class="math notranslate nohighlight">\(\epsilon\)</span> keeps more states (more accurate but slower); a larger <span class="math notranslate nohighlight">\(\epsilon\)</span> prunes more aggressively (faster but risks missing valid branches).</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="the-flow-in-detail">
+<h2>The Flow in Detail<a class="headerlink" href="#the-flow-in-detail" title="Link to this heading"></a></h2>
+<p>Here is a more detailed view of how the pieces connect. Follow this diagram from
+top to bottom to see the complete pipeline for threading one haplotype:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Haplotype n + Partial ARG
+        |
+        v
++-----------------------+
+|   BRANCH SAMPLING     |
+|                       |
+|  For each bin l:      |
+|    States: branches   |
+|    Emission: P(data   |
+|      | joining branch)|
+|    Transition: SMC    |
+|                       |
+|  -&gt; Forward algorithm |
+|  -&gt; Stochastic        |
+|     traceback         |
++-----------------------+
+        |
+        | Sequence of joining branches
+        v
++-----------------------+
+|   TIME SAMPLING       |
+|                       |
+|  For each bin l:      |
+|    States: time       |
+|      sub-intervals    |
+|    Emission: P(data   |
+|      | joining time)  |
+|    Transition: PSMC   |
+|                       |
+|  -&gt; Forward algorithm |
+|  -&gt; Stochastic        |
+|     traceback         |
++-----------------------+
+        |
+        | Joining times along genome
+        v
++-----------------------+
+|   ARG RESCALING       |
+|                       |
+|  Partition time axis  |
+|  Count mutations per  |
+|    time window        |
+|  Scale to match       |
+|    mutation clock     |
++-----------------------+
+        |
+        v
+    Updated ARG
+</pre></div>
+</div>
+<p>The branch sampling stage (top box) is where topology is decided. It runs a
+forward-backward HMM along the genome, with branches as hidden states and observed
+alleles as emissions. Transitions are governed by the SMC model of recombination.
+The forward algorithm computes the probability of each branch at each position given
+all the data to the left; stochastic traceback then samples a path from right to
+left, producing a sequence of joining branches.</p>
+<p>The time sampling stage (middle box) takes those branches as given and runs a second
+HMM to choose times within each branch. This HMM uses the PSMC transition density
+– the same continuous-time coalescent dynamics from <a class="reference internal" href="../psmc/index.html#psmc-timepiece"><span class="std std-ref">Timepiece I: PSMC</span></a> – to
+model how joining times change between adjacent bins. The result is a complete
+specification: at every bin, we know both which branch and at what time the new
+lineage joins.</p>
+<p>The rescaling stage (bottom box) is a calibration step. After threading, the
+coalescence times in the ARG may not perfectly match the mutation clock (the expected
+relationship between time and number of observed mutations). Rescaling adjusts the
+times to restore this calibration, like a watchmaker adjusting the beat rate after
+installing a new component.</p>
+</section>
+<section id="ready-to-build">
+<h2>Ready to Build<a class="headerlink" href="#ready-to-build" title="Link to this heading"></a></h2>
+<p>You now have the high-level blueprint. In the following chapters, we build each
+gear from scratch:</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="branch_sampling.html#branch-sampling"><span class="std std-ref">Branch Sampling</span></a> – The first HMM: choosing branches. This is the largest
+and most intricate gear in the mechanism, where the SMC transition model and the
+partial branch state machinery come together.</p></li>
+<li><p><a class="reference internal" href="time_sampling.html#time-sampling"><span class="std std-ref">Time Sampling</span></a> – The second HMM: choosing times. Here the PSMC transition
+density from <a class="reference internal" href="../psmc/index.html#psmc-timepiece"><span class="std std-ref">Timepiece I: PSMC</span></a> reappears as a component, a simpler mechanism
+embedded within the grander one.</p></li>
+<li><p><a class="reference internal" href="arg_rescaling.html#arg-rescaling"><span class="std std-ref">ARG Rescaling</span></a> – Calibrating the clock. A focused chapter on how
+coalescence times are adjusted to match the mutation rate.</p></li>
+<li><p><a class="reference internal" href="sgpr.html#sgpr"><span class="std std-ref">Sub-Graph Pruning and Re-grafting (SGPR)</span></a> – The MCMC engine. Sub-Graph Pruning and Re-grafting: how SINGER
+iteratively improves the ARG by removing and re-threading portions of the
+genealogy, converging to the posterior distribution.</p></li>
+</ol>
+<p>Each chapter derives the math, explains the intuition, implements the code,
+and verifies it works.</p>
+<p>Let’s start with the biggest gear: Branch Sampling.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Timepiece VI: SINGER" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="branch_sampling.html" class="btn btn-neutral float-right" title="Branch Sampling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

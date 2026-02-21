@@ -1,0 +1,629 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Moran Model &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tensor Machinery" href="tensor_machinery.html" />
+    <link rel="prev" title="The Coalescent SFS" href="coalescent_sfs.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece X: momi2</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece X: momi2</a></li>
+      <li class="breadcrumb-item active">The Moran Model</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="coalescent_sfs.html" class="btn btn-neutral float-left" title="The Coalescent SFS" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tensor_machinery.html" class="btn btn-neutral float-right" title="Tensor Machinery" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-moran-model">
+<span id="moran-model"></span><h1>The Moran Model<a class="headerlink" href="#the-moran-model" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The escapement of the watch: a discrete population model whose eigendecomposition lets us tell time exactly.</em></p>
+</div></blockquote>
+<blockquote class="epigraph">
+<div><p>“The Moran model provides a tractable Markov chain whose eigensystem is
+known in closed form.”</p>
+<p class="attribution">—Kamm, Terhorst, Song, and Durbin (2017)</p>
+</div></blockquote>
+<section id="step-1-the-moran-model-as-a-continuous-time-markov-chain">
+<h2>Step 1: The Moran Model as a Continuous-Time Markov Chain<a class="headerlink" href="#step-1-the-moran-model-as-a-continuous-time-markov-chain" title="Link to this heading"></a></h2>
+<p>The <strong>Moran model</strong> describes how allele frequencies change in a finite
+population of size <span class="math notranslate nohighlight">\(n\)</span>. Unlike the Wright-Fisher model (which has
+discrete, non-overlapping generations), the Moran model operates in continuous
+time: at rate proportional to <span class="math notranslate nohighlight">\(n\)</span>, one individual is chosen to reproduce
+and one to die.</p>
+<p>The state of the system is the number of derived alleles <span class="math notranslate nohighlight">\(i \in \{0, 1,
+\ldots, n\}\)</span>. The transition rates are:</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}q(i, i+1) &amp;= \frac{i(n-i)}{2} \quad \text{(one more derived copy)}\\q(i, i-1) &amp;= \frac{i(n-i)}{2} \quad \text{(one fewer derived copy)}\\q(i, i) &amp;= -i(n-i) \quad \text{(total departure rate)}\end{aligned}\end{align} \]</div>
+<p>The factor <span class="math notranslate nohighlight">\(i(n-i)/2\)</span> counts the number of ways to pick one derived and
+one ancestral individual (divided by 2 because either could be the parent).</p>
+<div class="admonition-probability-aside-moran-vs-wright-fisher admonition">
+<p class="admonition-title">Probability Aside – Moran vs. Wright-Fisher</p>
+<p>The Moran model and the Wright-Fisher model are different discrete models
+that converge to the same diffusion limit as <span class="math notranslate nohighlight">\(n \to \infty\)</span>. The key
+advantage of the Moran model for <code class="docutils literal notranslate"><span class="pre">momi2</span></code> is that its rate matrix has a
+known eigendecomposition, which allows exact computation of transition
+probabilities for any time <span class="math notranslate nohighlight">\(t\)</span>. The Wright-Fisher model, being a
+discrete-time chain with binomial transitions, does not have such a clean
+eigensystem.</p>
+</div>
+</section>
+<section id="step-2-the-rate-matrix">
+<h2>Step 2: The Rate Matrix<a class="headerlink" href="#step-2-the-rate-matrix" title="Link to this heading"></a></h2>
+<p>The rate matrix <span class="math notranslate nohighlight">\(Q\)</span> is an <span class="math notranslate nohighlight">\((n+1) \times (n+1)\)</span> tridiagonal matrix:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}Q = \begin{pmatrix}
+0 &amp; 0 &amp; &amp; &amp; \\
+0 \cdot n/2 &amp; -0 \cdot n &amp; 0 \cdot n/2 &amp; &amp; \\
+ &amp; 1(n-1)/2 &amp; -1(n-1) &amp; 1(n-1)/2 &amp; \\
+ &amp; &amp; \ddots &amp; \ddots &amp; \ddots \\
+ &amp; &amp; &amp; 0 &amp; 0
+\end{pmatrix}\end{split}\]</div>
+<p>States 0 (all ancestral) and <span class="math notranslate nohighlight">\(n\)</span> (all derived) are <strong>absorbing</strong> – their
+rows are all zeros. This makes sense: once an allele fixes or is lost, there
+is no further change.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">sparse</span>
+
+<span class="k">def</span> <span class="nf">moran_rate_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct the Moran model rate matrix for sample size n.</span>
+
+<span class="sd">    Returns a (n+1) x (n+1) tridiagonal matrix Q where:</span>
+<span class="sd">    - Q[i, i+1] = i*(n-i)/2   (gain one derived copy)</span>
+<span class="sd">    - Q[i, i-1] = i*(n-i)/2   (lose one derived copy)</span>
+<span class="sd">    - Q[i, i]   = -i*(n-i)    (total departure rate)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">off_diag</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="n">diag</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">off_diag</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">off_diag</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+         <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">diag</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+         <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">off_diag</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">Q</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verification: rows sum to zero (a property of all rate matrices)</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">Q</span> <span class="o">=</span> <span class="n">moran_rate_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">row_sums</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">row_sums</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Row sums: </span><span class="si">{</span><span class="n">row_sums</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="c1"># Verification: Q is symmetric (detailed balance for the Moran model)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">Q</span><span class="o">.</span><span class="n">T</span><span class="p">),</span> <span class="s2">&quot;Rate matrix should be symmetric&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-eigendecomposition">
+<h2>Step 3: Eigendecomposition<a class="headerlink" href="#step-3-eigendecomposition" title="Link to this heading"></a></h2>
+<p>Because <span class="math notranslate nohighlight">\(Q\)</span> is a real symmetric tridiagonal matrix, it has a complete set
+of real eigenvalues and orthogonal eigenvectors:</p>
+<div class="math notranslate nohighlight">
+\[Q = V \Lambda V^{-1}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Lambda = \text{diag}(\lambda_0, \lambda_1, \ldots, \lambda_n)\)</span> and
+<span class="math notranslate nohighlight">\(V\)</span> is the matrix of eigenvectors.</p>
+<p>The eigenvalues of the Moran rate matrix are:</p>
+<div class="math notranslate nohighlight">
+\[\lambda_j = -\frac{j(j-1)}{2}, \quad j = 0, 1, \ldots, n\]</div>
+<p>Note that <span class="math notranslate nohighlight">\(\lambda_0 = 0\)</span> and <span class="math notranslate nohighlight">\(\lambda_1 = 0\)</span>, corresponding to the
+two absorbing states (fixation and loss). All other eigenvalues are negative,
+meaning the system decays toward absorption.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">moran_eigensystem</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the eigendecomposition of the Moran rate matrix.</span>
+
+<span class="sd">    Returns (V, eigenvalues, V_inv) where Q = V @ diag(eigenvalues) @ V_inv.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="n">moran_rate_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>  <span class="c1"># eigh for symmetric matrices</span>
+    <span class="n">V_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">V</span><span class="p">,</span> <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">V_inv</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verification: eigenvalues match the theoretical formula</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">V</span><span class="p">,</span> <span class="n">eigs</span><span class="p">,</span> <span class="n">V_inv</span> <span class="o">=</span> <span class="n">moran_eigensystem</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">theoretical_eigs</span> <span class="o">=</span> <span class="o">-</span><span class="n">j</span> <span class="o">*</span> <span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+<span class="c1"># sort both to compare</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">eigs</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">theoretical_eigs</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
+
+<span class="c1"># Verification: reconstruct Q from eigensystem</span>
+<span class="n">Q_reconstructed</span> <span class="o">=</span> <span class="n">V</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">eigs</span><span class="p">)</span> <span class="o">@</span> <span class="n">V_inv</span>
+<span class="n">Q_original</span> <span class="o">=</span> <span class="n">moran_rate_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">Q_reconstructed</span><span class="p">,</span> <span class="n">Q_original</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-the-transition-matrix">
+<h2>Step 4: The Transition Matrix<a class="headerlink" href="#step-4-the-transition-matrix" title="Link to this heading"></a></h2>
+<p>The transition probability matrix for time <span class="math notranslate nohighlight">\(t\)</span> is the matrix exponential:</p>
+<div class="math notranslate nohighlight">
+\[P(t) = e^{Qt} = V \, e^{\Lambda t} \, V^{-1} = V \, \text{diag}(e^{\lambda_0 t}, e^{\lambda_1 t}, \ldots, e^{\lambda_n t}) \, V^{-1}\]</div>
+<p>Entry <span class="math notranslate nohighlight">\(P_{ij}(t)\)</span> gives the probability that the number of derived alleles
+transitions from <span class="math notranslate nohighlight">\(i\)</span> to <span class="math notranslate nohighlight">\(j\)</span> in time <span class="math notranslate nohighlight">\(t\)</span>.</p>
+<p>This is the core computational advantage of the Moran model: instead of
+numerically integrating an ODE system (as <code class="docutils literal notranslate"><span class="pre">moments</span></code> does) or discretizing a
+PDE on a grid (as <code class="docutils literal notranslate"><span class="pre">dadi</span></code> does), <code class="docutils literal notranslate"><span class="pre">momi2</span></code> computes exact transition
+probabilities with a single matrix multiplication. The eigendecomposition is
+computed once per sample size and cached; applying it for different times
+<span class="math notranslate nohighlight">\(t\)</span> requires only exponentiating the eigenvalues.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">moran_transition</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the Moran transition matrix P(t) = exp(Q*t).</span>
+
+<span class="sd">    t: time (in Moran model units, scaled by 2/N)</span>
+<span class="sd">    n: sample size</span>
+
+<span class="sd">    Returns (n+1) x (n+1) transition probability matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">V</span><span class="p">,</span> <span class="n">eigs</span><span class="p">,</span> <span class="n">V_inv</span> <span class="o">=</span> <span class="n">moran_eigensystem</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="n">eigs</span><span class="p">))</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">V</span> <span class="o">@</span> <span class="n">D</span> <span class="o">@</span> <span class="n">V_inv</span>
+    <span class="c1"># clamp small numerical errors</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">P</span> <span class="o">/</span> <span class="n">P</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># normalize rows</span>
+    <span class="k">return</span> <span class="n">P</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verification: P(0) is the identity matrix</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">P0</span> <span class="o">=</span> <span class="n">moran_transition</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">P0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
+
+<span class="c1"># Verification: rows of P(t) sum to 1</span>
+<span class="n">P1</span> <span class="o">=</span> <span class="n">moran_transition</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">P1</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
+
+<span class="c1"># Verification: all entries non-negative</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">P1</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">1e-15</span><span class="p">)</span>
+
+<span class="c1"># Verification: P(s+t) = P(s) @ P(t) (Chapman-Kolmogorov)</span>
+<span class="n">P_s</span> <span class="o">=</span> <span class="n">moran_transition</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">P_t</span> <span class="o">=</span> <span class="n">moran_transition</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">P_st</span> <span class="o">=</span> <span class="n">moran_transition</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">P_s</span> <span class="o">@</span> <span class="n">P_t</span><span class="p">,</span> <span class="n">P_st</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-connecting-to-the-coalescent">
+<h2>Step 5: Connecting to the Coalescent<a class="headerlink" href="#step-5-connecting-to-the-coalescent" title="Link to this heading"></a></h2>
+<p>How does the Moran transition matrix relate to the coalescent? The connection
+is through <strong>lineage counting</strong>.</p>
+<p>Consider <span class="math notranslate nohighlight">\(n\)</span> sampled chromosomes in a population of size <span class="math notranslate nohighlight">\(N\)</span>. Going
+backward in time, we track how many distinct lineages remain. The Moran model
+(running backward) describes how the configuration of alleles in the sample
+evolves as we trace back through the population history.</p>
+<p>Specifically, the transition matrix <span class="math notranslate nohighlight">\(P(t)\)</span> applied to a likelihood vector
+<span class="math notranslate nohighlight">\(\mathbf{v}\)</span> of length <span class="math notranslate nohighlight">\(n+1\)</span> computes:</p>
+<div class="math notranslate nohighlight">
+\[[\mathbf{v} \cdot P(t)]_i = \sum_j v_j \, P_{ji}(t)\]</div>
+<p>This transforms the likelihood of observing a given allele configuration at
+the bottom of an epoch to the likelihood at the top, accounting for all possible
+coalescence and drift events that could have occurred during the epoch.</p>
+<p>The <strong>time scaling</strong> is crucial. Real time <span class="math notranslate nohighlight">\(T\)</span> (in generations) maps to
+Moran model time via:</p>
+<div class="math notranslate nohighlight">
+\[t = \int_0^T \frac{2}{N(s)}\, ds\]</div>
+<p>For constant size: <span class="math notranslate nohighlight">\(t = 2T/N\)</span>. For exponential growth with rate <span class="math notranslate nohighlight">\(g\)</span>
+and bottom size <span class="math notranslate nohighlight">\(N_0\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[t = \frac{2}{N_0} \int_0^T e^{gs}\, ds = \frac{2(e^{gT} - 1)}{N_0 g}\]</div>
+</section>
+<section id="step-6-applying-moran-transitions-to-tensors">
+<h2>Step 6: Applying Moran Transitions to Tensors<a class="headerlink" href="#step-6-applying-moran-transitions-to-tensors" title="Link to this heading"></a></h2>
+<p>In <code class="docutils literal notranslate"><span class="pre">momi2</span></code>’s tensor framework, the Moran transition is applied to a
+<strong>specific axis</strong> of a multi-dimensional likelihood tensor. If the tensor has
+one axis per population, and we need to apply the Moran transition for
+population <span class="math notranslate nohighlight">\(k\)</span>, we multiply along axis <span class="math notranslate nohighlight">\(k\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[L'_{i_1, \ldots, i_k, \ldots, i_D} = \sum_{j_k} L_{i_1, \ldots, j_k, \ldots, i_D} \, P_{j_k, i_k}(t)\]</div>
+<p>This is an <code class="docutils literal notranslate"><span class="pre">einsum</span></code> operation, which <code class="docutils literal notranslate"><span class="pre">momi2</span></code> implements via optimized
+batched matrix multiplication:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">moran_action</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">axis</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply Moran transition matrix to a tensor along a given axis.</span>
+
+<span class="sd">    t: scaled time for this epoch</span>
+<span class="sd">    tensor: multi-dimensional likelihood tensor</span>
+<span class="sd">    axis: which axis (population) to apply the transition to</span>
+
+<span class="sd">    Returns tensor with the Moran transition applied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">moran_transition</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="c1"># einsum: contract axis of tensor with P</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">P</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="n">axis</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+</pre></div>
+</div>
+<div class="admonition-calculus-aside-why-eigendecomposition-beats-ode-integration admonition">
+<p class="admonition-title">Calculus Aside – Why eigendecomposition beats ODE integration</p>
+<p><code class="docutils literal notranslate"><span class="pre">moments</span></code> computes the SFS by integrating a system of ODEs forward in
+time: <span class="math notranslate nohighlight">\(d\phi/dt = A \phi\)</span>. For each epoch, this requires calling an
+ODE solver (like RK45), which takes many small steps. <code class="docutils literal notranslate"><span class="pre">momi2</span></code> instead
+computes <span class="math notranslate nohighlight">\(\phi(t) = e^{At} \phi(0)\)</span> directly via the eigensystem.
+Since the eigensystem is computed once and cached, each epoch requires only
+<span class="math notranslate nohighlight">\(O(n^2)\)</span> work for the matrix-vector product. This makes <code class="docutils literal notranslate"><span class="pre">momi2</span></code>
+particularly efficient when the same sample size appears in many epochs.</p>
+</div>
+</section>
+<section id="step-7-the-moran-model-in-momi2-s-source-code">
+<h2>Step 7: The Moran Model in momi2’s Source Code<a class="headerlink" href="#step-7-the-moran-model-in-momi2-s-source-code" title="Link to this heading"></a></h2>
+<p>In the actual <code class="docutils literal notranslate"><span class="pre">momi2</span></code> implementation, the Moran eigensystem is memoized
+(cached by sample size <span class="math notranslate nohighlight">\(n\)</span>) and the transition matrix computation handles
+edge cases for numerical stability:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simplified from momi/moran_model.py</span>
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">lru_cache</span>
+
+<span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">cached_eigensystem</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Memoized eigendecomposition -- computed once per sample size.&quot;&quot;&quot;</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="n">moran_rate_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+    <span class="n">V_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">V</span><span class="p">,</span> <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">V_inv</span>
+
+<span class="k">def</span> <span class="nf">transition_with_checks</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transition matrix with probability validation.&quot;&quot;&quot;</span>
+    <span class="n">V</span><span class="p">,</span> <span class="n">eigs</span><span class="p">,</span> <span class="n">V_inv</span> <span class="o">=</span> <span class="n">cached_eigensystem</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="n">eigs</span><span class="p">))</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">V</span> <span class="o">@</span> <span class="n">D</span> <span class="o">@</span> <span class="n">V_inv</span>
+    <span class="c1"># numerical cleanup: clamp negatives, normalize rows</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">row_sums</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">P</span> <span class="o">/</span> <span class="n">row_sums</span>
+    <span class="k">return</span> <span class="n">P</span>
+</pre></div>
+</div>
+<p>The memoization is critical for performance: in a typical inference run, the
+optimizer evaluates hundreds of parameter combinations, but the sample sizes
+remain fixed. The eigensystem is computed once; only the time argument <span class="math notranslate nohighlight">\(t\)</span>
+changes between evaluations.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-eigenvalue-verification admonition">
+<p class="admonition-title">Exercise 1: Eigenvalue verification</p>
+<p>Compute the eigenvalues of the Moran rate matrix for <span class="math notranslate nohighlight">\(n = 5, 10, 20\)</span>
+and verify they match the formula <span class="math notranslate nohighlight">\(\lambda_j = -j(j-1)/2\)</span>.</p>
+</div>
+<div class="admonition-exercise-2-stationary-distribution admonition">
+<p class="admonition-title">Exercise 2: Stationary distribution</p>
+<p>Show that the Moran model has two absorbing states (0 and <span class="math notranslate nohighlight">\(n\)</span>). For
+a large time <span class="math notranslate nohighlight">\(t\)</span>, what does <span class="math notranslate nohighlight">\(P(t)\)</span> converge to? What is the
+probability of fixation starting from <span class="math notranslate nohighlight">\(i\)</span> derived alleles?</p>
+</div>
+<div class="admonition-exercise-3-chapman-kolmogorov admonition">
+<p class="admonition-title">Exercise 3: Chapman-Kolmogorov</p>
+<p>Verify the semigroup property <span class="math notranslate nohighlight">\(P(s+t) = P(s) P(t)\)</span> numerically for
+several values of <span class="math notranslate nohighlight">\(s, t\)</span> and <span class="math notranslate nohighlight">\(n\)</span>. Why does this property make
+the eigendecomposition approach so natural?</p>
+</div>
+<div class="admonition-exercise-4-time-scaling admonition">
+<p class="admonition-title">Exercise 4: Time scaling</p>
+<p>For a population that grows exponentially from <span class="math notranslate nohighlight">\(N_0 = 1000\)</span> to
+<span class="math notranslate nohighlight">\(N_T = 10000\)</span> over <span class="math notranslate nohighlight">\(T = 500\)</span> generations, compute the scaled
+Moran time <span class="math notranslate nohighlight">\(t\)</span>. How does this compare to the constant-size case
+<span class="math notranslate nohighlight">\(t = 2T/N_0\)</span>?</p>
+</div>
+<p>Next: <a class="reference internal" href="tensor_machinery.html#tensor-machinery"><span class="std std-ref">Tensor Machinery</span></a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="coalescent_sfs.html" class="btn btn-neutral float-left" title="The Coalescent SFS" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tensor_machinery.html" class="btn btn-neutral float-right" title="Tensor Machinery" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

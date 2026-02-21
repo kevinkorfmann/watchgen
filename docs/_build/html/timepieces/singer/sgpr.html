@@ -1,0 +1,1247 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sub-Graph Pruning and Re-grafting (SGPR) &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Timepiece VII: Threads" href="../threads/index.html" />
+    <link rel="prev" title="ARG Rescaling" href="arg_rescaling.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece VI: SINGER</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece VI: SINGER</a></li>
+      <li class="breadcrumb-item active">Sub-Graph Pruning and Re-grafting (SGPR)</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="arg_rescaling.html" class="btn btn-neutral float-left" title="ARG Rescaling" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../threads/index.html" class="btn btn-neutral float-right" title="Timepiece VII: Threads" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="sub-graph-pruning-and-re-grafting-sgpr">
+<span id="sgpr"></span><h1>Sub-Graph Pruning and Re-grafting (SGPR)<a class="headerlink" href="#sub-graph-pruning-and-re-grafting-sgpr" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The mainspring of the MCMC: make a cut, thread it back, and let the data guide you.</em></p>
+</div></blockquote>
+<p>In the <a class="reference internal" href="branch_sampling.html#branch-sampling"><span class="std std-ref">previous chapters</span></a>, we built the threading
+algorithm (branch sampling + time sampling) and the <a class="reference internal" href="arg_rescaling.html#arg-rescaling"><span class="std std-ref">calibration step</span></a>. Together, these components can construct an initial ARG from
+a set of haplotypes and adjust its time scale. But a single construction is not
+enough – the threading order matters, the stochastic choices in each HMM
+traceback introduce randomness, and the resulting ARG may not be the best
+explanation of the data.</p>
+<p>SGPR is SINGER’s mechanism for exploring the space of ARGs. It is the
+<strong>winding mechanism</strong> of the grand complication – the mainspring that keeps
+the MCMC chain moving, proposing new ARG configurations that are tested
+against the data. Without SGPR, SINGER would produce a single (possibly poor)
+ARG and stop. With SGPR, it explores the posterior distribution, gradually
+improving the ARG and eventually producing high-quality posterior samples.</p>
+<p>SGPR is an MCMC (Markov Chain Monte Carlo) move that proposes updates to the
+current ARG by:</p>
+<ol class="arabic simple">
+<li><p><strong>Pruning</strong>: cutting a sub-graph from the ARG</p></li>
+<li><p><strong>Re-grafting</strong>: re-threading the cut point using the same branch + time
+sampling algorithm</p></li>
+</ol>
+<p>The genius of SGPR is that by using the data-informed threading algorithm
+(instead of sampling from the prior), the acceptance rate is dramatically higher
+than previous proposals – approaching 1.0 for large sample sizes.</p>
+<div class="admonition-probability-aside-what-is-mcmc admonition">
+<p class="admonition-title">Probability Aside – What is MCMC?</p>
+<p><strong>Markov Chain Monte Carlo (MCMC)</strong> is a family of algorithms for sampling
+from a probability distribution that is difficult to sample from directly.
+The idea: construct a Markov chain (a sequence of random states where each
+state depends only on the previous one) whose long-run behavior converges
+to the target distribution.</p>
+<p>For SINGER, the target distribution is the <strong>posterior over ARGs</strong>:
+<span class="math notranslate nohighlight">\(P(\mathcal{G} \mid D)\)</span>, the probability of an ARG given the observed
+DNA sequences. This distribution is astronomically complex – the space of
+possible ARGs is vast, and computing <span class="math notranslate nohighlight">\(P(\mathcal{G} \mid D)\)</span> directly
+for every possible ARG is impossible. MCMC sidesteps this by exploring the
+space one step at a time, spending more time in regions of high posterior
+probability.</p>
+<p>If you have encountered MCMC in other contexts (e.g., Bayesian statistics,
+statistical physics), the concepts here are the same. The innovation in
+SGPR is in the <em>proposal distribution</em> – how we choose the next state to
+try. A good proposal makes MCMC efficient; a poor proposal makes it
+glacially slow.</p>
+</div>
+<section id="the-subtree-pruning-and-regrafting-spr-foundation">
+<h2>The Subtree Pruning and Regrafting (SPR) Foundation<a class="headerlink" href="#the-subtree-pruning-and-regrafting-spr-foundation" title="Link to this heading"></a></h2>
+<p>Before understanding SGPR, let’s start with its simpler ancestor: <strong>SPR</strong> on
+a single tree. This is the foundation on which SGPR builds – understanding
+SPR on a single tree makes the extension to ARGs straightforward.</p>
+<p>In SPR, you:</p>
+<ol class="arabic simple">
+<li><p>Pick a branch in the tree</p></li>
+<li><p>Cut it (detach the subtree below the cut from the rest)</p></li>
+<li><p>Re-attach the subtree somewhere else in the remaining tree</p></li>
+</ol>
+<div class="admonition-probability-aside-spr-and-tree-space admonition">
+<p class="admonition-title">Probability Aside – SPR and Tree Space</p>
+<p>SPR moves define a <strong>graph on tree space</strong>: two trees are “neighbors” if
+one can be obtained from the other by a single SPR move. This graph is
+connected – any tree can be reached from any other tree by a sequence of
+SPR moves (proven by Allen and Steel, 2001). This connectivity is essential
+for MCMC: it guarantees that the Markov chain can reach any tree, so the
+chain can converge to the true posterior distribution regardless of its
+starting point.</p>
+<p>The number of SPR neighbors of a tree with <span class="math notranslate nohighlight">\(n\)</span> leaves is
+<span class="math notranslate nohighlight">\(O(n^2)\)</span> – there are <span class="math notranslate nohighlight">\(O(n)\)</span> branches to cut and <span class="math notranslate nohighlight">\(O(n)\)</span>
+branches to re-attach to. For an ARG, the number of possible SGPR moves
+is larger because the cut extends along the genome, but the same
+connectivity property holds.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">class</span> <span class="nc">SimpleTree</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A minimal tree for demonstrating SPR.</span>
+
+<span class="sd">    Stores the tree as a parent map (each node points to its parent)</span>
+<span class="sd">    and a time map (each node has a time/height).  This is the same</span>
+<span class="sd">    representation used internally by tree sequence libraries like</span>
+<span class="sd">    tskit (see the ARG prerequisite chapter).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        parent : dict of {node: parent_node}</span>
+<span class="sd">        time : dict of {node: time}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">time</span>
+        <span class="c1"># Build children map by inverting the parent map</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">child</span><span class="p">,</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">par</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">branches</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all branches as (child, parent, length).&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">child</span><span class="p">,</span> <span class="n">par</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">par</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">child</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">[</span><span class="n">par</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">[</span><span class="n">child</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the tree height (TMRCA).</span>
+
+<span class="sd">        The TMRCA (Time to Most Recent Common Ancestor) is the time</span>
+<span class="sd">        of the root node -- the oldest node in the tree.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">spr_move</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">new_parent</span><span class="p">,</span> <span class="n">new_time</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform an SPR move on a tree.</span>
+
+<span class="sd">    This implements the three-step SPR procedure:</span>
+<span class="sd">    1. Detach the subtree rooted at cut_node</span>
+<span class="sd">    2. Remove the now-unary node (the old parent of cut_node)</span>
+<span class="sd">    3. Re-attach cut_node to new_parent at new_time</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tree : SimpleTree</span>
+<span class="sd">    cut_node : int</span>
+<span class="sd">        The node whose branch we cut above.</span>
+<span class="sd">    new_parent : int</span>
+<span class="sd">        The branch (identified by its child node) to re-attach to.</span>
+<span class="sd">    new_time : float</span>
+<span class="sd">        The time of the re-attachment point.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_tree : SimpleTree</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_parent_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">new_time_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+
+    <span class="c1"># Find the old parent and grandparent of cut_node</span>
+    <span class="n">old_parent</span> <span class="o">=</span> <span class="n">new_parent_dict</span><span class="p">[</span><span class="n">cut_node</span><span class="p">]</span>
+    <span class="n">old_grandparent</span> <span class="o">=</span> <span class="n">new_parent_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_parent</span><span class="p">)</span>
+
+    <span class="c1"># Find sibling of cut_node (the other child of old_parent)</span>
+    <span class="n">siblings</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_parent</span><span class="p">,</span> <span class="p">[])</span>
+                 <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">cut_node</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">siblings</span> <span class="ow">and</span> <span class="n">old_grandparent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sibling</span> <span class="o">=</span> <span class="n">siblings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Remove old_parent node: connect sibling directly to grandparent</span>
+        <span class="c1"># This eliminates the now-unary internal node</span>
+        <span class="n">new_parent_dict</span><span class="p">[</span><span class="n">sibling</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_grandparent</span>
+        <span class="k">del</span> <span class="n">new_parent_dict</span><span class="p">[</span><span class="n">old_parent</span><span class="p">]</span>
+
+    <span class="c1"># Re-attach cut_node to new_parent at new_time</span>
+    <span class="c1"># Create a new internal node at the re-attachment point</span>
+    <span class="n">new_internal</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">new_time_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">new_time_dict</span><span class="p">[</span><span class="n">new_internal</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_time</span>
+
+    <span class="c1"># Re-wire: cut_node and new_parent both become children</span>
+    <span class="c1"># of the new internal node</span>
+    <span class="n">target_parent</span> <span class="o">=</span> <span class="n">new_parent_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">new_parent</span><span class="p">)</span>
+    <span class="n">new_parent_dict</span><span class="p">[</span><span class="n">new_parent</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_internal</span>
+    <span class="n">new_parent_dict</span><span class="p">[</span><span class="n">cut_node</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_internal</span>
+    <span class="k">if</span> <span class="n">target_parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">new_parent_dict</span><span class="p">[</span><span class="n">new_internal</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_parent</span>
+
+    <span class="k">return</span> <span class="n">SimpleTree</span><span class="p">(</span><span class="n">new_parent_dict</span><span class="p">,</span> <span class="n">new_time_dict</span><span class="p">)</span>
+
+<span class="c1"># Example tree: ((0,1)4, (2,3)5)6</span>
+<span class="n">tree</span> <span class="o">=</span> <span class="n">SimpleTree</span><span class="p">(</span>
+    <span class="n">parent</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span> <span class="mi">6</span><span class="p">},</span>
+    <span class="n">time</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mi">6</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Original branches:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">branches</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">: length=</span><span class="si">{</span><span class="n">l</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With the SPR foundation in place, we now extend the idea from a single tree to
+an entire ARG. The key challenge: a cut on one marginal tree extends to adjacent
+trees, creating a “sub-graph” rather than a “sub-tree.”</p>
+</section>
+<section id="step-1-how-to-prune-a-sub-graph">
+<h2>Step 1: How to Prune a Sub-Graph<a class="headerlink" href="#step-1-how-to-prune-a-sub-graph" title="Link to this heading"></a></h2>
+<p>In an ARG (unlike a single tree), a cut on one marginal tree extends to
+adjacent trees. The extension follows a simple rule:</p>
+<p><strong>Rule</strong>: A cut on a colored segment in one tree corresponds to the segment of
+the <strong>same color</strong> in the adjacent tree. The extension terminates when the cut
+reaches a segment that was created by a recombination event (a “black dashed”
+segment – the part of a new lineage above the recombination breakpoint).</p>
+<div class="admonition-probability-aside-why-the-cut-extends-along-the-genome admonition">
+<p class="admonition-title">Probability Aside – Why the Cut Extends Along the Genome</p>
+<p>In an ARG, adjacent marginal trees share most of their topology – they
+differ only at the recombination breakpoints. When you cut a branch in one
+tree, the same lineage typically exists (possibly in a different position)
+in the adjacent tree. The cut must follow this lineage across the genome
+to maintain consistency.</p>
+<p>The extension stops at recombination breakpoints because a recombination
+creates a <em>new</em> lineage above it – a lineage that did not exist in the
+previous tree. The cut cannot follow a lineage that doesn’t exist, so it
+stops.</p>
+<p>This is the key difference between SPR (on a single tree) and SGPR (on an
+ARG): in SPR, the cut affects a single tree; in SGPR, it affects a
+contiguous segment of the genome, potentially spanning many marginal trees.</p>
+</div>
+<p>For each marginal tree in the span of the cut, we remove the portion of the
+branch <strong>above the cut</strong> to the upper node.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">find_cut_span</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">tree_idx</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find how far a cut extends left and right along the genome.</span>
+
+<span class="sd">    Starting from the initial cut position, trace the lineage</span>
+<span class="sd">    in both directions until hitting a recombination boundary</span>
+<span class="sd">    (where the lineage was created by a recombination event).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg : object</span>
+<span class="sd">        The ARG (sequence of marginal trees with recombinations).</span>
+<span class="sd">    tree_idx : int</span>
+<span class="sd">        Index of the marginal tree where the cut is initiated.</span>
+<span class="sd">    cut_node : int</span>
+<span class="sd">        The branch (child node) being cut.</span>
+<span class="sd">    cut_time : float</span>
+<span class="sd">        The time of the cut.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    left_bound : int</span>
+<span class="sd">        Leftmost tree index affected by the cut.</span>
+<span class="sd">    right_bound : int</span>
+<span class="sd">        Rightmost tree index affected by the cut.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_trees</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">trees</span><span class="p">)</span>
+
+    <span class="c1"># Extend rightward: follow the lineage through each recombination</span>
+    <span class="n">right_bound</span> <span class="o">=</span> <span class="n">tree_idx</span>
+    <span class="n">current_branch</span> <span class="o">=</span> <span class="n">cut_node</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tree_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_trees</span><span class="p">):</span>
+        <span class="c1"># Check if there&#39;s a recombination between tree t-1 and t</span>
+        <span class="n">recomb</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">get_recombination</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">recomb</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># No recombination: the lineage continues unchanged</span>
+            <span class="n">right_bound</span> <span class="o">=</span> <span class="n">t</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Check if the cut segment can be traced through the recombination</span>
+        <span class="n">mapped</span> <span class="o">=</span> <span class="n">trace_branch_through_recomb</span><span class="p">(</span><span class="n">current_branch</span><span class="p">,</span> <span class="n">cut_time</span><span class="p">,</span>
+                                              <span class="n">recomb</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mapped</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Hit a decoupled segment -- the lineage was created by</span>
+            <span class="c1"># this recombination, so the cut cannot extend further</span>
+            <span class="k">break</span>
+
+        <span class="n">current_branch</span> <span class="o">=</span> <span class="n">mapped</span>
+        <span class="n">right_bound</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="c1"># Extend leftward (symmetric logic)</span>
+    <span class="n">left_bound</span> <span class="o">=</span> <span class="n">tree_idx</span>
+    <span class="n">current_branch</span> <span class="o">=</span> <span class="n">cut_node</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tree_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">recomb</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">get_recombination</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">recomb</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">left_bound</span> <span class="o">=</span> <span class="n">t</span>
+            <span class="k">continue</span>
+
+        <span class="n">mapped</span> <span class="o">=</span> <span class="n">trace_branch_through_recomb</span><span class="p">(</span><span class="n">current_branch</span><span class="p">,</span> <span class="n">cut_time</span><span class="p">,</span>
+                                              <span class="n">recomb</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mapped</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="n">current_branch</span> <span class="o">=</span> <span class="n">mapped</span>
+        <span class="n">left_bound</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="k">return</span> <span class="n">left_bound</span><span class="p">,</span> <span class="n">right_bound</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-the-cut-selection-procedure">
+<h2>Step 2: The Cut Selection Procedure<a class="headerlink" href="#step-2-the-cut-selection-procedure" title="Link to this heading"></a></h2>
+<p>SINGER selects cuts as follows:</p>
+<ol class="arabic simple">
+<li><p>Start at the rightmost position of the previous cut (or the beginning of the
+chromosome if this is the first cut).</p></li>
+<li><p>At the marginal tree at this position:</p>
+<ol class="loweralpha simple">
+<li><p>Sample a cut time <span class="math notranslate nohighlight">\(t\)</span> uniformly at random between 0 and the tree
+height (TMRCA).</p></li>
+<li><p>Find all branches that cross time <span class="math notranslate nohighlight">\(t\)</span>.</p></li>
+<li><p>Choose one uniformly at random.</p></li>
+<li><p>Cut the chosen branch at time <span class="math notranslate nohighlight">\(t\)</span>.</p></li>
+</ol>
+</li>
+<li><p>The cut extends left and right using the rule from Step 1.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">select_cut</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Select a random cut on a marginal tree.</span>
+
+<span class="sd">    The cut is chosen by first sampling a time uniformly in</span>
+<span class="sd">    [0, tree height], then choosing uniformly among branches</span>
+<span class="sd">    that cross that time.  This two-step procedure gives each</span>
+<span class="sd">    branch a probability proportional to its length.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tree : SimpleTree</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cut_node : int</span>
+<span class="sd">        The branch being cut (identified by child node).</span>
+<span class="sd">    cut_time : float</span>
+<span class="sd">        The time of the cut.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Sample time uniformly in [0, tree height]</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">height</span><span class="p">()</span>
+    <span class="n">cut_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+    <span class="c1"># Find branches that cross this time</span>
+    <span class="n">crossing_branches</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">child</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">length</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">branches</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">tree</span><span class="o">.</span><span class="n">time</span><span class="p">[</span><span class="n">child</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">cut_time</span> <span class="o">&lt;</span> <span class="n">tree</span><span class="o">.</span><span class="n">time</span><span class="p">[</span><span class="n">parent</span><span class="p">]:</span>
+            <span class="n">crossing_branches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+    <span class="c1"># Choose one uniformly at random</span>
+    <span class="n">cut_node</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">crossing_branches</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span> <span class="o">=</span> <span class="n">select_cut</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cut: node </span><span class="si">{</span><span class="n">cut_node</span><span class="si">}</span><span class="s2"> at time </span><span class="si">{</span><span class="n">cut_time</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-probability-aside-the-cut-probability-and-ultrametric-trees admonition">
+<p class="admonition-title">Probability Aside – The Cut Probability and Ultrametric Trees</p>
+<p>The probability of selecting a specific cut is:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{cut } b \text{ at } x) = \frac{1}{h(\Psi_x)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(h(\Psi_x)\)</span> is the height of tree <span class="math notranslate nohighlight">\(\Psi_x\)</span>. This is because
+the time is uniform in <span class="math notranslate nohighlight">\([0, h]\)</span>, and conditioned on the time, each crossing
+branch is equally likely. The number of crossing branches at time <span class="math notranslate nohighlight">\(t\)</span> is
+exactly <span class="math notranslate nohighlight">\(\lambda_\Psi(t)\)</span>, and when we integrate over <span class="math notranslate nohighlight">\(t\)</span>, we get a
+probability proportional to branch length – and all branch lengths sum to
+<span class="math notranslate nohighlight">\(h(\Psi_x)\)</span> when counting from 0 (since the tree is ultrametric).</p>
+<p>An <strong>ultrametric tree</strong> is one where all leaves are at the same distance
+(time) from the root – equivalently, all leaves are at time 0 (the present).
+Coalescent trees are always ultrametric because all samples are taken at
+the same time. In an ultrametric tree, the sum of all branch lengths at
+each time slice equals exactly the number of lineages at that time, and
+integrating from 0 to the root gives the tree height <span class="math notranslate nohighlight">\(h\)</span>.</p>
+<p>This means:</p>
+<div class="math notranslate nohighlight">
+\[P(H \mid G) = \frac{1}{h(\Psi_x)}\]</div>
+<p>This is a crucial quantity for the acceptance ratio, as we will see in Step 4.</p>
+</div>
+</section>
+<section id="step-3-re-grafting-via-threading">
+<h2>Step 3: Re-grafting via Threading<a class="headerlink" href="#step-3-re-grafting-via-threading" title="Link to this heading"></a></h2>
+<p>After pruning, we re-graft by running the <strong>same threading algorithm</strong> (branch
+sampling + time sampling) on the cut point, using the remaining partial ARG
+<span class="math notranslate nohighlight">\(H\)</span> as the reference.</p>
+<p>This is the key innovation over the Kuhner move (which re-grafts by simulating
+from the <strong>prior</strong>). By using the threading algorithm, SINGER’s proposal takes
+the <strong>data</strong> into account and proposes genealogies consistent with the observed
+mutations. In the watch metaphor, the Kuhner move replaces a gear blindfolded
+(hoping it fits); SGPR examines the mechanism first (using the threading
+algorithm’s emission probabilities) and chooses a gear that is likely to mesh
+correctly.</p>
+<div class="admonition-probability-aside-prior-vs-posterior-proposals admonition">
+<p class="admonition-title">Probability Aside – Prior vs. Posterior Proposals</p>
+<p>In MCMC, the <strong>proposal distribution</strong> determines what new states the chain
+considers. There are two natural choices:</p>
+<ul class="simple">
+<li><p><strong>Prior proposal</strong>: sample the new state from the model’s prior
+distribution (e.g., the coalescent process). This is simple but ignores
+the data, leading to proposals that rarely explain the observed mutations
+well. Most are rejected.</p></li>
+<li><p><strong>Posterior proposal</strong>: sample the new state from (an approximation to)
+the posterior distribution, which accounts for both the prior and the data.
+This produces proposals that are likely to be good explanations of the
+data, leading to high acceptance rates.</p></li>
+</ul>
+<p>SGPR uses a posterior proposal: the threading algorithm’s HMM incorporates
+both the coalescent prior (through transition probabilities) and the data
+(through emission probabilities). The resulting proposals are much better
+than prior proposals, which is why SGPR’s acceptance rate approaches 1.0
+while the Kuhner move’s acceptance rate is very low.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sgpr_move</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">cut_position</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform one SGPR move on the ARG.</span>
+
+<span class="sd">    This is the complete SGPR cycle:</span>
+<span class="sd">    1. Select a cut (random branch and time)</span>
+<span class="sd">    2. Find the genomic span of the cut</span>
+<span class="sd">    3. Prune the sub-graph above the cut</span>
+<span class="sd">    4. Re-graft using the threading algorithm</span>
+<span class="sd">    5. Compute the acceptance ratio</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg : object</span>
+<span class="sd">        Current ARG state.</span>
+<span class="sd">    cut_position : int, optional</span>
+<span class="sd">        Genome position for the cut. If None, continues from</span>
+<span class="sd">        the last cut position.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_arg : object</span>
+<span class="sd">        Proposed new ARG.</span>
+<span class="sd">    acceptance_ratio : float</span>
+<span class="sd">        The Metropolis-Hastings acceptance ratio.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Select a cut</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">get_tree_at</span><span class="p">(</span><span class="n">cut_position</span><span class="p">)</span>
+    <span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span> <span class="o">=</span> <span class="n">select_cut</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Find the span of the cut</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">find_cut_span</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">cut_position</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Prune -- remove the sub-graph above the cut</span>
+    <span class="n">partial_arg</span> <span class="o">=</span> <span class="n">prune_subgraph</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Re-graft using threading (data-informed proposal)</span>
+    <span class="c1"># This is the same threading algorithm from the branch_sampling</span>
+    <span class="c1"># and time_sampling chapters</span>
+    <span class="n">joining_branches</span> <span class="o">=</span> <span class="n">branch_sampling</span><span class="p">(</span><span class="n">partial_arg</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+    <span class="n">joining_times</span> <span class="o">=</span> <span class="n">time_sampling_sgpr</span><span class="p">(</span><span class="n">partial_arg</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span>
+                                       <span class="n">joining_branches</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Build the new ARG</span>
+    <span class="n">new_arg</span> <span class="o">=</span> <span class="n">regraft</span><span class="p">(</span><span class="n">partial_arg</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">joining_branches</span><span class="p">,</span>
+                       <span class="n">joining_times</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+
+    <span class="c1"># Step 6: Compute acceptance ratio (see Step 4 below)</span>
+    <span class="n">h_old</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">height</span><span class="p">()</span>
+    <span class="n">h_new</span> <span class="o">=</span> <span class="n">new_arg</span><span class="o">.</span><span class="n">get_tree_at</span><span class="p">(</span><span class="n">cut_position</span><span class="p">)</span><span class="o">.</span><span class="n">height</span><span class="p">()</span>
+    <span class="n">acceptance_ratio</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">h_old</span> <span class="o">/</span> <span class="n">h_new</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_arg</span><span class="p">,</span> <span class="n">acceptance_ratio</span>
+</pre></div>
+</div>
+<p>With the SGPR move defined, we need to understand <em>why</em> the acceptance ratio
+takes such a simple form. This requires a careful derivation from the
+Metropolis-Hastings framework – the mathematical backbone of MCMC.</p>
+</section>
+<section id="step-4-the-acceptance-ratio">
+<h2>Step 4: The Acceptance Ratio<a class="headerlink" href="#step-4-the-acceptance-ratio" title="Link to this heading"></a></h2>
+<p>This is where SGPR shines. Let’s build the derivation carefully from the
+Metropolis-Hastings framework.</p>
+<section id="background-metropolis-hastings">
+<h3>Background: Metropolis-Hastings<a class="headerlink" href="#background-metropolis-hastings" title="Link to this heading"></a></h3>
+<p>MCMC works by constructing a Markov chain whose stationary distribution is the
+target posterior <span class="math notranslate nohighlight">\(P(\mathcal{G} \mid D)\)</span>. At each step, we propose a new
+state <span class="math notranslate nohighlight">\(\mathcal{G}'\)</span> and accept it with probability:</p>
+<div class="math notranslate nohighlight">
+\[A(\mathcal{G} \to \mathcal{G}') = \min\left(1, \frac{P(\mathcal{G}' \mid D) \cdot q(\mathcal{G}' \to \mathcal{G})}{P(\mathcal{G} \mid D) \cdot q(\mathcal{G} \to \mathcal{G}')}\right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(q(\mathcal{G} \to \mathcal{G}')\)</span> is the proposal probability.</p>
+<div class="admonition-probability-aside-detailed-balance-and-why-mh-works admonition">
+<p class="admonition-title">Probability Aside – Detailed Balance and Why MH Works</p>
+<p>The Metropolis-Hastings acceptance formula ensures <strong>detailed balance</strong>: the
+probability of being in state <span class="math notranslate nohighlight">\(\mathcal{G}\)</span> and moving to
+<span class="math notranslate nohighlight">\(\mathcal{G}'\)</span> equals the probability of the reverse:</p>
+<div class="math notranslate nohighlight">
+\[P(\mathcal{G} \mid D) \cdot q(\mathcal{G} \to \mathcal{G}') \cdot A(\mathcal{G} \to \mathcal{G}')
+= P(\mathcal{G}' \mid D) \cdot q(\mathcal{G}' \to \mathcal{G}) \cdot A(\mathcal{G}' \to \mathcal{G})\]</div>
+<p>Detailed balance guarantees that the chain converges to the target
+distribution <span class="math notranslate nohighlight">\(P(\mathcal{G} \mid D)\)</span> regardless of its starting point.
+This is a fundamental result in probability theory (see any textbook on
+MCMC, e.g., Robert and Casella, 2004).</p>
+<p>The MH formula is the unique way to set the acceptance probability that
+achieves detailed balance for <em>any</em> proposal distribution <span class="math notranslate nohighlight">\(q\)</span>. Different
+choices of <span class="math notranslate nohighlight">\(q\)</span> lead to different acceptance rates and mixing speeds,
+but all are valid MCMC samplers.</p>
+</div>
+</section>
+<section id="the-sgpr-proposal">
+<h3>The SGPR proposal<a class="headerlink" href="#the-sgpr-proposal" title="Link to this heading"></a></h3>
+<p>In SGPR, the proposal from <span class="math notranslate nohighlight">\(\mathcal{G}\)</span> to <span class="math notranslate nohighlight">\(\mathcal{G}'\)</span> involves
+an intermediate step – the partial ARG <span class="math notranslate nohighlight">\(H\)</span>. The proposal factors as:</p>
+<div class="math notranslate nohighlight">
+\[q_H(\mathcal{G} \to \mathcal{G}') = P(\text{prune } \mathcal{G} \text{ to } H) \cdot P(\text{regraft } H \text{ to } \mathcal{G}')\]</div>
+<p>Let’s write these two pieces explicitly:</p>
+<ol class="arabic simple">
+<li><p><span class="math notranslate nohighlight">\(P(H \mid \mathcal{G})\)</span> = probability of selecting the specific cut that
+produces <span class="math notranslate nohighlight">\(H\)</span> from <span class="math notranslate nohighlight">\(\mathcal{G}\)</span> (the pruning probability).</p></li>
+<li><p><span class="math notranslate nohighlight">\(P(\mathcal{G}' \mid D, H)\)</span> = probability that the threading algorithm
+produces <span class="math notranslate nohighlight">\(\mathcal{G}'\)</span> given <span class="math notranslate nohighlight">\(H\)</span> (the re-grafting probability).</p></li>
+</ol>
+<p>So: <span class="math notranslate nohighlight">\(q_H(\mathcal{G} \to \mathcal{G}') = P(H \mid \mathcal{G}) \cdot P(\mathcal{G}' \mid D, H)\)</span>.</p>
+</section>
+<section id="the-key-assumption">
+<h3>The key assumption<a class="headerlink" href="#the-key-assumption" title="Link to this heading"></a></h3>
+<p><strong>SINGER assumes the threading algorithm approximately samples from the posterior
+conditioned on</strong> <span class="math notranslate nohighlight">\(H\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[P(\mathcal{G}' \mid D, H) \approx \frac{P(\mathcal{G}' \mid D)}{\sum_{\mathcal{G}'': H \subseteq \mathcal{G}''} P(\mathcal{G}'' \mid D)}\]</div>
+<div class="admonition-probability-aside-why-this-approximation-is-reasonable admonition">
+<p class="admonition-title">Probability Aside – Why This Approximation is Reasonable</p>
+<p>This approximation says: “the probability that the threading algorithm
+produces a specific ARG <span class="math notranslate nohighlight">\(\mathcal{G}'\)</span> is proportional to the
+posterior probability of <span class="math notranslate nohighlight">\(\mathcal{G}'\)</span>.” In other words, the
+threading algorithm acts as an approximate posterior sampler.</p>
+<p>Why is this reasonable? The threading HMM is designed to sample branch
+assignments and times that are consistent with both the partial ARG <span class="math notranslate nohighlight">\(H\)</span>
+(through the state space constraints) and the data <span class="math notranslate nohighlight">\(D\)</span> (through the
+emission probabilities). For large sample sizes, the posterior becomes
+increasingly concentrated (there are fewer plausible ARGs), and the threading
+algorithm closely approximates the true conditional posterior.</p>
+<p>This is an approximation, not an exact identity. For small sample sizes,
+the threading HMM may not perfectly match the true posterior, leading to
+slightly biased proposals. However, because the MH acceptance step corrects
+for any mismatch between the proposal and the target, the MCMC chain still
+converges to the correct distribution – it just may mix more slowly if the
+approximation is poor.</p>
+</div>
+</section>
+<section id="the-cancellation">
+<h3>The cancellation<a class="headerlink" href="#the-cancellation" title="Link to this heading"></a></h3>
+<p>Now let’s take the ratio of the reverse and forward proposals:</p>
+<div class="math notranslate nohighlight">
+\[\frac{q_H(\mathcal{G}' \to \mathcal{G})}{q_H(\mathcal{G} \to \mathcal{G}')}
+= \frac{P(H \mid \mathcal{G}') \cdot P(\mathcal{G} \mid D, H)}{P(H \mid \mathcal{G}) \cdot P(\mathcal{G}' \mid D, H)}\]</div>
+<p>Under the approximation above, <span class="math notranslate nohighlight">\(P(\mathcal{G} \mid D, H)\)</span> and
+<span class="math notranslate nohighlight">\(P(\mathcal{G}' \mid D, H)\)</span> both have the same denominator
+<span class="math notranslate nohighlight">\(\sum_{\mathcal{G}''} P(\mathcal{G}'' \mid D)\)</span>, so:</p>
+<div class="math notranslate nohighlight">
+\[\frac{P(\mathcal{G} \mid D, H)}{P(\mathcal{G}' \mid D, H)}
+= \frac{P(\mathcal{G} \mid D)}{P(\mathcal{G}' \mid D)}\]</div>
+<p>Substituting into the MH acceptance ratio:</p>
+<div class="math notranslate nohighlight">
+\[A_H &amp;= \min\left(1, \frac{P(\mathcal{G}' \mid D)}{P(\mathcal{G} \mid D)}
+\cdot \frac{P(H \mid \mathcal{G}')}{P(H \mid \mathcal{G})}
+\cdot \frac{P(\mathcal{G} \mid D)}{P(\mathcal{G}' \mid D)}\right)\]</div>
+<div class="admonition-calculus-aside-the-cancellation-in-detail admonition">
+<p class="admonition-title">Calculus Aside – The Cancellation in Detail</p>
+<p>Let us trace the algebra carefully. The MH ratio is:</p>
+<div class="math notranslate nohighlight">
+\[\frac{P(\mathcal{G}' \mid D)}{P(\mathcal{G} \mid D)}
+\cdot \frac{q_H(\mathcal{G}' \to \mathcal{G})}{q_H(\mathcal{G} \to \mathcal{G}')}\]</div>
+<p>Expanding the proposal ratio:</p>
+<div class="math notranslate nohighlight">
+\[= \frac{P(\mathcal{G}' \mid D)}{P(\mathcal{G} \mid D)}
+\cdot \frac{P(H \mid \mathcal{G}')}{P(H \mid \mathcal{G})}
+\cdot \frac{P(\mathcal{G} \mid D, H)}{P(\mathcal{G}' \mid D, H)}\]</div>
+<p>Now substitute the approximation
+<span class="math notranslate nohighlight">\(P(\mathcal{G} \mid D, H) / P(\mathcal{G}' \mid D, H) = P(\mathcal{G} \mid D) / P(\mathcal{G}' \mid D)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[= \frac{P(\mathcal{G}' \mid D)}{P(\mathcal{G} \mid D)}
+\cdot \frac{P(H \mid \mathcal{G}')}{P(H \mid \mathcal{G})}
+\cdot \frac{P(\mathcal{G} \mid D)}{P(\mathcal{G}' \mid D)}\]</div>
+<p>The first and third factors are exact inverses and cancel:</p>
+<div class="math notranslate nohighlight">
+\[= \frac{P(H \mid \mathcal{G}')}{P(H \mid \mathcal{G})}\]</div>
+<p>This is the remarkable result: the posterior ratio cancels completely,
+leaving only the ratio of pruning probabilities.</p>
+</div>
+<p>The posterior ratios <span class="math notranslate nohighlight">\(\frac{P(\mathcal{G}' \mid D)}{P(\mathcal{G} \mid D)}\)</span>
+and <span class="math notranslate nohighlight">\(\frac{P(\mathcal{G} \mid D)}{P(\mathcal{G}' \mid D)}\)</span> are exact
+<strong>inverses</strong> and cancel completely:</p>
+<div class="math notranslate nohighlight">
+\[A_H = \min\left(1, \frac{P(H \mid \mathcal{G}')}{P(H \mid \mathcal{G})}\right)\]</div>
+<p>This is remarkable: <strong>the acceptance ratio depends only on the pruning
+probabilities, not on the data likelihood at all</strong>.</p>
+</section>
+<section id="computing-p-h-mid-mathcal-g">
+<h3>Computing <span class="math notranslate nohighlight">\(P(H \mid \mathcal{G})\)</span><a class="headerlink" href="#computing-p-h-mid-mathcal-g" title="Link to this heading"></a></h3>
+<p>From Step 2, the cut is chosen by:</p>
+<ol class="arabic simple">
+<li><p>Sampling time <span class="math notranslate nohighlight">\(t\)</span> uniformly on <span class="math notranslate nohighlight">\([0, h(\Psi_x)]\)</span> (tree height)</p></li>
+<li><p>Choosing uniformly among branches crossing time <span class="math notranslate nohighlight">\(t\)</span></p></li>
+</ol>
+<p>The probability of selecting <em>any specific</em> cut is:</p>
+<div class="math notranslate nohighlight">
+\[P(H \mid \mathcal{G}) = \frac{1}{h(\Psi_x)}\]</div>
+<p><strong>Why?</strong> The probability of choosing a specific branch <span class="math notranslate nohighlight">\(b\)</span> at time <span class="math notranslate nohighlight">\(t\)</span>
+is <span class="math notranslate nohighlight">\(\frac{1}{h(\Psi_x)} \cdot \frac{1}{\lambda(t)}\)</span> (uniform time times
+uniform branch choice). Integrating over the branch’s time interval <span class="math notranslate nohighlight">\([l, u]\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{cut branch } b) = \int_l^u \frac{1}{h(\Psi_x)} \cdot \frac{1}{\lambda(t)} \, dt\]</div>
+<p>But we don’t need the specific branch – we only need <span class="math notranslate nohighlight">\(P(H \mid \mathcal{G})\)</span>.
+In an ultrametric tree (where all leaves are at time 0), summing over all
+possible cuts gives <span class="math notranslate nohighlight">\(1/h(\Psi_x)\)</span> because the cut time is uniform on
+<span class="math notranslate nohighlight">\([0, h(\Psi_x)]\)</span> and there is always exactly one valid cut at each time.</p>
+</section>
+<section id="the-final-result">
+<h3>The final result<a class="headerlink" href="#the-final-result" title="Link to this heading"></a></h3>
+<p>Substituting <span class="math notranslate nohighlight">\(P(H \mid \mathcal{G}) = 1/h(\Psi_x)\)</span> and
+<span class="math notranslate nohighlight">\(P(H \mid \mathcal{G}') = 1/h(\Psi'_x)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\boxed{A_H(\mathcal{G} \to \mathcal{G}') = \min\left(1, \frac{h(\Psi_x)}{h(\Psi'_x)}\right)}\]</div>
+<p>This is one of the most elegant results in computational population genetics.
+The acceptance ratio for an MCMC move on the space of ARGs reduces to the
+ratio of two tree heights – quantities that are trivial to compute.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">sgpr_acceptance_ratio</span><span class="p">(</span><span class="n">old_tree_height</span><span class="p">,</span> <span class="n">new_tree_height</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the SGPR Metropolis-Hastings acceptance ratio.</span>
+
+<span class="sd">    The acceptance ratio is simply the ratio of the old to new</span>
+<span class="sd">    tree heights.  This remarkably simple formula follows from</span>
+<span class="sd">    the cancellation of posterior ratios (see derivation above).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    old_tree_height : float</span>
+<span class="sd">        Height of the marginal tree before the move.</span>
+<span class="sd">    new_tree_height : float</span>
+<span class="sd">        Height of the marginal tree after the move.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ratio : float</span>
+<span class="sd">        Acceptance probability.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">old_tree_height</span> <span class="o">/</span> <span class="n">new_tree_height</span><span class="p">)</span>
+
+<span class="c1"># For large sample sizes, tree heights are very stable.</span>
+<span class="c1"># Let&#39;s verify this with coalescent simulations.</span>
+<span class="k">def</span> <span class="nf">simulate_tree_height_variability</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n_replicates</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate TMRCA for n samples to see height variability.</span>
+
+<span class="sd">    Under the standard coalescent (see the coalescent_theory chapter),</span>
+<span class="sd">    the TMRCA converges to 2 in coalescent units as n -&gt; infinity.</span>
+<span class="sd">    The coefficient of variation (CV) decreases with n, which is</span>
+<span class="sd">    why SGPR&#39;s acceptance rate approaches 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">heights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_replicates</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_replicates</span><span class="p">):</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">while</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Coalescence rate with k lineages: k*(k-1)/2</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="c1"># Wait an exponential time before the next coalescence</span>
+            <span class="n">t</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+            <span class="n">k</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="n">heights</span><span class="p">[</span><span class="n">rep</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+    <span class="k">return</span> <span class="n">heights</span>
+
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">]:</span>
+    <span class="n">heights</span> <span class="o">=</span> <span class="n">simulate_tree_height_variability</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n_replicates</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+    <span class="n">cv</span> <span class="o">=</span> <span class="n">heights</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">/</span> <span class="n">heights</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n=</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">&gt;4d</span><span class="si">}</span><span class="s2">: mean height=</span><span class="si">{</span><span class="n">heights</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;CV=</span><span class="si">{</span><span class="n">cv</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-probability-aside-why-acceptance-rates-approach-1-0 admonition">
+<p class="admonition-title">Probability Aside – Why Acceptance Rates Approach 1.0</p>
+<p>For large <span class="math notranslate nohighlight">\(n\)</span>, the tree height <span class="math notranslate nohighlight">\(h(\Psi_x)\)</span> converges to a
+deterministic value (close to 2 in coalescent units). This is a consequence
+of the <strong>law of large numbers</strong> applied to the coalescent process (see
+<a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">coalescent theory</span></a>): as the number of samples
+increases, the TMRCA concentrates around its expected value
+<span class="math notranslate nohighlight">\(2(1 - 1/n) \approx 2\)</span>.</p>
+<p>Since both <span class="math notranslate nohighlight">\(h(\Psi_x)\)</span> and <span class="math notranslate nohighlight">\(h(\Psi'_x)\)</span> are close to 2, their
+ratio <span class="math notranslate nohighlight">\(h(\Psi_x) / h(\Psi'_x) \approx 1\)</span>, so the acceptance
+probability <span class="math notranslate nohighlight">\(\min(1, h/h') \approx 1\)</span>. Almost every proposal is
+accepted.</p>
+<p>The coefficient of variation (CV) of the tree height decreases as
+<span class="math notranslate nohighlight">\(O(1/\sqrt{n})\)</span>. The simulation above confirms this: at <span class="math notranslate nohighlight">\(n = 500\)</span>,
+the CV is tiny, meaning tree heights are nearly constant across random trees.</p>
+<p>Empirically, SINGER achieves acceptance rates close to 1.0, compared to
+~22% for ARGweaver’s subtree-rethreading. This means SINGER can make
+<strong>much larger moves</strong> (cutting and re-grafting large sub-graphs) while
+still maintaining good MCMC mixing.</p>
+</div>
+</section>
+</section>
+<section id="step-5-comparison-with-the-kuhner-move">
+<h2>Step 5: Comparison with the Kuhner Move<a class="headerlink" href="#step-5-comparison-with-the-kuhner-move" title="Link to this heading"></a></h2>
+<p>The Kuhner move re-grafts by simulating from the <strong>prior</strong> (the coalescent
+process). Its acceptance ratio is:</p>
+<div class="math notranslate nohighlight">
+\[A_{\text{Kuhner}}(\mathcal{G} \to \mathcal{G}') = \min\left(1,
+\frac{B(\mathcal{G}) \cdot P(\mathcal{G}' \mid D)}{B(\mathcal{G}') \cdot P(\mathcal{G} \mid D)}\right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(B(\mathcal{G})\)</span> is the number of branches. This ratio depends on
+the <strong>data likelihood</strong> <span class="math notranslate nohighlight">\(P(\mathcal{G} \mid D)\)</span>, which means proposals
+are accepted only if the new ARG explains the data better. Since the prior
+doesn’t consider the data, this is very unlikely for large datasets.</p>
+<div class="admonition-probability-aside-why-likelihood-ratios-kill-the-kuhner-move admonition">
+<p class="admonition-title">Probability Aside – Why Likelihood Ratios Kill the Kuhner Move</p>
+<p>The data likelihood <span class="math notranslate nohighlight">\(P(D \mid \mathcal{G})\)</span> is a product of mutation
+probabilities over all sites and all branches. For a genome with
+<span class="math notranslate nohighlight">\(L = 100{,}000\)</span> sites, this product involves <span class="math notranslate nohighlight">\(O(n \cdot L)\)</span>
+terms. A random change to the ARG (from the prior proposal) will
+typically make some of these terms worse and some better. For large
+<span class="math notranslate nohighlight">\(L\)</span>, the product of many slightly-worse terms overwhelms the
+product of a few slightly-better terms, making the likelihood ratio
+<span class="math notranslate nohighlight">\(P(D \mid \mathcal{G}') / P(D \mid \mathcal{G})\)</span> astronomically
+small.</p>
+<p>SGPR avoids this problem entirely: the likelihood ratio cancels out of
+the acceptance formula. The proposal is already data-informed (via the
+threading algorithm’s emissions), so the data consistency is “built in”
+rather than checked after the fact.</p>
+</div>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 35.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Property</p></th>
+<th class="head"><p>Kuhner Move</p></th>
+<th class="head"><p>SGPR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Proposal distribution</p></td>
+<td><p>Prior (coalescent simulation)</p></td>
+<td><p>Approximate posterior (threading)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Acceptance ratio</p></td>
+<td><p>Involves likelihood ratio</p></td>
+<td><p>Only tree height ratio</p></td>
+</tr>
+<tr class="row-even"><td><p>Typical acceptance rate</p></td>
+<td><p>Very low for real data</p></td>
+<td><p>~1.0 for large samples</p></td>
+</tr>
+<tr class="row-odd"><td><p>Move size</p></td>
+<td><p>Must be small to get accepted</p></td>
+<td><p>Can be large</p></td>
+</tr>
+</tbody>
+</table>
+<p>In the watch metaphor, the Kuhner move is like replacing a gear blindfolded and
+then checking whether the watch still runs. Most of the time it doesn’t, and
+you have to put the old gear back. SGPR is like examining the mechanism first,
+choosing a gear that looks like it will fit, and then installing it. The
+“examination” (threading algorithm) is computationally expensive, but the
+installation (acceptance) almost always succeeds, making the overall process
+far more efficient.</p>
+</section>
+<section id="step-6-the-full-mcmc-loop">
+<h2>Step 6: The Full MCMC Loop<a class="headerlink" href="#step-6-the-full-mcmc-loop" title="Link to this heading"></a></h2>
+<p>Now we assemble the complete SINGER MCMC sampler. This is the outermost loop
+of the algorithm – the mainspring that drives the entire mechanism. Each
+iteration proposes an SGPR move, accepts or rejects it, and periodically
+rescales the ARG to keep the time axis calibrated.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">singer_mcmc</span><span class="p">(</span><span class="n">haplotypes</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_burnin</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                 <span class="n">thin</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the full SINGER MCMC sampler.</span>
+
+<span class="sd">    This is the top-level algorithm that ties everything together:</span>
+<span class="sd">    threading (branch sampling + time sampling), SGPR moves, ARG</span>
+<span class="sd">    rescaling, and posterior sample collection.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    haplotypes : ndarray of shape (n, L)</span>
+<span class="sd">        n haplotypes, each of length L.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Mutation rate.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Recombination rate per bin.</span>
+<span class="sd">    n_samples : int</span>
+<span class="sd">        Number of posterior samples to collect.</span>
+<span class="sd">    n_burnin : int</span>
+<span class="sd">        Number of burn-in iterations (discarded).</span>
+<span class="sd">    thin : int</span>
+<span class="sd">        Thinning interval (keep every thin-th sample).</span>
+<span class="sd">    J : int</span>
+<span class="sd">        Number of windows for ARG rescaling.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sampled_args : list</span>
+<span class="sd">        Posterior samples of ARGs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># ===== Initialization =====</span>
+    <span class="c1"># Thread haplotypes one by one to build initial ARG.</span>
+    <span class="c1"># This uses the threading algorithm from the branch_sampling</span>
+    <span class="c1"># and time_sampling chapters.</span>
+    <span class="n">arg</span> <span class="o">=</span> <span class="n">initialize_arg_by_threading</span><span class="p">(</span><span class="n">haplotypes</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="c1"># Calibrate the initial ARG&#39;s time scale (see arg_rescaling chapter)</span>
+    <span class="n">arg</span> <span class="o">=</span> <span class="n">rescale_arg</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">J</span><span class="p">)</span>
+
+    <span class="n">sampled_args</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">total_iterations</span> <span class="o">=</span> <span class="n">n_burnin</span> <span class="o">+</span> <span class="n">n_samples</span> <span class="o">*</span> <span class="n">thin</span>
+
+    <span class="n">cut_position</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Start at the beginning of the chromosome</span>
+
+    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">total_iterations</span><span class="p">):</span>
+        <span class="c1"># ===== SGPR Move =====</span>
+        <span class="c1"># Select cut at current position</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">get_tree_at</span><span class="p">(</span><span class="n">cut_position</span><span class="p">)</span>
+        <span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span> <span class="o">=</span> <span class="n">select_cut</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">old_height</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">height</span><span class="p">()</span>
+
+        <span class="c1"># Prune: remove the sub-graph above the cut</span>
+        <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">find_cut_span</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">cut_position</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span><span class="p">)</span>
+        <span class="n">partial_arg</span> <span class="o">=</span> <span class="n">prune_subgraph</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+
+        <span class="c1"># Re-graft via threading (data-informed proposal)</span>
+        <span class="n">new_arg</span> <span class="o">=</span> <span class="n">rethread</span><span class="p">(</span><span class="n">partial_arg</span><span class="p">,</span> <span class="n">cut_node</span><span class="p">,</span> <span class="n">cut_time</span><span class="p">,</span>
+                            <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">haplotypes</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+        <span class="n">new_height</span> <span class="o">=</span> <span class="n">new_arg</span><span class="o">.</span><span class="n">get_tree_at</span><span class="p">(</span><span class="n">cut_position</span><span class="p">)</span><span class="o">.</span><span class="n">height</span><span class="p">()</span>
+
+        <span class="c1"># Accept/reject using the simple height ratio</span>
+        <span class="n">ratio</span> <span class="o">=</span> <span class="n">sgpr_acceptance_ratio</span><span class="p">(</span><span class="n">old_height</span><span class="p">,</span> <span class="n">new_height</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">ratio</span><span class="p">:</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="n">new_arg</span>  <span class="c1"># accept the proposal</span>
+
+        <span class="c1"># Move to next cut position (sweep across the genome)</span>
+        <span class="n">cut_position</span> <span class="o">=</span> <span class="n">right</span>
+        <span class="k">if</span> <span class="n">cut_position</span> <span class="o">&gt;=</span> <span class="n">L</span><span class="p">:</span>
+            <span class="n">cut_position</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Wrap around to the beginning</span>
+
+        <span class="c1"># Rescale after thinning to keep times calibrated</span>
+        <span class="k">if</span> <span class="n">iteration</span> <span class="o">%</span> <span class="n">thin</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">iteration</span> <span class="o">&gt;=</span> <span class="n">n_burnin</span><span class="p">:</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="n">rescale_arg</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">J</span><span class="p">)</span>
+
+        <span class="c1"># Collect posterior samples after burn-in</span>
+        <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;=</span> <span class="n">n_burnin</span> <span class="ow">and</span> <span class="p">(</span><span class="n">iteration</span> <span class="o">-</span> <span class="n">n_burnin</span><span class="p">)</span> <span class="o">%</span> <span class="n">thin</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">sampled_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sampled_args</span><span class="p">)</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Collected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sampled_args</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_samples</span><span class="si">}</span><span class="s2"> samples&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sampled_args</span>
+</pre></div>
+</div>
+<div class="admonition-probability-aside-burn-in-and-thinning admonition">
+<p class="admonition-title">Probability Aside – Burn-in and Thinning</p>
+<p>Two important MCMC concepts appear in the loop above:</p>
+<p><strong>Burn-in</strong>: The first <code class="docutils literal notranslate"><span class="pre">n_burnin</span></code> iterations are discarded. The MCMC chain
+starts from an arbitrary initial state (the first threading), which may be
+far from the high-probability region of the posterior. The burn-in period
+allows the chain to “forget” its starting point and converge to the
+stationary distribution. How long the burn-in should be depends on the
+mixing rate of the chain – for SGPR, which has high acceptance rates and
+large moves, the burn-in can be relatively short.</p>
+<p><strong>Thinning</strong>: After burn-in, we keep only every <code class="docutils literal notranslate"><span class="pre">thin</span></code>-th sample.
+Consecutive MCMC samples are correlated (each is a small perturbation of
+the previous one), and correlated samples are less informative than
+independent ones. Thinning reduces this correlation. The thinning interval
+should be long enough that consecutive kept samples are approximately
+independent – typically estimated from the autocorrelation of summary
+statistics.</p>
+</div>
+<div class="admonition-convergence-diagnostics admonition">
+<p class="admonition-title">Convergence diagnostics</p>
+<p>SINGER checks MCMC convergence by computing traces of summary statistics
+(e.g., total ARG length, total number of recombinations) across iterations.
+The <code class="docutils literal notranslate"><span class="pre">compute_traces.py</span></code> script visualizes these traces to check for:</p>
+<ul class="simple">
+<li><p><strong>Stationarity</strong>: The trace should look like random noise around a constant
+level after burn-in.</p></li>
+<li><p><strong>Mixing</strong>: The trace should not show long periods stuck at one value.</p></li>
+<li><p><strong>Autocorrelation</strong>: Consecutive samples should not be too correlated.</p></li>
+</ul>
+</div>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-spr-on-a-tree admonition">
+<p class="admonition-title">Exercise 1: SPR on a tree</p>
+<p>Implement a complete SPR move for a single coalescent tree. Verify that
+the move is reversible (you can SPR back to the original tree) and that
+the tree topology space is connected (any tree can reach any other tree
+via a sequence of SPR moves).</p>
+</div>
+<div class="admonition-exercise-2-acceptance-rate-experiment admonition">
+<p class="admonition-title">Exercise 2: Acceptance rate experiment</p>
+<p>Simulate coalescent trees of size <span class="math notranslate nohighlight">\(n = 10, 50, 100, 500\)</span>.
+For each, compute the distribution of
+<span class="math notranslate nohighlight">\(h(\Psi) / h(\Psi')\)</span> for random pairs of trees. Verify that
+the acceptance rate approaches 1 as <span class="math notranslate nohighlight">\(n\)</span> increases.</p>
+</div>
+<div class="admonition-exercise-3-kuhner-vs-sgpr admonition">
+<p class="admonition-title">Exercise 3: Kuhner vs. SGPR</p>
+<p>On a small simulated dataset (5 sequences, 1000 bp), implement both the
+Kuhner move and the SGPR move. Compare:
+(a) acceptance rates, (b) mixing (how quickly do summary statistics
+decorrelate?), (c) accuracy of posterior estimates.</p>
+</div>
+<div class="admonition-exercise-4-full-singer-pipeline admonition">
+<p class="admonition-title">Exercise 4: Full SINGER pipeline</p>
+<p>Combine all the pieces:</p>
+<ol class="arabic simple">
+<li><p>Simulate data with <code class="docutils literal notranslate"><span class="pre">msprime</span></code> (50 sequences, 100 kb)</p></li>
+<li><p>Initialize an ARG by threading</p></li>
+<li><p>Run 1000 MCMC iterations with SGPR</p></li>
+<li><p>Collect 100 posterior samples</p></li>
+<li><p>Compute pairwise coalescence time estimates and compare to truth</p></li>
+</ol>
+<p>This is the capstone exercise. When you complete it, you will have built
+SINGER from scratch.</p>
+</div>
+<hr class="docutils" />
+<p>Congratulations. You’ve now disassembled and rebuilt every gear in the SINGER
+mechanism:</p>
+<ul class="simple">
+<li><p><strong>Branch Sampling</strong> (<a class="reference internal" href="branch_sampling.html#branch-sampling"><span class="std std-ref">Branch Sampling</span></a>): The HMM that finds which branch
+to join – finding the right slot in the movement</p></li>
+<li><p><strong>Time Sampling</strong> (<a class="reference internal" href="time_sampling.html#time-sampling"><span class="std std-ref">Time Sampling</span></a>): The HMM that finds when to join –
+setting the depth of engagement</p></li>
+<li><p><strong>ARG Rescaling</strong> (<a class="reference internal" href="arg_rescaling.html#arg-rescaling"><span class="std std-ref">ARG Rescaling</span></a>): The calibration to the mutation
+clock – adjusting the beat rate</p></li>
+<li><p><strong>SGPR</strong> (<a class="reference internal" href="#sgpr"><span class="std std-ref">Sub-Graph Pruning and Re-grafting (SGPR)</span></a>): The MCMC engine that explores the ARG space – the
+winding mechanism that keeps the mainspring tensioned</p></li>
+</ul>
+<p>You built it yourself. No black boxes remain.</p>
+<p><em>The watch ticks. And you know exactly why.</em></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="arg_rescaling.html" class="btn btn-neutral float-left" title="ARG Rescaling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../threads/index.html" class="btn btn-neutral float-right" title="Timepiece VII: Threads" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

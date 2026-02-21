@@ -1,0 +1,1320 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Diploid Extension &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Timepiece III: msprime" href="../msprime/index.html" />
+    <link rel="prev" title="Haploid LS HMM Algorithms" href="haploid_algorithms.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece II: The Li &amp; Stephens HMM</a></li>
+      <li class="breadcrumb-item active">The Diploid Extension</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="haploid_algorithms.html" class="btn btn-neutral float-left" title="Haploid LS HMM Algorithms" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../msprime/index.html" class="btn btn-neutral float-right" title="Timepiece III: msprime" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-diploid-extension">
+<span id="diploid"></span><h1>The Diploid Extension<a class="headerlink" href="#the-diploid-extension" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>Two watches, ticking together: when each individual carries two haplotypes.</em></p>
+</div></blockquote>
+<p>In the previous chapters, we built a complete haploid Li &amp; Stephens HMM – the
+template mechanism (<a class="reference internal" href="copying_model.html#copying-model"><span class="std std-ref">The Copying Model</span></a>) and the gear train
+(<a class="reference internal" href="haploid_algorithms.html#haploid-algorithms"><span class="std std-ref">Haploid LS HMM Algorithms</span></a>). That machinery handles one haplotype at a time.
+But humans (and most eukaryotes) are <strong>diploid</strong>: each individual carries
+<strong>two</strong> copies of each chromosome.</p>
+<p>When we observe genotype data (allele dosages: 0, 1, or 2), we see the <strong>sum</strong>
+of the two haplotypes but not which allele is on which chromosome. This creates
+a harder inference problem: we must simultaneously infer two copying paths, one
+for each chromosome – like two watches ticking together, sharing the same
+observed ticks but driven by independent (though correlated) gear trains.</p>
+<p>The diploid Li &amp; Stephens model extends the haploid model by running <strong>two
+copying processes in parallel</strong>, one for each haplotype of the query individual.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Prerequisites.</strong> This chapter builds on all preceding chapters:</p>
+<ul class="simple">
+<li><p>The <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a> for the general HMM framework.</p></li>
+<li><p>The <a class="reference internal" href="copying_model.html#copying-model"><span class="std std-ref">copying model chapter</span></a> for the Li-Stephens
+transition and emission probabilities.</p></li>
+<li><p>The <a class="reference internal" href="haploid_algorithms.html#haploid-algorithms"><span class="std std-ref">haploid algorithms chapter</span></a> for the
+forward, backward, and Viterbi algorithms in the haploid case.</p></li>
+</ul>
+<p>We will extend each of these components to the diploid setting. The key
+new concepts are the <span class="math notranslate nohighlight">\(n^2\)</span> state space, the four transition types,
+and the genotype emission probabilities.</p>
+</div>
+<section id="step-1-the-diploid-state-space">
+<h2>Step 1: The Diploid State Space<a class="headerlink" href="#step-1-the-diploid-state-space" title="Link to this heading"></a></h2>
+<p>In the haploid model, the hidden state at site <span class="math notranslate nohighlight">\(\ell\)</span> is a single index
+<span class="math notranslate nohighlight">\(Z_\ell \in \{1, \ldots, n\}\)</span> – which reference haplotype is being
+copied.</p>
+<p>In the diploid model, the hidden state is a <strong>pair</strong> <span class="math notranslate nohighlight">\((Z_\ell^{(1)}, Z_\ell^{(2)})\)</span>,
+where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(Z_\ell^{(1)}\)</span> = which reference haplotype is being copied for the
+first chromosome</p></li>
+<li><p><span class="math notranslate nohighlight">\(Z_\ell^{(2)}\)</span> = which reference haplotype is being copied for the
+second chromosome</p></li>
+</ul>
+<p>The state space is <span class="math notranslate nohighlight">\(\{1, \ldots, n\} \times \{1, \ldots, n\}\)</span>, giving
+<span class="math notranslate nohighlight">\(n^2\)</span> states. For <span class="math notranslate nohighlight">\(n = 100\)</span> reference haplotypes, that’s 10,000
+states.</p>
+<div class="admonition-terminology-state-space-explosion admonition">
+<p class="admonition-title">Terminology: State Space Explosion</p>
+<p>Going from <span class="math notranslate nohighlight">\(n\)</span> to <span class="math notranslate nohighlight">\(n^2\)</span> states is called a <strong>state space
+explosion</strong> – the cost of modeling two interacting processes. This is a
+recurring theme in computational biology: modeling pairs of things (diploid
+genotypes, pairwise sequence alignment, co-evolution) often squares the
+state space. The <span class="math notranslate nohighlight">\(O(n^2)\)</span> trick we develop below is the key to
+making this tractable.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Diploid state space: all pairs (j1, j2) of reference haplotypes</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># reference haplotypes</span>
+<span class="n">states</span> <span class="o">=</span> <span class="p">[(</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">)</span> <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Diploid state space (n=</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">n</span><span class="o">**</span><span class="mi">2</span><span class="si">}</span><span class="s2"> states&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First few states: </span><span class="si">{</span><span class="n">states</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The initial distribution is uniform over all pairs:</p>
+<div class="math notranslate nohighlight">
+\[\pi_{j_1, j_2} = \frac{1}{n^2}\]</div>
+<div class="admonition-probability-aside-why-uniform-over-pairs admonition">
+<p class="admonition-title">Probability Aside: Why Uniform Over Pairs?</p>
+<p>Just as the haploid model uses a uniform prior <span class="math notranslate nohighlight">\(\pi_j = 1/n\)</span> based
+on exchangeability of lineages under the coalescent (see
+<a class="reference internal" href="copying_model.html#copying-model"><span class="std std-ref">The Copying Model</span></a>), the diploid model uses <span class="math notranslate nohighlight">\(\pi_{j_1,j_2} = 1/n^2\)</span>
+because the two chromosomes are independent <em>a priori</em>. The uniform pair
+prior is the product of two independent uniform priors:
+<span class="math notranslate nohighlight">\(\pi_{j_1,j_2} = \pi_{j_1} \cdot \pi_{j_2} = (1/n)(1/n) = 1/n^2\)</span>.</p>
+</div>
+<p>With the state space defined, we now derive how states transition between
+adjacent sites.</p>
+</section>
+<section id="step-2-diploid-transitions">
+<h2>Step 2: Diploid Transitions<a class="headerlink" href="#step-2-diploid-transitions" title="Link to this heading"></a></h2>
+<p>Between adjacent sites, <strong>each</strong> chromosome independently decides whether to
+recombine. This gives four cases:</p>
+<ol class="arabic simple">
+<li><p><strong>Neither recombines</strong> (probability <span class="math notranslate nohighlight">\((1-r)^2\)</span>): Both chromosomes keep
+their copying sources.</p></li>
+<li><p><strong>Only chromosome 1 recombines</strong> (probability <span class="math notranslate nohighlight">\(r(1-r)\)</span>): Chromosome 1
+switches to a random haplotype, chromosome 2 stays.</p></li>
+<li><p><strong>Only chromosome 2 recombines</strong> (probability <span class="math notranslate nohighlight">\((1-r)r\)</span>): Chromosome 1
+stays, chromosome 2 switches.</p></li>
+<li><p><strong>Both recombine</strong> (probability <span class="math notranslate nohighlight">\(r^2\)</span>): Both chromosomes switch
+independently.</p></li>
+</ol>
+<div class="admonition-probability-aside-independence-of-the-two-chromosomes admonition">
+<p class="admonition-title">Probability Aside: Independence of the Two Chromosomes</p>
+<p>The four cases above arise from the assumption that recombination on the
+two chromosomes is <strong>independent</strong>. This is biologically reasonable: the
+two chromosomes of a diploid individual come from different parents, and
+their recombination events in the next generation are independent meiotic
+processes. Formally, if <span class="math notranslate nohighlight">\(R_1\)</span> and <span class="math notranslate nohighlight">\(R_2\)</span> are indicator variables
+for recombination on chromosomes 1 and 2, then:</p>
+<div class="math notranslate nohighlight">
+\[P(R_1 = r_1, R_2 = r_2) = P(R_1 = r_1) \cdot P(R_2 = r_2)\]</div>
+<p>This independence is what allows the diploid transition to <strong>factor</strong> as
+a product of two haploid transitions, which is the key to the
+<span class="math notranslate nohighlight">\(O(n^2)\)</span> trick.</p>
+</div>
+<p>The transition probability is:</p>
+<div class="math notranslate nohighlight">
+\[A_{(j_1,j_2)(k_1,k_2)} = P(Z^{(1)}_\ell = k_1, Z^{(2)}_\ell = k_2 \mid Z^{(1)}_{\ell-1} = j_1, Z^{(2)}_{\ell-1} = j_2)\]</div>
+<p>Since the two chromosomes are independent, this factors:</p>
+<div class="math notranslate nohighlight">
+\[A_{(j_1,j_2)(k_1,k_2)} = A^{(1)}_{j_1 k_1} \cdot A^{(2)}_{j_2 k_2}\]</div>
+<p>where each <span class="math notranslate nohighlight">\(A^{(c)}\)</span> is the haploid transition:</p>
+<div class="math notranslate nohighlight">
+\[A^{(c)}_{jk} = (1-r)\delta_{jk} + \frac{r}{n}\]</div>
+<p>Expanding the product:</p>
+<div class="math notranslate nohighlight">
+\[A_{(j_1,j_2)(k_1,k_2)} = \left[(1-r)\delta_{j_1 k_1} + \frac{r}{n}\right] \cdot \left[(1-r)\delta_{j_2 k_2} + \frac{r}{n}\right]\]</div>
+<p>Let’s expand this to see the four cases explicitly:</p>
+<div class="math notranslate nohighlight">
+\[A_{(j_1,j_2)(k_1,k_2)} = \underbrace{(1-r)^2 \delta_{j_1 k_1} \delta_{j_2 k_2}}_{\text{neither switches}}
++ \underbrace{(1-r)\frac{r}{n} \delta_{j_1 k_1}}_{\text{only chr 2 switches}}
++ \underbrace{\frac{r}{n}(1-r) \delta_{j_2 k_2}}_{\text{only chr 1 switches}}
++ \underbrace{\left(\frac{r}{n}\right)^2}_{\text{both switch}}\]</div>
+<p><strong>Verification</strong>: summing over all <span class="math notranslate nohighlight">\((k_1, k_2)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\sum_{k_1, k_2} A_{(j_1,j_2)(k_1,k_2)} = \left[\sum_{k_1} A^{(1)}_{j_1 k_1}\right] \cdot \left[\sum_{k_2} A^{(2)}_{j_2 k_2}\right] = 1 \cdot 1 = 1 \quad \checkmark\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">diploid_transition_prob</span><span class="p">(</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute diploid transition probability.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    j1, j2 : int</span>
+<span class="sd">        Previous state (copying sources for chr 1 and chr 2).</span>
+<span class="sd">    k1, k2 : int</span>
+<span class="sd">        Next state.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Per-site recombination probability.</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of reference haplotypes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    prob : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="c1"># Factor as product of two independent haploid transitions.</span>
+    <span class="c1"># t1: haploid transition for chromosome 1 (from j1 to k1)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">j1</span> <span class="o">==</span> <span class="n">k1</span><span class="p">)</span> <span class="o">+</span> <span class="n">r_n</span>
+    <span class="c1"># t2: haploid transition for chromosome 2 (from j2 to k2)</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">j2</span> <span class="o">==</span> <span class="n">k2</span><span class="p">)</span> <span class="o">+</span> <span class="n">r_n</span>
+    <span class="c1"># Independence: joint probability is the product</span>
+    <span class="k">return</span> <span class="n">t1</span> <span class="o">*</span> <span class="n">t2</span>
+
+<span class="c1"># Example: verify the four cases</span>
+<span class="n">n</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="mf">0.1</span>
+<span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span>
+
+<span class="n">no_switch</span> <span class="o">=</span> <span class="n">diploid_transition_prob</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">chr1_switch</span> <span class="o">=</span> <span class="n">diploid_transition_prob</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">chr2_switch</span> <span class="o">=</span> <span class="n">diploid_transition_prob</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">both_switch</span> <span class="o">=</span> <span class="n">diploid_transition_prob</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No switch:        </span><span class="si">{</span><span class="n">no_switch</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">  &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;(expected: </span><span class="si">{</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">r</span><span class="o">+</span><span class="n">r_n</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Only chr 1:       </span><span class="si">{</span><span class="n">chr1_switch</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">  &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;(expected: </span><span class="si">{</span><span class="n">r_n</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">r</span><span class="o">+</span><span class="n">r_n</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Only chr 2:       </span><span class="si">{</span><span class="n">chr2_switch</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">  &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;(expected: </span><span class="si">{</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">r</span><span class="o">+</span><span class="n">r_n</span><span class="p">)</span><span class="o">*</span><span class="n">r_n</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Both switch:      </span><span class="si">{</span><span class="n">both_switch</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">  &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;(expected: </span><span class="si">{</span><span class="n">r_n</span><span class="o">**</span><span class="mi">2</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Verify row sums to 1</span>
+<span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">diploid_transition_prob</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">k2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Row sum: </span><span class="si">{</span><span class="n">total</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Should be 1.0</span>
+</pre></div>
+</div>
+<section id="the-three-transition-magnitudes">
+<h3>The three transition magnitudes<a class="headerlink" href="#the-three-transition-magnitudes" title="Link to this heading"></a></h3>
+<p>Looking at the probabilities, there are really only <strong>three</strong> distinct values,
+depending on how many coordinates match:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}A_{(j_1,j_2)(k_1,k_2)} = \begin{cases}
+(1-r)^2 + 2(1-r)\frac{r}{n} + \left(\frac{r}{n}\right)^2 &amp; \text{if } k_1 = j_1 \text{ and } k_2 = j_2 \\[6pt]
+(1-r)\frac{r}{n} + \left(\frac{r}{n}\right)^2 &amp; \text{if } k_1 = j_1 \text{ or } k_2 = j_2 \text{ (but not both)} \\[6pt]
+\left(\frac{r}{n}\right)^2 &amp; \text{if } k_1 \neq j_1 \text{ and } k_2 \neq j_2
+\end{cases}\end{split}\]</div>
+<div class="admonition-probability-aside-deriving-the-three-magnitudes admonition">
+<p class="admonition-title">Probability Aside: Deriving the Three Magnitudes</p>
+<p>To see why there are only three distinct values, note that each coordinate
+contributes either <span class="math notranslate nohighlight">\((1-r) + r/n\)</span> (if it matches) or <span class="math notranslate nohighlight">\(r/n\)</span>
+(if it doesn’t). The product of two such factors gives:</p>
+<ul class="simple">
+<li><p>Both match: <span class="math notranslate nohighlight">\([(1-r)+r/n]^2 = (1-r)^2 + 2(1-r)r/n + (r/n)^2\)</span></p></li>
+<li><p>One matches, one doesn’t: <span class="math notranslate nohighlight">\([(1-r)+r/n] \cdot [r/n] = (1-r)r/n + (r/n)^2\)</span></p></li>
+<li><p>Neither matches: <span class="math notranslate nohighlight">\((r/n)^2\)</span></p></li>
+</ul>
+<p>These are exactly the <code class="docutils literal notranslate"><span class="pre">no_switch</span></code>, <code class="docutils literal notranslate"><span class="pre">single_switch</span></code>, and <code class="docutils literal notranslate"><span class="pre">double_switch</span></code>
+values in the code below.</p>
+</div>
+<p>The lshmm code uses exactly these three values:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># The three distinct transition magnitudes.</span>
+<span class="c1"># no_switch: both chromosomes stay with their current sources</span>
+<span class="n">no_switch</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">r_n</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">))</span> <span class="o">+</span> <span class="n">r_n</span><span class="o">**</span><span class="mi">2</span>
+<span class="c1"># single_switch: exactly one chromosome switches</span>
+<span class="n">single_switch</span> <span class="o">=</span> <span class="n">r_n</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="o">+</span> <span class="n">r_n</span><span class="o">**</span><span class="mi">2</span>
+<span class="c1"># double_switch: both chromosomes switch</span>
+<span class="n">double_switch</span> <span class="o">=</span> <span class="n">r_n</span><span class="o">**</span><span class="mi">2</span>
+</pre></div>
+</div>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">no_switch</span></code> can also be written as <span class="math notranslate nohighlight">\((1 - r + r/n)^2\)</span>, which
+is just the square of the haploid “stay” probability.</p>
+<p>With the diploid transitions fully specified, we now turn to the emission side
+of the model, which is substantially different from the haploid case.</p>
+</section>
+</section>
+<section id="step-3-diploid-emissions">
+<h2>Step 3: Diploid Emissions<a class="headerlink" href="#step-3-diploid-emissions" title="Link to this heading"></a></h2>
+<p>In the diploid model, we don’t observe individual alleles on each chromosome.
+Instead, we observe the <strong>genotype</strong> – the sum of alleles across both
+chromosomes:</p>
+<div class="math notranslate nohighlight">
+\[G = h^{(1)} + h^{(2)} \in \{0, 1, 2\}\]</div>
+<p>where <span class="math notranslate nohighlight">\(h^{(1)}, h^{(2)} \in \{0, 1\}\)</span> are the alleles on each chromosome.</p>
+<div class="admonition-terminology-genotype-dosage admonition">
+<p class="admonition-title">Terminology: Genotype Dosage</p>
+<p>The <strong>allele dosage</strong> (or simply <strong>genotype</strong>) at a biallelic site is the
+count of the alternate allele: 0 (homozygous reference), 1 (heterozygous),
+or 2 (homozygous alternate). This is the standard encoding in PLINK and
+VCF files. The key challenge for the diploid model is that genotype 1
+(heterozygous) does not tell us which chromosome carries which allele –
+this is the <strong>phase ambiguity</strong> discussed in Step 8.</p>
+</div>
+<p>Given the diploid state <span class="math notranslate nohighlight">\((j_1, j_2)\)</span>, the reference genotype is
+<span class="math notranslate nohighlight">\(H_{j_1} + H_{j_2}\)</span> (the sum of the reference alleles for the two copying
+sources). The emission probability depends on how the reference genotype
+compares to the query genotype.</p>
+<section id="deriving-the-emission-table">
+<h3>Deriving the emission table<a class="headerlink" href="#deriving-the-emission-table" title="Link to this heading"></a></h3>
+<p>Let <span class="math notranslate nohighlight">\(p = 1 - \mu\)</span> (match probability) and <span class="math notranslate nohighlight">\(q = \mu\)</span> (mutation probability).
+Each chromosome independently matches or mutates. The emission probability for
+the diploid state <span class="math notranslate nohighlight">\((j_1, j_2)\)</span> with reference genotype <span class="math notranslate nohighlight">\(g_r\)</span> and
+query genotype <span class="math notranslate nohighlight">\(g_q\)</span> is:</p>
+<p><strong>Case 1: Both homozygous, same genotype</strong> (<span class="math notranslate nohighlight">\(g_r = g_q \in \{0, 2\}\)</span>)</p>
+<p>Both chromosomes must match (no mutation on either):</p>
+<div class="math notranslate nohighlight">
+\[e = p^2 = (1-\mu)^2\]</div>
+<p><strong>Case 2: Both homozygous, different genotype</strong> (<span class="math notranslate nohighlight">\(g_r = 0, g_q = 2\)</span> or
+<span class="math notranslate nohighlight">\(g_r = 2, g_q = 0\)</span>)</p>
+<p>Both chromosomes must mutate:</p>
+<div class="math notranslate nohighlight">
+\[e = q^2 = \mu^2\]</div>
+<p><strong>Case 3: Both heterozygous</strong> (<span class="math notranslate nohighlight">\(g_r = g_q = 1\)</span>)</p>
+<p>Either both match or both mutate (since a mutation on each chromosome flips it,
+giving the same heterozygous genotype):</p>
+<div class="math notranslate nohighlight">
+\[e = p^2 + q^2 = (1-\mu)^2 + \mu^2\]</div>
+<div class="admonition-probability-aside-why-math-p-2-q-2-for-both-heterozygous admonition">
+<p class="admonition-title">Probability Aside: Why <span class="math notranslate nohighlight">\(p^2 + q^2\)</span> for Both Heterozygous?</p>
+<p>When both the reference and the query are heterozygous (genotype 1), there
+are two ways to produce the observed genotype:</p>
+<ol class="arabic simple">
+<li><p><strong>Both chromosomes match</strong> their reference sources: chromosome 1 copies
+the “0” allele faithfully, chromosome 2 copies the “1” allele faithfully
+(or vice versa). Probability: <span class="math notranslate nohighlight">\(p \cdot p = p^2\)</span>.</p></li>
+<li><p><strong>Both chromosomes mutate</strong>: chromosome 1 copies “0” but mutates to “1”,
+chromosome 2 copies “1” but mutates to “0”. The result is still 0+1 = 1.
+Probability: <span class="math notranslate nohighlight">\(q \cdot q = q^2\)</span>.</p></li>
+</ol>
+<p>No other combination works. If only one chromosome mutates, the genotype
+would be 0+0=0 or 1+1=2, not 1. Hence <span class="math notranslate nohighlight">\(e = p^2 + q^2\)</span>.</p>
+<p>Note that <span class="math notranslate nohighlight">\(p^2 + q^2 &lt; 1\)</span> (since <span class="math notranslate nohighlight">\(2pq &gt; 0\)</span>), so heterozygous
+observations are slightly less likely than homozygous ones – reflecting
+the fact that heterozygosity requires a specific arrangement of alleles.</p>
+</div>
+<p><strong>Case 4: Reference homozygous, query heterozygous</strong> (<span class="math notranslate nohighlight">\(g_r \in \{0, 2\}, g_q = 1\)</span>)</p>
+<p>Exactly one chromosome must mutate (either could be the one):</p>
+<div class="math notranslate nohighlight">
+\[e = 2pq = 2\mu(1-\mu)\]</div>
+<p><strong>Case 5: Reference heterozygous, query homozygous</strong> (<span class="math notranslate nohighlight">\(g_r = 1, g_q \in \{0, 2\}\)</span>)</p>
+<p>Exactly one chromosome must mutate:</p>
+<div class="math notranslate nohighlight">
+\[e = pq = \mu(1-\mu)\]</div>
+<p><strong>Wait – why not</strong> <span class="math notranslate nohighlight">\(2pq\)</span> <strong>in Case 5?</strong> Because in Case 4, the reference
+is homozygous (say <span class="math notranslate nohighlight">\(0/0\)</span>) and the query is <span class="math notranslate nohighlight">\(0/1\)</span>. Either the first
+or second chromosome could be the one that mutated – two configurations, hence
+the factor of 2. In Case 5, the reference is heterozygous (<span class="math notranslate nohighlight">\(0/1\)</span>) and the
+query is homozygous (say <span class="math notranslate nohighlight">\(0/0\)</span>). The chromosome carrying the “1” must
+mutate to “0” – that’s a specific chromosome, so there’s only one configuration.</p>
+<div class="admonition-probability-aside-the-factor-of-2-asymmetry-explained admonition">
+<p class="admonition-title">Probability Aside: The Factor-of-2 Asymmetry Explained</p>
+<p>This asymmetry is a subtle but important point. Let us spell it out
+carefully.</p>
+<p><strong>Case 4</strong> (ref = 0/0, query = 0/1): Chromosome 1 copies ref allele 0 and
+chromosome 2 copies ref allele 0. We need the query to be 0/1. This
+requires exactly one mutation:</p>
+<ul class="simple">
+<li><p>Chromosome 1 mutates (0 -&gt; 1), chromosome 2 matches (0 -&gt; 0):
+probability <span class="math notranslate nohighlight">\(q \cdot p\)</span></p></li>
+<li><p>Chromosome 1 matches (0 -&gt; 0), chromosome 2 mutates (0 -&gt; 1):
+probability <span class="math notranslate nohighlight">\(p \cdot q\)</span></p></li>
+</ul>
+<p>Total: <span class="math notranslate nohighlight">\(2pq\)</span>. The factor of 2 comes from the two <strong>interchangeable</strong>
+chromosomes both starting with the same allele.</p>
+<p><strong>Case 5</strong> (ref = 0/1, query = 0/0): Chromosome 1 copies allele 0 from
+<span class="math notranslate nohighlight">\(j_1\)</span>, chromosome 2 copies allele 1 from <span class="math notranslate nohighlight">\(j_2\)</span>. We need
+query = 0/0:</p>
+<ul class="simple">
+<li><p>Chromosome 1 matches (0 -&gt; 0), chromosome 2 mutates (1 -&gt; 0):
+probability <span class="math notranslate nohighlight">\(p \cdot q\)</span></p></li>
+</ul>
+<p>That’s the only configuration. The chromosomes are <strong>distinguishable</strong>
+(they copy from different sources with different alleles), so there’s no
+factor of 2.</p>
+</div>
+<p>Let’s verify this with a concrete example. Reference <span class="math notranslate nohighlight">\(0/1\)</span>, query <span class="math notranslate nohighlight">\(0/0\)</span>:</p>
+<ul class="simple">
+<li><p>Chromosome 1 (ref=0, query=0): match, probability <span class="math notranslate nohighlight">\(p\)</span></p></li>
+<li><p>Chromosome 2 (ref=1, query=0): mutation, probability <span class="math notranslate nohighlight">\(q\)</span></p></li>
+</ul>
+<p>Total: <span class="math notranslate nohighlight">\(pq\)</span>. There’s no second configuration because the chromosomes are
+distinguishable (chromosome 1 copies from <span class="math notranslate nohighlight">\(j_1\)</span>, chromosome 2 from <span class="math notranslate nohighlight">\(j_2\)</span>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">emission_matrix_diploid</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">num_sites</span><span class="p">,</span> <span class="n">num_alleles</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute emission probability matrix for diploid genotypes.</span>
+
+<span class="sd">    Returns matrix of shape (m, 8) indexed by genotype comparison code.</span>
+
+<span class="sd">    Indexing scheme (bit-packed, see Step 3 text):</span>
+<span class="sd">        4 = EQUAL_BOTH_HOM   (ref hom, query hom, same genotype)</span>
+<span class="sd">        0 = UNEQUAL_BOTH_HOM (ref hom, query hom, different genotype)</span>
+<span class="sd">        7 = BOTH_HET         (ref het, query het)</span>
+<span class="sd">        1 = REF_HOM_OBS_HET  (ref hom, query het)</span>
+<span class="sd">        2 = REF_HET_OBS_HOM  (ref het, query hom)</span>
+<span class="sd">        3 = MISSING_INDEX    (query is MISSING)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">EQUAL_BOTH_HOM</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">UNEQUAL_BOTH_HOM</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BOTH_HET</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">REF_HOM_OBS_HET</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">REF_HET_OBS_HOM</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">MISSING_INDEX</span> <span class="o">=</span> <span class="mi">3</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num_sites</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+
+    <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">num_sites</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>  <span class="c1"># -inf flags unused indices</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_sites</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">num_alleles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Invariant site: no mutation possible</span>
+            <span class="n">p_mut</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">p_no_mut</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Per-allele mutation probability (symmetric model)</span>
+            <span class="n">p_mut</span> <span class="o">=</span> <span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">num_alleles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">p_no_mut</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="c1"># Case 1: both hom, same genotype -&gt; both match</span>
+        <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">EQUAL_BOTH_HOM</span><span class="p">]</span>  <span class="o">=</span> <span class="n">p_no_mut</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="c1"># Case 2: both hom, different genotype -&gt; both mutate</span>
+        <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">UNEQUAL_BOTH_HOM</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_mut</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="c1"># Case 3: both het -&gt; both match OR both mutate</span>
+        <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">BOTH_HET</span><span class="p">]</span>         <span class="o">=</span> <span class="n">p_no_mut</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">p_mut</span><span class="o">**</span><span class="mi">2</span>
+        <span class="c1"># Case 4: ref hom, query het -&gt; exactly one mutates (factor of 2)</span>
+        <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">REF_HOM_OBS_HET</span><span class="p">]</span>  <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">p_mut</span> <span class="o">*</span> <span class="n">p_no_mut</span>
+        <span class="c1"># Case 5: ref het, query hom -&gt; exactly one mutates (no factor of 2)</span>
+        <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">REF_HET_OBS_HOM</span><span class="p">]</span>  <span class="o">=</span> <span class="n">p_mut</span> <span class="o">*</span> <span class="n">p_no_mut</span>
+        <span class="c1"># Missing data: no information</span>
+        <span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">MISSING_INDEX</span><span class="p">]</span>    <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="k">return</span> <span class="n">e</span>
+
+<span class="c1"># Example: verify emission probabilities</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">e_dip</span> <span class="o">=</span> <span class="n">emission_matrix_diploid</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Diploid emission probabilities (mu=0.01):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Both hom, match:     </span><span class="si">{</span><span class="n">e_dip</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">  (p^2)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Both hom, mismatch:  </span><span class="si">{</span><span class="n">e_dip</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">  (q^2)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Both het:            </span><span class="si">{</span><span class="n">e_dip</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">  (p^2 + q^2)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Ref hom, query het:  </span><span class="si">{</span><span class="n">e_dip</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">  (2pq)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Ref het, query hom:  </span><span class="si">{</span><span class="n">e_dip</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">  (pq)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-genotype-comparison-index">
+<h3>The genotype comparison index<a class="headerlink" href="#the-genotype-comparison-index" title="Link to this heading"></a></h3>
+<p>To look up the correct emission, we need a function that compares the reference
+genotype to the query genotype and returns the right index. The lshmm library
+uses a clever bit-packing scheme:</p>
+<div class="math notranslate nohighlight">
+\[\text{index} = 4 \cdot \text{is\_match} + 2 \cdot \text{is\_ref\_het} + \text{is\_query\_het}\]</div>
+<div class="admonition-terminology-bit-packing admonition">
+<p class="admonition-title">Terminology: Bit-Packing</p>
+<p><strong>Bit-packing</strong> encodes multiple boolean flags into a single integer by
+treating each flag as a binary digit. Here, <code class="docutils literal notranslate"><span class="pre">is_match</span></code> contributes
+<span class="math notranslate nohighlight">\(4 = 2^2\)</span>, <code class="docutils literal notranslate"><span class="pre">is_ref_het</span></code> contributes <span class="math notranslate nohighlight">\(2 = 2^1\)</span>, and
+<code class="docutils literal notranslate"><span class="pre">is_query_het</span></code> contributes <span class="math notranslate nohighlight">\(1 = 2^0\)</span>. The resulting index ranges
+from 0 to 7, mapping all 9 possible genotype comparisons to 5 distinct
+emission categories (with 3 indices unused). This is faster than a chain
+of if-else statements and is a common optimization in HMM implementations.</p>
+</div>
+<p>This maps all 9 possible (ref, query) genotype pairs to 5 distinct categories:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">genotype_comparison_index</span><span class="p">(</span><span class="n">ref_gt</span><span class="p">,</span> <span class="n">query_gt</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map (ref_genotype, query_genotype) to emission matrix index.</span>
+
+<span class="sd">    Genotypes are allele dosages: 0, 1, or 2.</span>
+<span class="sd">    Uses bit-packing: index = 4*is_match + 2*is_ref_het + is_query_het</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">MISSING</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">query_gt</span> <span class="o">==</span> <span class="n">MISSING</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">3</span>  <span class="c1"># MISSING_INDEX: no information from this site</span>
+    <span class="c1"># Pack three boolean flags into one integer index</span>
+    <span class="n">is_match</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_gt</span> <span class="o">==</span> <span class="n">query_gt</span><span class="p">)</span>     <span class="c1"># bit 2 (weight 4)</span>
+    <span class="n">is_ref_het</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_gt</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>          <span class="c1"># bit 1 (weight 2)</span>
+    <span class="n">is_query_het</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">query_gt</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>      <span class="c1"># bit 0 (weight 1)</span>
+    <span class="k">return</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">is_match</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">is_ref_het</span> <span class="o">+</span> <span class="n">is_query_het</span>
+
+<span class="c1"># Verify: all (ref, query) combinations</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Ref GT&#39;</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Query GT&#39;</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Index&#39;</span><span class="si">:</span><span class="s2">&gt;7</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Category&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">45</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ref_gt</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">query_gt</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">genotype_comparison_index</span><span class="p">(</span><span class="n">ref_gt</span><span class="p">,</span> <span class="n">query_gt</span><span class="p">)</span>
+        <span class="n">categories</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;UNEQUAL_BOTH_HOM&quot;</span><span class="p">,</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;REF_HOM_OBS_HET&quot;</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;REF_HET_OBS_HOM&quot;</span><span class="p">,</span>
+            <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;EQUAL_BOTH_HOM&quot;</span><span class="p">,</span>
+            <span class="mi">7</span><span class="p">:</span> <span class="s2">&quot;BOTH_HET&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ref_gt</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">query_gt</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">&gt;7</span><span class="si">}</span><span class="s2"> &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">categories</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;???&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With the emission probabilities and comparison index defined, we can now build
+the diploid forward algorithm.</p>
+</section>
+</section>
+<section id="step-4-diploid-forward-algorithm">
+<h2>Step 4: Diploid Forward Algorithm<a class="headerlink" href="#step-4-diploid-forward-algorithm" title="Link to this heading"></a></h2>
+<p>The diploid forward algorithm is structurally similar to the haploid version,
+but operates on the <span class="math notranslate nohighlight">\(n \times n\)</span> state space. The forward variable is now
+a matrix:</p>
+<div class="math notranslate nohighlight">
+\[F_{j_1, j_2}(\ell) = P(X_1, \ldots, X_\ell, Z^{(1)}_\ell = j_1, Z^{(2)}_\ell = j_2)\]</div>
+<p>The recursion mirrors the haploid case but accounts for the four transition
+types:</p>
+<div class="math notranslate nohighlight">
+\[F_{j_1, j_2}(\ell) = e_{j_1, j_2}(X_\ell) \cdot \sum_{k_1, k_2} F_{k_1, k_2}(\ell-1) \cdot A_{(k_1,k_2)(j_1,j_2)}\]</div>
+<p><strong>Naive implementation</strong>: The sum has <span class="math notranslate nohighlight">\(n^2\)</span> terms, and we compute it for
+each of <span class="math notranslate nohighlight">\(n^2\)</span> states, giving <span class="math notranslate nohighlight">\(O(n^4)\)</span> per site. For <span class="math notranslate nohighlight">\(n = 100\)</span>,
+that’s <span class="math notranslate nohighlight">\(10^8\)</span> per site – too slow.</p>
+<p><strong>Exploiting structure</strong>: We can decompose the sum using the same trick as the
+haploid case – the template mechanism’s special structure comes to the rescue
+again. The transition factors as a product of haploid transitions, so:</p>
+<div class="math notranslate nohighlight">
+\[\sum_{k_1, k_2} F_{k_1, k_2} A_{(k_1,k_2)(j_1,j_2)}
+= \underbrace{(1-r)^2 F_{j_1, j_2}}_{\text{no switch}}
++ \underbrace{(1-r) \frac{r}{n} \left[\sum_{k_2} F_{j_1, k_2} + \sum_{k_1} F_{k_1, j_2}\right]}_{\text{single switch}}
++ \underbrace{\left(\frac{r}{n}\right)^2 \sum_{k_1, k_2} F_{k_1, k_2}}_{\text{both switch}}\]</div>
+<div class="admonition-probability-aside-the-math-o-n-2-trick-for-diploids admonition">
+<p class="admonition-title">Probability Aside: The <span class="math notranslate nohighlight">\(O(n^2)\)</span> Trick for Diploids</p>
+<p>The <span class="math notranslate nohighlight">\(O(n^2)\)</span> trick is the diploid analog of the haploid
+<span class="math notranslate nohighlight">\(O(n)\)</span> trick from the <a class="reference internal" href="copying_model.html#copying-model"><span class="std std-ref">copying model chapter</span></a>.
+The key insight is identical: the sums that appear in the recursion can be
+precomputed and reused.</p>
+<p>The three sums needed are:</p>
+<ol class="arabic simple">
+<li><p><strong>Row sums</strong>: <span class="math notranslate nohighlight">\(\sum_{k_2} F_{j_1, k_2}\)</span> for each <span class="math notranslate nohighlight">\(j_1\)</span> –
+sum each row of the <span class="math notranslate nohighlight">\(n \times n\)</span> forward matrix. Cost: <span class="math notranslate nohighlight">\(O(n^2)\)</span>.</p></li>
+<li><p><strong>Column sums</strong>: <span class="math notranslate nohighlight">\(\sum_{k_1} F_{k_1, j_2}\)</span> for each <span class="math notranslate nohighlight">\(j_2\)</span> –
+sum each column. Cost: <span class="math notranslate nohighlight">\(O(n^2)\)</span>.</p></li>
+<li><p><strong>Total sum</strong>: <span class="math notranslate nohighlight">\(\sum_{k_1, k_2} F_{k_1, k_2}\)</span> – sum all entries.
+Cost: <span class="math notranslate nohighlight">\(O(n^2)\)</span>.</p></li>
+</ol>
+<p>Once these are computed, each of the <span class="math notranslate nohighlight">\(n^2\)</span> forward variables can be
+updated in <span class="math notranslate nohighlight">\(O(1)\)</span>, giving <span class="math notranslate nohighlight">\(O(n^2)\)</span> per site total. This is a
+factor of <span class="math notranslate nohighlight">\(n^2\)</span> faster than the naive <span class="math notranslate nohighlight">\(O(n^4)\)</span>.</p>
+</div>
+<p>The three sums can be precomputed:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\sum_{k_2} F_{j_1, k_2}\)</span> = row sum of <span class="math notranslate nohighlight">\(F\)</span> for each <span class="math notranslate nohighlight">\(j_1\)</span>:
+<span class="math notranslate nohighlight">\(O(n^2)\)</span> total</p></li>
+<li><p><span class="math notranslate nohighlight">\(\sum_{k_1} F_{k_1, j_2}\)</span> = column sum of <span class="math notranslate nohighlight">\(F\)</span> for each <span class="math notranslate nohighlight">\(j_2\)</span>:
+<span class="math notranslate nohighlight">\(O(n^2)\)</span> total</p></li>
+<li><p><span class="math notranslate nohighlight">\(\sum_{k_1, k_2} F_{k_1, k_2}\)</span> = total sum: <span class="math notranslate nohighlight">\(O(n^2)\)</span> total</p></li>
+</ul>
+<p>This reduces the cost to <span class="math notranslate nohighlight">\(O(n^2)\)</span> per site (from <span class="math notranslate nohighlight">\(O(n^4)\)</span> naive).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_diploid</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">emission_matrix</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward algorithm for the diploid Li-Stephens model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of reference haplotypes.</span>
+<span class="sd">    m : int</span>
+<span class="sd">        Number of sites.</span>
+<span class="sd">    G : ndarray of shape (m, n, n)</span>
+<span class="sd">        Reference genotype matrix. G[l, j1, j2] = allele dosage</span>
+<span class="sd">        when copying from (j1, j2).</span>
+<span class="sd">    s : ndarray of shape (1, m)</span>
+<span class="sd">        Query genotype (allele dosages: 0, 1, or 2).</span>
+<span class="sd">    emission_matrix : ndarray of shape (m, 8)</span>
+<span class="sd">        Diploid emission probabilities.</span>
+<span class="sd">    r : ndarray of shape (m,)</span>
+<span class="sd">        Per-site recombination probability.</span>
+<span class="sd">    norm : bool</span>
+<span class="sd">        Whether to normalize.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    F : ndarray of shape (m, n, n)</span>
+<span class="sd">        Forward probabilities (n x n matrix at each site).</span>
+<span class="sd">    c : ndarray of shape (m,)</span>
+<span class="sd">        Scaling factors.</span>
+<span class="sd">    ll : float</span>
+<span class="sd">        Log-likelihood (base 10).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span>  <span class="c1"># Pre-compute r/n for the O(n^2) trick</span>
+
+    <span class="c1"># Initialization: uniform over all n^2 pairs, times emission</span>
+    <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># Uniform prior over pairs</span>
+            <span class="n">ref_gt</span> <span class="o">=</span> <span class="n">G</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>       <span class="c1"># Reference genotype for this pair</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">genotype_comparison_index</span><span class="p">(</span><span class="n">ref_gt</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>  <span class="c1"># Emission</span>
+
+    <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+        <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+        <span class="n">F</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">/=</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Normalize</span>
+
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+            <span class="c1"># Precompute sums for the O(n^2) trick</span>
+            <span class="n">F_no_change</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+            <span class="n">F_j_change</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                    <span class="c1"># No-switch contribution: both stay</span>
+                    <span class="n">F_no_change</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>
+                    <span class="c1"># Single-switch contribution: accumulate row/col sums</span>
+                    <span class="n">F_j_change</span><span class="p">[</span><span class="n">j1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">*</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">*</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">j1</span><span class="p">]</span>
+
+            <span class="c1"># Build forward probabilities using the three magnitudes</span>
+            <span class="c1"># Start with double-switch (constant across all states)</span>
+            <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>  <span class="c1"># Both switch (normalized: total sum = 1)</span>
+
+            <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="c1"># Add single-switch contributions (one coordinate matches)</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+=</span> <span class="n">F_j_change</span>  <span class="c1"># One switches</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:,</span> <span class="n">j1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">F_j_change</span>  <span class="c1"># The other switches</span>
+                <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                    <span class="c1"># Add no-switch contribution (both coordinates match)</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">F_no_change</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>
+
+            <span class="c1"># Apply emission probabilities</span>
+            <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                    <span class="n">ref_gt</span> <span class="o">=</span> <span class="n">G</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">genotype_comparison_index</span><span class="p">(</span><span class="n">ref_gt</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">l</span><span class="p">])</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
+
+            <span class="c1"># Normalize</span>
+            <span class="n">c</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+            <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">/=</span> <span class="n">c</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+            <span class="n">F_no_change</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+            <span class="n">F_j1_change</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">F_j2_change</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">F_both_change</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+            <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                    <span class="n">F_no_change</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>
+                    <span class="n">F_j1_change</span><span class="p">[</span><span class="n">j1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">*</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">*</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">j1</span><span class="p">]</span>
+                    <span class="n">F_j2_change</span><span class="p">[</span><span class="n">j1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">*</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">*</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>
+                    <span class="n">F_both_change</span> <span class="o">+=</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>
+
+            <span class="c1"># Build forward probabilities (unnormalized)</span>
+            <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">F_both_change</span>  <span class="c1"># Both switch</span>
+            <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+=</span> <span class="n">F_j2_change</span>     <span class="c1"># Chr 2 switches</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:,</span> <span class="n">j1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">F_j1_change</span>     <span class="c1"># Chr 1 switches</span>
+                <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">F_no_change</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>  <span class="c1"># Neither switches</span>
+
+            <span class="c1"># Apply emission</span>
+            <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                    <span class="n">ref_gt</span> <span class="o">=</span> <span class="n">G</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">genotype_comparison_index</span><span class="p">(</span><span class="n">ref_gt</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">l</span><span class="p">])</span>
+                    <span class="n">F</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="p">[</span><span class="n">m</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]))</span>
+
+    <span class="k">return</span> <span class="n">F</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">ll</span>
+</pre></div>
+</div>
+<p>With the forward algorithm generalized to the diploid setting, we now extend
+the Viterbi algorithm – finding the most likely gear sequence for two watches
+ticking together.</p>
+</section>
+<section id="step-5-diploid-viterbi-algorithm">
+<h2>Step 5: Diploid Viterbi Algorithm<a class="headerlink" href="#step-5-diploid-viterbi-algorithm" title="Link to this heading"></a></h2>
+<p>The diploid Viterbi algorithm finds the most likely pair of copying paths. The
+<span class="math notranslate nohighlight">\(O(n^2)\)</span> trick works the same way as for the forward algorithm, but with
+<span class="math notranslate nohighlight">\(\max\)</span> replacing <span class="math notranslate nohighlight">\(\sum\)</span>.</p>
+<p>At each state <span class="math notranslate nohighlight">\((j_1, j_2)\)</span>, the best predecessor is one of three types:</p>
+<ol class="arabic simple">
+<li><p><strong>No switch</strong>: same state <span class="math notranslate nohighlight">\((j_1, j_2)\)</span>, transition weight <code class="docutils literal notranslate"><span class="pre">no_switch</span></code></p></li>
+<li><p><strong>Single switch</strong>: state <span class="math notranslate nohighlight">\((j_1, k_2)\)</span> or <span class="math notranslate nohighlight">\((k_1, j_2)\)</span> for the
+best <span class="math notranslate nohighlight">\(k_2\)</span> or <span class="math notranslate nohighlight">\(k_1\)</span>, transition weight <code class="docutils literal notranslate"><span class="pre">single_switch</span></code></p></li>
+<li><p><strong>Double switch</strong>: the globally best state <span class="math notranslate nohighlight">\((k_1^*, k_2^*)\)</span>,
+transition weight <code class="docutils literal notranslate"><span class="pre">double_switch</span></code></p></li>
+</ol>
+<p>To evaluate the “single switch” option efficiently, we precompute the row and
+column maxima of <span class="math notranslate nohighlight">\(V\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[V^{\text{row}}_j = \max_{k} V_{j, k} \quad \text{(best column for each row)}\]</div>
+<div class="math notranslate nohighlight">
+\[V^{\text{col}}_j = \max_{k} V_{k, j} \quad \text{(best row for each column)}\]</div>
+<p>These are computed in <span class="math notranslate nohighlight">\(O(n^2)\)</span> total.</p>
+<p>For state <span class="math notranslate nohighlight">\((j_1, j_2)\)</span>, the best single-switch predecessor has value
+<span class="math notranslate nohighlight">\(\max(V^{\text{row}}_{j_1}, V^{\text{col}}_{j_2}) \cdot \texttt{single\_switch}\)</span>.</p>
+<div class="admonition-probability-aside-viterbi-decisions-in-the-diploid-model admonition">
+<p class="admonition-title">Probability Aside: Viterbi Decisions in the Diploid Model</p>
+<p>The diploid Viterbi algorithm makes a three-way decision at each state
+(vs. the two-way stay/switch decision in the haploid case):</p>
+<ol class="arabic simple">
+<li><p><strong>No switch</strong>: <span class="math notranslate nohighlight">\(V_{j_1,j_2}(\ell-1) \cdot \texttt{no\_switch}\)</span></p></li>
+<li><p><strong>Single switch</strong>: <span class="math notranslate nohighlight">\(\max(V^{\text{row}}_{j_1}, V^{\text{col}}_{j_2}) \cdot \texttt{single\_switch}\)</span></p></li>
+<li><p><strong>Double switch</strong>: <span class="math notranslate nohighlight">\(V^*(\ell-1) \cdot \texttt{double\_switch}\)</span></p></li>
+</ol>
+<p>The winner determines both the Viterbi value <em>and</em> the pointer for
+traceback. Just as in the haploid case, a switch requires the alternative
+to be sufficiently better than the current state to overcome the
+recombination penalty. In the diploid case, a double switch requires
+overcoming <span class="math notranslate nohighlight">\((r/n)^2\)</span>, which is quadratically smaller than the
+single-switch penalty – making double switches extremely rare.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">viterbi_diploid</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">emission_matrix</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Viterbi algorithm for the diploid Li-Stephens model.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    V : ndarray of shape (n, n)</span>
+<span class="sd">        Viterbi probabilities at the last site.</span>
+<span class="sd">    P : ndarray of shape (m, n, n), dtype int</span>
+<span class="sd">        Pointer array (flattened index into n*n state space).</span>
+<span class="sd">    ll : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="n">V_prev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>  <span class="c1"># Rescaling factors for numerical stability</span>
+    <span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">n</span>
+
+    <span class="c1"># Initialization: uniform prior over all n^2 pairs, times emission</span>
+    <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">V_prev</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">ref_gt</span> <span class="o">=</span> <span class="n">G</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">genotype_comparison_index</span><span class="p">(</span><span class="n">ref_gt</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">V_prev</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
+
+    <span class="c1"># Forward pass: find best path to each diploid state at each site</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+        <span class="c1"># Rescale to prevent underflow</span>
+        <span class="n">c</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">V_prev</span><span class="p">)</span>
+        <span class="n">argmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">V_prev</span><span class="p">)</span>  <span class="c1"># Flattened index of global max</span>
+        <span class="n">V_prev</span> <span class="o">/=</span> <span class="n">c</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+
+        <span class="c1"># Precompute row maxima for single-switch decisions.</span>
+        <span class="c1"># V_rowcol_max[j] = max over all partners k of V_prev[j, k]</span>
+        <span class="n">V_rowcol_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">V_prev</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">arg_rowcol_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">V_prev</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># The three distinct transition magnitudes</span>
+        <span class="n">no_switch</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">]))</span> <span class="o">+</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">single_switch</span> <span class="o">=</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="o">+</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">double_switch</span> <span class="o">=</span> <span class="n">r_n</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">j1_j2</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Flattened index for pointer array</span>
+        <span class="k">for</span> <span class="n">j1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="c1"># Find best single-switch predecessor:</span>
+                <span class="c1"># one coordinate stays, the other switches to the</span>
+                <span class="c1"># best available partner</span>
+                <span class="n">V_single</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">V_rowcol_max</span><span class="p">[</span><span class="n">j1</span><span class="p">],</span> <span class="n">V_rowcol_max</span><span class="p">[</span><span class="n">j2</span><span class="p">])</span>
+                <span class="n">P_single</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">V_rowcol_max</span><span class="p">[</span><span class="n">j1</span><span class="p">],</span> <span class="n">V_rowcol_max</span><span class="p">[</span><span class="n">j2</span><span class="p">]])</span>
+                <span class="p">)</span>
+                <span class="c1"># Reconstruct flattened index of the best single-switch source</span>
+                <span class="k">if</span> <span class="n">P_single</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">template_single</span> <span class="o">=</span> <span class="n">j1</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="n">arg_rowcol_max</span><span class="p">[</span><span class="n">j1</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">template_single</span> <span class="o">=</span> <span class="n">arg_rowcol_max</span><span class="p">[</span><span class="n">j2</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="n">j2</span>
+
+                <span class="c1"># Compare the three options</span>
+                <span class="c1"># Option 1: No switch (both stay)</span>
+                <span class="n">V</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="n">V_prev</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">*</span> <span class="n">no_switch</span>
+                <span class="n">P</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="n">j1_j2</span>  <span class="c1"># Default: no switch</span>
+
+                <span class="c1"># Option 2: Single switch (one chromosome recombines)</span>
+                <span class="n">single_val</span> <span class="o">=</span> <span class="n">single_switch</span> <span class="o">*</span> <span class="n">V_single</span>
+                <span class="k">if</span> <span class="n">single_val</span> <span class="o">&gt;</span> <span class="n">double_switch</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">V</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">single_val</span><span class="p">:</span>
+                        <span class="n">V</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="n">single_val</span>
+                        <span class="n">P</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_single</span>
+
+                <span class="c1"># Option 3: Double switch (both chromosomes recombine)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">V</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">double_switch</span><span class="p">:</span>
+                        <span class="n">V</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="n">double_switch</span>
+                        <span class="n">P</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">=</span> <span class="n">argmax</span>
+
+                <span class="c1"># Emission: multiply by the appropriate genotype emission</span>
+                <span class="n">ref_gt</span> <span class="o">=</span> <span class="n">G</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">genotype_comparison_index</span><span class="p">(</span><span class="n">ref_gt</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">l</span><span class="p">])</span>
+                <span class="n">V</span><span class="p">[</span><span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
+
+                <span class="n">j1_j2</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">V_prev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>  <span class="c1"># Save for next iteration</span>
+
+    <span class="c1"># Log-likelihood: sum of log rescaling factors + log of final max</span>
+    <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">c</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">V</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">ll</span>
+</pre></div>
+</div>
+<section id="diploid-traceback-and-phasing">
+<h3>Diploid traceback and phasing<a class="headerlink" href="#diploid-traceback-and-phasing" title="Link to this heading"></a></h3>
+<p>The traceback recovers the flattened index at each site, which is then
+<strong>unraveled</strong> into the two haplotype indices. This step implicitly performs
+<strong>phasing</strong> – assigning alleles to chromosomes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">backwards_viterbi_diploid</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">V_last</span><span class="p">,</span> <span class="n">P</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Traceback for diploid Viterbi.</span>
+
+<span class="sd">    Follows pointers backward from the best final state,</span>
+<span class="sd">    recovering the flattened index at each site.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="c1"># Start at the last site: pick the best diploid state</span>
+    <span class="n">path</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">V_last</span><span class="p">)</span>
+
+    <span class="c1"># Trace backward through the pointer array</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">path</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="n">path</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+
+    <span class="k">return</span> <span class="n">path</span>
+
+<span class="k">def</span> <span class="nf">get_phased_path</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">flat_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert flattened diploid path to two haploid paths.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Number of reference haplotypes.</span>
+<span class="sd">    flat_path : ndarray of shape (m,)</span>
+<span class="sd">        Flattened indices into n*n state space.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    path1, path2 : tuple of ndarray of shape (m,)</span>
+<span class="sd">        Copying paths for each chromosome.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># np.unravel_index converts flat index back to (row, col) = (chr1, chr2)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">flat_path</span><span class="p">,</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>With the algorithms in place, we need one more utility: constructing the
+reference genotype matrix from the haplotype panel.</p>
+</section>
+</section>
+<section id="step-6-building-the-reference-genotype-matrix">
+<h2>Step 6: Building the Reference Genotype Matrix<a class="headerlink" href="#step-6-building-the-reference-genotype-matrix" title="Link to this heading"></a></h2>
+<p>The diploid model needs the reference <strong>genotype</strong> at each site for each pair
+of copying sources. Given the reference haplotype panel <span class="math notranslate nohighlight">\(H\)</span> of shape
+<span class="math notranslate nohighlight">\((m, n)\)</span>, the reference genotype matrix <span class="math notranslate nohighlight">\(G\)</span> of shape <span class="math notranslate nohighlight">\((m, n, n)\)</span>
+is:</p>
+<div class="math notranslate nohighlight">
+\[G_{\ell, j_1, j_2} = H_{\ell, j_1} + H_{\ell, j_2}\]</div>
+<p>This is just the outer sum of the haplotype alleles at each site.</p>
+<div class="admonition-terminology-outer-sum admonition">
+<p class="admonition-title">Terminology: Outer Sum</p>
+<p>The <strong>outer sum</strong> of two vectors <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span> is the matrix
+<span class="math notranslate nohighlight">\(C_{ij} = a_i + b_j\)</span>. It is the additive analog of the outer
+product <span class="math notranslate nohighlight">\(C_{ij} = a_i \cdot b_j\)</span>. In NumPy, <code class="docutils literal notranslate"><span class="pre">np.add.outer(a,</span> <span class="pre">b)</span></code>
+computes this efficiently. For the diploid LS model, the outer sum at
+each site gives the genotype (allele dosage) for every pair of copying
+sources.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">build_genotype_matrix</span><span class="p">(</span><span class="n">H</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build reference genotype matrix from haplotype panel.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    H : ndarray of shape (m, n)</span>
+<span class="sd">        Reference haplotype panel.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    G : ndarray of shape (m, n, n)</span>
+<span class="sd">        Reference genotype matrix. G[l, j1, j2] = H[l, j1] + H[l, j2].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+        <span class="c1"># Outer sum: genotype for every pair (j1, j2) at site l</span>
+        <span class="n">G</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:],</span> <span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="p">:])</span>
+    <span class="k">return</span> <span class="n">G</span>
+
+<span class="c1"># Example</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="p">])</span>
+<span class="n">G</span> <span class="o">=</span> <span class="n">build_genotype_matrix</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reference genotype matrix at site 0:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">G</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Diagonal (self-pairs):&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">G</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>Now let us put everything together in a complete diploid example.</p>
+</section>
+<section id="step-7-complete-diploid-example">
+<h2>Step 7: Complete Diploid Example<a class="headerlink" href="#step-7-complete-diploid-example" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Full diploid pipeline</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">6</span>   <span class="c1"># reference haplotypes</span>
+<span class="n">m</span> <span class="o">=</span> <span class="mi">50</span>  <span class="c1"># sites</span>
+
+<span class="c1"># Simulate reference panel (biallelic)</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+<span class="n">G</span> <span class="o">=</span> <span class="n">build_genotype_matrix</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>  <span class="c1"># Reference genotype matrix (m x n x n)</span>
+
+<span class="c1"># Create a diploid query: two haplotypes copied from different sources</span>
+<span class="n">true_path1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">true_path2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">true_path1</span><span class="p">[:</span><span class="mi">25</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">true_path1</span><span class="p">[</span><span class="mi">25</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># Chr 1: switch at site 25</span>
+<span class="n">true_path2</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># Chromosome 2 copies from h_2 the whole time</span>
+
+<span class="c1"># Build query genotype (allele dosage = sum of the two haplotypes)</span>
+<span class="n">h1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">true_path1</span><span class="p">[</span><span class="n">l</span><span class="p">]]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)])</span>
+<span class="n">h2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">H</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">true_path2</span><span class="p">[</span><span class="n">l</span><span class="p">]]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)])</span>
+<span class="n">query_gt</span> <span class="o">=</span> <span class="p">(</span><span class="n">h1</span> <span class="o">+</span> <span class="n">h2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Genotype: 0, 1, or 2</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True copying path, chr 1: h_</span><span class="si">{</span><span class="n">true_path1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; h_</span><span class="si">{</span><span class="n">true_path1</span><span class="p">[</span><span class="mi">25</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True copying path, chr 2: h_</span><span class="si">{</span><span class="n">true_path2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> (constant)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Query genotypes: </span><span class="si">{</span><span class="n">query_gt</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+
+<span class="c1"># Set up model parameters</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">e_dip</span> <span class="o">=</span> <span class="n">emission_matrix_diploid</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+<span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># No recombination before the first site</span>
+
+<span class="c1"># Run diploid Viterbi: find the most likely gear sequence for both watches</span>
+<span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">ll</span> <span class="o">=</span> <span class="n">viterbi_diploid</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">query_gt</span><span class="p">,</span> <span class="n">e_dip</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+<span class="n">flat_path</span> <span class="o">=</span> <span class="n">backwards_viterbi_diploid</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="n">path1</span><span class="p">,</span> <span class="n">path2</span> <span class="o">=</span> <span class="n">get_phased_path</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">flat_path</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Viterbi log-likelihood: </span><span class="si">{</span><span class="n">ll</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Decoded chr 1 path: </span><span class="si">{</span><span class="n">path1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Decoded chr 2 path: </span><span class="si">{</span><span class="n">path2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Note: the phasing might be swapped (chr1 and chr2 are interchangeable)</span>
+<span class="c1"># Check both orientations</span>
+<span class="n">acc_direct</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">path1</span> <span class="o">==</span> <span class="n">true_path1</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">path2</span> <span class="o">==</span> <span class="n">true_path2</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">acc_swapped</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">path1</span> <span class="o">==</span> <span class="n">true_path2</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">path2</span> <span class="o">==</span> <span class="n">true_path1</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Accuracy (direct):  </span><span class="si">{</span><span class="n">acc_direct</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Accuracy (swapped): </span><span class="si">{</span><span class="n">acc_swapped</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best accuracy:      </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">acc_direct</span><span class="p">,</span><span class="w"> </span><span class="n">acc_swapped</span><span class="p">)</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-8-the-phase-ambiguity">
+<h2>Step 8: The Phase Ambiguity<a class="headerlink" href="#step-8-the-phase-ambiguity" title="Link to this heading"></a></h2>
+<p>An important subtlety: the diploid model treats the state <span class="math notranslate nohighlight">\((j_1, j_2)\)</span>
+and <span class="math notranslate nohighlight">\((j_2, j_1)\)</span> as <strong>different</strong> states, even though the observed genotype
+is the same. This means the model implicitly performs <strong>phasing</strong> – it infers
+which allele is on which chromosome.</p>
+<p>However, the genotype <span class="math notranslate nohighlight">\(g = h_1 + h_2\)</span> is symmetric: swapping the two
+chromosomes gives the same observation. So the posterior has a symmetry:</p>
+<div class="math notranslate nohighlight">
+\[P((j_1, j_2) \mid \text{data}) = P((j_2, j_1) \mid \text{data})\]</div>
+<p>when the data is unphased genotypes. The Viterbi algorithm breaks this
+symmetry by choosing one orientation arbitrarily.</p>
+<div class="admonition-probability-aside-phase-symmetry-and-identifiability admonition">
+<p class="admonition-title">Probability Aside: Phase Symmetry and Identifiability</p>
+<p>The phase symmetry means that the diploid LS model with unphased genotype
+data has a <strong>non-identifiability</strong>: states <span class="math notranslate nohighlight">\((j_1, j_2)\)</span> and
+<span class="math notranslate nohighlight">\((j_2, j_1)\)</span> are observationally equivalent. The Viterbi algorithm
+picks one arbitrarily, but the forward-backward algorithm reveals the
+symmetry: the posteriors for <span class="math notranslate nohighlight">\((j_1, j_2)\)</span> and <span class="math notranslate nohighlight">\((j_2, j_1)\)</span>
+will be equal.</p>
+<p>This non-identifiability is not a bug – it reflects the genuine biological
+ambiguity of unphased genotype data. Resolving it requires additional
+information, such as:</p>
+<ul class="simple">
+<li><p><strong>Read-backed phasing</strong>: long sequencing reads that span multiple
+heterozygous sites can link alleles on the same chromosome.</p></li>
+<li><p><strong>Family data</strong>: parent-offspring trios allow Mendelian transmission to
+resolve phase.</p></li>
+<li><p><strong>Population-based phasing</strong> (e.g., SHAPEIT, Eagle): iterative
+algorithms that use the LS model on many individuals simultaneously,
+leveraging the fact that most haplotypes in the population are shared.</p></li>
+</ul>
+<p>In these more advanced settings, the LS model is applied iteratively:
+the current phase estimate is used to update the reference panel, which
+is then used to re-phase the query, and so on until convergence.</p>
+</div>
+<p>In practice, if you care about phasing (resolving which allele is on which
+chromosome), you need additional information – such as read-backed phasing,
+family data, or population-based phasing algorithms that use the LS model
+iteratively.</p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 35.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Haploid</p></th>
+<th class="head"><p>Diploid</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>State space</p></td>
+<td><p><span class="math notranslate nohighlight">\(n\)</span> states</p></td>
+<td><p><span class="math notranslate nohighlight">\(n^2\)</span> states</p></td>
+</tr>
+<tr class="row-odd"><td><p>Transition</p></td>
+<td><p>Stay <span class="math notranslate nohighlight">\((1-r) + r/n\)</span></p></td>
+<td><p>No switch / single / double</p></td>
+</tr>
+<tr class="row-even"><td><p>Emission</p></td>
+<td><p>Match <span class="math notranslate nohighlight">\(1-\mu\)</span> / mismatch <span class="math notranslate nohighlight">\(\mu\)</span></p></td>
+<td><p>5 genotype categories</p></td>
+</tr>
+<tr class="row-odd"><td><p>Forward complexity</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn^2)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Viterbi complexity</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn^2)\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>The diploid model is more expensive (<span class="math notranslate nohighlight">\(n^2\)</span> vs <span class="math notranslate nohighlight">\(n\)</span> states), but the
+<span class="math notranslate nohighlight">\(O(n^2)\)</span> trick (precomputing row/column sums and maxima) keeps the cost
+manageable. For <span class="math notranslate nohighlight">\(n = 100\)</span> and <span class="math notranslate nohighlight">\(m = 10^6\)</span>, the diploid forward
+algorithm requires about <span class="math notranslate nohighlight">\(10^{10}\)</span> operations – feasible on modern
+hardware.</p>
+<p>You’ve now built a complete Li &amp; Stephens HMM from scratch – haploid and
+diploid, forward-backward and Viterbi. Every gear is exposed, every equation
+derived, every algorithm implemented and tested. Like a watchmaker who has
+assembled a grand complication from individual components, you own this
+mechanism completely – from the template mechanism of the copying model, through
+the gear train of the haploid algorithms, to the paired movements of the
+diploid extension.</p>
+<p>This versatile gear appears in many movements across computational genetics.
+The next time you encounter a tool built on the Li &amp; Stephens model – whether
+it is an imputation engine, a phasing algorithm, an ancestry painter, or an
+ARG inference method – you will recognize the familiar ticking of the
+mechanism you have built here, and you will know exactly how it works.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="haploid_algorithms.html" class="btn btn-neutral float-left" title="Haploid LS HMM Algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../msprime/index.html" class="btn btn-neutral float-right" title="Timepiece III: msprime" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

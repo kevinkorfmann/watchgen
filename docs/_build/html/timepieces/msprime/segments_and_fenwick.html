@@ -1,0 +1,1279 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Segments &amp; the Fenwick Tree &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Hudson’s Algorithm" href="hudson_algorithm.html" />
+    <link rel="prev" title="The Coalescent Process" href="coalescent.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece III: msprime</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece III: msprime</a></li>
+      <li class="breadcrumb-item active">Segments &amp; the Fenwick Tree</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="coalescent.html" class="btn btn-neutral float-left" title="The Coalescent Process" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hudson_algorithm.html" class="btn btn-neutral float-right" title="Hudson’s Algorithm" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="segments-the-fenwick-tree">
+<span id="segments-fenwick"></span><h1>Segments &amp; the Fenwick Tree<a class="headerlink" href="#segments-the-fenwick-tree" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The gear train: the data structures that turn coalescent math into an
+efficient algorithm.</em></p>
+</div></blockquote>
+<p>In the previous chapter (<a class="reference internal" href="coalescent.html#coalescent-process"><span class="std std-ref">The Coalescent Process</span></a>), we derived all the rates
+and distributions that govern the coalescent with recombination. We even wrote
+a simple simulator. But that simulator was slow: it recomputed the total
+segment length from scratch at every step, iterating over all segments to sum
+their lengths every time we needed a rate. That is <span class="math notranslate nohighlight">\(O(n)\)</span> per event.
+With millions of events, this is too slow.</p>
+<p>This chapter introduces the two data structures that transform the coalescent
+from a mathematical specification into an efficient algorithm. Think of them
+as the gear train of the master clockmaker’s bench – the mechanical linkage
+that translates the escapement’s regular beats (the coalescent math) into
+the smooth motion of the hands (the simulation output).</p>
+<p>msprime solves the performance problem with two data structures:</p>
+<ol class="arabic simple">
+<li><p><strong>Segment chains</strong> – doubly-linked lists representing the ancestral material
+of each lineage, enabling <span class="math notranslate nohighlight">\(O(1)\)</span> splits and merges. These are the
+linked-list track that follows each lineage’s ancestral material along the
+genome.</p></li>
+<li><p><strong>Fenwick trees</strong> – cumulative frequency trees that maintain the total
+recombination mass across all segments, enabling <span class="math notranslate nohighlight">\(O(\log n)\)</span> rate
+queries and updates. The Fenwick tree is a clever indexing mechanism for
+fast event scheduling.</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Prerequisites.</strong> This chapter builds directly on <a class="reference internal" href="coalescent.html#coalescent-process"><span class="std std-ref">The Coalescent Process</span></a>,
+where we defined segments, lineages, recombination mass, and the event
+rates. If you need a refresher on what “recombination mass” means or why
+the total mass determines the recombination rate, revisit Steps 4-5 of
+that chapter.</p>
+</div>
+<section id="step-1-the-segment">
+<h2>Step 1: The Segment<a class="headerlink" href="#step-1-the-segment" title="Link to this heading"></a></h2>
+<p>A <strong>segment</strong> represents a contiguous stretch of ancestral genome carried by a
+lineage. It has four essential fields:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">left</span></code>: the start position on the genome (inclusive)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">right</span></code>: the end position on the genome (exclusive)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">node</span></code>: the tree-sequence node ID where this ancestry was born</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">next</span></code> / <code class="docutils literal notranslate"><span class="pre">prev</span></code>: pointers to adjacent segments in the chain</p></li>
+</ul>
+<div class="admonition-closing-a-confusion-gap-what-is-a-segment-concretely admonition">
+<p class="admonition-title">Closing a confusion gap – What is a segment, concretely?</p>
+<p>A segment is a small data object that says: “This lineage carries
+ancestral material for the genomic interval <code class="docutils literal notranslate"><span class="pre">[left,</span> <span class="pre">right)</span></code>.” At the
+start of the simulation, each of the <span class="math notranslate nohighlight">\(n\)</span> sample lineages has
+exactly one segment covering the full genome <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">L)</span></code>. As
+recombination events split lineages, segments get shorter and lineages
+accumulate multiple segments separated by gaps. As coalescence events
+merge lineages, overlapping segments are combined, and edges are recorded
+in the tree sequence. The segment is the fundamental unit of bookkeeping
+in msprime.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">dataclasses</span>
+
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="nc">Segment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A contiguous stretch of ancestral genome.</span>
+
+<span class="sd">    The segment covers the half-open interval [left, right) on the genome.</span>
+<span class="sd">    Segments are linked into doubly-linked lists via prev/next pointers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>          <span class="c1"># unique ID (position in the segment pool)</span>
+    <span class="n">left</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>     <span class="c1"># start position (inclusive)</span>
+    <span class="n">right</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>    <span class="c1"># end position (exclusive)</span>
+    <span class="n">node</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>      <span class="c1"># tree-sequence node ID</span>
+    <span class="n">prev</span><span class="p">:</span> <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># previous segment in the chain (toward left end of genome)</span>
+    <span class="nb">next</span><span class="p">:</span> <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># next segment in the chain (toward right end of genome)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Genomic span of this segment in base pairs.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Seg(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">: [</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="si">}</span><span class="s2">), node=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">show_chain</span><span class="p">(</span><span class="n">seg</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print the entire chain starting from seg.&quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">seg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">left</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">right</span><span class="si">}</span><span class="s2">: node </span><span class="si">{</span><span class="n">seg</span><span class="o">.</span><span class="n">node</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+            <span class="n">seg</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span>
+        <span class="k">return</span> <span class="s2">&quot; -&gt; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+
+<span class="c1"># Example: a lineage carrying two non-contiguous segments</span>
+<span class="c1"># This happens after a coalescence event removed the middle portion.</span>
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">s1</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">s2</span>    <span class="c1"># wire s1&#39;s &quot;next&quot; pointer to s2</span>
+<span class="n">s2</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">s1</span>    <span class="c1"># wire s2&#39;s &quot;prev&quot; pointer back to s1</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Segment chain:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">Segment</span><span class="o">.</span><span class="n">show_chain</span><span class="p">(</span><span class="n">s1</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Total ancestry: </span><span class="si">{</span><span class="n">s1</span><span class="o">.</span><span class="n">length</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s2</span><span class="o">.</span><span class="n">length</span><span class="si">}</span><span class="s2"> bp out of 1000 bp&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="why-linked-lists">
+<h3>Why Linked Lists?<a class="headerlink" href="#why-linked-lists" title="Link to this heading"></a></h3>
+<p>Why not arrays? Because the two most frequent operations are:</p>
+<ol class="arabic simple">
+<li><p><strong>Split</strong> (recombination): break a segment at position <span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><strong>Merge</strong> (coalescence): combine two segment chains into one</p></li>
+</ol>
+<p>Both are <span class="math notranslate nohighlight">\(O(1)\)</span> with linked lists (just rewire pointers) but
+<span class="math notranslate nohighlight">\(O(n)\)</span> with arrays (shifting elements).</p>
+<p>In the watch metaphor, segments are the linked-list track that follows each
+lineage’s ancestral material. Like the links of a fine watch bracelet, each
+segment connects to the next, and you can open any link to insert or remove a
+piece without disturbing the rest of the chain.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">split_segment</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="nb">breakpoint</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split segment at breakpoint, returning (left_part, right_part).</span>
+
+<span class="sd">    Before:  seg = [left, .... bp .... right)</span>
+
+<span class="sd">    After:   seg = [left, bp)   alpha = [bp, right)</span>
+
+<span class="sd">    This is O(1): we just create a new segment and rewire pointers.</span>
+<span class="sd">    No array copying or shifting is needed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span>
+        <span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># will be assigned by the pool</span>
+        <span class="n">left</span><span class="o">=</span><span class="nb">breakpoint</span><span class="p">,</span>
+        <span class="n">right</span><span class="o">=</span><span class="n">seg</span><span class="o">.</span><span class="n">right</span><span class="p">,</span>
+        <span class="n">node</span><span class="o">=</span><span class="n">seg</span><span class="o">.</span><span class="n">node</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Wire up the linked list: alpha inherits seg&#39;s successor</span>
+    <span class="n">alpha</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span>
+    <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">next</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">alpha</span>
+    <span class="n">alpha</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># alpha is the head of the right chain</span>
+
+    <span class="c1"># Trim seg to end at the breakpoint</span>
+    <span class="n">seg</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="nb">breakpoint</span>
+    <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># seg is now the tail of the left chain</span>
+
+    <span class="k">return</span> <span class="n">seg</span><span class="p">,</span> <span class="n">alpha</span>
+
+<span class="c1"># Example</span>
+<span class="n">seg</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mi">900</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">split_segment</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Before split: [</span><span class="si">{</span><span class="mi">100</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="mi">900</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Left:  [</span><span class="si">{</span><span class="n">left</span><span class="o">.</span><span class="n">left</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">left</span><span class="o">.</span><span class="n">right</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Right: [</span><span class="si">{</span><span class="n">right</span><span class="o">.</span><span class="n">left</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">right</span><span class="o">.</span><span class="n">right</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With the Segment defined, let us wrap it in a higher-level abstraction: the
+Lineage.</p>
+</section>
+</section>
+<section id="step-2-the-lineage">
+<h2>Step 2: The Lineage<a class="headerlink" href="#step-2-the-lineage" title="Link to this heading"></a></h2>
+<p>A <strong>lineage</strong> wraps a segment chain and adds metadata:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="nc">Lineage</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single haploid genome in the simulation.</span>
+
+<span class="sd">    The ancestry is stored as a linked list of Segments,</span>
+<span class="sd">    accessed via head and tail pointers. The head points to the</span>
+<span class="sd">    leftmost segment, the tail to the rightmost.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">head</span><span class="p">:</span> <span class="n">Segment</span>       <span class="c1"># first segment in the chain (leftmost on genome)</span>
+    <span class="n">tail</span><span class="p">:</span> <span class="n">Segment</span>       <span class="c1"># last segment in the chain (rightmost on genome)</span>
+    <span class="n">population</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># which population this lineage resides in</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>      <span class="c1"># sub-label (used for selective sweeps)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">total_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total ancestral material carried by this lineage.</span>
+
+<span class="sd">        Walk the chain and sum each segment&#39;s length. This is O(s)</span>
+<span class="sd">        where s is the number of segments -- but we rarely call this</span>
+<span class="sd">        because the Fenwick tree maintains the running total.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">seg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span>
+        <span class="k">while</span> <span class="n">seg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">length</span> <span class="o">+=</span> <span class="n">seg</span><span class="o">.</span><span class="n">length</span>
+            <span class="n">seg</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span>
+        <span class="k">return</span> <span class="n">length</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Lineage(pop=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;chain=</span><span class="si">{</span><span class="n">Segment</span><span class="o">.</span><span class="n">show_chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example: lineage with two segments</span>
+<span class="n">s1</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">Segment</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">s1</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">s2</span>
+<span class="n">s2</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">s1</span>
+<span class="n">lin</span> <span class="o">=</span> <span class="n">Lineage</span><span class="p">(</span><span class="n">head</span><span class="o">=</span><span class="n">s1</span><span class="p">,</span> <span class="n">tail</span><span class="o">=</span><span class="n">s2</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total ancestry: </span><span class="si">{</span><span class="n">lin</span><span class="o">.</span><span class="n">total_length</span><span class="si">}</span><span class="s2"> bp&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we arrive at the key innovation that makes msprime fast.</p>
+</section>
+<section id="step-3-the-fenwick-tree">
+<h2>Step 3: The Fenwick Tree<a class="headerlink" href="#step-3-the-fenwick-tree" title="Link to this heading"></a></h2>
+<p>This is the key data structure that makes msprime fast. The Fenwick tree
+(also called a Binary Indexed Tree or BIT) maintains a collection of values
+and supports two operations in <span class="math notranslate nohighlight">\(O(\log n)\)</span> time:</p>
+<ol class="arabic simple">
+<li><p><strong>Update</strong>: change the value at an index</p></li>
+<li><p><strong>Prefix sum</strong>: compute the sum of values from index 1 to <span class="math notranslate nohighlight">\(k\)</span></p></li>
+</ol>
+<p>From these, we can also:</p>
+<ol class="arabic simple" start="3">
+<li><p><strong>Total sum</strong>: prefix sum up to the maximum index</p></li>
+<li><p><strong>Find</strong>: given a target sum <span class="math notranslate nohighlight">\(v\)</span>, find the smallest index whose
+prefix sum <span class="math notranslate nohighlight">\(\geq v\)</span></p></li>
+</ol>
+<div class="admonition-closing-a-confusion-gap-why-do-we-need-a-fenwick-tree admonition">
+<p class="admonition-title">Closing a confusion gap – Why do we need a Fenwick tree?</p>
+<p>The simulation needs to answer two questions very frequently:</p>
+<ol class="arabic simple">
+<li><p><strong>“What is the total recombination rate?”</strong> – This is the sum of
+recombination masses over all segments. It determines the rate
+parameter for the exponential waiting time.</p></li>
+<li><p><strong>“Which segment should the next recombination hit?”</strong> – Given a
+random number, we need to find the segment whose cumulative mass
+contains that number (weighted random selection).</p></li>
+</ol>
+<p>A naive approach answers question 1 in <span class="math notranslate nohighlight">\(O(n)\)</span> by summing all
+masses, and question 2 in <span class="math notranslate nohighlight">\(O(n)\)</span> by scanning through segments.
+The Fenwick tree answers both in <span class="math notranslate nohighlight">\(O(\log n)\)</span>. With millions of
+events, this is the difference between seconds and hours.</p>
+</div>
+<p>Let’s build it from scratch.</p>
+<section id="the-key-insight">
+<h3>The Key Insight<a class="headerlink" href="#the-key-insight" title="Link to this heading"></a></h3>
+<p>The Fenwick tree uses the <strong>binary representation</strong> of indices to organize
+partial sums. Each position <span class="math notranslate nohighlight">\(i\)</span> stores the sum of a specific range of
+values, where the range is determined by the lowest set bit of <span class="math notranslate nohighlight">\(i\)</span>.</p>
+<p>The lowest set bit of <span class="math notranslate nohighlight">\(i\)</span> is <span class="math notranslate nohighlight">\(i \mathbin{\&amp;} (-i)\)</span> (using two’s complement).</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(i = 1 = \texttt{0001}\)</span>: lowest bit = 1, stores value at index 1</p></li>
+<li><p><span class="math notranslate nohighlight">\(i = 2 = \texttt{0010}\)</span>: lowest bit = 2, stores sum of indices 1-2</p></li>
+<li><p><span class="math notranslate nohighlight">\(i = 3 = \texttt{0011}\)</span>: lowest bit = 1, stores value at index 3</p></li>
+<li><p><span class="math notranslate nohighlight">\(i = 4 = \texttt{0100}\)</span>: lowest bit = 4, stores sum of indices 1-4</p></li>
+<li><p><span class="math notranslate nohighlight">\(i = 5 = \texttt{0101}\)</span>: lowest bit = 1, stores value at index 5</p></li>
+<li><p><span class="math notranslate nohighlight">\(i = 6 = \texttt{0110}\)</span>: lowest bit = 2, stores sum of indices 5-6</p></li>
+<li><p><span class="math notranslate nohighlight">\(i = 7 = \texttt{0111}\)</span>: lowest bit = 1, stores value at index 7</p></li>
+<li><p><span class="math notranslate nohighlight">\(i = 8 = \texttt{1000}\)</span>: lowest bit = 8, stores sum of indices 1-8</p></li>
+</ul>
+<div class="admonition-closing-a-confusion-gap-the-i-i-trick admonition">
+<p class="admonition-title">Closing a confusion gap – The <code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">&amp;</span> <span class="pre">-i</span></code> trick</p>
+<p>In two’s complement representation, <code class="docutils literal notranslate"><span class="pre">-i</span></code> flips all bits of <code class="docutils literal notranslate"><span class="pre">i</span></code> and
+adds 1. The bitwise AND of <code class="docutils literal notranslate"><span class="pre">i</span></code> and <code class="docutils literal notranslate"><span class="pre">-i</span></code> isolates the lowest set bit.
+For example: <code class="docutils literal notranslate"><span class="pre">6</span> <span class="pre">=</span> <span class="pre">0110</span></code>, <code class="docutils literal notranslate"><span class="pre">-6</span> <span class="pre">=</span> <span class="pre">1010</span></code> (in 4-bit two’s complement),
+<code class="docutils literal notranslate"><span class="pre">6</span> <span class="pre">&amp;</span> <span class="pre">-6</span> <span class="pre">=</span> <span class="pre">0010</span> <span class="pre">=</span> <span class="pre">2</span></code>. This single expression tells us the “responsibility
+range” of each position in the Fenwick tree. It is the fundamental building
+block of all Fenwick tree operations: to move <em>up</em> (toward larger ranges),
+we add <code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">&amp;</span> <span class="pre">-i</span></code>; to move <em>down</em> (toward smaller ranges), we subtract it.</p>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Index:    1    2    3    4    5    6    7    8
+Values:  [3]  [1]  [4]  [1]  [5]  [9]  [2]  [6]
+
+Tree:    [3] [3+1] [4] [3+1+4+1] [5] [5+9] [2] [3+1+4+1+5+9+2+6]
+       = [3]  [4]  [4]    [9]    [5]  [14] [2]       [31]
+
+To get prefix_sum(6): start at 6 = 0110
+  tree[6] = 14       (sum of 5-6)
+  6 - (6 &amp; -6) = 6 - 2 = 4
+  tree[4] = 9        (sum of 1-4)
+  4 - (4 &amp; -4) = 4 - 4 = 0  -&gt; stop
+  Result: 14 + 9 = 23  (3+1+4+1+5+9 = 23)
+</pre></div>
+</div>
+</section>
+<section id="the-implementation">
+<h3>The Implementation<a class="headerlink" href="#the-implementation" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FenwickTree</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A Fenwick Tree for cumulative frequency tables.</span>
+
+<span class="sd">    Supports O(log n) updates, prefix sums, and searches.</span>
+<span class="sd">    Indices are 1-based (index 0 is unused).</span>
+
+<span class="sd">    In msprime, this tree stores the recombination mass of each segment.</span>
+<span class="sd">    It is the clever indexing mechanism for fast event scheduling:</span>
+<span class="sd">    it lets the simulator quickly answer &quot;what is the total recombination</span>
+<span class="sd">    rate?&quot; and &quot;which segment should be hit next?&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_index</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">max_index</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_index</span> <span class="o">=</span> <span class="n">max_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tree</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>   <span class="c1"># partial sums (the Fenwick structure)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>   <span class="c1"># actual values at each index</span>
+
+        <span class="c1"># Precompute the largest power of 2 &lt;= max_index</span>
+        <span class="c1"># (used by the find() method for efficient top-down search)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">max_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_max</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">u</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_max</span> <span class="o">=</span> <span class="n">u</span>
+            <span class="n">u</span> <span class="o">-=</span> <span class="n">u</span> <span class="o">&amp;</span> <span class="o">-</span><span class="n">u</span>  <span class="c1"># strip lowest set bit</span>
+
+    <span class="k">def</span> <span class="nf">increment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add delta to the value at index. O(log n).</span>
+
+<span class="sd">        This propagates the change upward through the tree:</span>
+<span class="sd">        every ancestor node that includes this index in its range</span>
+<span class="sd">        is also incremented.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">index</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">delta</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="k">while</span> <span class="n">j</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_index</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">delta</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="n">j</span> <span class="o">&amp;</span> <span class="o">-</span><span class="n">j</span>  <span class="c1"># move to parent (next larger range)</span>
+
+    <span class="k">def</span> <span class="nf">set_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">new_value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the value at index. O(log n).</span>
+
+<span class="sd">        Computes the delta from the old value and calls increment.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">old_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">increment</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">new_value</span> <span class="o">-</span> <span class="n">old_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the value at index. O(1).</span>
+
+<span class="sd">        The actual value is stored separately from the tree structure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get_cumulative_sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the sum of values from 1 to index. O(log n).</span>
+
+<span class="sd">        Walks downward through the tree, accumulating partial sums.</span>
+<span class="sd">        At each step, we strip the lowest set bit to move to the</span>
+<span class="sd">        next non-overlapping range.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">index</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_index</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="k">while</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">j</span> <span class="o">-=</span> <span class="n">j</span> <span class="o">&amp;</span> <span class="o">-</span><span class="n">j</span>  <span class="c1"># strip lowest set bit (move to next range)</span>
+        <span class="k">return</span> <span class="n">s</span>
+
+    <span class="k">def</span> <span class="nf">get_total</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the sum of all values. O(log n).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cumulative_sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_index</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find smallest index with cumulative sum &gt;= target. O(log n).</span>
+
+<span class="sd">        This is the inverse of get_cumulative_sum: given a target sum,</span>
+<span class="sd">        find which index it falls in. This is used to select a random</span>
+<span class="sd">        segment weighted by recombination mass.</span>
+
+<span class="sd">        The algorithm performs a top-down binary search through the</span>
+<span class="sd">        Fenwick tree, halving the search range at each step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">remaining</span> <span class="o">=</span> <span class="n">target</span>
+        <span class="n">half</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_max</span>
+
+        <span class="k">while</span> <span class="n">half</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Skip indices beyond max_index</span>
+            <span class="k">while</span> <span class="n">j</span> <span class="o">+</span> <span class="n">half</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_index</span><span class="p">:</span>
+                <span class="n">half</span> <span class="o">&gt;&gt;=</span> <span class="mi">1</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="n">half</span>
+            <span class="k">if</span> <span class="n">remaining</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
+                <span class="c1"># Target is beyond this subtree: skip it</span>
+                <span class="n">j</span> <span class="o">=</span> <span class="n">k</span>
+                <span class="n">remaining</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">half</span> <span class="o">&gt;&gt;=</span> <span class="mi">1</span>  <span class="c1"># halve the search range</span>
+
+        <span class="k">return</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="c1"># Demonstration</span>
+<span class="n">ft</span> <span class="o">=</span> <span class="n">FenwickTree</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+    <span class="n">ft</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>  <span class="c1"># Fenwick tree is 1-indexed</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Values:&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ft</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Prefix sums:&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ft</span><span class="o">.</span><span class="n">get_cumulative_sum</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total:&quot;</span><span class="p">,</span> <span class="n">ft</span><span class="o">.</span><span class="n">get_total</span><span class="p">())</span>
+
+<span class="c1"># Find: which index does cumulative sum 15 fall in?</span>
+<span class="n">idx</span> <span class="o">=</span> <span class="n">ft</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">find(15) = </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  cumsum(</span><span class="si">{</span><span class="n">idx</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2">) = </span><span class="si">{</span><span class="n">ft</span><span class="o">.</span><span class="n">get_cumulative_sum</span><span class="p">(</span><span class="n">idx</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">idx</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  cumsum(</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">) = </span><span class="si">{</span><span class="n">ft</span><span class="o">.</span><span class="n">get_cumulative_sum</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  (15 falls in index </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now let us see how the <code class="docutils literal notranslate"><span class="pre">find()</span></code> method powers the simulation.</p>
+</section>
+<section id="why-the-find-method-matters">
+<h3>Why the <code class="docutils literal notranslate"><span class="pre">find()</span></code> Method Matters<a class="headerlink" href="#why-the-find-method-matters" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">find()</span></code> method is the heart of msprime’s breakpoint selection. Here’s
+how it works in the context of the simulation:</p>
+<ol class="arabic simple">
+<li><p>Each segment <span class="math notranslate nohighlight">\(i\)</span> has a recombination “mass” <span class="math notranslate nohighlight">\(m_i\)</span> stored in the
+Fenwick tree at index <span class="math notranslate nohighlight">\(i\)</span>.</p></li>
+<li><p>To choose a random breakpoint, we draw
+<span class="math notranslate nohighlight">\(U \sim \text{Uniform}(0, M_{\text{total}})\)</span> where
+<span class="math notranslate nohighlight">\(M_{\text{total}}\)</span> is the total mass.</p></li>
+<li><p>We call <code class="docutils literal notranslate"><span class="pre">find(U)</span></code> to find which segment <span class="math notranslate nohighlight">\(i\)</span> the random mass falls
+in. This segment will experience the recombination.</p></li>
+<li><p>Within that segment, we compute the exact breakpoint position using the
+rate map.</p></li>
+</ol>
+<p>This gives us a <strong>weighted random selection</strong> of segments in <span class="math notranslate nohighlight">\(O(\log n)\)</span>
+time. Without the Fenwick tree, we’d need <span class="math notranslate nohighlight">\(O(n)\)</span> to iterate over all
+segments.</p>
+<div class="admonition-probability-aside-weighted-random-selection-via-inverse-cdf admonition">
+<p class="admonition-title">Probability Aside – Weighted random selection via inverse CDF</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">find()</span></code> operation is an instance of the <strong>inverse CDF method</strong>.
+If we have weights <span class="math notranslate nohighlight">\(m_1, m_2, \ldots, m_n\)</span> with total
+<span class="math notranslate nohighlight">\(M = \sum m_i\)</span>, then drawing <span class="math notranslate nohighlight">\(U \sim \text{Uniform}(0, M)\)</span> and
+finding the smallest <span class="math notranslate nohighlight">\(k\)</span> such that <span class="math notranslate nohighlight">\(\sum_{i=1}^k m_i \geq U\)</span>
+selects index <span class="math notranslate nohighlight">\(k\)</span> with probability <span class="math notranslate nohighlight">\(m_k / M\)</span>. The Fenwick tree
+makes this <span class="math notranslate nohighlight">\(O(\log n)\)</span> instead of <span class="math notranslate nohighlight">\(O(n)\)</span> by organizing the
+partial sums hierarchically.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">choose_random_segment</span><span class="p">(</span><span class="n">fenwick_tree</span><span class="p">,</span> <span class="n">segments</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Choose a random segment weighted by recombination mass.</span>
+
+<span class="sd">    This is the core selection operation used every time a</span>
+<span class="sd">    recombination event occurs in the simulation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fenwick_tree : FenwickTree</span>
+<span class="sd">        Stores recombination mass for each segment.</span>
+<span class="sd">    segments : dict of {index: Segment}</span>
+<span class="sd">        All active segments.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    segment : Segment</span>
+<span class="sd">        The chosen segment.</span>
+<span class="sd">    mass_within : float</span>
+<span class="sd">        How far into this segment&#39;s mass the random point fell.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">total_mass</span> <span class="o">=</span> <span class="n">fenwick_tree</span><span class="o">.</span><span class="n">get_total</span><span class="p">()</span>
+    <span class="n">random_mass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total_mass</span><span class="p">)</span>
+
+    <span class="c1"># Find which segment contains this mass -- O(log n)</span>
+    <span class="n">seg_index</span> <span class="o">=</span> <span class="n">fenwick_tree</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">random_mass</span><span class="p">)</span>
+    <span class="n">segment</span> <span class="o">=</span> <span class="n">segments</span><span class="p">[</span><span class="n">seg_index</span><span class="p">]</span>
+
+    <span class="c1"># How far into this segment?</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">fenwick_tree</span><span class="o">.</span><span class="n">get_cumulative_sum</span><span class="p">(</span><span class="n">seg_index</span><span class="p">)</span>
+    <span class="n">mass_within_segment</span> <span class="o">=</span> <span class="n">fenwick_tree</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">seg_index</span><span class="p">)</span>
+    <span class="n">mass_from_right</span> <span class="o">=</span> <span class="n">cumsum</span> <span class="o">-</span> <span class="n">random_mass</span>
+
+    <span class="k">return</span> <span class="n">segment</span><span class="p">,</span> <span class="n">mass_from_right</span>
+
+<span class="c1"># Example: 5 segments with different masses</span>
+<span class="n">ft</span> <span class="o">=</span> <span class="n">FenwickTree</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">masses</span> <span class="o">=</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">25.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">15.0</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">masses</span><span class="p">):</span>
+    <span class="n">ft</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+
+<span class="c1"># Sample 10000 segments -- verify proportional selection</span>
+<span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">ft</span><span class="o">.</span><span class="n">get_total</span><span class="p">()</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">ft</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">counts</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sampling frequencies vs expected:&quot;</span><span class="p">)</span>
+<span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">masses</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Segment </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: observed=</span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;expected=</span><span class="si">{</span><span class="n">masses</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="n">total</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The Fenwick tree handles the “which segment?” question. But we also need to
+convert the random mass into a genomic position, which requires the rate map.</p>
+</section>
+</section>
+<section id="step-4-the-rate-map">
+<h2>Step 4: The Rate Map<a class="headerlink" href="#step-4-the-rate-map" title="Link to this heading"></a></h2>
+<p>The recombination rate is not uniform across the genome. Humans, for example,
+have recombination hotspots where the rate can be 100x higher than the
+background. msprime handles this through <strong>rate maps</strong>.</p>
+<p>A rate map is a piecewise-constant function <span class="math notranslate nohighlight">\(r(x)\)</span> defined by breakpoints
+and rates:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Position:  0      1000     2000     5000     10000
+Rate:        1e-8     5e-8     1e-8      2e-8
+</pre></div>
+</div>
+<p>The <strong>mass</strong> of a genomic interval <span class="math notranslate nohighlight">\([a, b)\)</span> is the integral of the rate:</p>
+<div class="math notranslate nohighlight">
+\[m(a, b) = \int_a^b r(x) \, dx\]</div>
+<p>For a piecewise-constant rate, this is just the sum of rate times length for
+each piece.</p>
+<div class="admonition-calculus-aside-piecewise-integration admonition">
+<p class="admonition-title">Calculus Aside – Piecewise integration</p>
+<p>For a piecewise-constant function <span class="math notranslate nohighlight">\(r(x) = r_i\)</span> on
+<span class="math notranslate nohighlight">\([p_i, p_{i+1})\)</span>, the integral over <span class="math notranslate nohighlight">\([a, b)\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[\int_a^b r(x)\,dx = \sum_{i} r_i \cdot \max(0, \min(b, p_{i+1}) - \max(a, p_i))\]</div>
+<p>Each term contributes only for the part of <span class="math notranslate nohighlight">\([p_i, p_{i+1})\)</span> that
+overlaps with <span class="math notranslate nohighlight">\([a, b)\)</span>. In the implementation below, we precompute
+cumulative masses at each breakpoint so that <code class="docutils literal notranslate"><span class="pre">mass_between(a,</span> <span class="pre">b)</span></code> can
+be answered in <span class="math notranslate nohighlight">\(O(\log m)\)</span> time (where <span class="math notranslate nohighlight">\(m\)</span> is the number of
+rate intervals) using binary search.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RateMap</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A piecewise-constant rate function over the genome.</span>
+
+<span class="sd">    The rate in interval [positions[i], positions[i+1]) is rates[i].</span>
+<span class="sd">    This class handles both recombination and mutation rate maps.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">rates</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        positions : list of float</span>
+<span class="sd">            Breakpoints (including 0 and L).</span>
+<span class="sd">        rates : list of float</span>
+<span class="sd">            Rate in each interval (len = len(positions) - 1).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">rates</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rates</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="c1"># Precompute cumulative mass at each breakpoint</span>
+        <span class="c1"># cumulative[i] = integral of r(x) from position[0] to position[i]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumulative</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">positions</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rates</span><span class="p">)):</span>
+            <span class="n">span</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">positions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cumulative</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumulative</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">rates</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">span</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">total_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumulative</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">mass_between</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the recombination mass of interval [left, right).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_to_mass</span><span class="p">(</span><span class="n">right</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_to_mass</span><span class="p">(</span><span class="n">left</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">position_to_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a genomic position to cumulative mass.</span>
+
+<span class="sd">        This is the forward mapping: position -&gt; mass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Find which interval pos falls in</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rates</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># Mass up to the start of this interval + mass within</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumulative</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rates</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">pos</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
+
+    <span class="k">def</span> <span class="nf">mass_to_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a cumulative mass back to genomic position (inverse).</span>
+
+<span class="sd">        This is the inverse mapping: mass -&gt; position.</span>
+<span class="sd">        Used to convert a random mass coordinate into a breakpoint.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumulative</span><span class="p">,</span> <span class="n">mass</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rates</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># Position at start of interval + offset</span>
+        <span class="n">remaining_mass</span> <span class="o">=</span> <span class="n">mass</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumulative</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rates</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">remaining_mass</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">rates</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+<span class="c1"># Example: genome with a recombination hotspot</span>
+<span class="n">rate_map</span> <span class="o">=</span> <span class="n">RateMap</span><span class="p">(</span>
+    <span class="n">positions</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">6000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">],</span>
+    <span class="n">rates</span><span class="o">=</span><span class="p">[</span><span class="mf">1e-8</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">]</span>  <span class="c1"># 100x hotspot in [5000, 6000)</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total mass: </span><span class="si">{</span><span class="n">rate_map</span><span class="o">.</span><span class="n">total_mass</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mass [0, 5000): </span><span class="si">{</span><span class="n">rate_map</span><span class="o">.</span><span class="n">mass_between</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">5000</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mass [5000, 6000): </span><span class="si">{</span><span class="n">rate_map</span><span class="o">.</span><span class="n">mass_between</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span><span class="w"> </span><span class="mi">6000</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mass [6000, 10000): </span><span class="si">{</span><span class="n">rate_map</span><span class="o">.</span><span class="n">mass_between</span><span class="p">(</span><span class="mi">6000</span><span class="p">,</span><span class="w"> </span><span class="mi">10000</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The 1kb hotspot has </span><span class="si">{</span><span class="n">rate_map</span><span class="o">.</span><span class="n">mass_between</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span><span class="w"> </span><span class="mi">6000</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">rate_map</span><span class="o">.</span><span class="n">total_mass</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">% &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;of total recombination mass&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="why-mass-not-position">
+<h3>Why Mass, Not Position?<a class="headerlink" href="#why-mass-not-position" title="Link to this heading"></a></h3>
+<p>The Fenwick tree stores <strong>mass</strong> (rate-weighted length), not raw genomic
+length. This is crucial: when we draw a random breakpoint, we want it
+proportional to the local rate. By storing mass in the Fenwick tree, the
+<code class="docutils literal notranslate"><span class="pre">find()</span></code> method automatically gives us rate-weighted selection.</p>
+<p>The conversion from mass back to position is handled by
+<code class="docutils literal notranslate"><span class="pre">RateMap.mass_to_position()</span></code> – the inverse function.</p>
+<p>Here is the full breakpoint selection pipeline, showing how the Fenwick tree,
+the rate map, and the segment chain work together:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">choose_breakpoint</span><span class="p">(</span><span class="n">fenwick_tree</span><span class="p">,</span> <span class="n">segments</span><span class="p">,</span> <span class="n">rate_map</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Choose a random recombination breakpoint.</span>
+
+<span class="sd">    This is the core of msprime&#39;s breakpoint selection:</span>
+<span class="sd">    1. Draw random mass from [0, total_mass)</span>
+<span class="sd">    2. Use Fenwick.find() to locate the segment   -- O(log n)</span>
+<span class="sd">    3. Convert mass coordinate to genomic position -- O(log m)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fenwick_tree : FenwickTree</span>
+<span class="sd">    segments : dict of {index: Segment}</span>
+<span class="sd">    rate_map : RateMap</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    segment : Segment</span>
+<span class="sd">        The segment where recombination occurs.</span>
+<span class="sd">    breakpoint : float</span>
+<span class="sd">        The genomic position of the breakpoint.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">total_mass</span> <span class="o">=</span> <span class="n">fenwick_tree</span><span class="o">.</span><span class="n">get_total</span><span class="p">()</span>
+    <span class="n">random_mass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total_mass</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: find which segment (using the Fenwick tree&#39;s find)</span>
+    <span class="n">seg_index</span> <span class="o">=</span> <span class="n">fenwick_tree</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">random_mass</span><span class="p">)</span>
+    <span class="n">seg</span> <span class="o">=</span> <span class="n">segments</span><span class="p">[</span><span class="n">seg_index</span><span class="p">]</span>
+
+    <span class="c1"># Step 2: compute breakpoint position</span>
+    <span class="c1"># The cumulative mass up to this segment&#39;s right end</span>
+    <span class="n">cum_mass</span> <span class="o">=</span> <span class="n">fenwick_tree</span><span class="o">.</span><span class="n">get_cumulative_sum</span><span class="p">(</span><span class="n">seg_index</span><span class="p">)</span>
+    <span class="c1"># Mass of the breakpoint from the right end of the segment</span>
+    <span class="n">mass_from_right</span> <span class="o">=</span> <span class="n">cum_mass</span> <span class="o">-</span> <span class="n">random_mass</span>
+    <span class="c1"># Convert to genomic position using the rate map inverse</span>
+    <span class="n">right_mass</span> <span class="o">=</span> <span class="n">rate_map</span><span class="o">.</span><span class="n">position_to_mass</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+    <span class="n">bp_mass</span> <span class="o">=</span> <span class="n">right_mass</span> <span class="o">-</span> <span class="n">mass_from_right</span>
+    <span class="n">bp</span> <span class="o">=</span> <span class="n">rate_map</span><span class="o">.</span><span class="n">mass_to_position</span><span class="p">(</span><span class="n">bp_mass</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">seg</span><span class="p">,</span> <span class="n">bp</span>
+</pre></div>
+</div>
+<div class="admonition-the-left-bound-subtlety admonition">
+<p class="admonition-title">The left-bound subtlety</p>
+<p>In msprime’s implementation, the recombination mass of a segment is
+computed from <code class="docutils literal notranslate"><span class="pre">get_recomb_left_bound(seg)</span></code> to <code class="docutils literal notranslate"><span class="pre">seg.right</span></code>. The left
+bound is <code class="docutils literal notranslate"><span class="pre">seg.prev.right</span></code> if the segment has a predecessor (i.e., it’s
+not the head of the chain), because recombination between two adjacent
+segments of the same lineage has no effect – both pieces already belong
+to the same lineage. Only recombination that falls in a <strong>gap</strong> or within
+a segment creates a meaningful split. This subtlety is easy to miss but
+essential for correctness.</p>
+</div>
+<p>With the rate map and Fenwick tree working together, we have efficient
+breakpoint selection. Next, we need efficient memory management for the
+millions of segments created and destroyed during the simulation.</p>
+</section>
+</section>
+<section id="step-5-the-segment-pool">
+<h2>Step 5: The Segment Pool<a class="headerlink" href="#step-5-the-segment-pool" title="Link to this heading"></a></h2>
+<p>Creating and destroying segment objects millions of times would be slow due
+to memory allocation overhead. msprime uses a <strong>segment pool</strong>: a pre-allocated
+array of segments that are recycled.</p>
+<div class="admonition-closing-a-confusion-gap-why-a-pool admonition">
+<p class="admonition-title">Closing a confusion gap – Why a pool?</p>
+<p>In languages like Python, creating an object involves memory allocation,
+constructor calls, and eventually garbage collection. For an object
+created and destroyed millions of times per second, this overhead
+dominates. A pool pre-allocates all objects at startup and reuses them:
+“allocation” just pops an index from a free list (<span class="math notranslate nohighlight">\(O(1)\)</span>), and
+“deallocation” pushes it back (<span class="math notranslate nohighlight">\(O(1)\)</span>). The C implementation of
+msprime uses the same pattern for maximum performance.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SegmentPool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pre-allocated pool of Segment objects.</span>
+
+<span class="sd">    Avoids repeated memory allocation during the simulation.</span>
+<span class="sd">    &#39;Allocating&#39; a segment just pops an index from the free list.</span>
+<span class="sd">    &#39;Freeing&#39; a segment pushes it back.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_segments</span><span class="p">):</span>
+        <span class="c1"># Pre-create all segment objects at once</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segments</span> <span class="o">=</span> <span class="p">[</span><span class="n">Segment</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_segments</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">free_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_segments</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># 1-indexed (0 unused)</span>
+
+    <span class="k">def</span> <span class="nf">alloc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">node</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allocate a segment from the pool.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">free_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Segment pool exhausted&quot;</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">free_list</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>  <span class="c1"># O(1) -- just pop from the stack</span>
+        <span class="n">seg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">seg</span>
+
+    <span class="k">def</span> <span class="nf">free</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a segment to the pool.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">free_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>  <span class="c1"># O(1) -- push back onto the stack</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seg</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allocate a new segment as a copy of an existing one.&quot;&quot;&quot;</span>
+        <span class="n">new_seg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alloc</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">seg</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">seg</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">new_seg</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span>
+        <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">next</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">new_seg</span>
+        <span class="k">return</span> <span class="n">new_seg</span>
+
+<span class="c1"># Example</span>
+<span class="n">pool</span> <span class="o">=</span> <span class="n">SegmentPool</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">s1</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">alloc</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">alloc</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">s1</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">s2</span>
+<span class="n">s2</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">s1</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Allocated: </span><span class="si">{</span><span class="n">Segment</span><span class="o">.</span><span class="n">show_chain</span><span class="p">(</span><span class="n">s1</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Free slots remaining: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">free_list</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">pool</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;After freeing s2: free slots = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">free_list</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The segment pool, the Fenwick tree, and the segment chains form the “gear
+train” of the simulation. There is one more data structure to introduce: the
+overlap counter that tells the simulation when it is done.</p>
+</section>
+<section id="step-6-the-overlap-counter-s">
+<h2>Step 6: The Overlap Counter S<a class="headerlink" href="#step-6-the-overlap-counter-s" title="Link to this heading"></a></h2>
+<p>The simulation needs to know when it’s done. It’s done when every genomic
+position has exactly one ancestral lineage (the MRCA). msprime tracks this
+with an <strong>overlap counter</strong> <span class="math notranslate nohighlight">\(S\)</span>: an AVL tree mapping genomic positions
+to the number of lineages carrying ancestral material at that position.</p>
+<div class="admonition-closing-a-confusion-gap-what-is-an-overlap-counter admonition">
+<p class="admonition-title">Closing a confusion gap – What is an overlap counter?</p>
+<p>Imagine the genome as a number line from 0 to <span class="math notranslate nohighlight">\(L\)</span>. Each lineage
+“paints” a color over the intervals where it carries ancestral material.
+The overlap counter <span class="math notranslate nohighlight">\(S[x]\)</span> counts how many colors are stacked at
+position <span class="math notranslate nohighlight">\(x\)</span>. At the start, all <span class="math notranslate nohighlight">\(n\)</span> lineages cover the entire
+genome, so <span class="math notranslate nohighlight">\(S[x] = n\)</span> everywhere. Each coalescence event at
+interval <span class="math notranslate nohighlight">\([a, b)\)</span> reduces <span class="math notranslate nohighlight">\(S[x]\)</span> by 1 for <span class="math notranslate nohighlight">\(x \in [a, b)\)</span>,
+because two lineages become one. When <span class="math notranslate nohighlight">\(S[x] \leq 1\)</span> everywhere,
+every position has found its MRCA and the simulation is complete.</p>
+<p>The AVL tree (implemented here as a <code class="docutils literal notranslate"><span class="pre">SortedDict</span></code>) stores this count
+as a piecewise-constant function: only the breakpoints where the count
+changes are stored, not every base pair individually.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sortedcontainers</span> <span class="kn">import</span> <span class="n">SortedDict</span>
+
+<span class="k">class</span> <span class="nc">OverlapCounter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tracks the number of lineages at each genomic position.</span>
+
+<span class="sd">    Uses an AVL tree (here SortedDict) to store a piecewise-constant</span>
+<span class="sd">    function: S[x] gives the number of lineages at positions [x, next_key).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence_length</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">S</span> <span class="o">=</span> <span class="n">SortedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>                    <span class="c1"># count starts at 0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">sequence_length</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>     <span class="c1"># sentinel marking the end</span>
+
+    <span class="k">def</span> <span class="nf">increment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Increment the count in [left, right) by delta.&quot;&quot;&quot;</span>
+        <span class="c1"># Ensure breakpoints exist at left and right</span>
+        <span class="k">if</span> <span class="n">left</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">:</span>
+            <span class="c1"># Find the value just before left and copy it</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">bisect_left</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">prev_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">left</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">prev_key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">right</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">bisect_left</span><span class="p">(</span><span class="n">right</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">prev_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">right</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">prev_key</span><span class="p">]</span>
+
+        <span class="c1"># Increment all positions in [left, right)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">irange</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">))):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="n">delta</span>
+
+    <span class="k">def</span> <span class="nf">is_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if all positions have count &lt;= 1 (MRCA found).&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [</span><span class="si">{</span><span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;OverlapCounter:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+
+<span class="c1"># Example: 3 lineages with overlapping segments</span>
+<span class="n">S</span> <span class="o">=</span> <span class="n">OverlapCounter</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">increment</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>    <span class="c1"># lineage 0: full genome</span>
+<span class="n">S</span><span class="o">.</span><span class="n">increment</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>    <span class="c1"># lineage 1: full genome</span>
+<span class="n">S</span><span class="o">.</span><span class="n">increment</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>    <span class="c1"># lineage 2: full genome</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Before any coalescence:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+
+<span class="c1"># After first coalescence at [0, 500)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">increment</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">delta</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">After coalescence at [0, 500):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Complete? </span><span class="si">{</span><span class="n">S</span><span class="o">.</span><span class="n">is_complete</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With all the data structures defined, let us see how they work together in
+a single simulation step.</p>
+</section>
+<section id="step-7-putting-it-all-together">
+<h2>Step 7: Putting It All Together<a class="headerlink" href="#step-7-putting-it-all-together" title="Link to this heading"></a></h2>
+<p>Here’s how the data structures work together in a single simulation step.
+This is a preview of what <a class="reference internal" href="hudson_algorithm.html#hudson-algorithm"><span class="std std-ref">Hudson’s Algorithm</span></a> – the main simulation
+loop, the ticking of the clock – will orchestrate at full scale.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SimulationState</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Minimal simulation state demonstrating the data structures.</span>
+
+<span class="sd">    This ties together the segment pool, the Fenwick tree, the rate map,</span>
+<span class="sd">    and the lineage list. In the full simulator (hudson_algorithm), these</span>
+<span class="sd">    are augmented with populations, migration, and demographic events.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">recomb_rate</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">L</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">SegmentPool</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rate_map</span> <span class="o">=</span> <span class="n">RateMap</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">],</span> <span class="p">[</span><span class="n">recomb_rate</span><span class="p">])</span>
+
+        <span class="c1"># Fenwick tree for recombination mass -- the clever indexing mechanism</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span> <span class="o">=</span> <span class="n">FenwickTree</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+
+        <span class="c1"># Create initial lineages: each carries [0, L)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lineages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">seg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">alloc</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">lin</span> <span class="o">=</span> <span class="n">Lineage</span><span class="p">(</span><span class="n">head</span><span class="o">=</span><span class="n">seg</span><span class="p">,</span> <span class="n">tail</span><span class="o">=</span><span class="n">seg</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">lineage</span> <span class="o">=</span> <span class="n">lin</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lineages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span>
+
+            <span class="c1"># Register this segment&#39;s mass in the Fenwick tree</span>
+            <span class="n">mass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate_map</span><span class="o">.</span><span class="n">mass_between</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">mass</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_total_recomb_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total recombination rate across all lineages.</span>
+
+<span class="sd">        Thanks to the Fenwick tree, this is O(log n), not O(n).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">get_total</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">recombination_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute one recombination event.&quot;&quot;&quot;</span>
+        <span class="c1"># Step 1: Choose breakpoint using Fenwick tree -- O(log n)</span>
+        <span class="n">total_mass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">get_total</span><span class="p">()</span>
+        <span class="n">random_mass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total_mass</span><span class="p">)</span>
+        <span class="n">seg_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">random_mass</span><span class="p">)</span>
+        <span class="n">seg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="n">seg_index</span><span class="p">]</span>
+
+        <span class="c1"># Step 2: Convert mass to position using rate map</span>
+        <span class="n">cum_mass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">get_cumulative_sum</span><span class="p">(</span><span class="n">seg_index</span><span class="p">)</span>
+        <span class="n">right_mass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate_map</span><span class="o">.</span><span class="n">position_to_mass</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+        <span class="n">bp_mass</span> <span class="o">=</span> <span class="n">right_mass</span> <span class="o">-</span> <span class="p">(</span><span class="n">cum_mass</span> <span class="o">-</span> <span class="n">random_mass</span><span class="p">)</span>
+        <span class="n">bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate_map</span><span class="o">.</span><span class="n">mass_to_position</span><span class="p">(</span><span class="n">bp_mass</span><span class="p">)</span>
+
+        <span class="c1"># Step 3: Split the segment -- O(1) pointer rewiring</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span>
+        <span class="n">alpha</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">bp</span>
+        <span class="n">alpha</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">next</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">seg</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">bp</span>
+
+        <span class="c1"># Step 4: Update Fenwick tree -- O(log n)</span>
+        <span class="n">left_mass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate_map</span><span class="o">.</span><span class="n">mass_between</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">seg</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">left_mass</span><span class="p">)</span>
+        <span class="n">right_mass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rate_map</span><span class="o">.</span><span class="n">mass_between</span><span class="p">(</span><span class="n">alpha</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">alpha</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass_index</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">alpha</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">right_mass</span><span class="p">)</span>
+
+        <span class="c1"># Step 5: Create new lineage for the right part</span>
+        <span class="n">old_lineage</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">lineage</span>
+        <span class="n">new_lineage</span> <span class="o">=</span> <span class="n">Lineage</span><span class="p">(</span><span class="n">head</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">tail</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">alpha</span><span class="o">.</span><span class="n">lineage</span> <span class="o">=</span> <span class="n">new_lineage</span>
+        <span class="n">old_lineage</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">seg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lineages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_lineage</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">bp</span>
+
+<span class="c1"># Demo</span>
+<span class="n">state</span> <span class="o">=</span> <span class="n">SimulationState</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">recomb_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">lineages</span><span class="p">)</span><span class="si">}</span><span class="s2"> lineages&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total recomb mass: </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">get_total_recomb_rate</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">bp</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">recombination_event</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">After recombination at </span><span class="si">{</span><span class="n">bp</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Now </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">lineages</span><span class="p">)</span><span class="si">}</span><span class="s2"> lineages&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total recomb mass: </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">get_total_recomb_rate</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You have now seen every data structure that powers the master clockmaker’s
+bench. The segment chains are the linked-list track that follows each
+lineage’s ancestral material. The Fenwick tree is the clever indexing
+mechanism for fast event scheduling. The segment pool eliminates memory
+allocation overhead. And the overlap counter tracks progress toward completion.</p>
+<p>In the next chapter, we assemble these parts into the complete simulation loop.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-fenwick-tree-operations admonition">
+<p class="admonition-title">Exercise 1: Fenwick tree operations</p>
+<p>Build a Fenwick tree with 16 elements. Set random values, then verify that
+<code class="docutils literal notranslate"><span class="pre">get_cumulative_sum(i)</span></code> matches a naive prefix sum for all <span class="math notranslate nohighlight">\(i\)</span>.
+Also verify that <code class="docutils literal notranslate"><span class="pre">find(v)</span></code> returns the correct index for 100 random
+target values.</p>
+</div>
+<div class="admonition-exercise-2-weighted-segment-selection admonition">
+<p class="admonition-title">Exercise 2: Weighted segment selection</p>
+<p>Create 100 segments with random masses. Use the Fenwick tree to sample
+10,000 segments. Verify that the empirical selection frequency of each
+segment matches its mass fraction to within 1%.</p>
+</div>
+<div class="admonition-exercise-3-breakpoint-distribution-with-hotspots admonition">
+<p class="admonition-title">Exercise 3: Breakpoint distribution with hotspots</p>
+<p>Create a rate map with a 100x hotspot covering 1% of the genome. Sample
+10,000 breakpoints using the Fenwick tree + rate map. Plot the breakpoint
+density and verify that ~50% of breakpoints fall in the hotspot.</p>
+</div>
+<div class="admonition-exercise-4-segment-chain-operations admonition">
+<p class="admonition-title">Exercise 4: Segment chain operations</p>
+<p>Implement a full recombination-coalescence cycle: start with 3 lineages
+each carrying [0, 1000), perform a recombination on lineage 1, then
+coalesce two lineages. Verify the segment chains are correct at each step.</p>
+</div>
+<p>Next: <a class="reference internal" href="hudson_algorithm.html#hudson-algorithm"><span class="std std-ref">Hudson’s Algorithm</span></a> – the main simulation loop that orchestrates
+these data structures, the ticking of the clock.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="coalescent.html" class="btn btn-neutral float-left" title="The Coalescent Process" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hudson_algorithm.html" class="btn btn-neutral float-right" title="Hudson’s Algorithm" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

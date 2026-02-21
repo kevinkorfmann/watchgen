@@ -1,0 +1,1319 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decoding the Clock &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Timepiece II: The Li &amp; Stephens HMM" href="../lshmm/index.html" />
+    <link rel="prev" title="The PSMC HMM and EM Algorithm" href="hmm_inference.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Timepiece I: PSMC</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lshmm/index.html">Timepiece II: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../msprime/index.html">Timepiece III: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../argweaver/index.html">Timepiece IV: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsinfer/index.html">Timepiece V: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tsdate/index.html">Timepiece VII: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#the-papers-behind-tsdate">The Papers Behind tsdate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../singer/index.html">Timepiece VI: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../moments/index.html">Timepiece VIII: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../momi2/index.html">Timepiece X: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece I: PSMC</a></li>
+      <li class="breadcrumb-item active">Decoding the Clock</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="hmm_inference.html" class="btn btn-neutral float-left" title="The PSMC HMM and EM Algorithm" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../lshmm/index.html" class="btn btn-neutral float-right" title="Timepiece II: The Li &amp; Stephens HMM" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="decoding-the-clock">
+<span id="psmc-decoding"></span><h1>Decoding the Clock<a class="headerlink" href="#decoding-the-clock" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The case and dial: turning internal gears into a readable face.</em></p>
+</div></blockquote>
+<p>We have arrived at the final chapter of the PSMC Timepiece. In the preceding
+chapters, we built every internal component of this watch: the continuous-time
+transition density (the escapement, <a class="reference internal" href="continuous_model.html#psmc-continuous"><span class="std std-ref">The Continuous-Time PSMC Model</span></a>), the discrete time
+intervals and transition matrix (the gear train, <a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>),
+and the EM algorithm that iteratively refines the parameters from data (the
+mainspring, <a class="reference internal" href="hmm_inference.html#psmc-hmm"><span class="std std-ref">The PSMC HMM and EM Algorithm</span></a>). The EM algorithm has converged, and we now hold
+estimated parameters <span class="math notranslate nohighlight">\(\hat{\theta}_0\)</span>, <span class="math notranslate nohighlight">\(\hat{\rho}_0\)</span>, and
+<span class="math notranslate nohighlight">\(\hat{\lambda}_0, \ldots, \hat{\lambda}_n\)</span>.</p>
+<p>But these are dimensionless numbers in coalescent units – the internal tick
+count of the mechanism, not the time displayed on the dial. A watch is useless
+if you cannot read its face. To tell biological time, we need to <strong>scale</strong> these
+parameters to real units – generations, years, and population sizes. We also
+need to assess how confident we are in the reading (bootstrapping), how well the
+model fits the data (goodness of fit), and what common mistakes can lead us to
+misread the dial entirely (pitfalls).</p>
+<p>This chapter covers five steps:</p>
+<ol class="arabic simple">
+<li><p><strong>Scaling</strong> – reading the dial by converting coalescent units to real units</p></li>
+<li><p><strong>Goodness of fit</strong> – checking whether the watch keeps accurate time</p></li>
+<li><p><strong>Bootstrapping</strong> – testing the watch against multiple reference clocks</p></li>
+<li><p><strong>Common pitfalls</strong> – the ways even experienced watchmakers misread the dial</p></li>
+<li><p><strong>Interpreting PSMC plots</strong> – what the population history actually tells us</p></li>
+</ol>
+<p>Let us begin.</p>
+<section id="step-1-from-coalescent-units-to-real-units">
+<span id="psmc-decoding-scaling"></span><h2>Step 1: From Coalescent Units to Real Units<a class="headerlink" href="#step-1-from-coalescent-units-to-real-units" title="Link to this heading"></a></h2>
+<p><em>Reading the dial.</em></p>
+<div class="admonition-what-does-reading-the-dial-mean admonition">
+<p class="admonition-title">What does “reading the dial” mean?</p>
+<p>A watch’s internal mechanism counts oscillations – ticks of the escapement.
+But the dial translates those ticks into hours and minutes, units that have
+meaning in the external world. The PSMC’s internal mechanism operates in
+<strong>coalescent units</strong>, where time is measured relative to the population size
+and rates are scaled accordingly. “Reading the dial” means converting those
+internal units into <strong>generations</strong>, <strong>years</strong>, and <strong>individuals</strong> – the
+units that have meaning for biology.</p>
+</div>
+<p>PSMC operates in <strong>coalescent units</strong>: time is measured in units of <span class="math notranslate nohighlight">\(2N_0\)</span>
+generations, and rates are scaled by <span class="math notranslate nohighlight">\(4N_0\)</span>. These conventions come
+directly from the coalescent theory developed in the <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">prerequisites</span></a>, where we saw that the natural time unit for two-lineage
+coalescence is <span class="math notranslate nohighlight">\(2N\)</span> generations. To convert back to real units,
+we need one external piece of information: the <strong>per-generation mutation rate</strong>
+<span class="math notranslate nohighlight">\(\mu\)</span>.</p>
+<p>Think of <span class="math notranslate nohighlight">\(\mu\)</span> as the conversion factor printed on the bezel of the
+watch – without it, the dial markings are arbitrary.</p>
+<p><strong>Computing</strong> <span class="math notranslate nohighlight">\(N_0\)</span>:</p>
+<p>The estimated <span class="math notranslate nohighlight">\(\hat{\theta}_0\)</span> is the population-scaled mutation rate per
+bin of size <span class="math notranslate nohighlight">\(s\)</span> base pairs:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\theta}_0 = 4 N_0 \mu s\]</div>
+<p>This equation relates four quantities. We know three of them after inference:
+<span class="math notranslate nohighlight">\(\hat{\theta}_0\)</span> comes from EM (see <a class="reference internal" href="hmm_inference.html#psmc-hmm"><span class="std std-ref">The PSMC HMM and EM Algorithm</span></a>), <span class="math notranslate nohighlight">\(\mu\)</span> is an
+externally supplied mutation rate, and <span class="math notranslate nohighlight">\(s\)</span> is the bin size we chose during
+data preparation (typically 100 bp). Solving for the one remaining unknown:</p>
+<div class="math notranslate nohighlight">
+\[N_0 = \frac{\hat{\theta}_0}{4 \mu s}\]</div>
+<div class="admonition-choosing-a-mutation-rate-math-mu admonition">
+<p class="admonition-title">Choosing a mutation rate <span class="math notranslate nohighlight">\(\mu\)</span></p>
+<p>For <strong>humans</strong>, commonly used values are:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\mu \approx 1.25 \times 10^{-8}\)</span> per base pair per generation
+(pedigree-based estimate)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mu \approx 2.5 \times 10^{-8}\)</span> per base pair per generation
+(phylogenetic estimate from human-chimp divergence)</p></li>
+</ul>
+<p>For <strong>other organisms</strong>, you must find a species-appropriate estimate from
+the literature. The mutation rate depends on generation time, DNA repair
+mechanisms, and other biological factors. Using the wrong <span class="math notranslate nohighlight">\(\mu\)</span> will
+shift your entire time axis and population size axis – we discuss this
+further in the mutation rate admonition below.</p>
+<p>As a sanity check: for humans with <span class="math notranslate nohighlight">\(\mu = 1.25 \times 10^{-8}\)</span>,
+<span class="math notranslate nohighlight">\(s = 100\)</span>, and a typical <span class="math notranslate nohighlight">\(\hat{\theta}_0 \approx 0.00069\)</span>, you
+should get <span class="math notranslate nohighlight">\(N_0 \approx 13{,}800\)</span>. If your <span class="math notranslate nohighlight">\(N_0\)</span> is orders of
+magnitude off from the expected range for your species, double-check your
+<span class="math notranslate nohighlight">\(\mu\)</span> and <span class="math notranslate nohighlight">\(s\)</span>.</p>
+</div>
+<p><strong>Scaling time</strong> from coalescent units to generations:</p>
+<p>Each coalescent time unit corresponds to <span class="math notranslate nohighlight">\(2N_0\)</span> generations (recall from
+<a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> that the coalescence rate for two lineages in a
+population of size <span class="math notranslate nohighlight">\(N\)</span> is <span class="math notranslate nohighlight">\(1/(2N)\)</span> per generation, so the expected
+coalescence time is <span class="math notranslate nohighlight">\(2N\)</span> generations). Therefore:</p>
+<div class="math notranslate nohighlight">
+\[T_k \text{ (generations)} = 2 N_0 \cdot t_k\]</div>
+<p>To convert generations to years, multiply by the <strong>generation time</strong> (typically
+25–29 years for humans):</p>
+<div class="math notranslate nohighlight">
+\[T_k \text{ (years)} = 2 N_0 \cdot t_k \cdot g\]</div>
+<p>where <span class="math notranslate nohighlight">\(g\)</span> is the generation time in years.</p>
+<p><strong>Scaling population size:</strong></p>
+<p>The <span class="math notranslate nohighlight">\(\hat{\lambda}_k\)</span> values estimated by EM are <em>relative</em> population
+sizes – they express the population size in interval <span class="math notranslate nohighlight">\(k\)</span> as a multiple
+of the reference <span class="math notranslate nohighlight">\(N_0\)</span>. To get absolute effective population sizes:</p>
+<div class="math notranslate nohighlight">
+\[N_k = N_0 \cdot \hat{\lambda}_k\]</div>
+<p>So if <span class="math notranslate nohighlight">\(\hat{\lambda}_3 = 2.0\)</span>, the population in the third time interval
+was twice as large as the reference <span class="math notranslate nohighlight">\(N_0\)</span>.</p>
+<p>Here is the complete scaling function, with inline comments explaining each
+conversion:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">scale_psmc_output</span><span class="p">(</span><span class="n">theta_0</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">t_boundaries</span><span class="p">,</span>
+                       <span class="n">mu</span><span class="o">=</span><span class="mf">1.25e-8</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">generation_time</span><span class="o">=</span><span class="mi">25</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scale PSMC output to real units.</span>
+
+<span class="sd">    This is the &quot;dial&quot; of the PSMC watch: it converts the internal</span>
+<span class="sd">    coalescent-unit parameters into biologically meaningful quantities.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    theta_0 : float</span>
+<span class="sd">        Estimated theta_0 from EM (population-scaled mutation rate per bin).</span>
+<span class="sd">    lambdas : ndarray of shape (n+1,)</span>
+<span class="sd">        Estimated relative population sizes (lambda_k values from EM).</span>
+<span class="sd">    t_boundaries : ndarray of shape (n+2,)</span>
+<span class="sd">        Time interval boundaries in coalescent units (from discretization).</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Per-generation, per-base-pair mutation rate (external input).</span>
+<span class="sd">    s : int</span>
+<span class="sd">        Bin size in base pairs (must match what was used in data preparation).</span>
+<span class="sd">    generation_time : float</span>
+<span class="sd">        Years per generation (e.g., 25 for humans, 3 for mice).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    N_0 : float</span>
+<span class="sd">        Reference effective population size.</span>
+<span class="sd">    times_gen : ndarray</span>
+<span class="sd">        Time boundaries in generations.</span>
+<span class="sd">    times_years : ndarray</span>
+<span class="sd">        Time boundaries in years.</span>
+<span class="sd">    pop_sizes : ndarray</span>
+<span class="sd">        Effective population sizes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert theta to N_0 using the relationship theta = 4 * N_0 * mu * s</span>
+    <span class="n">N_0</span> <span class="o">=</span> <span class="n">theta_0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+
+    <span class="c1"># Scale time: each coalescent unit = 2*N_0 generations</span>
+    <span class="n">times_gen</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">N_0</span> <span class="o">*</span> <span class="n">t_boundaries</span>
+
+    <span class="c1"># Convert generations to calendar years</span>
+    <span class="n">times_years</span> <span class="o">=</span> <span class="n">times_gen</span> <span class="o">*</span> <span class="n">generation_time</span>
+
+    <span class="c1"># Scale relative sizes (lambdas) to absolute population sizes</span>
+    <span class="n">pop_sizes</span> <span class="o">=</span> <span class="n">N_0</span> <span class="o">*</span> <span class="n">lambdas</span>
+
+    <span class="k">return</span> <span class="n">N_0</span><span class="p">,</span> <span class="n">times_gen</span><span class="p">,</span> <span class="n">times_years</span><span class="p">,</span> <span class="n">pop_sizes</span>
+
+<span class="c1"># Example: typical human PSMC output</span>
+<span class="n">theta_0</span> <span class="o">=</span> <span class="mf">0.00069</span>  <span class="c1"># typical for humans with s=100</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="c1"># Time boundaries in coalescent units (from discretization chapter)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.12</span><span class="p">,</span> <span class="mf">0.22</span><span class="p">,</span> <span class="mf">0.37</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">])</span>
+<span class="c1"># Relative population sizes (lambda_k from EM)</span>
+<span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.8</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span>
+
+<span class="n">N_0</span><span class="p">,</span> <span class="n">t_gen</span><span class="p">,</span> <span class="n">t_years</span><span class="p">,</span> <span class="n">N_t</span> <span class="o">=</span> <span class="n">scale_psmc_output</span><span class="p">(</span><span class="n">theta_0</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;N_0 = </span><span class="si">{</span><span class="n">N_0</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Time (years ago)    Pop. size&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">t_years</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;12,.0f</span><span class="si">}</span><span class="s2">      </span><span class="si">{</span><span class="n">N_t</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;10,.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let us pause and trace through the unit conversions carefully, because getting
+them wrong is the single most common source of error in PSMC analyses.</p>
+<div class="admonition-unit-conversion-walkthrough admonition">
+<p class="admonition-title">Unit conversion walkthrough</p>
+<p>Suppose <span class="math notranslate nohighlight">\(\hat{\theta}_0 = 0.00069\)</span>, <span class="math notranslate nohighlight">\(\mu = 1.25 \times 10^{-8}\)</span>,
+<span class="math notranslate nohighlight">\(s = 100\)</span>, and <span class="math notranslate nohighlight">\(g = 25\)</span> years.</p>
+<ol class="arabic">
+<li><p><span class="math notranslate nohighlight">\(N_0 = 0.00069 / (4 \times 1.25 \times 10^{-8} \times 100) = 0.00069 / 5 \times 10^{-6} = 138\)</span>.
+Wait – that gives 138? That seems far too low. Let us recheck:
+<span class="math notranslate nohighlight">\(4 \times 1.25 \times 10^{-8} \times 100 = 5 \times 10^{-6}\)</span>.
+<span class="math notranslate nohighlight">\(0.00069 / 5 \times 10^{-6} = 6.9 \times 10^{-4} / 5 \times 10^{-6} = 138\)</span>.</p>
+<p>Actually, 138 is correct – but this is <span class="math notranslate nohighlight">\(N_0\)</span> as a <em>scaling constant</em>,
+not the actual population size. The actual population sizes are
+<span class="math notranslate nohighlight">\(N_k = N_0 \times \lambda_k\)</span>. If <span class="math notranslate nohighlight">\(\lambda_k \approx 72\)</span>, then
+<span class="math notranslate nohighlight">\(N_k \approx 10{,}000\)</span>.</p>
+<p>In practice, typical human PSMC runs give <span class="math notranslate nohighlight">\(N_0 \approx 10{,}000\text{--}15{,}000\)</span>
+because the <span class="math notranslate nohighlight">\(\hat{\theta}_0\)</span> incorporates the bin size differently
+depending on the implementation. <strong>Always sanity-check your</strong> <span class="math notranslate nohighlight">\(N_0\)</span>
+<strong>against known values for your species.</strong></p>
+</li>
+<li><p>Time at boundary <span class="math notranslate nohighlight">\(t_3 = 0.22\)</span> coalescent units:
+<span class="math notranslate nohighlight">\(T_3 = 2 \times N_0 \times 0.22\)</span> generations,
+<span class="math notranslate nohighlight">\(= 2 \times N_0 \times 0.22 \times 25\)</span> years.</p></li>
+<li><p>Population size in interval 3 with <span class="math notranslate nohighlight">\(\lambda_3 = 1.0\)</span>:
+<span class="math notranslate nohighlight">\(N_3 = N_0 \times 1.0 = N_0\)</span>.</p></li>
+</ol>
+</div>
+<div class="admonition-the-mutation-rate-problem admonition">
+<p class="admonition-title">The mutation rate problem</p>
+<p>The biggest source of uncertainty in PSMC scaling is <span class="math notranslate nohighlight">\(\mu\)</span>. Different
+estimation methods give different values:</p>
+<ul class="simple">
+<li><p><strong>Phylogenetic rate</strong> (human-chimp divergence): <span class="math notranslate nohighlight">\(\mu \approx 2.5 \times 10^{-8}\)</span></p></li>
+<li><p><strong>Pedigree rate</strong> (parent-offspring sequencing): <span class="math notranslate nohighlight">\(\mu \approx 1.2 \times 10^{-8}\)</span></p></li>
+<li><p><strong>Ancient DNA calibration</strong>: <span class="math notranslate nohighlight">\(\mu \approx 1.5 \times 10^{-8}\)</span></p></li>
+</ul>
+<p>The factor-of-2 difference shifts the entire time axis and population size
+axis. Since <span class="math notranslate nohighlight">\(N_0 \propto 1/\mu\)</span> and <span class="math notranslate nohighlight">\(T \propto N_0 \propto 1/\mu\)</span>,
+halving <span class="math notranslate nohighlight">\(\mu\)</span> doubles both the inferred population sizes and the
+inferred times. This is not a small effect – it can shift the inferred
+out-of-Africa bottleneck from 50,000 to 100,000 years ago.</p>
+<p>This is why PSMC plots often show axes in terms of “scaled mutation rate”
+(<span class="math notranslate nohighlight">\(\theta_k = 4 N_k \mu\)</span>) and “sequence divergence”
+(<span class="math notranslate nohighlight">\(d_k = 2 \mu T_k\)</span>) rather than absolute years and population sizes.
+These mutation-rate-free quantities are model outputs that do not depend on
+the choice of <span class="math notranslate nohighlight">\(\mu\)</span>.</p>
+</div>
+<p><strong>Alternative scaling (mutation-rate free):</strong></p>
+<p>To avoid depending on <span class="math notranslate nohighlight">\(\mu\)</span>, PSMC output can be presented in terms of
+pairwise sequence divergence. This is the approach used in Li and Durbin (2011)
+and in many subsequent PSMC papers. The x-axis becomes sequence divergence per
+base pair (a proxy for time), and the y-axis becomes the scaled mutation rate
+(a proxy for population size):</p>
+<div class="math notranslate nohighlight">
+\[d_k = t_k \cdot \frac{\theta_0}{s} \quad \text{(divergence per bp)}\]</div>
+<div class="math notranslate nohighlight">
+\[\theta_k = \lambda_k \cdot \frac{\theta_0}{s} \quad \text{(scaled mutation rate)}\]</div>
+<p>These are the axes you see in many PSMC papers. The advantage is that these
+quantities are directly estimated from the data with no external calibration
+needed. The disadvantage is that they require the reader to mentally convert
+divergence to years (using an assumed <span class="math notranslate nohighlight">\(\mu\)</span>) to interpret the biological
+meaning.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">scale_mutation_free</span><span class="p">(</span><span class="n">theta_0</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">t_boundaries</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scale without assuming a mutation rate.</span>
+
+<span class="sd">    Returns divergence (x-axis) and scaled mutation rate (y-axis).</span>
+<span class="sd">    These are the &quot;native&quot; units of PSMC output -- no external</span>
+<span class="sd">    calibration is needed.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    theta_0 : float</span>
+<span class="sd">        Estimated theta_0 from EM.</span>
+<span class="sd">    lambdas : ndarray</span>
+<span class="sd">        Relative population sizes.</span>
+<span class="sd">    t_boundaries : ndarray</span>
+<span class="sd">        Time boundaries in coalescent units.</span>
+<span class="sd">    s : int</span>
+<span class="sd">        Bin size in base pairs.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    divergence : ndarray</span>
+<span class="sd">        Pairwise sequence divergence per bp (proxy for time).</span>
+<span class="sd">    scaled_theta : ndarray</span>
+<span class="sd">        Population-scaled mutation rate (proxy for N_e).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Divergence = coalescent time * per-bp mutation rate</span>
+    <span class="c1"># Since theta_0 = 4*N_0*mu*s, theta_0/s = 4*N_0*mu,</span>
+    <span class="c1"># and t_k * theta_0/s = t_k * 4*N_0*mu = 2*mu * (2*N_0*t_k)</span>
+    <span class="c1"># = 2*mu*T_k = expected divergence at time T_k</span>
+    <span class="n">divergence</span> <span class="o">=</span> <span class="n">t_boundaries</span> <span class="o">*</span> <span class="n">theta_0</span> <span class="o">/</span> <span class="n">s</span>
+
+    <span class="c1"># Scaled theta: lambda_k * theta_0/s = lambda_k * 4*N_0*mu</span>
+    <span class="c1"># = 4 * N_k * mu = population-scaled mutation rate for interval k</span>
+    <span class="n">scaled_theta</span> <span class="o">=</span> <span class="n">lambdas</span> <span class="o">*</span> <span class="n">theta_0</span> <span class="o">/</span> <span class="n">s</span>
+
+    <span class="k">return</span> <span class="n">divergence</span><span class="p">,</span> <span class="n">scaled_theta</span>
+
+<span class="n">div</span><span class="p">,</span> <span class="n">theta_scaled</span> <span class="o">=</span> <span class="n">scale_mutation_free</span><span class="p">(</span><span class="n">theta_0</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Mutation-rate-free scaling:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Divergence (per bp)    Scaled theta&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">45</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">div</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;15.2e</span><span class="si">}</span><span class="s2">      </span><span class="si">{</span><span class="n">theta_scaled</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;15.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With the dial now readable, we can move to the next question: how much should
+we trust the reading?</p>
+</section>
+<section id="step-2-goodness-of-fit">
+<span id="psmc-decoding-gof"></span><h2>Step 2: Goodness of Fit<a class="headerlink" href="#step-2-goodness-of-fit" title="Link to this heading"></a></h2>
+<p><em>Checking whether the watch keeps accurate time.</em></p>
+<p>Before we place confidence in the PSMC’s inferred history, we should verify
+that the model actually fits the observed data. A watch that displays a time
+but runs at the wrong rate is worse than useless – it is misleading. PSMC
+provides two diagnostics for assessing model fit.</p>
+<p><strong>Diagnostic 1: Comparing</strong> <span class="math notranslate nohighlight">\(\sigma_k\)</span> <strong>and</strong> <span class="math notranslate nohighlight">\(\hat{\sigma}_k\)</span></p>
+<div class="admonition-what-is-posterior-decoding admonition">
+<p class="admonition-title">What is posterior decoding?</p>
+<p><em>Asking the watch what time it thinks it is at each position.</em></p>
+<p>In the <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">HMM prerequisites</span></a>, we learned about the forward-backward
+algorithm: it computes, for every position along the sequence and every hidden
+state, the probability that the HMM was in that state given the entire
+observed sequence. This is called <strong>posterior decoding</strong> – it is the model’s
+best guess about which hidden state generated each observation.</p>
+<p>In the PSMC context, the hidden states are coalescence time intervals. So
+posterior decoding asks: “At genomic position <span class="math notranslate nohighlight">\(a\)</span>, what is the
+probability that the two haplotypes coalesced in time interval <span class="math notranslate nohighlight">\(k\)</span>?”
+This is like asking the watch, at each tick along the genome, “What time do
+you think it is here?”</p>
+<p>The <strong>posterior stationary distribution</strong> <span class="math notranslate nohighlight">\(\hat{\sigma}_k\)</span> is the
+average of these posterior probabilities across all positions – it tells us
+what fraction of the genome the model <em>thinks</em> falls into each coalescence
+time interval, given the observed data.</p>
+</div>
+<p>The model predicts a stationary distribution <span class="math notranslate nohighlight">\(\sigma_k\)</span> (computed from the
+estimated parameters, as derived in <a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>). The data
+provides a posterior estimate <span class="math notranslate nohighlight">\(\hat{\sigma}_k\)</span> (from the forward-backward
+algorithm, as implemented in <a class="reference internal" href="hmm_inference.html#psmc-hmm"><span class="std std-ref">The PSMC HMM and EM Algorithm</span></a>):</p>
+<div class="math notranslate nohighlight">
+\[\hat{\sigma}_k = \frac{\sum_a f_k(a) b_k(a)}{\sum_{k,a} f_k(a) b_k(a)}\]</div>
+<p>Here <span class="math notranslate nohighlight">\(f_k(a)\)</span> and <span class="math notranslate nohighlight">\(b_k(a)\)</span> are the (scaled) forward and backward
+variables at position <span class="math notranslate nohighlight">\(a\)</span> for state <span class="math notranslate nohighlight">\(k\)</span>. Their product, after
+normalization, gives the posterior probability <span class="math notranslate nohighlight">\(\gamma_k(a)\)</span> that the
+coalescence time at position <span class="math notranslate nohighlight">\(a\)</span> falls in interval <span class="math notranslate nohighlight">\(k\)</span>. Summing
+over all positions and normalizing gives <span class="math notranslate nohighlight">\(\hat{\sigma}_k\)</span>.</p>
+<p>If the model fits well, <span class="math notranslate nohighlight">\(\sigma_k \approx \hat{\sigma}_k\)</span>. The
+<strong>relative entropy</strong> (Kullback-Leibler divergence) measures the discrepancy:</p>
+<div class="math notranslate nohighlight">
+\[G^\sigma = \sum_k \sigma_k \log \frac{\sigma_k}{\hat{\sigma}_k}\]</div>
+<div class="admonition-interpreting-the-kl-divergence admonition">
+<p class="admonition-title">Interpreting the KL divergence</p>
+<p>The KL divergence <span class="math notranslate nohighlight">\(G^\sigma\)</span> is always non-negative and equals zero if
+and only if the two distributions are identical. In practice:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(G^\sigma &lt; 10^{-4}\)</span>: excellent fit</p></li>
+<li><p><span class="math notranslate nohighlight">\(G^\sigma \sim 10^{-3}\)</span>: acceptable fit</p></li>
+<li><p><span class="math notranslate nohighlight">\(G^\sigma &gt; 10^{-2}\)</span>: the model may be misspecified (wrong number of
+intervals, not enough EM iterations, or the data violates PSMC assumptions)</p></li>
+</ul>
+<p>If you see a large <span class="math notranslate nohighlight">\(G^\sigma\)</span>, try running more EM iterations or
+adjusting the number of free intervals. If the value remains high, the data
+may not be well-suited for PSMC (e.g., too much missing data or strong
+population structure).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">goodness_of_fit_sigma</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute goodness-of-fit by comparing sigma_k to posterior.</span>
+
+<span class="sd">    This diagnostic checks whether the model&#39;s predicted stationary</span>
+<span class="sd">    distribution matches what the data actually shows via posterior</span>
+<span class="sd">    decoding -- it tests whether the watch&#39;s internal model of time</span>
+<span class="sd">    agrees with the evidence from the observed sequence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hmm : PSMC_HMM</span>
+<span class="sd">        The fully parameterized HMM after EM convergence.</span>
+<span class="sd">    seq : ndarray</span>
+<span class="sd">        The observed binary sequence (0 = homozygous, 1 = heterozygous).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    G_sigma : float</span>
+<span class="sd">        KL divergence (smaller is better, 0 is perfect).</span>
+<span class="sd">    sigma_model : ndarray</span>
+<span class="sd">        The model&#39;s predicted stationary distribution.</span>
+<span class="sd">    sigma_data : ndarray</span>
+<span class="sd">        The data&#39;s posterior stationary distribution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">N</span>  <span class="c1"># number of hidden states (time intervals)</span>
+
+    <span class="c1"># Model&#39;s stationary distribution: computed from parameters alone</span>
+    <span class="n">sigma_model</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">initial</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Data&#39;s posterior stationary distribution: requires forward-backward</span>
+    <span class="c1"># (See the forward-backward implementation in the HMM chapter)</span>
+    <span class="n">alpha_hat</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">forward_scaled</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="n">beta_hat</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">backward_scaled</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">alpha_hat</span><span class="p">)</span>
+
+    <span class="c1"># Accumulate posterior probabilities across all positions</span>
+    <span class="n">sigma_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)):</span>
+        <span class="c1"># gamma[k] = P(state=k at position pos | entire sequence)</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">alpha_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta_hat</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+        <span class="n">sigma_data</span> <span class="o">+=</span> <span class="n">gamma</span>
+    <span class="c1"># Normalize to get a proper distribution</span>
+    <span class="n">sigma_data</span> <span class="o">/=</span> <span class="n">sigma_data</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># KL divergence: D(model || data)</span>
+    <span class="n">G_sigma</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sigma_model</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">sigma_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">G_sigma</span> <span class="o">+=</span> <span class="n">sigma_model</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">sigma_model</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">/</span> <span class="n">sigma_data</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">G_sigma</span><span class="p">,</span> <span class="n">sigma_model</span><span class="p">,</span> <span class="n">sigma_data</span>
+</pre></div>
+</div>
+<p><strong>Diagnostic 2: Subsequence distribution</strong></p>
+<p>The second diagnostic is more stringent. It compares the empirical distribution
+of short binary subsequences in the data to the theoretical distribution
+predicted by the model. For example, for subsequences of length <span class="math notranslate nohighlight">\(l = 10\)</span>,
+there are <span class="math notranslate nohighlight">\(2^{10} = 1024\)</span> possible binary patterns (like <code class="docutils literal notranslate"><span class="pre">0000000001</span></code>,
+<code class="docutils literal notranslate"><span class="pre">0101010101</span></code>, etc.). If the model is correct, the frequency of each pattern in
+the data should match the frequency predicted by the model’s transition and
+emission probabilities.</p>
+<p>This tests not just the marginal distribution (like Diagnostic 1) but the
+<strong>sequential structure</strong> of the data – the correlations between nearby
+positions. It is analogous to testing not just whether a watch shows the right
+time on average, but whether it ticks at the right rate second-by-second.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">goodness_of_fit_subsequences</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare empirical and theoretical subsequence distributions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hmm : PSMC_HMM</span>
+<span class="sd">        The fully parameterized HMM.</span>
+<span class="sd">    seq : ndarray</span>
+<span class="sd">        The observed binary sequence.</span>
+<span class="sd">    l : int</span>
+<span class="sd">        Subsequence length (10 is typical; 2^l patterns are compared).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    G_l : float</span>
+<span class="sd">        KL divergence between empirical and theoretical distributions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="n">n_patterns</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">l</span>  <span class="c1"># number of possible binary patterns</span>
+
+    <span class="c1"># Count occurrences of each binary pattern in the observed data</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_patterns</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">subseq</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="n">pos</span><span class="p">:</span><span class="n">pos</span> <span class="o">+</span> <span class="n">l</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">subseq</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">):</span>  <span class="c1"># skip positions with missing data</span>
+            <span class="k">continue</span>
+        <span class="c1"># Convert binary subsequence to an integer index</span>
+        <span class="c1"># e.g., [0,1,0,1] -&gt; 0b0101 = 5</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">subseq</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="p">(</span><span class="n">pattern</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="nb">int</span><span class="p">(</span><span class="n">bit</span><span class="p">)</span>
+        <span class="n">counts</span><span class="p">[</span><span class="n">pattern</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">total</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="n">p_empirical</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">total</span>  <span class="c1"># normalize to get frequencies</span>
+
+    <span class="c1"># Theoretical distribution (requires matrix powers -- simplified here)</span>
+    <span class="c1"># In practice, computed via transfer matrix:</span>
+    <span class="c1"># P(pattern) = sigma @ T^(l-1) @ emission_product</span>
+    <span class="c1"># For now, we return just the empirical distribution</span>
+    <span class="k">return</span> <span class="n">p_empirical</span>
+</pre></div>
+</div>
+<p>Now that we can check whether the watch is accurate, the next question is: how
+<em>precise</em> is it? That is the domain of bootstrapping.</p>
+</section>
+<section id="step-3-bootstrapping-for-confidence-intervals">
+<span id="psmc-decoding-bootstrap"></span><h2>Step 3: Bootstrapping for Confidence Intervals<a class="headerlink" href="#step-3-bootstrapping-for-confidence-intervals" title="Link to this heading"></a></h2>
+<p><em>Testing the watch against multiple reference clocks.</em></p>
+<div class="admonition-what-is-bootstrapping admonition">
+<p class="admonition-title">What is bootstrapping?</p>
+<p>Imagine you have built a watch and you want to know how reliable its reading
+is. You cannot build the same watch a hundred times from scratch (you only
+have one genome). But you <em>can</em> do the next best thing: take the parts of
+the watch, shuffle them randomly, reassemble the watch many times, and see
+how much the readings vary. If every reassembled watch tells nearly the same
+time, your original reading is reliable. If the readings scatter widely,
+your original reading is uncertain.</p>
+<p>More formally, <strong>bootstrapping</strong> is a statistical technique for estimating
+the uncertainty of an estimate when you have only one dataset. You create
+many “pseudo-datasets” by <strong>resampling with replacement</strong> from your original
+data, compute the estimate on each pseudo-dataset, and use the spread of
+the resulting estimates as a measure of uncertainty.</p>
+<p>The key assumption is that the resampled datasets are approximately as
+variable as truly independent datasets would be. For PSMC, this works well
+because different genomic regions are approximately independent (they are
+separated by enough recombination events).</p>
+</div>
+<p>A single PSMC run gives point estimates. To assess uncertainty, we use
+bootstrapping: resample the data and re-run PSMC many times.</p>
+<p><strong>The procedure:</strong></p>
+<ol class="arabic simple">
+<li><p>Split the genome into non-overlapping segments of length <span class="math notranslate nohighlight">\(L'\)</span>
+(typically 5 Mb = 50,000 bins at 100bp resolution). Each segment should be
+long enough to contain many recombination events, so that PSMC can extract
+meaningful signal from it.</p></li>
+<li><p>Randomly sample <span class="math notranslate nohighlight">\(\lceil L / L' \rceil\)</span> segments <em>with replacement</em>
+to create a bootstrap replicate of the same total length. Some segments will
+appear multiple times; others will not appear at all. This is the “shuffling
+and reassembling” step.</p></li>
+<li><p>Run PSMC on the bootstrap replicate (full EM, same parameters as the
+original run).</p></li>
+<li><p>Repeat <span class="math notranslate nohighlight">\(B\)</span> times (typically <span class="math notranslate nohighlight">\(B = 100\)</span>).</p></li>
+<li><p>For each time point <span class="math notranslate nohighlight">\(t_k\)</span>, compute the 2.5th and 97.5th percentiles
+of <span class="math notranslate nohighlight">\(\hat{\lambda}_k^{(b)}\)</span> across bootstrap replicates to get 95%
+confidence intervals.</p></li>
+</ol>
+<div class="admonition-what-do-confidence-intervals-represent admonition">
+<p class="admonition-title">What do confidence intervals represent?</p>
+<p>A <strong>95% confidence interval</strong> around the inferred <span class="math notranslate nohighlight">\(N_e(t)\)</span> at a
+particular time means: if we repeated the entire experiment (sequencing a
+new genome and running PSMC) many times, 95% of the resulting estimates
+would fall within this interval.</p>
+<p>In practice, narrow confidence bands mean that PSMC has strong signal at
+that time depth – many recombination events produce coalescence times in
+that range. Wide bands mean limited signal. You will typically see:</p>
+<ul class="simple">
+<li><p><strong>Narrow bands</strong> in the intermediate past (roughly 50,000–500,000 years
+ago for humans), where PSMC has the most power</p></li>
+<li><p><strong>Wide bands</strong> in the very recent past (fewer than ~20,000 years ago),
+where there are too few short-range recombination events for precise
+inference</p></li>
+<li><p><strong>Wide bands</strong> in the very distant past (more than ~1 million years ago),
+where there are few surviving genomic segments with such ancient
+coalescence times</p></li>
+</ul>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">split_sequence</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">segment_length</span><span class="o">=</span><span class="mi">50000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split a sequence into segments for bootstrapping.</span>
+
+<span class="sd">    Each segment should be long enough to contain meaningful PSMC</span>
+<span class="sd">    signal. At s=100 bp per bin, 50000 bins = 5 Mb of sequence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seq : ndarray</span>
+<span class="sd">        The full binary sequence.</span>
+<span class="sd">    segment_length : int</span>
+<span class="sd">        Number of bins per segment (default 50000 = 5 Mb at s=100).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    segments : list of ndarray</span>
+<span class="sd">        Non-overlapping segments of the sequence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">segments</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="o">-</span> <span class="n">segment_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">segment_length</span><span class="p">):</span>
+        <span class="n">segments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">segment_length</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">segments</span>
+
+<span class="k">def</span> <span class="nf">bootstrap_resample</span><span class="p">(</span><span class="n">segments</span><span class="p">,</span> <span class="n">total_length</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a bootstrap replicate by resampling segments.</span>
+
+<span class="sd">    This is the &quot;shuffling and reassembling&quot; step: we draw segments</span>
+<span class="sd">    with replacement to build a new sequence of the same total length.</span>
+<span class="sd">    Some segments will be duplicated; others will be absent entirely.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    segments : list of ndarray</span>
+<span class="sd">        The genomic segments produced by split_sequence.</span>
+<span class="sd">    total_length : int</span>
+<span class="sd">        Desired length of the replicate (same as original sequence).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    replicate : ndarray</span>
+<span class="sd">        The bootstrap replicate sequence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_segments</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span>
+    <span class="c1"># How many segments do we need to reach the target length?</span>
+    <span class="n">n_needed</span> <span class="o">=</span> <span class="n">total_length</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="c1"># Sample segment indices WITH REPLACEMENT -- this is the key step</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">n_segments</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_needed</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># Concatenate the selected segments into one long sequence</span>
+    <span class="n">replicate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">segments</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">])</span>
+    <span class="c1"># Trim to exact length</span>
+    <span class="k">return</span> <span class="n">replicate</span><span class="p">[:</span><span class="n">total_length</span><span class="p">]</span>
+
+<span class="c1"># Example bootstrap workflow (pseudocode)</span>
+<span class="k">def</span> <span class="nf">run_bootstrap</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">n_bootstrap</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">segment_length</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="o">**</span><span class="n">psmc_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run PSMC with bootstrapping.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seq : ndarray</span>
+<span class="sd">        Original sequence.</span>
+<span class="sd">    n_bootstrap : int</span>
+<span class="sd">        Number of bootstrap replicates (100 is standard).</span>
+<span class="sd">    segment_length : int</span>
+<span class="sd">        Bins per segment (50000 = 5 Mb at s=100).</span>
+<span class="sd">    **psmc_kwargs : passed to psmc_inference.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bootstrap_lambdas : list of ndarray</span>
+<span class="sd">        Lambda estimates from each bootstrap replicate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Split the genome into segments</span>
+    <span class="n">segments</span> <span class="o">=</span> <span class="n">split_sequence</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">segment_length</span><span class="p">)</span>
+    <span class="n">total_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="n">bootstrap_lambdas</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_bootstrap</span><span class="p">):</span>
+        <span class="c1"># Step 2: Create a resampled replicate</span>
+        <span class="n">replicate</span> <span class="o">=</span> <span class="n">bootstrap_resample</span><span class="p">(</span><span class="n">segments</span><span class="p">,</span> <span class="n">total_length</span><span class="p">)</span>
+        <span class="c1"># Step 3: Run full PSMC inference on the replicate</span>
+        <span class="c1"># results = psmc_inference(replicate, **psmc_kwargs)</span>
+        <span class="c1"># bootstrap_lambdas.append(results[-1][&#39;lambdas&#39;])</span>
+        <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">bootstrap_lambdas</span>
+</pre></div>
+</div>
+<p>With scaling in hand and uncertainty quantified, let us now turn to the
+mistakes that can make all of this effort misleading.</p>
+</section>
+<section id="step-4-common-pitfalls">
+<span id="psmc-decoding-pitfalls"></span><h2>Step 4: Common Pitfalls<a class="headerlink" href="#step-4-common-pitfalls" title="Link to this heading"></a></h2>
+<p><em>The ways even experienced watchmakers misread the dial.</em></p>
+<p>PSMC is remarkably powerful, but several pitfalls can produce misleading results.
+Understanding these pitfalls is as important as understanding the algorithm
+itself – a watch that you trust blindly is more dangerous than one you know is
+unreliable.</p>
+<p><strong>Pitfall 1: Low coverage (the most common mistake)</strong></p>
+<p>For diploid genomes sequenced to low coverage, heterozygous sites are randomly
+lost – if only one allele is sequenced at a heterozygous position, it appears
+homozygous. This <strong>false negative rate (FNR)</strong> makes it look like the mutation
+rate is lower, which shifts the entire population size curve upward and the
+time axis to the right.</p>
+<div class="admonition-why-does-missing-heterozygosity-distort-the-results admonition">
+<p class="admonition-title">Why does missing heterozygosity distort the results?</p>
+<p>Recall that PSMC reads population history from the <em>density</em> of heterozygous
+sites. If you systematically miss some heterozygous sites, the density
+appears lower. Lower heterozygosity looks like the two haplotypes diverged
+more recently (shorter coalescence times), which PSMC interprets as a
+smaller ancestral population. The entire <span class="math notranslate nohighlight">\(N(t)\)</span> curve shifts, and the
+time axis stretches because <span class="math notranslate nohighlight">\(N_0\)</span> is underestimated.</p>
+<p>In watch terms: it is as if some of the tick marks on the dial have been
+erased, making the watch systematically slow.</p>
+</div>
+<div class="math notranslate nohighlight">
+\[\theta_{\text{apparent}} = \theta_{\text{true}} \cdot (1 - \text{FNR})\]</div>
+<p><strong>Correction:</strong> If you know the FNR, divide <span class="math notranslate nohighlight">\(\hat{\theta}_0\)</span> by
+<span class="math notranslate nohighlight">\((1 - \text{FNR})\)</span> before scaling:</p>
+<div class="math notranslate nohighlight">
+\[\theta_{\text{corrected}} = \frac{\hat{\theta}_0}{1 - \text{FNR}}\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">correct_for_coverage</span><span class="p">(</span><span class="n">theta_0</span><span class="p">,</span> <span class="n">fnr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Correct theta_0 for false negative rate on heterozygotes.</span>
+
+<span class="sd">    Apply this correction BEFORE scaling to real units. The FNR</span>
+<span class="sd">    can be estimated by comparing variant calls at different coverage</span>
+<span class="sd">    depths, or by using simulations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    theta_0 : float</span>
+<span class="sd">        Observed theta (from EM on low-coverage data).</span>
+<span class="sd">    fnr : float</span>
+<span class="sd">        Fraction of heterozygotes missed (0 to 1).</span>
+<span class="sd">        Typical values: 0.05 at 30x, 0.15 at 15x, 0.30 at 8x.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    theta_corrected : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">theta_0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">fnr</span><span class="p">)</span>
+
+<span class="c1"># Example: 20% of hets missed (roughly corresponding to ~10x coverage)</span>
+<span class="n">theta_obs</span> <span class="o">=</span> <span class="mf">0.00069</span>
+<span class="n">theta_corr</span> <span class="o">=</span> <span class="n">correct_for_coverage</span><span class="p">(</span><span class="n">theta_obs</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Observed theta: </span><span class="si">{</span><span class="n">theta_obs</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Corrected theta: </span><span class="si">{</span><span class="n">theta_corr</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;N_0 ratio: </span><span class="si">{</span><span class="n">theta_corr</span><span class="o">/</span><span class="n">theta_obs</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">x&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Pitfall 2: Overfitting</strong></p>
+<p>Using too many free parameters (e.g., <code class="docutils literal notranslate"><span class="pre">-p</span> <span class="pre">&quot;64*1&quot;</span></code> where every interval has its
+own <span class="math notranslate nohighlight">\(\lambda\)</span>) leads to overfitting, especially in time intervals with few
+expected recombination events. The symptom is a jagged, noisy <span class="math notranslate nohighlight">\(N(t)\)</span> curve
+with biologically implausible spikes and dips – the watch appears to be ticking
+erratically rather than smoothly.</p>
+<p><strong>How to check:</strong> Compute <span class="math notranslate nohighlight">\(C_\sigma \sigma_k\)</span> for each interval – this is
+the expected number of genomic segments whose coalescence time falls in interval
+<span class="math notranslate nohighlight">\(k\)</span>. If this number is less than ~20, the <span class="math notranslate nohighlight">\(\lambda_k\)</span> estimate is
+unreliable and should be grouped with adjacent intervals. This is why the
+default PSMC pattern <code class="docutils literal notranslate"><span class="pre">&quot;4+25*2+4+6&quot;</span></code> groups intervals in the very recent and
+very ancient past, where data is sparse, while allowing finer resolution in the
+intermediate past where signal is strongest.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">check_overfitting</span><span class="p">(</span><span class="n">sigma_k</span><span class="p">,</span> <span class="n">C_sigma</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check which intervals have too few expected segments.</span>
+
+<span class="sd">    Intervals with fewer than ~20 expected segments cannot reliably</span>
+<span class="sd">    support an independent lambda estimate. These should be grouped</span>
+<span class="sd">    with neighboring intervals using the pattern string.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sigma_k : ndarray</span>
+<span class="sd">        Stationary distribution over time intervals.</span>
+<span class="sd">    C_sigma : float</span>
+<span class="sd">        Total number of independent segments (approximately</span>
+<span class="sd">        total_sequence_length * rho, where rho is the recombination rate).</span>
+<span class="sd">    threshold : float</span>
+<span class="sd">        Minimum expected segments for reliable estimation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    warnings : list of int</span>
+<span class="sd">        Indices of intervals that may overfit.</span>
+<span class="sd">    expected_segments : ndarray</span>
+<span class="sd">        Expected segment count per interval.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Expected number of segments coalescing in each interval</span>
+    <span class="n">expected_segments</span> <span class="o">=</span> <span class="n">C_sigma</span> <span class="o">*</span> <span class="n">sigma_k</span>
+    <span class="n">warnings</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">exp_seg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">expected_segments</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">exp_seg</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">expected_segments</span>
+</pre></div>
+</div>
+<p><strong>Pitfall 3: Interpreting the recent past</strong></p>
+<p>PSMC has poor resolution for very recent times (the last ~20,000 years for
+humans). This is because recent coalescence times correspond to long segments of
+identical-by-descent (IBD), and a single diploid genome has limited information
+about these long segments. The first few <span class="math notranslate nohighlight">\(\lambda_k\)</span> values should be
+interpreted with caution.</p>
+<p>In watch terms: the hour hand moves so slowly in the recent past that you cannot
+read the minutes. The watch still works, but its resolution is limited.</p>
+<div class="admonition-why-is-the-recent-past-hard admonition">
+<p class="admonition-title">Why is the recent past hard?</p>
+<p>For a coalescence time of <span class="math notranslate nohighlight">\(T\)</span> generations, the expected length of the
+shared IBD segment is <span class="math notranslate nohighlight">\(\sim 1/T\)</span> Morgans. Very recent coalescence
+times produce very long IBD segments, and each diploid genome contains only
+a finite amount of sequence. With few independent segments carrying
+information about recent times, the variance of the <span class="math notranslate nohighlight">\(\lambda_k\)</span>
+estimate for the most recent intervals becomes large. This is a fundamental
+limitation of the two-sequence approach. Methods like MSMC and MSMC2, which
+use multiple genomes, have better resolution in the recent past because
+additional genomes provide more short IBD segments.</p>
+</div>
+<p><strong>Pitfall 4: Population structure</strong></p>
+<p>PSMC assumes a <strong>panmictic</strong> (randomly mating) population. If the two haplotypes
+come from a structured population, PSMC will infer spurious population size changes.
+Migration between subpopulations looks like population expansion; isolation looks
+like a bottleneck. This is because PSMC cannot distinguish between “the population
+was large” (many individuals, high coalescence time) and “the population was
+subdivided” (the two lineages were in different subpopulations, which also
+increases coalescence time).</p>
+<div class="admonition-when-to-worry-about-structure admonition">
+<p class="admonition-title">When to worry about structure</p>
+<p>If your PSMC curves for different individuals from the same population diverge
+in the recent past, population structure may be confounding the inference. In
+this case, consider using MSMC (Multiple Sequentially Markovian Coalescent),
+which can model population separation.</p>
+<p>A useful diagnostic: run PSMC on individuals from different populations and
+compare. If the curves agree in the distant past (when the populations shared
+ancestors) but diverge in the recent past, the divergence point may indicate
+population split time – but the <em>shape</em> of the curves after divergence
+reflects structure, not necessarily true population size changes.</p>
+</div>
+</section>
+<section id="step-5-interpreting-psmc-plots">
+<span id="psmc-decoding-interpreting"></span><h2>Step 5: Interpreting PSMC Plots<a class="headerlink" href="#step-5-interpreting-psmc-plots" title="Link to this heading"></a></h2>
+<p><em>Reading the face of the watch.</em></p>
+<p>We have now scaled our parameters, checked model fit, quantified uncertainty,
+and accounted for pitfalls. It is time to interpret the final product: the PSMC
+plot. This is the payoff – the readable face of the watch we have built across
+four chapters.</p>
+<p>A PSMC plot shows <span class="math notranslate nohighlight">\(N_e(t)\)</span> (y-axis) vs. time (x-axis), both on log scales.
+Here is how to read it:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>        N_e
+         ^
+100,000 -|        ____
+         |       /    \
+ 50,000 -|      /      \
+         |  ___/        \___
+ 10,000 -|                   \
+         |                    \____
+  5,000 -|
+         +--+----+----+----+----+--&gt;  time (years ago)
+           10k  50k  100k  500k  1M
+</pre></div>
+</div>
+<p>Key features to look for:</p>
+<ol class="arabic simple">
+<li><p><strong>A peak</strong>: indicates a period of large effective population size (or population
+expansion). The population was large, coalescence was slow, and the genome
+accumulated more diversity.</p></li>
+<li><p><strong>A trough</strong>: indicates a bottleneck (population contraction). The population
+shrank, forcing lineages to coalesce quickly, leaving less diversity in that
+time window.</p></li>
+<li><p><strong>A plateau</strong>: indicates stable population size. The rate of coalescence was
+roughly constant.</p></li>
+<li><p><strong>Recent decline</strong>: often seen in humans, may reflect the out-of-Africa
+bottleneck (~50,000–100,000 years ago depending on <span class="math notranslate nohighlight">\(\mu\)</span>).</p></li>
+<li><p><strong>Noisy edges</strong>: the leftmost and rightmost parts have high uncertainty.
+Do not over-interpret the first or last one or two intervals (recall Pitfall 3).</p></li>
+</ol>
+<div class="admonition-log-log-axes admonition">
+<p class="admonition-title">Log-log axes</p>
+<p>Both axes in a standard PSMC plot use logarithmic scales. This is essential
+because the time axis spans several orders of magnitude (10,000 to 1,000,000+
+years) and population sizes can vary by an order of magnitude. On linear
+axes, the interesting intermediate-time features would be compressed into an
+unreadable sliver. The log-log presentation gives roughly equal visual weight
+to each decade of time and population size.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_psmc_history</span><span class="p">(</span><span class="n">theta_0</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">t_boundaries</span><span class="p">,</span>
+                       <span class="n">mu</span><span class="o">=</span><span class="mf">1.25e-8</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">generation_time</span><span class="o">=</span><span class="mi">25</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate data for a PSMC plot.</span>
+
+<span class="sd">    Returns the x (time) and y (N_e) coordinates for a step-function</span>
+<span class="sd">    plot of population size history. Each interval is rendered as a</span>
+<span class="sd">    horizontal line at height N_k between time boundaries t_k and t_{k+1}.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    theta_0, lambdas, t_boundaries : PSMC output</span>
+<span class="sd">    mu : float</span>
+<span class="sd">    s : int</span>
+<span class="sd">    generation_time : float</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x : list of float</span>
+<span class="sd">        Time points (years ago) for plotting as a step function.</span>
+<span class="sd">    y : list of float</span>
+<span class="sd">        Population sizes corresponding to each time point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># First, scale from coalescent units to real units</span>
+    <span class="n">N_0</span><span class="p">,</span> <span class="n">t_gen</span><span class="p">,</span> <span class="n">t_years</span><span class="p">,</span> <span class="n">N_t</span> <span class="o">=</span> <span class="n">scale_psmc_output</span><span class="p">(</span>
+        <span class="n">theta_0</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">t_boundaries</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">generation_time</span><span class="p">)</span>
+
+    <span class="c1"># Create step function: for each interval k, draw a horizontal</span>
+    <span class="c1"># line from t_k to t_{k+1} at height N_k</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)):</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t_years</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>      <span class="c1"># left edge of interval</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">N_t</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>          <span class="c1"># population size in this interval</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t_years</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>  <span class="c1"># right edge of interval</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">N_t</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>          <span class="c1"># same population size (step function)</span>
+
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
+
+<span class="c1"># Example plot data</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">plot_psmc_history</span><span class="p">(</span><span class="n">theta_0</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PSMC history (step function):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Time range: </span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2"> years ago&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;N_e range: </span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="putting-it-all-together-the-complete-psmc-pipeline">
+<span id="psmc-decoding-pipeline"></span><h2>Putting It All Together: The Complete PSMC Pipeline<a class="headerlink" href="#putting-it-all-together-the-complete-psmc-pipeline" title="Link to this heading"></a></h2>
+<p>Let us now step back and see the full pipeline from raw sequence to interpreted
+population history. This function ties together every chapter of the PSMC
+Timepiece: discretization (<a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>), HMM inference
+(<a class="reference internal" href="hmm_inference.html#psmc-hmm"><span class="std std-ref">The PSMC HMM and EM Algorithm</span></a>), and all five steps of decoding covered in this chapter.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">psmc_pipeline</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mf">1.25e-8</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">generation_time</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+                   <span class="n">n</span><span class="o">=</span><span class="mi">63</span><span class="p">,</span> <span class="n">t_max</span><span class="o">=</span><span class="mf">15.0</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="s2">&quot;4+25*2+4+6&quot;</span><span class="p">,</span>
+                   <span class="n">n_iters</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">n_bootstrap</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The complete PSMC pipeline from sequence to population history.</span>
+
+<span class="sd">    This function represents the entire watch -- from raw input (the</span>
+<span class="sd">    binary sequence) through the internal mechanism (EM inference)</span>
+<span class="sd">    to the readable output (scaled population history with confidence</span>
+<span class="sd">    intervals).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seq : ndarray</span>
+<span class="sd">        Binary sequence (0 = homozygous, 1 = heterozygous, 2 = missing).</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Per-generation, per-bp mutation rate (see mutation rate discussion).</span>
+<span class="sd">    s : int</span>
+<span class="sd">        Bin size in base pairs.</span>
+<span class="sd">    generation_time : float</span>
+<span class="sd">        Years per generation.</span>
+<span class="sd">    n, t_max, pattern, n_iters : PSMC parameters.</span>
+<span class="sd">        n : number of time intervals (before grouping by pattern).</span>
+<span class="sd">        t_max : maximum coalescent time.</span>
+<span class="sd">        pattern : grouping pattern for lambda parameters (see psmc_hmm).</span>
+<span class="sd">        n_iters : number of EM iterations.</span>
+<span class="sd">    n_bootstrap : int</span>
+<span class="sd">        Number of bootstrap replicates for confidence intervals.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    history : dict</span>
+<span class="sd">        &#39;times&#39;: time points (years),</span>
+<span class="sd">        &#39;pop_sizes&#39;: N_e at each time,</span>
+<span class="sd">        &#39;ci_lower&#39;: lower 95% CI,</span>
+<span class="sd">        &#39;ci_upper&#39;: upper 95% CI,</span>
+<span class="sd">        &#39;theta&#39;: estimated theta,</span>
+<span class="sd">        &#39;rho&#39;: estimated rho,</span>
+<span class="sd">        &#39;N_0&#39;: reference population size.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Run PSMC inference (the mainspring -- see psmc_hmm chapter)</span>
+    <span class="c1"># results = psmc_inference(seq, n, t_max, pattern=pattern, n_iters=n_iters)</span>
+    <span class="c1"># final = results[-1]</span>
+
+    <span class="c1"># Step 2: Scale to real units (reading the dial -- this chapter, Step 1)</span>
+    <span class="c1"># N_0, t_gen, t_years, N_t = scale_psmc_output(</span>
+    <span class="c1">#     final[&#39;theta&#39;], final[&#39;lambdas&#39;], t_boundaries, mu, s, generation_time)</span>
+
+    <span class="c1"># Step 3: Bootstrap for confidence intervals (this chapter, Step 3)</span>
+    <span class="c1"># bootstrap_lambdas = run_bootstrap(seq, n_bootstrap)</span>
+    <span class="c1"># ci_lower, ci_upper = compute_confidence_intervals(bootstrap_lambdas)</span>
+
+    <span class="c1"># Step 4: Check goodness of fit (this chapter, Step 2)</span>
+    <span class="c1"># G_sigma = goodness_of_fit_sigma(final_hmm, seq)</span>
+
+    <span class="c1"># Step 5: Return the complete history</span>
+    <span class="c1"># return history</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-full-psmc-on-simulated-data admonition">
+<p class="admonition-title">Exercise 1: Full PSMC on simulated data</p>
+<p>This is the capstone exercise. Simulate a diploid genome under a known
+demographic model:</p>
+<ol class="arabic simple">
+<li><p>Constant <span class="math notranslate nohighlight">\(N = 10,000\)</span> from present to 50,000 years ago</p></li>
+<li><p>Bottleneck <span class="math notranslate nohighlight">\(N = 1,000\)</span> from 50,000 to 100,000 years ago</p></li>
+<li><p><span class="math notranslate nohighlight">\(N = 20,000\)</span> before 100,000 years ago</p></li>
+</ol>
+<p>Using <span class="math notranslate nohighlight">\(\mu = 1.25 \times 10^{-8}\)</span>, generate 3 Mb of psmcfa data.
+Run your PSMC implementation and verify it recovers the demographic history.</p>
+<p><em>Hint:</em> To simulate, you can use the msprime Timepiece
+(<a class="reference internal" href="../msprime/index.html#msprime-timepiece"><span class="std std-ref">Timepiece III: msprime</span></a>) with a demographic model. Convert the resulting
+tree sequence to a heterozygosity sequence using mutation overlays
+(see <a class="reference internal" href="../msprime/mutations.html#msprime-mutations"><span class="std std-ref">Mutations</span></a>).</p>
+</div>
+<div class="admonition-exercise-2-the-coverage-effect admonition">
+<p class="admonition-title">Exercise 2: The coverage effect</p>
+<p>Take the simulated data from Exercise 1. Randomly set 20% of heterozygous
+bins to homozygous (simulating low coverage). Run PSMC with and without the
+FNR correction. How much does the inferred history shift?</p>
+<p><em>Hint:</em> The shift should be approximately proportional to
+<span class="math notranslate nohighlight">\(1/(1 - \text{FNR})\)</span>. Plot both curves on the same axes and compare
+the time axis and population size axis separately.</p>
+</div>
+<div class="admonition-exercise-3-compare-to-the-real-psmc admonition">
+<p class="admonition-title">Exercise 3: Compare to the real PSMC</p>
+<p>Run both your Python implementation and the original C implementation
+(<code class="docutils literal notranslate"><span class="pre">psmc</span></code> binary) on the same data. Compare:
+(a) log-likelihoods at each iteration,
+(b) final parameter estimates,
+(c) running time.</p>
+<p>Your Python version will be much slower, but the results should agree.</p>
+</div>
+<div class="admonition-exercise-4-bootstrap-confidence-intervals admonition">
+<p class="admonition-title">Exercise 4: Bootstrap confidence intervals</p>
+<p>Using the data from Exercise 1, run 100 bootstrap replicates. Plot the
+inferred <span class="math notranslate nohighlight">\(N(t)\)</span> with 95% confidence bands. Where is the uncertainty
+largest? Why?</p>
+<p><em>Hint:</em> Recall our discussion of where PSMC has the most and least power.
+The very recent past and the very distant past should have the widest bands,
+while the intermediate past should be tightest.</p>
+</div>
+<hr class="docutils" />
+</section>
+<section id="recap-the-complete-psmc-timepiece">
+<span id="psmc-decoding-recap"></span><h2>Recap: The Complete PSMC Timepiece<a class="headerlink" href="#recap-the-complete-psmc-timepiece" title="Link to this heading"></a></h2>
+<p>Congratulations. You have now disassembled and rebuilt every gear in the PSMC
+mechanism across four chapters:</p>
+<ul class="simple">
+<li><p><strong>The Continuous-Time Model</strong> (<a class="reference internal" href="continuous_model.html#psmc-continuous"><span class="std std-ref">The Continuous-Time PSMC Model</span></a>): The transition density
+<span class="math notranslate nohighlight">\(q(t|s)\)</span> that captures how coalescence times change along the genome
+under variable <span class="math notranslate nohighlight">\(N(t)\)</span>. This was the escapement – the fundamental
+ticking mechanism.</p></li>
+<li><p><strong>Discretization</strong> (<a class="reference internal" href="discretization.html#psmc-discretization"><span class="std std-ref">Discretizing Time</span></a>): Converting continuous time
+into discrete intervals with a computable transition matrix. This was the
+gear train – carving continuous gears into finite teeth.</p></li>
+<li><p><strong>The HMM and EM</strong> (<a class="reference internal" href="hmm_inference.html#psmc-hmm"><span class="std std-ref">The PSMC HMM and EM Algorithm</span></a>): The learning machine that estimates
+population parameters from a binary sequence. This was the mainspring –
+the engine that drives the whole mechanism.</p></li>
+<li><p><strong>Decoding the Clock</strong> (this chapter): Scaling to real units (reading the
+dial), bootstrapping (testing the watch against multiple reference clocks),
+posterior decoding (asking the watch what time it thinks it is at each
+position), goodness of fit (checking the watch’s accuracy), and interpreting
+the population size history (reading the face).</p></li>
+</ul>
+<p>You built it yourself. No black boxes remain.</p>
+<p>The PSMC is the simplest complete Timepiece – a two-handed watch that reads
+population history from a single diploid genome. But just as a simple watch
+invites the question “could we add a chronograph? a moon phase? a tourbillon?”,
+the PSMC invites the question: what if we used <em>more</em> than two sequences? What
+if we could read not just population <em>size</em> but population <em>structure</em>,
+divergence times, and migration rates? Those questions lead to the Timepieces
+that follow – MSMC, ARGweaver, SINGER, and beyond.</p>
+<p><em>The clock ticks. And you can read every hour it marks.</em></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hmm_inference.html" class="btn btn-neutral float-left" title="The PSMC HMM and EM Algorithm" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../lshmm/index.html" class="btn btn-neutral float-right" title="Timepiece II: The Li &amp; Stephens HMM" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
