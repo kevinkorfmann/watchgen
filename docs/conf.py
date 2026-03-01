@@ -21,21 +21,15 @@ bibtex_reference_style = 'author_year'
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_book_theme'
 html_static_path = ['_static']
 html_css_files = ['custom.css']
 html_logo = '_static/logo.png'
 
 html_theme_options = {
-    'logo_only': False,
-    'version_selector': True,
-    'prev_next_buttons_location': 'both',
-    'style_external_links': True,
-    'collapse_navigation': False,
-    'sticky_navigation': True,
-    'navigation_depth': 4,
-    'includehidden': True,
-    'titles_only': False,
+    'show_toc_level': 2,
+    'navigation_with_keys': True,
+    'show_navbar_depth': 2,
 }
 
 html_title = "The Watchmaker's Guide to Population Genetics"
