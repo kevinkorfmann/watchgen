@@ -1,10 +1,12 @@
-name: Docs
+name: Docs & Publish
 
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  release:
+    types: [published]
 
 jobs:
   build-docs:
@@ -30,3 +32,25 @@ jobs:
         with:
           name: html-docs
           path: docs/_build/html/
+
+  publish:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
