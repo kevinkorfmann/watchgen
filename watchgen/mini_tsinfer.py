@@ -467,7 +467,7 @@ def viterbi_ls(query, panel, rho, mu):
                 e = mu[ell]       # Mismatch: low prob
 
             # Two candidates for the best previous state:
-            stay = (1 - rho[ell]) * V[ell - 1, j]       # Stay on j
+            stay = (1 - rho[ell] + rho[ell] / k) * V[ell - 1, j]  # Stay on j
             switch = (rho[ell] / k) * max_prev           # Switch from best
 
             if stay >= switch:
@@ -555,7 +555,7 @@ def viterbi_ls_with_noncopy(query, panel, rho, mu):
                 e = mu[ell]
 
             # Two candidates, using site-specific panel size k_ell
-            stay = (1 - rho[ell]) * V[ell - 1, j]
+            stay = (1 - rho[ell] + rho[ell] / k_ell) * V[ell - 1, j]
             switch = (rho[ell] / k_ell) * max_prev
 
             if stay >= switch:

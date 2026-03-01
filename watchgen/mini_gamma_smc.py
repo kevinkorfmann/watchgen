@@ -178,7 +178,9 @@ def compute_flow_at_point(l_mu, l_C, n_eval=2000):
     perturbation = np.zeros_like(x)  # placeholder
 
     # Step 5: solve least-squares for (u, v) in log10(alpha), log10(beta)
-    A = np.column_stack([df_da, df_db])
+    # Use chain rule: df/d(log10 a) = a*ln(10) * df/da
+    A = np.column_stack([alpha * np.log(10) * df_da,
+                         beta * np.log(10) * df_db])
     result = np.linalg.lstsq(A, perturbation, rcond=None)
     delta_log_a, delta_log_b = result[0]
 
@@ -283,14 +285,15 @@ def gamma_smc_forward(observations, theta, rho, flow_field):
     alpha, beta = 1.0, 1.0
 
     for i in range(N):
-        # Step 1: Transition via flow field
-        l_mu = np.log10(alpha / beta)
-        l_C = np.log10(1.0 / np.sqrt(alpha))
-        dl_mu, dl_C = flow_field.query(l_mu, l_C)
-        l_mu += rho * dl_mu  # displacement scaled by rho
-        l_C += rho * dl_C
-        alpha = 10.0 ** (-2 * l_C)
-        beta = alpha * 10.0 ** (-l_mu)
+        # Step 1: Transition via flow field (skip for the first position)
+        if i > 0:
+            l_mu = np.log10(alpha / beta)
+            l_C = np.log10(1.0 / np.sqrt(alpha))
+            dl_mu, dl_C = flow_field.query(l_mu, l_C)
+            l_mu += rho * dl_mu  # displacement scaled by rho
+            l_C += rho * dl_C
+            alpha = 10.0 ** (-2 * l_C)
+            beta = alpha * 10.0 ** (-l_mu)
 
         # Step 2: Emission update (conjugate)
         y = observations[i]

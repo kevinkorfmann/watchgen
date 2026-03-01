@@ -221,7 +221,11 @@ def crank_nicolson_1d(phi, xx, T, nu=1.0, theta=0.0, n_steps=100):
         dx_r = xx[i + 1] - xx[i]
         dx_avg = 0.5 * (dx_l + dx_r)
 
-        # Diffusion coefficients at half-grid points
+        # The Fokker-Planck operator is d^2/dx^2[V(x)*phi], where V = x(1-x)/(2*nu).
+        # Expanding: V*phi'' + 2*V'*phi' + V''*phi
+        # V(x) = x(1-x)/(2*nu), V'(x) = (1-2x)/(2*nu), V''(x) = -1/nu
+
+        # Diffusion term: d/dx[V * dphi/dx] contributes V*phi'' + V'*phi'
         x_r = 0.5 * (xx[i] + xx[i + 1])
         x_l = 0.5 * (xx[i] + xx[i - 1])
         V_r = x_r * (1 - x_r) / (2.0 * nu)
@@ -230,6 +234,14 @@ def crank_nicolson_1d(phi, xx, T, nu=1.0, theta=0.0, n_steps=100):
         a[i] = V_l / (dx_l * dx_avg)
         c[i] = V_r / (dx_r * dx_avg)
         b[i] = -(a[i] + c[i])
+
+        # Additional advection term: V'(x) * dphi/dx (central difference)
+        Vp = (1.0 - 2.0 * xx[i]) / (2.0 * nu)
+        a[i] += -Vp / (dx_l + dx_r)
+        c[i] += Vp / (dx_l + dx_r)
+
+        # Zeroth-order term: V''(x) * phi = -1/nu * phi
+        b[i] += -1.0 / nu
 
     # Precompute LHS tridiagonal bands: (I - 0.5*dt*L)
     lhs_lower = np.zeros(n)

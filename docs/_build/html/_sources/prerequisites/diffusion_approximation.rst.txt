@@ -227,13 +227,13 @@ where the **drift coefficient** :math:`\mu(x)` and **diffusion coefficient**
 .. math::
 
    \mu(x) &= \underbrace{\frac{s}{2} x(1-x)}_{\text{selection}} +
-              \underbrace{\theta_1(1-x) - \theta_2 x}_{\text{mutation}} +
+              \underbrace{\frac{\theta_1}{2}(1-x) - \frac{\theta_2}{2} x}_{\text{mutation}} +
               \underbrace{m(x_{\text{source}} - x)}_{\text{migration}} \\
    \sigma(x) &= \sqrt{x(1-x)}
 
 Here :math:`s` is the selection coefficient (positive favors the derived allele),
 :math:`\theta_1` and :math:`\theta_2` are forward and backward mutation rates
-scaled by :math:`2N`, :math:`m` is the migration rate, and :math:`x_{\text{source}}`
+scaled by :math:`4N` (i.e., :math:`\theta = 4N\mu`), :math:`m` is the migration rate, and :math:`x_{\text{source}}`
 is the frequency in the source population. The diffusion coefficient
 :math:`\sigma^2(x) = x(1-x)` captures **genetic drift** and is always the same
 regardless of selection or mutation.
@@ -1010,7 +1010,7 @@ Summary
    * - Concept
      - Key Formula / Idea
    * - WF frequency change
-     - :math:`\mathbb{E}[\Delta x] = \mu(x)/(2N)`, :math:`\text{Var}(\Delta x) = x(1-x)/(2N)`
+     - :math:`\mathbb{E}[\Delta x] \approx 0` (neutral), :math:`\text{Var}(\Delta x) = x(1-x)/(2N)`
    * - Diffusion timescale
      - :math:`\tau = t/(2N)` (same as coalescent time units)
    * - SDE (Wright-Fisher diffusion)

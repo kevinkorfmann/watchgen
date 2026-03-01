@@ -90,7 +90,7 @@ This is the formula used in the CLUES2 source code. For additive selection
 
 .. math::
 
-   \mu(x) = x + \frac{s \cdot x(1-x)}{2(1 + sx)}
+   \mu(x) = x - \frac{s \cdot x(1-x)}{2(1 + sx)}
 
 **Intuition:** Going backward in time, a positively selected allele (:math:`s > 0`)
 was at a *lower* frequency in the past. So the backward mean is shifted *downward*

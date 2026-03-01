@@ -70,22 +70,22 @@ def calculate_fitness(individual):
     """
     w = 1.0
 
-    # Collect positions of mutations on each haplosome
-    positions_1 = {m.position for m in individual.haplosome_1}
-    positions_2 = {m.position for m in individual.haplosome_2}
+    # Collect mutations by (position, selection coefficient) identity
+    muts_1 = {(m.position, m.s, m.h): m for m in individual.haplosome_1}
+    muts_2 = {(m.position, m.s, m.h): m for m in individual.haplosome_2}
 
     # Mutations on haplosome 1
-    for m in individual.haplosome_1:
-        if m.position in positions_2:
-            # Homozygous: mutation present on both haplosomes
+    for key, m in muts_1.items():
+        if key in muts_2:
+            # Homozygous: same mutation on both haplosomes
             w *= max(0.0, 1.0 + m.s)
         else:
             # Heterozygous: mutation only on haplosome 1
             w *= max(0.0, 1.0 + m.h * m.s)
 
-    # Mutations on haplosome 2 that are NOT on haplosome 1
-    for m in individual.haplosome_2:
-        if m.position not in positions_1:
+    # Mutations on haplosome 2 that are NOT shared with haplosome 1
+    for key, m in muts_2.items():
+        if key not in muts_1:
             # Heterozygous: mutation only on haplosome 2
             w *= max(0.0, 1.0 + m.h * m.s)
 

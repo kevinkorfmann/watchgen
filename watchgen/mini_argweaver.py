@@ -339,12 +339,13 @@ def recoal_distribution(nbranches_const, Ne, times):
 
     for j in range(ntimes):
         nbr = nbranches_const
-        A = (coal_times_list[2*j + 1] - coal_times_list[2*j]) * nbr
-        if j > 0:
-            A += (coal_times_list[2*j] - coal_times_list[2*j - 1]) * nbr
+        # Non-overlapping interval: from boundary point to next boundary point
+        t_lo = times[j]
+        t_hi = times[j + 1]
+        A = (t_hi - t_lo) * nbr
         coal_prob = 1.0 - exp(-A / Ne)
         pmf.append(exp(cum_log_surv) * coal_prob)
-        cum_log_surv += -A / Ne
+        cum_log_surv += log(1.0 - coal_prob) if coal_prob < 1.0 else -1e20
 
     return pmf
 
@@ -777,11 +778,11 @@ def demo():
     case1 = -mu * t
     case2 = log(1.0/3 - 1.0/3 * exp(-mu * t))
     case3 = log((1 - exp(-mu * t2)) / (1 - exp(-mu * t1))
-                * exp(-mu * (t + t2 - t1)))
+                * exp(-mu * (t + t1 - t2)))
     t3 = t
     case5 = log((1 - exp(-mu * t2)) * (1 - exp(-mu * t3))
                 / (1 - exp(-mu * t1))
-                * exp(-mu * (t + t2 + t3 - t1)))
+                * exp(-mu * (t + t1 - t2 - t3)))
 
     print(f"Case 1 (no mutation):    log P = {case1:.6e}")
     print(f"Case 2 (new branch mut): log P = {case2:.6e}")

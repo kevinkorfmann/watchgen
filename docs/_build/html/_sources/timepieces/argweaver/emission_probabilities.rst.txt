@@ -264,7 +264,7 @@ that the mutation fell on the lower segment (not the upper segment or the new br
 .. math::
 
    \log P(\text{emit}) = \log\!\left(
-   \frac{1 - e^{-\mu t_2}}{1 - e^{-\mu t_1}} \cdot e^{-\mu(t + t_2 - t_1)}
+   \frac{1 - e^{-\mu t_2}}{1 - e^{-\mu t_1}} \cdot e^{-\mu(t + t_1 - t_2)}
    \right)
 
 .. admonition:: Derivation
@@ -280,16 +280,10 @@ that the mutation fell on the lower segment (not the upper segment or the new br
 
       \frac{(1 - e^{-\mu t_2}) \cdot e^{-\mu(t_1 - t_2)} \cdot e^{-\mu t}}
            {1 - e^{-\mu t_1}}
-      = \frac{1 - e^{-\mu t_2}}{1 - e^{-\mu t_1}} \cdot e^{-\mu(t + t_2 - t_1)}
+      = \frac{1 - e^{-\mu t_2}}{1 - e^{-\mu t_1}} \cdot e^{-\mu(t + t_1 - t_2)}
 
-   Wait --- that's :math:`e^{-\mu(t_1 - t_2)} \cdot e^{-\mu t} = e^{-\mu(t + t_1 - t_2)}`.
-   But the code has :math:`e^{-\mu(t + t_2 - t_1)}`. Let's re-derive carefully.
-
-   Actually, the formula accounts for the fact that the observation constrains
-   where the mutation is. The factor :math:`e^{-\mu(t + t_2 - t_1)}` comes from
-   requiring no mutation on the new branch (:math:`e^{-\mu t}`) and adjusting for
-   the conditional probability. The full derivation normalizes over all possible
-   mutation placements consistent with the observation.
+   That's :math:`e^{-\mu(t_1 - t_2)} \cdot e^{-\mu t} = e^{-\mu(t + t_1 - t_2)}`,
+   which matches the formula above.
 
 .. admonition:: Calculus Aside --- Conditional probabilities and branch partitioning
 
@@ -318,7 +312,7 @@ Let :math:`t_1 = \text{age}(p) - \text{age}(x)` be the full branch length and
 .. math::
 
    \log P(\text{emit}) = \log\!\left(
-   \frac{1 - e^{-\mu t_2}}{1 - e^{-\mu t_1}} \cdot e^{-\mu(t + t_2 - t_1)}
+   \frac{1 - e^{-\mu t_2}}{1 - e^{-\mu t_1}} \cdot e^{-\mu(t + t_1 - t_2)}
    \right)
 
 This has the same form as Case 3, but with :math:`t_2` now measuring the upper
@@ -334,7 +328,7 @@ the existing branch. This is the rarest case.
 
    \log P(\text{emit}) = \log\!\left(
    \frac{(1 - e^{-\mu t_2}) \cdot (1 - e^{-\mu t_3})}{1 - e^{-\mu t_1}}
-   \cdot e^{-\mu(t + t_2 + t_3 - t_1)}
+   \cdot e^{-\mu(t + t_1 - t_2 - t_3)}
    \right)
 
 where :math:`t_1` is the full original branch length, :math:`t_2 = \max(t_{\text{upper}}, t_{\text{lower}})`,

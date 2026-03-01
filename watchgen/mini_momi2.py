@@ -68,9 +68,9 @@ def w_matrix(n):
     for col in range(2, n - 1):
         j = col + 2  # number of lineages
         W[:, col] = (
-            W[:, col - 1] * (2 * j + 1) * (n - 2 * bb) / (j * (n + j + 1))
-            - W[:, col - 2] * (j + 1) * (2 * j + 3) * (n - j)
-              / (j * (2 * j - 1) * (n + j + 1))
+            W[:, col - 1] * (2 * j - 1) * (n - 2 * bb) / ((j - 1) * (n + j))
+            - W[:, col - 2] * j * (2 * j - 3) * (n - j + 1)
+              / ((j - 1) * (2 * j + 1) * (n + j))
         )
     return W
 
@@ -109,12 +109,16 @@ def etjj_exponential(n, tau, growth_rate, N_bottom):
     scaled_time = (np.expm1(total_growth) / total_growth) * tau * 2.0 / N_bottom
 
     # Expected coalescence times via exponential integral
+    # Derivation: etjj = (2/N_bottom) * integral_0^tau exp(-c*(exp(g*s)-1)) ds
+    # where c = rate * 2 / (N_bottom * g).
+    # Substituting u = c*exp(g*s): etjj = (1/rate)*c*exp(c)*(Ei(-c*exp(g*tau)) - Ei(-c))
     a = rate * 2.0 / (N_bottom * growth_rate)
     result = np.zeros_like(rate)
     for idx in range(len(rate)):
         c = a[idx]
         result[idx] = (
-            np.exp(-c) * (-expi(c) + expi(c * np.exp(total_growth)))
+            (1.0 / rate[idx]) * c * np.exp(c)
+            * (expi(-c * np.exp(total_growth)) - expi(-c))
         )
     return result
 
@@ -210,8 +214,12 @@ def moran_action(t, tensor, axis):
     """
     n = tensor.shape[axis] - 1
     P = moran_transition(t, n)
-    # einsum: contract axis of tensor with P
-    return np.tensordot(tensor, P.T, axes=([axis], [0]))
+    # Contract along the specified axis and move result back to same position
+    result = np.tensordot(tensor, P.T, axes=([axis], [0]))
+    # tensordot places the contracted axis last; move it back to original position
+    if axis != result.ndim - 1:
+        result = np.moveaxis(result, -1, axis)
+    return result
 
 
 # ============================================================================
@@ -303,6 +311,8 @@ def poisson_log_likelihood(observed_sfs, expected_sfs):
         observed_sfs[mask] * np.log(expected_sfs[mask])
         - expected_sfs[mask]
     )
+    # Subtract expected counts for zero-observation bins
+    ll -= np.sum(expected_sfs[~mask])
     return ll
 
 

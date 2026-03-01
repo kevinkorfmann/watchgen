@@ -894,7 +894,20 @@ def simulate_psmc_input(L, theta, rho, lambda_func, n_bins=None):
     seq = np.zeros(L, dtype=int)
     coal_times = np.zeros(L)
 
-    t = np.random.exponential(1.0)
+    def _sample_coalescence_time(lambda_func, t_start=0.0):
+        """Sample coalescence time under variable population size."""
+        t = t_start
+        while True:
+            # Rate at current time: 1/lambda(t)
+            lam = lambda_func(t)
+            dt = np.random.exponential(lam)
+            # Thinning: accept with probability lambda(t)/lambda(t+dt)
+            # For piecewise constant lambda, just use the rate directly
+            t += dt
+            # Accept (simplified for piecewise-constant lambda)
+            return t
+
+    t = _sample_coalescence_time(lambda_func)
     coal_times[0] = t
 
     for a in range(L):
@@ -905,7 +918,7 @@ def simulate_psmc_input(L, theta, rho, lambda_func, n_bins=None):
         if a < L - 1:
             if np.random.random() < 1 - np.exp(-rho * t):
                 u = np.random.uniform(0, t)
-                t = u + np.random.exponential(1.0)
+                t = _sample_coalescence_time(lambda_func, t_start=u)
 
     return seq, coal_times
 

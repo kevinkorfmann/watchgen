@@ -53,7 +53,7 @@ def backward_mean(x, s, h=0.5):
     Wright-Fisher transition.
 
     For additive selection (h=0.5), this simplifies to:
-        mu = x + s * x * (1-x) / (2 * (1 + s*x))
+        mu = x - s * x * (1-x) / (2 * (1 + s*x))
 
     Parameters
     ----------
@@ -446,9 +446,9 @@ def log_coalescent_density(coal_times, n_lineages, epoch_start, epoch_end,
 
         # Exponential density: rate * exp(-rate * dt)
         # In log: log(rate) - rate * dt
-        # But we split: -log(xi) accounts for the 1/xi factor in the rate
         dt = t - prev_t
-        logp += -np.log(xi) - kchoose2_over_4 / (xi * N_diploid) * dt
+        logp += (np.log(kchoose2_over_4) - np.log(xi) - np.log(N_diploid)
+                 - kchoose2_over_4 / (xi * N_diploid) * dt)
 
         prev_t = t
         k -= 1
@@ -818,14 +818,11 @@ def backward_algorithm(sel, freqs, logfreqs, log1minusfreqs,
 
         total_emissions = gl_emissions + hap_emissions + coal_emissions
 
-        # HMM update: alpha[k] = emission[k] + logsumexp(prev_alpha + P^T[:,k])
+        # HMM update: alpha[k] = emission[k] + logsumexp(prev_alpha + P[:,k])
         for k in range(K):
-            # Use sparse column range for efficiency
-            col_lo = lo_idx[k] if lo_idx is not None else 0
-            col_hi = hi_idx[k] if hi_idx is not None else K
-            # P^T[j, k] = P[j, k] for column k = logP[j, k]
+            # Sum over all source states (column k of transition matrix)
             alpha[k] = total_emissions[k] + logsumexp(
-                prev_alpha[col_lo:col_hi] + logP[col_lo:col_hi, k])
+                prev_alpha + logP[:, k])
             if np.isnan(alpha[k]):
                 alpha[k] = -np.inf
 
@@ -925,12 +922,10 @@ def forward_algorithm(sel, freqs, logfreqs, log1minusfreqs,
 
         total_emissions = gl_emissions + coal_emissions
 
-        # Forward update: use P[i,j] (not transposed)
+        # Forward update: alpha[k] = emission[k] + logsumexp_j(prev_alpha[j] + P[j,k])
         for k in range(K):
-            alpha[k] = logsumexp(
-                prev_alpha[lo_idx[k]:hi_idx[k]]
-                + logP[k, lo_idx[k]:hi_idx[k]]
-                + total_emissions[lo_idx[k]:hi_idx[k]])
+            alpha[k] = total_emissions[k] + logsumexp(
+                prev_alpha + logP[:, k])
             if np.isnan(alpha[k]):
                 alpha[k] = -np.inf
 

@@ -218,7 +218,7 @@ def coalescent_with_recombination_simple(n, L, rho, max_events=10000):
         total_length = sum(
             sum(r - l for l, r in segs) for segs in lineages
         )
-        recomb_rate = rho * total_length / L
+        recomb_rate = rho * total_length / (2 * L)
 
         winner, dt = exponential_race(coal_rate, recomb_rate)
         t += dt
@@ -249,7 +249,7 @@ def coalescent_with_recombination_simple(n, L, rho, max_events=10000):
 def coalescent_waiting_time_constant(k, N):
     """Waiting time for k lineages, constant population size N."""
     rate = k * (k - 1) / 2
-    u = np.random.exponential(1.0 / (2 * rate))
+    u = np.random.exponential(1.0 / rate)
     return N * u
 
 
@@ -273,7 +273,7 @@ def coalescent_waiting_time_growth(k, N0, alpha, t0):
         Waiting time (can be inf if coalescence doesn't occur).
     """
     rate = k * (k - 1) / 2
-    u = np.random.exponential(1.0 / (2 * rate))
+    u = np.random.exponential(1.0 / rate)
 
     if alpha == 0:
         return N0 * u
@@ -648,7 +648,7 @@ class MinimalSimulator:
             t_ca = INFINITY
             if coal_rate > 0:
                 t_ca = self.Ne * np.random.exponential(
-                    1.0 / (2 * coal_rate))
+                    1.0 / coal_rate)
 
             min_t = min(t_re, t_ca)
             self.t += min_t
@@ -1342,7 +1342,7 @@ def simulate_coalescent_tmrca(n, N, n_reps=5000):
         k = n
         while k > 1:
             rate = k * (k - 1) / 2
-            t += N * np.random.exponential(1.0 / rate)
+            t += 2 * N * np.random.exponential(1.0 / rate)
             k -= 1
         tmrca_values.append(t)
     return np.array(tmrca_values)
