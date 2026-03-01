@@ -1,17 +1,10 @@
 .. _tsdate_timepiece:
 
-====================================
-Timepiece VII: tsdate
-====================================
+=====================================
+Timepiece IX: tsdate
+=====================================
 
    *Dating Nodes in a Tree Sequence*
-
-.. epigraph::
-
-   "A unified genealogy of modern and ancient genomes"
-
-   -- Wohns, Wong, Jeffery, Treber, Harber, Muber, Niskanen, Rood, Mis,
-      Murdock, and others (2022)
 
 The Mechanism at a Glance
 ==========================
@@ -40,6 +33,10 @@ mutational data (how many mutations sit on each edge), and :math:`\mathcal{T}` i
 the tree topology. In words: the probability of the node ages given the data is
 proportional to the probability of the data given the ages (the **likelihood**) times
 the prior probability of those ages (the **prior**).
+
+.. admonition:: Primary Reference
+
+   :cite:`tsdate`
 
 The four gears of tsdate:
 
@@ -102,14 +99,14 @@ The standard pipeline for scalable genealogical inference is:
            v
        tsdate   -->  Dated tree sequence (calibrated node ages)
 
-**tsinfer** (Timepiece V) gives you the *skeleton* -- which samples share which
-ancestors, and the tree structure at each position. But the "times" it assigns are
-just a frequency-based proxy (older ancestors have higher-frequency derived alleles).
-These are ordinal, not quantitative: they tell you ancestor A is older than B,
-but not by how much.
+**tsinfer** (Timepiece VI) gives you the *skeleton of the movement* -- the frame on
+which everything hangs: which samples share which ancestors, and the tree structure
+at each position. But the "times" it assigns are just a frequency-based proxy
+(older ancestors have higher-frequency derived alleles). These are ordinal, not
+quantitative: they tell you ancestor A is older than B, but not by how much.
 
-**tsdate** adds the *flesh* -- real time estimates based on the molecular clock.
-Every edge in the tree can carry mutations, and the number of mutations is
+**tsdate** adds the *calibration* -- real time estimates based on the molecular
+clock. Every edge in the tree can carry mutations, and the number of mutations is
 informative about the edge's length. By combining this mutation signal with a prior
 from coalescent theory, tsdate computes posterior estimates for every node's age.
 
@@ -123,31 +120,8 @@ both essential, each useless without the other.
      Poisson mutation model
    - :ref:`Ancestral Recombination Graphs <args>` -- tree sequences
    - :ref:`Hidden Markov Models <hmms>` -- for understanding belief propagation
-   - Familiarity with :ref:`tsinfer <tsinfer_timepiece>` (Timepiece V) is helpful
+   - Familiarity with :ref:`tsinfer <tsinfer_timepiece>` (Timepiece VI) is helpful
      but not strictly required
-
-The Papers Behind tsdate
-==========================
-
-tsdate draws on multiple papers:
-
-1. **Wohns et al. (2022)**, *Science*. "A unified genealogy of modern and
-   ancient genomes." Introduces the inside-outside and maximization methods,
-   the conditional coalescent prior, and applies tsdate to build a unified
-   human genealogy. The foundational paper.
-
-2. **Schweiger & Durbin (2023)**, *Genome Research*. "Ultrafast genome-wide
-   inference of pairwise coalescence times." Introduces the Gamma-SMC method
-   that inspired the variational gamma approach: represent posteriors as gamma
-   distributions, update via expectation propagation.
-
-3. **Minka (2001)**. "Expectation propagation for approximate Bayesian
-   inference." The machine-learning framework behind the variational gamma
-   method: iterative message passing with moment matching.
-
-4. **Deng, Nielsen, and Song (2024)**. The rescaling algorithm used in
-   SINGER, which tsdate also adopts for calibrating times against the
-   mutation clock.
 
 Chapters
 ========
@@ -161,6 +135,7 @@ Chapters
    inside_outside
    variational_gamma
    rescaling
+   demo
 
 Each chapter derives the math, explains the intuition, implements the code,
 and verifies it works. By the end, you'll have built a complete node-dating

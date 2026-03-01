@@ -6,6 +6,18 @@ Overview of msprime
 
    *Before assembling the watch, lay out every part and understand what it does.*
 
+.. figure:: /_static/figures/fig_mini_msprime.png
+   :width: 100%
+   :align: center
+
+   **msprime at a glance.** Panel A: Coalescence times -- histogram of simulated
+   :math:`T_{\text{MRCA}}` for :math:`n=2` vs the theoretical :math:`\text{Exp}(1)`
+   density. Panel B: Site frequency spectrum from many coalescent replicates vs the
+   classic neutral expectation :math:`\theta/i`. Panel C: Fenwick tree -- the
+   binary-indexed data structure enabling :math:`O(\log n)` cumulative-sum queries
+   and weighted random search. Panel D: Demographic effects on coalescence times
+   under constant, bottleneck, and growth scenarios.
+
 Welcome to the master clockmaker's bench. Of all the timepieces we will
 examine in this book, msprime is arguably the most finely engineered: a
 coalescent simulator that can generate the complete genealogical history of

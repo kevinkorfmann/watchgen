@@ -26,6 +26,19 @@ This chapter builds EP from scratch, one piece at a time. By the end you will
 understand cavity distributions, moment matching, and damping -- the three
 pillars of EP -- and see how they fit together to date a tree sequence.
 
+.. admonition:: Biology Aside -- Why dating matters
+
+   Assigning dates to ancestral nodes in a genealogy answers some of the most
+   fundamental questions in evolutionary biology: *When did the most recent
+   common ancestor of all humans live? When did a specific population split
+   occur? How old is a particular beneficial mutation?* The tree sequence
+   from ``tsinfer`` gives us the topology (who is related to whom), but
+   the branch lengths -- the time spans between ancestor and descendant --
+   must be estimated from the density of mutations along each branch. More
+   mutations imply more time. The variational gamma method performs this
+   estimation for every node simultaneously, propagating information through
+   the entire genealogy to produce the most consistent set of dates.
+
 .. admonition:: Prerequisites
 
    This chapter builds on three earlier ones. The coalescent prior
@@ -124,20 +137,77 @@ In the **natural parameter** (exponential family) form, this is:
 The natural parameters are :math:`\eta_1 = \alpha - 1` and :math:`\eta_2 = -\beta`.
 The sufficient statistics are :math:`\log t` and :math:`t`.
 
+.. admonition:: Biology Aside -- What :math:`\alpha` and :math:`\beta` mean for node ages
+
+   For each ancestor in the genealogy, the gamma distribution
+   :math:`\text{Gamma}(\alpha, \beta)` encodes our belief about when that
+   ancestor lived. The **mean** :math:`\alpha/\beta` is our best estimate
+   of the ancestor's age (in generations or coalescent time units). The
+   **variance** :math:`\alpha/\beta^2` measures how uncertain we are. A
+   node deep in the tree (many mutations on incident edges, many descendant
+   samples) will have a tight gamma with large :math:`\alpha` -- we are
+   confident about its age. A node with few mutations and few descendants
+   will have a diffuse gamma -- we know little about when it lived. The EP
+   algorithm refines these beliefs by passing information along edges,
+   iteratively sharpening each node's gamma.
+
 **Why natural parameters?** Because products of gamma-like terms correspond to
-*additions* of natural parameters. If we have two gamma factors:
+*additions* of natural parameters. Let us show this step by step. Start with two
+gamma-shaped factors:
 
 .. math::
 
    f_1(t) \propto t^{\alpha_1 - 1} e^{-\beta_1 t}, \quad
    f_2(t) \propto t^{\alpha_2 - 1} e^{-\beta_2 t}
 
-then their product is:
+Multiply them together, using the rules :math:`t^a \cdot t^b = t^{a+b}` and
+:math:`e^{-c_1 t} \cdot e^{-c_2 t} = e^{-(c_1+c_2)t}`:
 
 .. math::
 
-   f_1(t) \cdot f_2(t) \propto t^{(\alpha_1 + \alpha_2 - 1) - 1} e^{-(\beta_1 + \beta_2) t}
-   = \text{Gamma}(\alpha_1 + \alpha_2 - 1, \beta_1 + \beta_2)
+   f_1(t) \cdot f_2(t) &\propto t^{\alpha_1 - 1} \cdot t^{\alpha_2 - 1}
+   \cdot e^{-\beta_1 t} \cdot e^{-\beta_2 t} \\
+   &= t^{(\alpha_1 - 1) + (\alpha_2 - 1)} \cdot e^{-(\beta_1 + \beta_2) t} \\
+   &= t^{(\alpha_1 + \alpha_2 - 2)} \cdot e^{-(\beta_1 + \beta_2) t} \\
+   &= t^{(\alpha_1 + \alpha_2 - 1) - 1} \cdot e^{-(\beta_1 + \beta_2) t}
+
+This is the kernel of :math:`\text{Gamma}(\alpha_1 + \alpha_2 - 1, \beta_1 + \beta_2)`.
+In natural parameters :math:`(\eta_1, \eta_2) = (\alpha - 1, -\beta)`, the
+product corresponds to elementwise addition:
+
+.. math::
+
+   (\eta_1^{(1)} + \eta_1^{(2)}, \; \eta_2^{(1)} + \eta_2^{(2)})
+   = (\alpha_1 - 1 + \alpha_2 - 1, \; -\beta_1 - \beta_2)
+
+which gives natural parameters for the product
+:math:`\text{Gamma}(\alpha_1 + \alpha_2 - 1, \beta_1 + \beta_2)`.
+
+.. code-block:: python
+
+   # Verify the product rule numerically
+   import numpy as np
+   from scipy.stats import gamma as gamma_dist
+
+   a1, b1 = 3.0, 2.0
+   a2, b2 = 2.0, 1.5
+
+   x = np.linspace(0.01, 5.0, 1000)
+
+   # Product of two gamma PDFs (unnormalized)
+   f1 = gamma_dist.pdf(x, a=a1, scale=1/b1)
+   f2 = gamma_dist.pdf(x, a=a2, scale=1/b2)
+   product = f1 * f2
+
+   # The result should be proportional to Gamma(a1+a2-1, b1+b2)
+   a_new, b_new = a1 + a2 - 1, b1 + b2
+   f_new = gamma_dist.pdf(x, a=a_new, scale=1/b_new)
+
+   # Check proportionality: ratio should be constant
+   ratio = product / f_new
+   ratio = ratio[f_new > 1e-10]  # avoid division by near-zero
+   print(f"Product is Gamma({a_new}, {b_new})")
+   print(f"Ratio min={ratio.min():.6f}, max={ratio.max():.6f} (should be constant)")
 
 This addition rule is the foundation of EP updates. In the gear train, each
 factor (edge likelihood, coalescent prior) contributes a "torque" in natural
@@ -323,6 +393,18 @@ The EP Update for One Edge
 This is the heart of the algorithm. For edge :math:`e = (u, v)` with
 :math:`m_e` mutations and span-weighted rate :math:`\lambda_e`:
 
+.. admonition:: Biology Aside -- What an EP update does, biologically
+
+   Each edge in the tree sequence connects a parent (ancestor) to a child
+   (descendant). The edge carries mutations whose count constrains the time
+   difference between parent and child. The EP update for one edge asks:
+   *given what we currently believe about the parent's age and the child's
+   age, and given the number of mutations on this edge, how should we revise
+   our beliefs?* If many mutations sit on a short edge, the parent must be
+   much older than the child. If no mutations sit on a long edge, parent and
+   child are probably close in time. The four steps below formalize this
+   intuition as a sequence of mathematical operations.
+
 **Step 1: Compute the "cavity" distributions.**
 
 Remove the current edge's messages from the parent and child posteriors:
@@ -480,6 +562,19 @@ For the Poisson-gamma case, this involves integrals of the form:
    \int_0^\infty \int_0^{t_u} q_{\setminus e}(t_u) \cdot q_{\setminus e}(t_v) \cdot
    (\lambda_e(t_u - t_v))^{m_e} e^{-\lambda_e(t_u-t_v)} \, dt_v \, dt_u
    }
+
+.. admonition:: Plain-language summary -- Why these integrals are hard
+
+   The difficulty arises because the parent must be older than the child
+   (:math:`t_u > t_v`), and the number of mutations depends on the time
+   *difference* :math:`t_u - t_v`. This couples the two variables: you
+   cannot estimate the parent's age independently of the child's. The
+   integral averages over all possible (parent age, child age) combinations
+   that are consistent with both the mutation data on this edge *and* the
+   information from all other edges (encoded in the cavity). Computing this
+   average exactly would require evaluating a two-dimensional integral for
+   each of the millions of edges in a tree sequence -- which is why
+   approximations are essential.
 
 These integrals don't have closed forms in general. tsdate evaluates them using
 a combination of:
@@ -658,6 +753,17 @@ allowing it to settle smoothly into the correct position.
 
 Convergence
 =============
+
+.. admonition:: Biology Aside -- Convergence means consistent dating
+
+   Convergence of EP means that the inferred ages of all nodes in the
+   genealogy have become mutually consistent. Each node's age agrees with the
+   mutation evidence on every incident edge, with the coalescent prior (old
+   nodes should have ages consistent with the expected coalescent times), and
+   with the ages of its parents and children. When the algorithm converges,
+   the age assignments satisfy all these constraints simultaneously -- or at
+   least as well as the gamma approximation allows. In practice, ~25
+   iterations suffice for tree sequences with millions of nodes.
 
 EP iterates over all edges multiple times. Convergence is monitored by checking
 whether the posteriors change significantly between iterations:

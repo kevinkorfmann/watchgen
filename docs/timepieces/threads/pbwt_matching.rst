@@ -57,11 +57,11 @@ site.
 
 .. code-block:: text
 
-   Site i:   sort₀ = [h3, h1, h4, h2, h5]
+   Site i:   sort_0 = [h3, h1, h4, h2, h5]
 
-   Alleles:  h3→0, h1→1, h4→0, h2→1, h5→0
+   Alleles:  h3->0, h1->1, h4->0, h2->1, h5->0
 
-   Site i+1: sort₁ = [h3, h4, h5,  |  h1, h2]
+   Site i+1: sort_1 = [h3, h4, h5,  |  h1, h2]
                        ^^^^^^^^^^^^     ^^^^^^
                        allele = 0       allele = 1
                       (order preserved) (order preserved)
@@ -69,6 +69,50 @@ site.
 This sorting is performed in :math:`O(N)` time per site using a single pass
 through the current array. The PBWT is never stored in full -- genotypes are
 streamed through the algorithm one site at a time.
+
+.. code-block:: python
+
+   import numpy as np
+
+   def pbwt_update(prefix_array, alleles):
+       """Update the PBWT prefix array at one site.
+
+       Sorts haplotypes by placing allele-0 carriers before allele-1
+       carriers, preserving relative order within each group.
+
+       Parameters
+       ----------
+       prefix_array : list of int
+           Current ordering of haplotype indices.
+       alleles : ndarray, shape (N,)
+           Alleles (0 or 1) for each haplotype at this site.
+
+       Returns
+       -------
+       new_array : list of int
+           Updated prefix array.
+       """
+       zeros = [h for h in prefix_array if alleles[h] == 0]
+       ones = [h for h in prefix_array if alleles[h] == 1]
+       return zeros + ones
+
+   # Demonstrate PBWT sorting on a small panel
+   N = 6  # haplotypes
+   M = 4  # sites
+   np.random.seed(42)
+   panel = np.random.randint(0, 2, size=(N, M))
+
+   prefix = list(range(N))  # initial order: [0, 1, 2, 3, 4, 5]
+   print("Haplotype panel:")
+   for h in range(N):
+       print(f"  h{h}: {panel[h]}")
+   print()
+
+   for site in range(M):
+       prefix = pbwt_update(prefix, panel[:, site])
+       print(f"Site {site} (alleles={panel[:, site].tolist()}): "
+             f"prefix = {prefix}")
+   print("\nFinal PBWT order groups haplotypes sharing long prefixes together")
 
 
 L-Neighbourhood Querying
@@ -93,6 +137,71 @@ array index into a **red-black tree** (C++ ``std::set``) and querying the
 
 We denote the total number of query sites by :math:`M_{\text{query}}`.
 
+.. code-block:: python
+
+   def query_l_neighbourhood(prefix_array, query_idx, L, max_idx):
+       """Find the L nearest neighbours in the prefix array.
+
+       Returns the L/2 closest sequences above and below query_idx
+       in the prefix array that were threaded earlier (index < max_idx).
+
+       Parameters
+       ----------
+       prefix_array : list of int
+           Current PBWT prefix array.
+       query_idx : int
+           Position of the query sequence in the prefix array.
+       L : int
+           Neighbourhood size (total matches to return).
+       max_idx : int
+           Only consider sequences with index < max_idx (threaded earlier).
+
+       Returns
+       -------
+       neighbours : list of int
+           Haplotype indices of the L nearest neighbours.
+       """
+       pos = prefix_array.index(query_idx)
+       neighbours = []
+
+       # Search upward (lower indices in prefix array)
+       above = []
+       for i in range(pos - 1, -1, -1):
+           if prefix_array[i] < max_idx:
+               above.append(prefix_array[i])
+           if len(above) >= L // 2:
+               break
+
+       # Search downward (higher indices in prefix array)
+       below = []
+       for i in range(pos + 1, len(prefix_array)):
+           if prefix_array[i] < max_idx:
+               below.append(prefix_array[i])
+           if len(below) >= L // 2:
+               break
+
+       neighbours = above + below
+
+       # If one side has fewer, expand the other
+       if len(neighbours) < L:
+           remaining = L - len(neighbours)
+           all_eligible = [h for h in prefix_array
+                           if h < max_idx and h != query_idx
+                           and h not in neighbours]
+           neighbours.extend(all_eligible[:remaining])
+
+       return neighbours[:L]
+
+   # Demonstrate L-neighbourhood query
+   prefix = [3, 0, 5, 2, 4, 1]  # some PBWT ordering
+   query = 5  # query haplotype
+   L = 4
+   max_idx = 5  # only consider h0..h4 (threaded before h5)
+   nbrs = query_l_neighbourhood(prefix, query, L, max_idx)
+   print(f"Prefix array: {prefix}")
+   print(f"Query h{query} at position {prefix.index(query)}")
+   print(f"L={L} neighbours (threaded before h{query}): {nbrs}")
+
 
 Candidate Filtering
 =====================
@@ -112,6 +221,55 @@ filtered by match count:
 
 Additionally, the top 4 matches from adjacent chunks are included to account
 for recombination events near chunk boundaries.
+
+.. code-block:: python
+
+   from collections import Counter
+
+   def filter_candidates(match_counts, min_count=4, n_threaded=100):
+       """Filter candidates by match count.
+
+       Parameters
+       ----------
+       match_counts : Counter
+           Maps haplotype index to number of query sites where it appeared.
+       min_count : int
+           Minimum match count to retain a candidate.
+       n_threaded : int
+           Number of sequences threaded so far.
+
+       Returns
+       -------
+       candidates : list of int
+           Filtered candidate haplotype indices.
+       """
+       threshold = min_count
+       if n_threaded >= 10000:
+           threshold *= 2  # stricter for large panels
+
+       candidates = [h for h, c in match_counts.items() if c >= threshold]
+
+       # If none survive, relax threshold until at least one remains
+       while not candidates and threshold > 1:
+           threshold -= 1
+           candidates = [h for h, c in match_counts.items() if c >= threshold]
+
+       # Fallback: if still empty, take the best match
+       if not candidates and match_counts:
+           candidates = [match_counts.most_common(1)[0][0]]
+
+       return candidates
+
+   # Demonstrate candidate filtering
+   np.random.seed(42)
+   counts = Counter()
+   for h in np.random.choice(50, size=200, replace=True):
+       counts[h] += 1
+
+   filtered = filter_candidates(counts, min_count=4, n_threaded=500)
+   print(f"Total candidates observed: {len(counts)}")
+   print(f"After filtering (min_count=4): {len(filtered)} candidates")
+   print(f"Top 5 by count: {counts.most_common(5)}")
 
 .. note::
 

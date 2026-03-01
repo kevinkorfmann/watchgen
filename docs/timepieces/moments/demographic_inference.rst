@@ -846,6 +846,291 @@ Exercises
    for it. How biased are the demographic parameter estimates? Now fit with
    ``moments``' built-in misidentification correction. Does the bias disappear?
 
+Solutions
+=========
+
+.. admonition:: Solution 1: Likelihood surface
+
+   Compute the Poisson log-likelihood on a grid of :math:`(\nu, T)` values
+   and display the result as a contour map.  The surface should be unimodal
+   with the maximum near the true parameters.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments
+
+      # --- Generate data ---
+      n = 30
+      theta_true = 2000
+      nu_true, T_true = 5.0, 0.2
+
+      model_true = two_epoch_model([nu_true, T_true], [n])
+      data = model_true * theta_true
+      np.random.seed(42)
+      data_noisy = np.zeros(n + 1)
+      for j in range(1, n):
+          data_noisy[j] = np.random.poisson(data[j])
+
+      # --- Build a 50 x 50 grid ---
+      nu_grid = np.linspace(0.5, 15.0, 50)
+      T_grid = np.linspace(0.01, 0.8, 50)
+      ll_surface = np.zeros((50, 50))
+
+      for i, nu in enumerate(nu_grid):
+          for j, T in enumerate(T_grid):
+              model = two_epoch_model([nu, T], [n])
+              theta_opt = optimal_theta_scaling(data_noisy, model)
+              model_scaled = model * theta_opt
+              ll_surface[i, j] = poisson_log_likelihood(data_noisy, model_scaled)
+
+      # --- Find the maximum ---
+      idx = np.unravel_index(np.argmax(ll_surface), ll_surface.shape)
+      nu_best = nu_grid[idx[0]]
+      T_best = T_grid[idx[1]]
+
+      print(f"Grid maximum at nu={nu_best:.2f}, T={T_best:.3f}")
+      print(f"True parameters: nu={nu_true}, T={T_true}")
+      print(f"Max log-likelihood: {ll_surface[idx]:.2f}")
+
+      # --- Contour plot (if matplotlib available) ---
+      try:
+          import matplotlib.pyplot as plt
+          fig, ax = plt.subplots(figsize=(7, 5))
+          NU, TT = np.meshgrid(nu_grid, T_grid, indexing='ij')
+          levels = np.linspace(ll_surface.max() - 20, ll_surface.max(), 15)
+          cs = ax.contourf(NU, TT, ll_surface, levels=levels, cmap='viridis')
+          ax.plot(nu_true, T_true, 'r*', markersize=14, label='True')
+          ax.plot(nu_best, T_best, 'wx', markersize=10, label='Grid max')
+          ax.set_xlabel(r'$\nu$ (expansion factor)')
+          ax.set_ylabel(r'$T$ (time since expansion)')
+          ax.set_title('Log-likelihood surface')
+          ax.legend()
+          plt.colorbar(cs, label='Log-likelihood')
+          plt.tight_layout()
+          plt.savefig('likelihood_surface.png', dpi=150)
+          plt.show()
+      except ImportError:
+          print("(matplotlib not available -- skipping plot)")
+
+   The surface should be unimodal.  A ridge running diagonally indicates a
+   correlation between :math:`\nu` and :math:`T`: a larger expansion can be
+   partially compensated by a more recent onset.  This correlation is captured
+   by the off-diagonal elements of the Fisher Information Matrix.
+
+.. admonition:: Solution 2: FIM vs GIM
+
+   Simulate 100 independent SFS replicates, fit each one, compute
+   FIM-based z-scores, and check whether they follow a standard normal.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments
+      from scipy.optimize import minimize
+
+      n = 30
+      nu_true, T_true = 5.0, 0.2
+      theta_true = 2000
+
+      model_true = two_epoch_model([nu_true, T_true], [n])
+      data_expected = model_true * theta_true
+
+      z_scores_nu = []
+      z_scores_T = []
+
+      for rep in range(100):
+          np.random.seed(rep)
+          # Simulate Poisson data
+          data_rep = np.zeros(n + 1)
+          for j in range(1, n):
+              data_rep[j] = np.random.poisson(data_expected[j])
+
+          # Fit the two-epoch model
+          log_p0 = np.log([3.0, 0.3])
+          result = minimize(
+              objective, log_p0, args=(data_rep, [n]),
+              method='Nelder-Mead', options={'maxiter': 1000, 'xatol': 1e-4}
+          )
+          nu_hat, T_hat = np.exp(result.x)
+          params_hat = np.array([nu_hat, T_hat])
+
+          # Compute FIM and standard errors
+          FIM = fisher_information_numerical(
+              params_hat, data_rep, two_epoch_model, [n]
+          )
+          if np.linalg.det(FIM) > 0:
+              cov = np.linalg.inv(FIM)
+              se = np.sqrt(np.diag(cov))
+              z_scores_nu.append((nu_hat - nu_true) / se[0])
+              z_scores_T.append((T_hat - T_true) / se[1])
+
+      z_nu = np.array(z_scores_nu)
+      z_T = np.array(z_scores_T)
+
+      print(f"z-scores for nu: mean={z_nu.mean():.3f}, std={z_nu.std():.3f}")
+      print(f"z-scores for T:  mean={z_T.mean():.3f}, std={z_T.std():.3f}")
+      print(f"Expected for N(0,1): mean=0.000, std=1.000")
+
+   If the FIM correctly predicts the spread, the z-score standard deviation
+   should be close to 1.0.  With Poisson-sampled data (truly independent
+   sites), the FIM is the correct information measure, so the z-scores
+   should indeed follow a standard normal.  With real genomic data, linkage
+   would inflate the true variance beyond what the FIM predicts, making
+   the z-score distribution wider than :math:`N(0,1)` -- this is precisely
+   why the GIM correction is needed for real data.
+
+.. admonition:: Solution 3: Model comparison
+
+   Simulate data under a three-epoch model (bottleneck then expansion),
+   fit both a two-epoch and three-epoch model, and use the LRT.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments
+      from scipy.optimize import minimize
+      from scipy.stats import chi2
+
+      n = 30
+      theta_true = 3000
+
+      # --- Three-epoch model: ancestral -> bottleneck -> expansion ---
+      def three_epoch_model(params, ns):
+          nu_B, nu_E, T_B, T_E = params
+          fs = moments.Demographics1D.snm(ns)
+          fs.integrate([nu_B], T_B)   # bottleneck
+          fs.integrate([nu_E], T_E)   # expansion
+          return fs
+
+      # True parameters: bottleneck to 0.1x, then expansion to 5x
+      params_true_3 = [0.1, 5.0, 0.05, 0.2]
+      model_true_3 = three_epoch_model(params_true_3, [n])
+      data = model_true_3 * theta_true
+
+      np.random.seed(42)
+      data_noisy = np.zeros(n + 1)
+      for j in range(1, n):
+          data_noisy[j] = np.random.poisson(data[j])
+
+      # --- Fit the two-epoch model (2 free parameters) ---
+      def obj_2epoch(log_p, data_sfs, ns):
+          nu, T = np.exp(log_p)
+          model = two_epoch_model([nu, T], ns)
+          theta_opt = optimal_theta_scaling(data_sfs, model)
+          return -poisson_log_likelihood(data_sfs, model * theta_opt)
+
+      res_2 = minimize(obj_2epoch, np.log([2.0, 0.3]), args=(data_noisy, [n]),
+                       method='Nelder-Mead', options={'maxiter': 2000})
+      nu2, T2 = np.exp(res_2.x)
+      model_2 = two_epoch_model([nu2, T2], [n])
+      theta_2 = optimal_theta_scaling(data_noisy, model_2)
+      ll_2 = poisson_log_likelihood(data_noisy, model_2 * theta_2)
+
+      # --- Fit the three-epoch model (4 free parameters) ---
+      def obj_3epoch(log_p, data_sfs, ns):
+          params = np.exp(log_p)
+          model = three_epoch_model(params, ns)
+          theta_opt = optimal_theta_scaling(data_sfs, model)
+          return -poisson_log_likelihood(data_sfs, model * theta_opt)
+
+      res_3 = minimize(obj_3epoch, np.log([0.5, 3.0, 0.1, 0.1]),
+                       args=(data_noisy, [n]),
+                       method='Nelder-Mead', options={'maxiter': 5000})
+      p3 = np.exp(res_3.x)
+      model_3 = three_epoch_model(p3, [n])
+      theta_3 = optimal_theta_scaling(data_noisy, model_3)
+      ll_3 = poisson_log_likelihood(data_noisy, model_3 * theta_3)
+
+      # --- Likelihood ratio test (df = 4 - 2 = 2) ---
+      lr_stat = 2 * (ll_3 - ll_2)
+      p_value = 1 - chi2.cdf(lr_stat, df=2)
+
+      print(f"Two-epoch:   ll = {ll_2:.2f}  (nu={nu2:.3f}, T={T2:.4f})")
+      print(f"Three-epoch: ll = {ll_3:.2f}  (nuB={p3[0]:.3f}, nuE={p3[1]:.3f}, "
+            f"TB={p3[2]:.4f}, TE={p3[3]:.4f})")
+      print(f"LR statistic: {lr_stat:.2f}")
+      print(f"p-value: {p_value:.2e}")
+      print(f"Three-epoch significantly better (p < 0.05): {p_value < 0.05}")
+
+   Since the data were generated under a three-epoch model, the three-epoch
+   fit should have a significantly higher likelihood.  The LRT with 2 degrees
+   of freedom should reject the simpler two-epoch model at the 0.05 level.
+
+.. admonition:: Solution 4: Misidentification bias
+
+   Generate data with 5% ancestral misidentification, fit without correction,
+   then fit with the ``apply_misidentification`` correction and compare.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments
+      from scipy.optimize import minimize
+
+      n = 30
+      nu_true, T_true = 5.0, 0.2
+      theta_true = 2000
+      p_misid_true = 0.05
+
+      # Generate true SFS and apply misidentification
+      model_true = two_epoch_model([nu_true, T_true], [n])
+      sfs_true = model_true * theta_true
+      sfs_misid = apply_misidentification(np.array(sfs_true), p_misid_true)
+
+      np.random.seed(42)
+      data_obs = np.zeros(n + 1)
+      for j in range(1, n):
+          data_obs[j] = np.random.poisson(sfs_misid[j])
+
+      # --- Fit WITHOUT misidentification correction ---
+      def obj_no_correction(log_p, data_sfs, ns):
+          nu, T = np.exp(log_p)
+          model = two_epoch_model([nu, T], ns)
+          theta_opt = optimal_theta_scaling(data_sfs, model)
+          return -poisson_log_likelihood(data_sfs, model * theta_opt)
+
+      res_no = minimize(obj_no_correction, np.log([3.0, 0.3]),
+                        args=(data_obs, [n]),
+                        method='Nelder-Mead', options={'maxiter': 2000})
+      nu_no, T_no = np.exp(res_no.x)
+
+      # --- Fit WITH misidentification correction ---
+      def obj_with_correction(log_p, data_sfs, ns):
+          # params: [log(nu), log(T), logit(p_misid)]
+          nu, T = np.exp(log_p[:2])
+          p_misid = 1.0 / (1.0 + np.exp(-log_p[2]))  # sigmoid for (0, 1)
+          model = two_epoch_model([nu, T], ns)
+          theta_opt = optimal_theta_scaling(data_sfs, model)
+          model_scaled = np.array(model * theta_opt)
+          model_corrected = apply_misidentification(model_scaled, p_misid)
+          return -poisson_log_likelihood(data_sfs, model_corrected)
+
+      # Initial guess: logit(0.02) for p_misid
+      logit_p0 = np.log(0.02 / (1 - 0.02))
+      res_with = minimize(obj_with_correction,
+                          np.array([np.log(3.0), np.log(0.3), logit_p0]),
+                          args=(data_obs, [n]),
+                          method='Nelder-Mead', options={'maxiter': 3000})
+      nu_with, T_with = np.exp(res_with.x[:2])
+      p_misid_hat = 1.0 / (1.0 + np.exp(-res_with.x[2]))
+
+      print("True parameters:    nu=5.000, T=0.2000, p_misid=0.050")
+      print(f"Without correction: nu={nu_no:.3f}, T={T_no:.4f}")
+      print(f"  Bias in nu: {(nu_no - nu_true)/nu_true*100:+.1f}%")
+      print(f"  Bias in T:  {(T_no - T_true)/T_true*100:+.1f}%")
+      print(f"With correction:    nu={nu_with:.3f}, T={T_with:.4f}, "
+            f"p_misid={p_misid_hat:.3f}")
+      print(f"  Bias in nu: {(nu_with - nu_true)/nu_true*100:+.1f}%")
+      print(f"  Bias in T:  {(T_with - T_true)/T_true*100:+.1f}%")
+
+   Without correction, the 5% misidentification inflates the high-frequency
+   bins (singletons are "flipped" to appear as :math:`n-1` counts), biasing
+   the inferred demography -- typically making the population appear less
+   expanded than it truly is.  With the correction, the optimizer jointly
+   recovers :math:`\nu`, :math:`T`, and :math:`p_{\text{misid}}`, removing
+   the bias.
+
 Next: :ref:`linkage_disequilibrium` -- a second source of information about
 demography, captured by two-locus statistics.  Where the SFS is our primary
 dial, LD is a **second pendulum** that constrains parameters the SFS alone

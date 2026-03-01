@@ -1003,3 +1003,225 @@ Exercises
 
 Next: :ref:`hudson_algorithm` -- the main simulation loop that orchestrates
 these data structures, the ticking of the clock.
+
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Fenwick tree operations
+
+   We build a Fenwick tree with 16 elements, set random values, and verify
+   that ``get_cumulative_sum`` matches a naive prefix sum for every index.
+   Then we verify ``find`` for 100 random target values.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      ft = FenwickTree(16)
+      values = np.random.exponential(5.0, size=16)
+
+      for i in range(16):
+          ft.set_value(i + 1, values[i])  # 1-indexed
+
+      # Verify cumulative sums
+      naive_cumsum = np.cumsum(values)
+      all_correct = True
+      for i in range(1, 17):
+          fenwick_sum = ft.get_cumulative_sum(i)
+          naive_sum = naive_cumsum[i - 1]
+          if abs(fenwick_sum - naive_sum) > 1e-10:
+              print(f"MISMATCH at index {i}: fenwick={fenwick_sum}, "
+                    f"naive={naive_sum}")
+              all_correct = False
+      print(f"Cumulative sum verification: {'PASS' if all_correct else 'FAIL'}")
+
+      # Verify find() for 100 random targets
+      total = ft.get_total()
+      find_correct = True
+      for _ in range(100):
+          target = np.random.uniform(0, total)
+          idx = ft.find(target)
+
+          # Verify: cumsum(idx-1) < target <= cumsum(idx)
+          cumsum_idx = ft.get_cumulative_sum(idx)
+          cumsum_prev = ft.get_cumulative_sum(idx - 1) if idx > 1 else 0
+
+          if not (cumsum_prev < target <= cumsum_idx + 1e-10):
+              print(f"MISMATCH: find({target:.4f})={idx}, "
+                    f"cumsum[{idx-1}]={cumsum_prev:.4f}, "
+                    f"cumsum[{idx}]={cumsum_idx:.4f}")
+              find_correct = False
+      print(f"find() verification: {'PASS' if find_correct else 'FAIL'}")
+
+.. admonition:: Solution 2: Weighted segment selection
+
+   We create 100 segments with random masses and verify that sampling 10,000
+   times with the Fenwick tree produces frequencies matching the mass fractions.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n_segments = 100
+      ft = FenwickTree(n_segments)
+      masses = np.random.exponential(10.0, size=n_segments)
+
+      for i in range(n_segments):
+          ft.set_value(i + 1, masses[i])
+
+      total_mass = ft.get_total()
+      expected_fracs = masses / total_mass
+
+      # Sample 10,000 segments
+      n_samples = 10000
+      counts = np.zeros(n_segments)
+      for _ in range(n_samples):
+          target = np.random.uniform(0, total_mass)
+          idx = ft.find(target)
+          counts[idx - 1] += 1  # convert from 1-indexed to 0-indexed
+
+      observed_fracs = counts / n_samples
+
+      # Check that all segments are within 1% of expected
+      max_error = np.max(np.abs(observed_fracs - expected_fracs))
+      within_1pct = np.all(np.abs(observed_fracs - expected_fracs) < 0.01)
+
+      print(f"Max absolute error: {max_error:.4f}")
+      print(f"All within 1%: {within_1pct}")
+
+      # Show the 5 segments with the largest mass
+      top5 = np.argsort(masses)[-5:][::-1]
+      print(f"\nTop 5 segments by mass:")
+      print(f"{'Seg':>5s}  {'Mass':>8s}  {'Expected':>10s}  {'Observed':>10s}")
+      for i in top5:
+          print(f"{i:5d}  {masses[i]:8.2f}  {expected_fracs[i]:10.4f}  "
+                f"{observed_fracs[i]:10.4f}")
+
+.. admonition:: Solution 3: Breakpoint distribution with hotspots
+
+   We create a rate map where 1% of the genome has a 100x recombination rate.
+   The hotspot's mass fraction determines the expected fraction of breakpoints
+   falling in it. For a 100x hotspot covering 1% of the genome, the mass
+   fraction is :math:`100 \times 0.01 / (100 \times 0.01 + 1 \times 0.99) = 1.0 / 1.99 \approx 50.3\%`.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      L = 100000
+      hotspot_start = 50000
+      hotspot_end = 51000   # 1% of genome
+      background_rate = 1e-8
+      hotspot_rate = 100 * background_rate
+
+      rate_map = RateMap(
+          positions=[0, hotspot_start, hotspot_end, L],
+          rates=[background_rate, hotspot_rate, background_rate]
+      )
+
+      # Theoretical hotspot mass fraction
+      hotspot_mass = rate_map.mass_between(hotspot_start, hotspot_end)
+      total_mass = rate_map.total_mass
+      expected_hotspot_frac = hotspot_mass / total_mass
+      print(f"Hotspot mass fraction: {expected_hotspot_frac:.4f}")
+
+      # Set up a Fenwick tree with a single segment covering [0, L)
+      ft = FenwickTree(1)
+      ft.set_value(1, total_mass)
+
+      # Sample 10,000 breakpoints
+      n_samples = 10000
+      n_in_hotspot = 0
+      breakpoints = []
+
+      for _ in range(n_samples):
+          # Draw a random mass and convert to genomic position
+          random_mass = np.random.uniform(0, total_mass)
+          bp = rate_map.mass_to_position(random_mass)
+          breakpoints.append(bp)
+          if hotspot_start <= bp < hotspot_end:
+              n_in_hotspot += 1
+
+      observed_frac = n_in_hotspot / n_samples
+      print(f"Breakpoints in hotspot: {n_in_hotspot}/{n_samples} "
+            f"= {observed_frac:.4f}")
+      print(f"Expected fraction: {expected_hotspot_frac:.4f}")
+      print(f"The hotspot (1% of genome) captures ~{observed_frac*100:.1f}% "
+            f"of breakpoints.")
+
+.. admonition:: Solution 4: Segment chain operations
+
+   We start with 3 lineages each carrying [0, 1000), perform a recombination
+   on lineage 1 at position 400, then coalesce lineage 0 with the left part
+   of lineage 1.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # Initialize 3 lineages, each covering [0, 1000)
+      pool = SegmentPool(20)
+      recomb_rate = 1e-3
+      L = 1000
+
+      segs = []
+      lineages = []
+      for i in range(3):
+          seg = pool.alloc(left=0, right=L, node=i)
+          lin = Lineage(head=seg, tail=seg, population=0)
+          seg.lineage = lin
+          segs.append(seg)
+          lineages.append(lin)
+
+      print("=== Initial state ===")
+      for i, lin in enumerate(lineages):
+          print(f"  Lineage {i}: {Segment.show_chain(lin.head)}")
+
+      # Recombination on lineage 1 at position 400
+      bp = 400
+      seg1 = lineages[1].head
+      left_seg, right_seg = split_segment(seg1, bp)
+
+      # Create new lineage for the right part
+      new_lin = Lineage(head=right_seg, tail=right_seg, population=0)
+      right_seg.lineage = new_lin
+      lineages[1].tail = left_seg  # update tail of left lineage
+      lineages.append(new_lin)
+
+      print(f"\n=== After recombination at bp={bp} ===")
+      for i, lin in enumerate(lineages):
+          print(f"  Lineage {i}: {Segment.show_chain(lin.head)}")
+
+      # Coalescence: merge lineage 0 and lineage 1 (left part)
+      x = lineages[0].head  # [0, 1000: node 0]
+      y = lineages[1].head  # [0, 400: node 1]
+      ancestor_node = 10
+
+      # Walk through the merge:
+      # Both start at 0, x.right=1000 > y.right=400
+      # Coalescence at [0, 400): create ancestor, record edges
+      # x has leftover [400, 1000): passes through
+
+      print(f"\n=== Coalescence of lineage 0 and lineage 1 ===")
+      print(f"  x: {Segment.show_chain(x)}")
+      print(f"  y: {Segment.show_chain(y)}")
+
+      # The overlap is [0, 400): both have material there
+      overlap_left, overlap_right = 0, min(x.right, y.right)
+      print(f"  Overlap: [{overlap_left}, {overlap_right})")
+      print(f"  Edges: ({overlap_left}, {overlap_right}, {ancestor_node}, {x.node})")
+      print(f"  Edges: ({overlap_left}, {overlap_right}, {ancestor_node}, {y.node})")
+
+      # After merge: [0, 400: node 10] -> [400, 1000: node 0]
+      merged_seg1 = pool.alloc(left=0, right=400, node=ancestor_node)
+      merged_seg2 = pool.alloc(left=400, right=1000, node=x.node)
+      merged_seg1.next = merged_seg2
+      merged_seg2.prev = merged_seg1
+      merged_lin = Lineage(head=merged_seg1, tail=merged_seg2, population=0)
+
+      print(f"  Merged chain: {Segment.show_chain(merged_lin.head)}")
+      print(f"\n=== Final state ===")
+      print(f"  Merged lineage: {Segment.show_chain(merged_lin.head)}")
+      print(f"  Lineage 2: {Segment.show_chain(lineages[2].head)}")
+      print(f"  Right fragment: {Segment.show_chain(lineages[3].head)}")

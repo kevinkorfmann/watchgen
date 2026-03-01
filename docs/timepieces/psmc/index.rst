@@ -6,12 +6,6 @@ Timepiece I: PSMC
 
    *The Pairwise Sequentially Markovian Coalescent*
 
-.. epigraph::
-
-   "Inference of human population history from individual whole-genome sequences"
-
-   -- Li and Durbin (2011)
-
 The Mechanism at a Glance
 ==========================
 
@@ -42,6 +36,10 @@ PSMC reads these patterns with a Hidden Markov Model.
 If the coalescent is the escapement -- the fundamental ticking mechanism -- then PSMC
 is the simplest complete watch you can build around it: just two hands (two haplotypes),
 a single gear train (the HMM), and a dial that reads out population size through time.
+
+.. admonition:: Primary Reference
+
+   :cite:`psmc`
 
 The four gears of PSMC:
 
@@ -127,7 +125,9 @@ like SINGER that handle many? Three reasons:
 
 The simplicity of PSMC makes it an ideal first Timepiece to understand,
 because the PSMC transition density reappears as a gear inside SINGER's time sampling
-step (Timepiece VI). We start here and build the complete watch around it.
+step (Timepiece VII). And the very next Timepiece -- SMC++
+(:ref:`Timepiece II <smcpp_timepiece>`) -- generalizes PSMC from two sequences to many.
+We start here and build the complete watch around it.
 
 .. admonition:: Prerequisites for this Timepiece
 
@@ -153,3 +153,4 @@ Chapters
    discretization
    hmm_inference
    decoding
+   demo

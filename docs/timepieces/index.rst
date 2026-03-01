@@ -38,18 +38,18 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - IV
      - :ref:`msprime <msprime_timepiece>`
-     - 95
+     - 190
      - --
      - Neutral coalescent with recombination. The clockwork that generates ground truth.
    * - XVI
      - :ref:`SLiM <slim_timepiece>`
-     - 29
+     - 67
      - --
      - Forward-time simulation with natural selection. The forge that builds what the
        coalescent cannot.
    * - XVIII
      - :ref:`discoal <discoal_timepiece>`
-     - 66
+     - 132
      - --
      - Coalescent simulation with selective sweeps via trajectory + structured coalescent.
 
@@ -66,23 +66,23 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - I
      - :ref:`PSMC <psmc_timepiece>`
-     - 93
+     - 186
      - --
      - Population size history from a single diploid genome. The simplest inference
        Timepiece.
    * - II
      - :ref:`SMC++ <smcpp_timepiece>`
-     - 56
+     - 112
      - --
      - Extends PSMC to multiple unphased genomes with a distinguished lineage approach.
    * - XIII
      - :ref:`Gamma-SMC <gamma_smc_timepiece>`
-     - 52
+     - 107
      - --
      - Ultrafast pairwise TMRCA inference with gamma-distributed posteriors.
    * - XIV
      - :ref:`PHLASH <phlash_timepiece>`
-     - 65
+     - 130
      - --
      - GPU-accelerated Bayesian inference of population size history via SVGD.
 
@@ -99,17 +99,17 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - X
      - :ref:`moments <moments_timepiece>`
-     - 50
+     - 162
      - --
      - Demographic inference from the SFS using moment equations.
    * - XI
      - :ref:`dadi <dadi_timepiece>`
-     - 42
+     - 84
      - --
      - Demographic inference from the SFS by solving the Wright-Fisher diffusion PDE.
    * - XII
      - :ref:`momi2 <momi2_timepiece>`
-     - 70
+     - 140
      - --
      - Demographic inference from the SFS via coalescent tensor algebra.
 
@@ -126,33 +126,33 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - III
      - :ref:`Li & Stephens HMM <lshmm_timepiece>`
-     - 76
+     - 158
      - --
      - The copying model: a haplotype as a mosaic of references. A gear inside many
        Timepieces.
    * - V
      - :ref:`ARGweaver <argweaver_timepiece>`
-     - 52
+     - 120
      - --
      - Bayesian ARG sampling with discretized time. SINGER's predecessor.
    * - VI
      - :ref:`tsinfer <tsinfer_timepiece>`
-     - 71
+     - 142
      - --
      - Deterministic tree sequence inference at biobank scale.
    * - VII
      - :ref:`SINGER <singer_timepiece>`
-     - 44
+     - 172
      - --
      - Bayesian ARG sampling with continuous time and two-HMM architecture.
    * - VIII
      - :ref:`Threads <threads_timepiece>`
-     - 28
+     - 56
      - --
      - Deterministic ARG inference at biobank scale with PBWT pre-filtering.
    * - XVII
      - :ref:`Relate <relate_timepiece>`
-     - 33
+     - 66
      - --
      - Genome-wide genealogy estimation via asymmetric painting + MCMC branch lengths.
 
@@ -169,12 +169,12 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - IX
      - :ref:`tsdate <tsdate_timepiece>`
-     - 47
+     - 139
      - --
      - Dates tree sequence nodes using the molecular clock.
    * - XV
      - :ref:`CLUES <clues_timepiece>`
-     - 42
+     - 93
      - --
      - Full-likelihood estimation of selection coefficients from gene trees and ancient
        DNA.

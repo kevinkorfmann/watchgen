@@ -13,6 +13,19 @@ Automatic Differentiation & Inference
 
    -- Kamm, Terhorst, Song, and Durbin (2017)
 
+.. admonition:: Biology Aside -- What demographic inference asks
+
+   Demographic inference is the process of reconstructing a population's
+   history from patterns in its DNA. The parameters being estimated --
+   population sizes, divergence times, migration rates, admixture
+   proportions -- directly answer biological questions: *When did human
+   populations diverge from each other? How large was the ancestral
+   population? Was there gene flow after the split?* The inference machinery
+   in this chapter takes the mathematical tools from the previous chapters
+   (the Moran model and tensor computation) and uses them to search the
+   space of possible histories for the one that best explains the observed
+   genetic data.
+
 Step 1: The Likelihood Function
 ================================
 
@@ -93,6 +106,19 @@ This is computed by **reverse-mode AD** (backpropagation): a single forward
 pass computes :math:`\ell(\boldsymbol{\Theta})`, then a single backward pass
 computes all partial derivatives. The cost is roughly 2--3 times the forward
 pass, regardless of the number of parameters.
+
+.. admonition:: Plain-language summary -- What gradients tell the optimizer
+
+   The gradient is a vector that points in the direction of steepest
+   improvement. It answers the question: *if I slightly increase the split
+   time, or slightly decrease the ancestral population size, how much does
+   the fit to the data improve or worsen?* An optimizer follows the gradient
+   uphill (toward better fit) iteratively, adjusting all demographic
+   parameters simultaneously. Automatic differentiation computes these
+   sensitivities exactly and efficiently -- without it, ``momi2`` would
+   have to numerically perturb each parameter one at a time (finite
+   differences), which is slower by a factor equal to the number of
+   parameters.
 
 .. code-block:: python
 
@@ -343,6 +369,17 @@ The inverse Hessian gives the asymptotic covariance matrix, and
        se = np.sqrt(np.diag(cov))
        return se, cov
 
+.. admonition:: Biology Aside -- Why uncertainty matters in demographic inference
+
+   A single best-fit demographic model is of limited value without knowing
+   how confident we should be in its parameters. Did the ancestral population
+   have 15,000 individuals or could it plausibly have been 5,000 or 50,000?
+   Confidence intervals on demographic parameters are essential for drawing
+   biological conclusions -- for example, distinguishing a bottleneck from a
+   gradual decline, or determining whether an estimated admixture event is
+   statistically significant. The Hessian and bootstrap methods below provide
+   these confidence intervals.
+
 **Bootstrap.** For more robust uncertainty estimates (especially when the
 composite likelihood assumption is violated due to linkage), ``momi2``
 supports parametric and nonparametric bootstrap:
@@ -364,7 +401,28 @@ Step 7: Goodness-of-Fit Statistics
 ====================================
 
 Beyond the SFS itself, ``momi2`` can compute **f-statistics** and other
-summary statistics to assess model fit:
+summary statistics to assess model fit.
+
+.. admonition:: Biology Aside -- f-statistics as tests of evolutionary relationships
+
+   f-statistics were developed by population geneticists to test specific
+   hypotheses about population history without fitting a full demographic
+   model. They ask concrete questions:
+
+   - :math:`f_2(A, B)`: *How much genetic drift separates populations A and B?*
+     Large values mean deep divergence; small values mean recent shared
+     ancestry or ongoing gene flow.
+   - :math:`f_3(C; A, B)`: *Is population C a mixture of A and B?* A
+     negative value is strong evidence of admixture -- the classical test
+     used to detect Neanderthal introgression into non-African humans.
+   - :math:`f_4(A, B; C, D)` and **Patterson's D**: *Did gene flow occur
+     between non-sister populations?* The ABBA-BABA test is one of the most
+     widely used tools in evolutionary genomics.
+
+   These statistics are linear functions of the SFS, so ``momi2`` computes
+   them as part of its tensor machinery. If a fitted model predicts the
+   right SFS but the wrong f-statistics, the model is missing important
+   population relationships.
 
 .. list-table::
    :header-rows: 1
@@ -496,3 +554,214 @@ Exercises
    Fit a tree model (no admixture) to data simulated under a model *with*
    admixture. Compute :math:`f_3` for the admixed population. Does the
    statistic detect the model misspecification?
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Gradient verification
+
+   We compare the autograd gradient to a finite-difference approximation for a
+   simple two-population divergence model.
+
+   .. code-block:: python
+
+      import autograd
+      import autograd.numpy as np
+
+      def simple_log_likelihood(params, observed_sfs):
+          """Log-likelihood for a two-pop model: params = [N_A, N_B, T_split]."""
+          N_A, N_B, T_split = params
+          # Compute expected SFS under this model (using moran transitions)
+          # (simplified: use the W-matrix approach for a single population
+          #  to illustrate the gradient comparison)
+          n = len(observed_sfs) - 1
+          j_vals = np.arange(2, n + 1)
+          rate = j_vals * (j_vals - 1) / 2.0
+          t = 2.0 * T_split / N_A
+          E_Tjj = (1.0 - np.exp(-rate * t)) / rate + np.exp(-rate * t) / rate
+          expected_sfs = np.abs(E_Tjj[:n-1])  # simplified
+          expected_sfs = expected_sfs / expected_sfs.sum()
+          mask = observed_sfs[1:] > 0
+          ll = np.sum(observed_sfs[1:][mask] * np.log(expected_sfs[mask]))
+          return ll
+
+      # Test data
+      n = 10
+      observed = np.array([0] + [100 // b for b in range(1, n)])
+      params = np.array([1000.0, 2000.0, 500.0])
+
+      # (a) Autograd gradient
+      grad_func = autograd.grad(simple_log_likelihood)
+      grad_auto = grad_func(params, observed)
+
+      # (b) Finite-difference gradient
+      eps = 1e-5
+      grad_fd = np.zeros_like(params)
+      for i in range(len(params)):
+          params_plus = params.copy()
+          params_minus = params.copy()
+          params_plus[i] += eps
+          params_minus[i] -= eps
+          grad_fd[i] = (simple_log_likelihood(params_plus, observed)
+                        - simple_log_likelihood(params_minus, observed)) / (2 * eps)
+
+      # Compare
+      for i in range(len(params)):
+          print(f"  param {i}: autograd={grad_auto[i]:.8f}, "
+                f"finite-diff={grad_fd[i]:.8f}, "
+                f"rel_diff={abs(grad_auto[i] - grad_fd[i]) / (abs(grad_auto[i]) + 1e-15):.2e}")
+
+   The autograd and finite-difference gradients should agree to approximately
+   :math:`O(\epsilon^2) \approx 10^{-10}` (the error of central differences).
+   Any relative discrepancy larger than :math:`10^{-4}` indicates a bug in the
+   computation graph.
+
+.. admonition:: Solution 2: Optimizer comparison
+
+   We fit a three-parameter model using both TNC and L-BFGS-B and compare
+   convergence.
+
+   .. code-block:: python
+
+      import numpy as np
+      from scipy.optimize import minimize
+      import autograd
+      import autograd.numpy as anp
+
+      def neg_log_likelihood(params):
+          """Negative log-likelihood for a 3-param model."""
+          N_anc, N_derived, T_split = params
+          # ... (compute expected SFS using Moran transitions)
+          # ... (compute multinomial log-likelihood)
+          return -ll
+
+      val_and_grad = autograd.value_and_grad(neg_log_likelihood)
+
+      def scipy_obj(x):
+          v, g = val_and_grad(x)
+          return float(v), np.array(g, dtype=float)
+
+      x0 = np.array([5000.0, 8000.0, 1000.0])
+      bounds = [(100, 1e6), (100, 1e6), (10, 1e5)]
+
+      # TNC
+      res_tnc = minimize(scipy_obj, x0, method='TNC', jac=True, bounds=bounds)
+      print(f"TNC: {res_tnc.nfev} evaluations, "
+            f"final -ll = {res_tnc.fun:.4f}, "
+            f"params = {res_tnc.x}")
+
+      # L-BFGS-B
+      res_lbfgsb = minimize(scipy_obj, x0, method='L-BFGS-B', jac=True, bounds=bounds)
+      print(f"L-BFGS-B: {res_lbfgsb.nfev} evaluations, "
+            f"final -ll = {res_lbfgsb.fun:.4f}, "
+            f"params = {res_lbfgsb.x}")
+
+      # Check convergence to same optimum
+      param_diff = np.abs(res_tnc.x - res_lbfgsb.x) / res_tnc.x
+      print(f"Relative parameter difference: {param_diff}")
+
+   Both optimizers should converge to the same MLE (within tolerance). TNC
+   typically uses fewer function evaluations for small parameter spaces
+   (it exploits Hessian-vector products), while L-BFGS-B may be faster
+   per iteration. If they converge to different optima, this indicates
+   multiple local maxima -- run from additional starting points.
+
+.. admonition:: Solution 3: Uncertainty calibration
+
+   We simulate datasets, fit each, and check coverage of 95% Hessian-based
+   confidence intervals.
+
+   .. code-block:: python
+
+      import numpy as np
+      import autograd
+
+      def simulate_and_fit(true_params, n_sites, n_reps=100):
+          """Simulate datasets and check CI coverage."""
+          coverage = np.zeros(len(true_params))
+
+          for rep in range(n_reps):
+              # Simulate: compute expected SFS, draw Poisson counts
+              expected = compute_expected_sfs_from_params(true_params)
+              observed = np.random.poisson(expected * n_sites)
+
+              # Fit
+              x0 = true_params * np.exp(np.random.randn(len(true_params)) * 0.1)
+              mle = fit_model(observed, x0)
+
+              # Hessian-based standard errors
+              H = autograd.hessian(neg_log_likelihood)(mle)
+              se = np.sqrt(np.diag(np.linalg.inv(-H)))
+
+              # Check if true values fall within 95% CI
+              for i in range(len(true_params)):
+                  if abs(mle[i] - true_params[i]) < 1.96 * se[i]:
+                      coverage[i] += 1
+
+          coverage /= n_reps
+          print(f"Hessian CI coverage (target 0.95): {coverage}")
+          return coverage
+
+      # Expected result: coverage will be LESS than 0.95 (e.g., 0.80-0.90)
+      # because the composite likelihood underestimates variance.
+
+   The Hessian-based intervals are typically **too narrow** (coverage below
+   95%), because the composite likelihood treats SNPs as independent when they
+   are linked. Block bootstrap corrects this:
+
+   .. code-block:: python
+
+      def block_bootstrap_se(observed_sfs, block_size=100, n_bootstrap=200):
+          """Estimate standard errors via genomic block bootstrap."""
+          n_blocks = n_sites // block_size
+          bootstrap_estimates = []
+
+          for b in range(n_bootstrap):
+              # Resample blocks with replacement
+              block_indices = np.random.choice(n_blocks, size=n_blocks, replace=True)
+              resampled_sfs = sum_sfs_for_blocks(block_indices)
+              mle_b = fit_model(resampled_sfs)
+              bootstrap_estimates.append(mle_b)
+
+          bootstrap_estimates = np.array(bootstrap_estimates)
+          se_bootstrap = bootstrap_estimates.std(axis=0)
+          return se_bootstrap
+
+   Block bootstrap standard errors are typically 1.5--3x larger than Hessian
+   standard errors, yielding calibrated (close to 95%) coverage.
+
+.. admonition:: Solution 4: f-statistics as model diagnostics
+
+   We simulate data with admixture and fit a tree (no-admixture) model, then
+   compute :math:`f_3` to detect misspecification.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # True model: C is 30% A + 70% B
+      # Fit model: tree (A, (B, C)) -- no admixture
+
+      # Compute f3(C; A, B) from the observed data
+      def compute_f3(sfs, n_C, n_A, n_B):
+          """Compute f3(C; A, B) from the joint SFS."""
+          W = f3_weights(n_C, n_A, n_B)
+          # sum over all configurations, weighted
+          total_snps = sfs.sum()
+          f3_val = np.sum(W * sfs) / total_snps
+          return f3_val
+
+      # After fitting the tree model:
+      f3_observed = compute_f3(observed_sfs, n_C=10, n_A=10, n_B=10)
+      f3_expected = compute_f3(fitted_sfs, n_C=10, n_A=10, n_B=10)
+
+      print(f"f3(C; A, B) observed: {f3_observed:.6f}")
+      print(f"f3(C; A, B) expected (tree model): {f3_expected:.6f}")
+
+   Under the true admixture model, :math:`f_3(C; A, B) < 0`, which is the
+   classic signal of admixture. The tree model cannot produce a negative
+   :math:`f_3` (for a non-admixed population, :math:`f_3 \geq 0`), so the
+   observed negative value directly reveals the misspecification. This is
+   precisely the Patterson :math:`f_3` test: a significantly negative value
+   rejects the tree hypothesis and indicates that population C has mixed
+   ancestry from populations related to A and B.

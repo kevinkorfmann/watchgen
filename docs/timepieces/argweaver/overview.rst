@@ -7,6 +7,17 @@ Overview of ARGweaver
    *Before you can reassemble the watch, you must understand what every gear does ---
    and why this particular watchmaker chose to cut them the way he did.*
 
+.. figure:: /_static/figures/fig_mini_argweaver.png
+   :width: 100%
+   :align: center
+
+   **ARGweaver at a glance.** The four core components of the discrete SMC
+   machinery: time discretisation converting continuous coalescent time into
+   a finite grid, transition probabilities between time intervals at
+   recombination breakpoints, re-coalescence distributions governing where
+   a detached lineage re-attaches, and MCMC tree sampling behaviour showing
+   convergence of the Gibbs sampler.
+
 If PSMC (see :ref:`coalescent_theory`) is an analog wristwatch --- elegant, continuous,
 but limited to reading the time for a single pair of chromosomes --- then ARGweaver is
 a **digital watch**. It chops continuous time into discrete ticks, displays everything

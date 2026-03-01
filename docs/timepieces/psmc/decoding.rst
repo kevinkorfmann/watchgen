@@ -1075,6 +1075,307 @@ Exercises
    The very recent past and the very distant past should have the widest bands,
    while the intermediate past should be tightest.
 
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Full PSMC on simulated data
+
+   This capstone exercise ties together every chapter. We simulate data under a
+   known three-epoch demographic model, run PSMC, scale to real units, and
+   verify recovery of the true history.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # Define the demographic model in real units
+      # Epoch 1: N = 10,000 from present to 50 kya
+      # Epoch 2: N = 1,000 from 50 to 100 kya (bottleneck)
+      # Epoch 3: N = 20,000 before 100 kya
+      mu = 1.25e-8        # per bp per generation
+      s = 100              # bin size
+      g = 25               # generation time
+      N_ref = 10000        # use as N_0 for scaling
+
+      # Convert to coalescent units (time in units of 2*N_ref generations)
+      t_50k = 50000 / (g * 2 * N_ref)    # ~0.1 coalescent units
+      t_100k = 100000 / (g * 2 * N_ref)  # ~0.2 coalescent units
+
+      def true_lambda(t):
+          """True relative population size in coalescent units."""
+          if t < t_50k:
+              return 10000 / N_ref   # = 1.0
+          elif t < t_100k:
+              return 1000 / N_ref    # = 0.1
+          else:
+              return 20000 / N_ref   # = 2.0
+
+      theta_true = 4 * N_ref * mu * s  # = 0.005
+      rho_true = theta_true / 5
+
+      # Simulate 30,000 bins (= 3 Mb at s=100 bp)
+      np.random.seed(42)
+      seq, _ = simulate_psmc_input(30000, theta_true, rho_true, true_lambda)
+
+      print(f"Observed heterozygosity: {np.mean(seq):.4f}")
+      print(f"theta_true = {theta_true:.6f}")
+
+      # Run PSMC inference
+      n = 20
+      results = psmc_inference(seq, n=n, t_max=15.0, n_iters=25,
+                                pattern=f"{n+1}*1")
+
+      # Scale the output
+      final = results[-1]
+      t_boundaries = compute_time_intervals(n, t_max=15.0)
+      N_0, t_gen, t_years, N_t = scale_psmc_output(
+          final['theta'], final['lambdas'], t_boundaries,
+          mu=mu, s=s, generation_time=g)
+
+      print(f"\nInferred N_0 = {N_0:.0f} (expected ~{N_ref})")
+      print(f"\nTime (years ago)    Inferred N_e    True N_e")
+      print("-" * 50)
+      for k in range(n + 1):
+          t_mid_years = (t_years[k] + t_years[k+1]) / 2.0
+          # Determine true N_e at this time
+          if t_mid_years < 50000:
+              true_N = 10000
+          elif t_mid_years < 100000:
+              true_N = 1000
+          else:
+              true_N = 20000
+          print(f"  {t_mid_years:>12,.0f}    {N_t[k]:>12,.0f}    {true_N:>8,}")
+
+   The inferred :math:`N_e(t)` should show three clear epochs: a plateau near
+   10,000 in the recent past, a dip toward 1,000 around 50,000--100,000 years
+   ago, and a rise toward 20,000 in the deep past. With only 3 Mb of data, the
+   edges of the bottleneck will be somewhat smoothed, but the qualitative pattern
+   should be unmistakable.
+
+.. admonition:: Solution 2: The coverage effect
+
+   We demonstrate how missing heterozygous sites (simulating low coverage)
+   distort the inferred history, and how the FNR correction restores it.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # Use the same simulated sequence from Exercise 1
+      np.random.seed(42)
+      seq_full, _ = simulate_psmc_input(30000, theta_true, rho_true, true_lambda)
+
+      # Simulate low coverage: randomly convert 20% of het sites to hom
+      fnr = 0.20
+      seq_low = seq_full.copy()
+      het_positions = np.where(seq_low == 1)[0]
+      n_to_drop = int(len(het_positions) * fnr)
+      drop_indices = np.random.choice(het_positions, size=n_to_drop, replace=False)
+      seq_low[drop_indices] = 0
+
+      het_original = np.mean(seq_full)
+      het_low = np.mean(seq_low)
+      print(f"Original heterozygosity: {het_original:.4f}")
+      print(f"Low-coverage heterozygosity: {het_low:.4f}")
+      print(f"Ratio: {het_low / het_original:.4f} (expected: {1 - fnr:.2f})")
+
+      # Run PSMC on both sequences
+      n = 10
+      results_full = psmc_inference(seq_full, n=n, t_max=15.0, n_iters=20,
+                                     pattern=f"{n+1}*1")
+      results_low = psmc_inference(seq_low, n=n, t_max=15.0, n_iters=20,
+                                    pattern=f"{n+1}*1")
+
+      # Scale without correction
+      theta_uncorrected = results_low[-1]['theta']
+      # Scale with FNR correction
+      theta_corrected = correct_for_coverage(theta_uncorrected, fnr)
+
+      t_boundaries = compute_time_intervals(n, t_max=15.0)
+
+      N0_full, _, t_years_full, Nt_full = scale_psmc_output(
+          results_full[-1]['theta'], results_full[-1]['lambdas'],
+          t_boundaries, mu=mu, s=s, generation_time=g)
+      N0_uncorr, _, t_years_uncorr, Nt_uncorr = scale_psmc_output(
+          theta_uncorrected, results_low[-1]['lambdas'],
+          t_boundaries, mu=mu, s=s, generation_time=g)
+      N0_corr, _, t_years_corr, Nt_corr = scale_psmc_output(
+          theta_corrected, results_low[-1]['lambdas'],
+          t_boundaries, mu=mu, s=s, generation_time=g)
+
+      print(f"\nN_0 (full data):      {N0_full:.0f}")
+      print(f"N_0 (uncorrected):    {N0_uncorr:.0f}")
+      print(f"N_0 (FNR corrected):  {N0_corr:.0f}")
+      print(f"Expected correction factor: {1/(1-fnr):.4f}")
+      print(f"Actual N_0 ratio (corr/uncorr): {N0_corr/N0_uncorr:.4f}")
+
+   **What happens:** Without correction, the inferred :math:`\hat{\theta}` is
+   reduced by a factor of :math:`(1 - \text{FNR}) = 0.8`, which means
+   :math:`N_0` is underestimated by 20%. This shifts the entire population size
+   curve downward and stretches the time axis. The bottleneck appears less
+   severe (because :math:`N_0` is smaller, the relative depth of the dip changes)
+   and appears to occur at a different time.
+
+   After applying ``correct_for_coverage``, the corrected :math:`N_0` should
+   closely match the full-data estimate, restoring the correct scaling on both
+   axes. The :math:`\lambda_k` values themselves are not affected by the FNR
+   correction -- only the scaling changes -- because the relative emission
+   probabilities across intervals are affected approximately uniformly by the
+   missing data.
+
+.. admonition:: Solution 3: Compare to the real PSMC
+
+   This exercise requires the original C implementation of PSMC (available at
+   ``https://github.com/lh3/psmc``). We compare the Python and C
+   implementations on identical input.
+
+   .. code-block:: python
+
+      import numpy as np
+      import subprocess
+      import time
+
+      # Step 1: Write simulated data in psmcfa format
+      np.random.seed(42)
+      seq, _ = simulate_psmc_input(100000, theta_true, rho_true, true_lambda)
+
+      def write_psmcfa(seq, filename, s=100):
+          """Write a binary sequence as a psmcfa file."""
+          with open(filename, 'w') as f:
+              f.write(">chr1\n")
+              line = ""
+              for obs in seq:
+                  line += "K" if obs == 1 else "T"
+                  if len(line) == 60:
+                      f.write(line + "\n")
+                      line = ""
+              if line:
+                  f.write(line + "\n")
+
+      write_psmcfa(seq, "/tmp/test.psmcfa")
+
+      # Step 2: Run Python PSMC
+      t_start = time.time()
+      results_py = psmc_inference(seq, n=63, t_max=15.0,
+                                   pattern="4+25*2+4+6", n_iters=25)
+      time_python = time.time() - t_start
+
+      # Step 3: Run C PSMC (requires psmc binary in PATH)
+      # t_start = time.time()
+      # subprocess.run(["psmc", "-N", "25", "-t", "15", "-r", "5",
+      #                 "-p", "4+25*2+4+6", "-o", "/tmp/test.psmc",
+      #                 "/tmp/test.psmcfa"])
+      # time_c = time.time() - t_start
+
+      # Step 4: Parse C PSMC output and compare
+      # (a) Log-likelihoods should agree to within ~1%
+      # (b) Final lambda_k values should agree to within ~5%
+      # (c) Python will be ~100-1000x slower than C
+
+      print(f"Python PSMC time: {time_python:.1f} seconds")
+      print(f"Final Python LL: {results_py[-1]['log_likelihood']:.2f}")
+
+   **Expected comparison:**
+
+   **(a) Log-likelihoods:** Should agree to within ~1% at each iteration. Small
+   differences arise from different numerical optimization strategies (the C
+   implementation uses Hooke-Jeeves while our Python version uses Nelder-Mead)
+   and floating-point differences.
+
+   **(b) Final parameters:** The inferred :math:`\lambda_k` curves should be
+   visually indistinguishable. Quantitatively, individual :math:`\lambda_k`
+   values may differ by up to ~5%, but the overall shape of the population
+   history should match.
+
+   **(c) Running time:** The Python implementation will be approximately
+   100--1000x slower than the C implementation. The C version uses optimized
+   matrix operations and avoids the overhead of Python loops in the
+   forward-backward algorithm. For production use, always prefer the C
+   implementation; the Python version is for understanding the algorithm.
+
+.. admonition:: Solution 4: Bootstrap confidence intervals
+
+   We run 100 bootstrap replicates to quantify uncertainty in the inferred
+   population history and identify where PSMC has the most and least power.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # Simulate a long sequence for meaningful bootstrapping
+      np.random.seed(42)
+      seq, _ = simulate_psmc_input(500000, theta_true, rho_true, true_lambda)
+
+      n = 20
+      segment_length = 50000  # 5 Mb segments
+
+      # Split into segments
+      segments = split_sequence(seq, segment_length)
+      print(f"Number of segments: {len(segments)}")
+
+      # Run original PSMC
+      results_orig = psmc_inference(seq, n=n, t_max=15.0, n_iters=20,
+                                     pattern=f"{n+1}*1")
+      lambdas_orig = results_orig[-1]['lambdas']
+
+      # Run 100 bootstrap replicates
+      n_bootstrap = 100
+      all_lambdas = np.zeros((n_bootstrap, n + 1))
+
+      for b in range(n_bootstrap):
+          replicate = bootstrap_resample(segments, len(seq))
+          results_b = psmc_inference(replicate, n=n, t_max=15.0, n_iters=20,
+                                      pattern=f"{n+1}*1")
+          all_lambdas[b] = results_b[-1]['lambdas']
+          if (b + 1) % 10 == 0:
+              print(f"  Completed {b + 1}/{n_bootstrap} replicates")
+
+      # Compute 95% confidence intervals (2.5th and 97.5th percentiles)
+      ci_lower = np.percentile(all_lambdas, 2.5, axis=0)
+      ci_upper = np.percentile(all_lambdas, 97.5, axis=0)
+      ci_width = ci_upper - ci_lower
+
+      # Scale to real units
+      t_boundaries = compute_time_intervals(n, t_max=15.0)
+      N_0, _, t_years, _ = scale_psmc_output(
+          results_orig[-1]['theta'], lambdas_orig, t_boundaries,
+          mu=mu, s=s, generation_time=g)
+
+      print(f"\n{'Time (years)':>15} {'N_e':>10} {'CI width':>10} "
+            f"{'Rel. width':>12}")
+      print("-" * 50)
+      for k in range(n + 1):
+          t_mid = (t_years[k] + t_years[k+1]) / 2.0
+          Ne = N_0 * lambdas_orig[k]
+          width = N_0 * ci_width[k]
+          rel_width = ci_width[k] / lambdas_orig[k] if lambdas_orig[k] > 0 else 0
+          print(f"  {t_mid:>12,.0f} {Ne:>10,.0f} {width:>10,.0f} "
+                f"{rel_width:>10.1%}")
+
+   **Where is the uncertainty largest?**
+
+   - **Very recent past** (first 1--2 intervals, :math:`< 20{,}000` years ago):
+     Wide confidence bands because there are few recombination events producing
+     very short-range coalescence times. A single diploid genome has limited
+     information about very recent demography.
+
+   - **Very distant past** (last 1--2 intervals, :math:`> 1{,}000{,}000` years
+     ago): Wide bands because very few genomic segments retain coalescence times
+     this ancient. The survival probability :math:`\alpha_k` is extremely small,
+     so the expected number of segments :math:`C_\sigma \sigma_k` is tiny.
+
+   - **Intermediate past** (~50,000--500,000 years ago for humans): The
+     **tightest** confidence bands. This is PSMC's sweet spot -- enough
+     recombination events to have good statistical power, and enough segments
+     with coalescence times in this range to constrain :math:`\lambda_k`
+     precisely.
+
+   This pattern reflects the fundamental resolution limit of the two-sequence
+   PSMC: it is most informative about population sizes in the time window where
+   most coalescence events occur, and least informative at the extremes of the
+   time axis.
+
 ----
 
 .. _psmc_decoding_recap:
@@ -1112,6 +1413,7 @@ invites the question "could we add a chronograph? a moon phase? a tourbillon?",
 the PSMC invites the question: what if we used *more* than two sequences? What
 if we could read not just population *size* but population *structure*,
 divergence times, and migration rates? Those questions lead to the Timepieces
-that follow -- MSMC, ARGweaver, SINGER, and beyond.
+that follow -- SMC++ (:ref:`Timepiece II <smcpp_timepiece>`), ARGweaver, SINGER,
+and beyond.
 
 *The clock ticks. And you can read every hour it marks.*

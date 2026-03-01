@@ -1,16 +1,10 @@
 .. _msprime_timepiece:
 
 ====================================
-Timepiece III: msprime
+Timepiece IV: msprime
 ====================================
 
    *Simulating ancestral histories under the coalescent with recombination*
-
-.. epigraph::
-
-   "Efficient coalescent simulation and genealogical analysis for large sample sizes"
-
-   -- Kelleher, Etheridge, and McVean (2016)
 
 The Mechanism at a Glance
 ==========================
@@ -21,7 +15,7 @@ mutation rate, and recombination rate, it produces random ancestral histories
 **backwards in time**, starting from a set of sampled genomes in the present
 and tracing their ancestry back until all lineages have found common ancestors.
 
-While SINGER (Timepiece VI) *infers* an ARG from observed data, msprime
+While SINGER (Timepiece VII) *infers* an ARG from observed data, msprime
 *generates* an ARG from a specified model. They are complementary tools, like a
 watch and a watch-testing machine: msprime creates the ground truth that tools
 like SINGER try to recover. Understanding how the simulator works gives you deep
@@ -33,6 +27,10 @@ If PSMC is the simplest watch (two hands, one gear train), msprime is the
 every other watch. Its output (tree sequences) is what inference methods consume,
 and its internals (the coalescent with recombination, implemented with clever data
 structures) reveal how nature's own clockwork operates.
+
+.. admonition:: Primary Reference
+
+   :cite:`msprime`
 
 The four gears of msprime:
 
@@ -112,3 +110,4 @@ Chapters
    hudson_algorithm
    demographics
    mutations
+   demo

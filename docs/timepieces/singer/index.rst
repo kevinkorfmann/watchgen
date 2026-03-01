@@ -1,16 +1,10 @@
 .. _singer_timepiece:
 
 ====================================
-Timepiece VI: SINGER
+Timepiece VII: SINGER
 ====================================
 
    *Sampling and Inference of Genealogies with Recombination*
-
-.. epigraph::
-
-   "Robust and accurate Bayesian inference of genome-wide genealogies for large samples"
-
-   -- Deng, Nielsen, and Song (2024)
 
 The Mechanism at a Glance
 ==========================
@@ -26,6 +20,10 @@ complete genealogical history of many individuals simultaneously. Where PSMC rea
 population size from two haplotypes, SINGER reconstructs the full ancestral
 recombination graph: every coalescence event, every recombination, every marginal
 tree, for as many samples as you can provide.
+
+.. admonition:: Primary Reference
+
+   :cite:`singer`
 
 The four gears of SINGER:
 
@@ -93,3 +91,4 @@ Chapters
    time_sampling
    arg_rescaling
    sgpr
+   demo

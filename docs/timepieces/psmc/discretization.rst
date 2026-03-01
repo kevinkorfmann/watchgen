@@ -1174,3 +1174,200 @@ Exercises
    :math:`\lambda_k` curves. Which shows overfitting? Which is too smooth?
 
 Next: :ref:`psmc_hmm` -- the EM algorithm that makes the parameters talk to the data.
+
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Verify the transition matrix
+
+   We build the transition matrix for a constant population and verify three
+   fundamental properties: row normalization, stationarity, and convergence.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # Setup: n=20 intervals, constant population
+      n = 20
+      t = compute_time_intervals(n, t_max=15.0)
+      lambdas = np.ones(n + 1)
+      rho = 0.001
+
+      # Compute all helper quantities
+      tau, alpha, beta, q_aux, C_pi = compute_helpers(n, t, lambdas)
+      pi_k, sigma_k, C_sigma = compute_stationary(n, tau, alpha, lambdas, C_pi, rho)
+      p, q = compute_transition_matrix(n, tau, alpha, beta, q_aux, lambdas,
+                                        C_pi, C_sigma, pi_k, sigma_k)
+
+      # (a) Verify all rows sum to 1
+      row_sums = p.sum(axis=1)
+      print("(a) Row sums of P:")
+      print(f"  min = {row_sums.min():.10f}")
+      print(f"  max = {row_sums.max():.10f}")
+      assert np.allclose(row_sums, 1.0, atol=1e-10), "Row sums are not 1!"
+
+      # (b) Verify sigma^T P = sigma^T
+      sigma_after = sigma_k @ p
+      max_diff = np.max(np.abs(sigma_after - sigma_k))
+      print(f"\n(b) Stationarity check: max|sigma*P - sigma| = {max_diff:.2e}")
+      assert max_diff < 1e-10, "Sigma is not stationary!"
+
+      # (c) Convergence from arbitrary initial distribution
+      # Start from a point mass on state 0
+      dist = np.zeros(n + 1)
+      dist[0] = 1.0
+
+      print("\n(c) Convergence from delta(state=0):")
+      for iteration in [1, 5, 10, 50, 100, 500]:
+          # Apply P repeatedly: dist @ P^iteration
+          current = dist.copy()
+          for _ in range(iteration):
+              current = current @ p
+          max_err = np.max(np.abs(current - sigma_k))
+          print(f"  After {iteration:4d} steps: max|dist - sigma| = {max_err:.6e}")
+
+   **(a)** All row sums should equal 1.0 to within machine precision
+   (:math:`\sim 10^{-15}`), confirming that ``p`` is a valid stochastic matrix.
+
+   **(b)** The difference :math:`|\sigma^T P - \sigma^T|` should be on the order
+   of :math:`10^{-12}` or smaller, confirming that :math:`\sigma` is indeed the
+   stationary distribution of :math:`P`.
+
+   **(c)** The distribution converges to :math:`\sigma` exponentially fast. After
+   ~100 steps, the maximum deviation should be negligible (:math:`< 10^{-6}`).
+   This demonstrates that regardless of the starting distribution, the Markov
+   chain converges to its unique equilibrium -- the stochastic analogue of a
+   watch settling into its natural rhythm.
+
+.. admonition:: Solution 2: Sensitivity to population size
+
+   We build transition matrices and emission probabilities for three population
+   scenarios and compare how demography affects heterozygosity.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 20
+      t = compute_time_intervals(n, t_max=15.0)
+      theta = 0.001
+      rho = 0.0002
+
+      # Identify intervals near t=1 in coalescent units
+      t_mid = [(t[k] + t[k+1]) / 2.0 for k in range(n + 1)]
+      near_t1 = [k for k in range(n + 1) if 0.5 < t_mid[k] < 1.5]
+
+      scenarios = {}
+
+      # (a) Constant population
+      lam_a = np.ones(n + 1)
+      scenarios["(a) Constant"] = lam_a
+
+      # (b) Expansion near t=1: lambda_k = 10 for intervals near t=1
+      lam_b = np.ones(n + 1)
+      for k in near_t1:
+          lam_b[k] = 10.0
+      scenarios["(b) Expansion"] = lam_b
+
+      # (c) Bottleneck near t=1: lambda_k = 0.1 for intervals near t=1
+      lam_c = np.ones(n + 1)
+      for k in near_t1:
+          lam_c[k] = 0.1
+      scenarios["(c) Bottleneck"] = lam_c
+
+      for name, lam in scenarios.items():
+          trans, emissions, initial = build_psmc_hmm(
+              n, t_max=15.0, theta=theta, rho=rho, lambdas=lam)
+
+          # Weighted average heterozygosity under the stationary distribution
+          avg_het = np.sum(initial * emissions[1, :])
+          print(f"{name}:")
+          print(f"  Emission P(het) range: [{emissions[1,:].min():.6f}, "
+                f"{emissions[1,:].max():.6f}]")
+          print(f"  Weighted avg heterozygosity: {avg_het:.6f}")
+          print(f"  Intervals near t=1: lambda = {lam[near_t1[0]]:.1f}")
+
+   **How the bottleneck affects heterozygosity:** The bottleneck
+   (:math:`\lambda_k = 0.1`) increases the coalescence rate in those intervals,
+   meaning lineages are forced to coalesce quickly. This produces shorter effective
+   branch lengths and therefore lower emission probabilities
+   :math:`P(\text{het} | k) = 1 - e^{-\theta \bar{t}_k}` for the affected
+   intervals. The weighted average heterozygosity decreases compared to the
+   constant-population case.
+
+   Conversely, the expansion (:math:`\lambda_k = 10`) reduces the coalescence
+   rate, allowing longer branches and higher heterozygosity in those intervals.
+   The overall effect depends on the stationary weight assigned to those
+   intervals -- a large population means fewer coalescence events there, but
+   the ones that do occur have longer branch lengths.
+
+.. admonition:: Solution 3: The effect of pattern choice
+
+   We compare three grouping patterns on the same simulated data to demonstrate
+   overfitting vs. over-smoothing. The key insight is that the pattern controls
+   the bias-variance tradeoff: more free parameters reduce bias but increase
+   variance.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # Simulate data under a known bottleneck model
+      np.random.seed(42)
+      n = 63
+      N = n + 1  # 64 intervals
+
+      # True population history: bottleneck from t=0.5 to t=1.5
+      t = compute_time_intervals(n, t_max=15.0)
+      true_lambdas = np.ones(N)
+      for k in range(N):
+          t_mid = (t[k] + t[k+1]) / 2.0
+          if 0.5 < t_mid < 1.5:
+              true_lambdas[k] = 0.1
+
+      theta = 0.001
+      rho = theta / 5
+
+      # Generate observation sequence
+      # seq, _ = simulate_psmc_input(100000, theta, rho,
+      #     lambda t: 0.1 if 0.5 < t < 1.5 else 1.0)
+
+      # Three patterns to compare
+      patterns = {
+          "64*1 (all free)":    "64*1",      # 64 free parameters
+          "4+25*2+4+6 (default)": "4+25*2+4+6",  # 28 free parameters
+          "32*2 (simple)":      "32*2",      # 32 free parameters
+      }
+
+      for name, pattern in patterns.items():
+          par_map, n_free, n_intervals = parse_pattern(pattern)
+          print(f"{name}: {n_free} free parameters, {n_intervals} intervals")
+
+          # In a full run:
+          # results = psmc_inference(seq, n=63, pattern=pattern, n_iters=25)
+          # final_lambdas = results[-1]['lambdas']
+
+   **Expected results and interpretation:**
+
+   - **"64*1" (all free):** With 64 independent :math:`\lambda` parameters, the
+     inferred curve will show the bottleneck but will also have noisy spikes and
+     dips, especially in the recent and ancient past where few recombination
+     events provide signal. This is **overfitting**: the model has enough
+     flexibility to fit noise in the data. The symptom is a jagged curve that
+     changes dramatically between bootstrap replicates.
+
+   - **"4+25*2+4+6" (default):** With 28 free parameters, the recent and ancient
+     intervals are grouped (reducing noise), while the intermediate past retains
+     fine resolution. The bottleneck should be clearly visible as a smooth dip.
+     This is the **sweet spot** chosen by Li and Durbin for human data.
+
+   - **"32*2" (simple):** With 32 free parameters, every pair of adjacent
+     intervals shares one :math:`\lambda`. This provides moderate resolution
+     everywhere but may be **too smooth** in the intermediate past, slightly
+     blurring the edges of the bottleneck. It will miss fine temporal structure
+     but will be more robust to noise than "64*1".
+
+   The general rule: check :math:`C_\sigma \sigma_k` for each parameter group.
+   If the expected number of recombination events per group is below ~20, the
+   group should be made wider (merged with neighbors) to avoid overfitting.

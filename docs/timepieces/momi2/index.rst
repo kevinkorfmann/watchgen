@@ -1,24 +1,17 @@
 .. _momi2_timepiece:
 
 ====================================
-Timepiece X: momi2
+Timepiece XII: momi2
 ====================================
 
    *Computing the expected frequency spectrum backward through the coalescent -- one tensor at a time.*
-
-.. epigraph::
-
-   "We introduce a new method for computing the expected sample frequency
-   spectrum (SFS) for a tree of populations with arbitrary size histories."
-
-   -- Kamm, Terhorst, Song, and Durbin (2017)
 
 The Mechanism at a Glance
 ==========================
 
 ``momi2`` is a method for **demographic inference** -- learning a population's
 history (size changes, splits, admixture events) from patterns in its DNA
-variation. Like ``moments`` (:ref:`Timepiece IX <moments_timepiece>`), it works
+variation. Like ``moments`` (:ref:`Timepiece X <moments_timepiece>`), it works
 with the **site frequency spectrum** (SFS) as its summary statistic. But the
 internal mechanism is fundamentally different.
 
@@ -44,6 +37,10 @@ gradients of the likelihood with respect to all demographic parameters -- no
 hand-coded derivatives, no finite differences. This enables efficient
 gradient-based optimization and even Hessian computation for uncertainty
 quantification.
+
+.. admonition:: Primary Reference
+
+   :cite:`momi2`
 
 The four gears of ``momi2``:
 
@@ -131,3 +128,4 @@ Chapters
    moran_model
    tensor_machinery
    inference
+   demo

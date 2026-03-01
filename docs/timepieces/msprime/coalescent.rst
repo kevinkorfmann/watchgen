@@ -1016,3 +1016,166 @@ Exercises
 Next: :ref:`segments_fenwick` -- the linked-list track that follows each
 lineage's ancestral material, and the Fenwick tree -- a clever indexing
 mechanism for fast event scheduling.
+
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Verify the coalescent
+
+   We simulate 10,000 coalescent trees using ``simulate_coalescent`` and compare the
+   empirical mean and variance of :math:`T_{\text{MRCA}}` to their theoretical values.
+
+   The theoretical variance uses the fact that the :math:`T_k` are independent, so:
+
+   .. math::
+
+      \text{Var}(T_{\text{MRCA}}) = \sum_{k=2}^{n} \text{Var}(T_k)
+      = \sum_{k=2}^{n} \frac{1}{\binom{k}{2}^2}
+      = \sum_{k=2}^{n} \frac{4}{[k(k-1)]^2}
+
+   since :math:`T_k \sim \text{Exp}(\binom{k}{2})` and the variance of an
+   :math:`\text{Exp}(\lambda)` random variable is :math:`1/\lambda^2`.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 10
+      n_replicates = 10000
+
+      # Theoretical values
+      E_tmrca = 2 * (1 - 1.0 / n)
+      Var_tmrca = sum(4.0 / (k * (k - 1))**2 for k in range(2, n + 1))
+
+      # Simulate
+      tmrca_values = []
+      for _ in range(n_replicates):
+          results = simulate_coalescent(n, n_replicates=1)
+          times, pairs = results[0]
+          tmrca_values.append(times[-1])  # last coalescence time is the MRCA
+
+      tmrca_values = np.array(tmrca_values)
+
+      print(f"E[T_MRCA]:   simulated = {tmrca_values.mean():.4f}, "
+            f"theory = {E_tmrca:.4f}")
+      print(f"Var[T_MRCA]: simulated = {tmrca_values.var():.4f}, "
+            f"theory = {Var_tmrca:.4f}")
+
+.. admonition:: Solution 2: The exponential race
+
+   We run the race 100,000 times with rates :math:`\lambda_1 = 1, \lambda_2 = 2,
+   \lambda_3 = 3`. The total rate is :math:`\Lambda = 6`, so the minimum has
+   mean :math:`1/6` and event :math:`i` wins with probability
+   :math:`\lambda_i / \Lambda`.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      rates = [1.0, 2.0, 3.0]
+      total_rate = sum(rates)
+      n_trials = 100000
+
+      wins = np.zeros(3)
+      min_times = []
+
+      for _ in range(n_trials):
+          winner, t = exponential_race(*rates)
+          wins[winner] += 1
+          min_times.append(t)
+
+      min_times = np.array(min_times)
+
+      print("Win probabilities:")
+      for i in range(3):
+          print(f"  Event {i}: observed = {wins[i]/n_trials:.4f}, "
+                f"expected = {rates[i]/total_rate:.4f}")
+
+      print(f"\nMinimum time distribution:")
+      print(f"  Mean: observed = {min_times.mean():.4f}, "
+            f"expected = {1.0/total_rate:.4f}")
+      print(f"  Var:  observed = {min_times.var():.4f}, "
+            f"expected = {1.0/total_rate**2:.4f}")
+
+.. admonition:: Solution 3: Coalescent with recombination
+
+   The expected number of recombination events in a coalescent tree is approximately
+   :math:`\frac{\rho}{2} \cdot E[L_{\text{total}}]` where
+   :math:`E[L_{\text{total}}] = 2 \sum_{k=1}^{n-1} 1/k`. We simulate for several
+   values of :math:`\rho` and compare.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 5
+      L = 10000
+      n_replicates = 1000
+      rho_values = [0.1, 1.0, 5.0, 10.0, 20.0, 50.0]
+
+      # Theoretical expected total branch length (coalescent units)
+      E_total_length = 2 * sum(1.0 / k for k in range(1, n))
+
+      print(f"E[total branch length] = {E_total_length:.4f}")
+      print(f"{'rho':>6s}  {'E[recomb] (sim)':>16s}  {'E[recomb] (theory)':>18s}")
+
+      for rho in rho_values:
+          recomb_counts = []
+          for _ in range(n_replicates):
+              events = coalescent_with_recombination_simple(n=n, L=L, rho=rho)
+              n_recomb = sum(1 for _, etype, _ in events if etype == 'recomb')
+              recomb_counts.append(n_recomb)
+
+          mean_recomb = np.mean(recomb_counts)
+          # Theory: E[recomb] = (rho/2) * E[L_total]
+          expected_recomb = (rho / 2) * E_total_length
+          print(f"{rho:6.1f}  {mean_recomb:16.2f}  {expected_recomb:18.2f}")
+
+.. admonition:: Solution 4: Growth vs. constant size
+
+   Exponential growth (:math:`\alpha > 0`) makes the population smaller in the past,
+   which increases the coalescence rate at earlier times. This compresses the genealogy:
+   :math:`T_{\text{MRCA}}` is shorter and the tree is more star-shaped (most coalescences
+   happen at roughly the same time in the recent past).
+
+   .. code-block:: python
+
+      import numpy as np
+
+      N0 = 10000
+      alpha = 0.01
+      n = 10
+      n_reps = 10000
+
+      # Constant size: standard coalescent, then scale to generations
+      tmrca_const = []
+      for _ in range(n_reps):
+          results = simulate_coalescent(n, n_replicates=1)
+          times, _ = results[0]
+          tmrca_const.append(times[-1] * N0)  # scale to generations
+
+      # Growth: draw waiting times with the growth formula
+      tmrca_growth = []
+      for _ in range(n_reps):
+          t = 0.0
+          k = n
+          while k > 1:
+              w = coalescent_waiting_time_growth(k, N0, alpha, t)
+              if w == np.inf:
+                  break
+              t += w
+              k -= 1
+          tmrca_growth.append(t)
+
+      tmrca_const = np.array(tmrca_const)
+      tmrca_growth = np.array(tmrca_growth)
+
+      print(f"Constant N={N0}:")
+      print(f"  Mean T_MRCA = {tmrca_const.mean():.0f} generations")
+      print(f"  Std  T_MRCA = {tmrca_const.std():.0f} generations")
+      print(f"\nGrowth alpha={alpha}:")
+      print(f"  Mean T_MRCA = {tmrca_growth.mean():.0f} generations")
+      print(f"  Std  T_MRCA = {tmrca_growth.std():.0f} generations")
+      print(f"\nGrowth reduces T_MRCA because the ancestral population was smaller, "
+            f"forcing lineages to coalesce faster.")

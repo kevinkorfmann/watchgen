@@ -37,6 +37,9 @@ via the forward--backward algorithm.
 
 .. admonition:: Closing the confusion gap --- What is Gibbs sampling?
 
+   For a thorough introduction to MCMC and Gibbs sampling, see the prerequisite
+   chapter :ref:`mcmc`.
+
    Gibbs sampling is a strategy for sampling from a joint probability distribution
    :math:`P(x_1, x_2, \ldots, x_n)` when the joint distribution is too complex to
    sample from directly, but the *conditional* distributions
@@ -755,3 +758,281 @@ Exercises
    (a) wallclock time per iteration, (b) effective sample size after 1000 iterations,
    (c) autocorrelation of pairwise TMRCA at a fixed site. Which sampler is more
    efficient per iteration? Per unit of wallclock time?
+
+Solutions
+==========
+
+.. admonition:: Solution 1: Gibbs vs. Metropolis-Hastings
+
+   **Claim**: If the update for variable :math:`x_k` samples from the full
+   conditional :math:`P(x_k \mid \mathbf{x}_{-k})`, then the joint distribution
+   :math:`\pi(\mathbf{x}) = P(x_1, \ldots, x_n)` is stationary.
+
+   **Proof via detailed balance**: Consider a Gibbs update of coordinate :math:`k`.
+   The transition kernel from state :math:`\mathbf{x}` to :math:`\mathbf{x}'`
+   (which differs only in coordinate :math:`k`) is:
+
+   .. math::
+
+      T(\mathbf{x} \to \mathbf{x}') = P(x_k' \mid \mathbf{x}_{-k})
+
+   By the definition of conditional probability:
+
+   .. math::
+
+      P(x_k' \mid \mathbf{x}_{-k}) = \frac{\pi(\mathbf{x}')}{\pi(\mathbf{x}_{-k})}
+      \quad \text{where } \pi(\mathbf{x}_{-k}) = \sum_{x_k} \pi(\mathbf{x})
+
+   Similarly:
+
+   .. math::
+
+      T(\mathbf{x}' \to \mathbf{x}) = P(x_k \mid \mathbf{x}_{-k})
+      = \frac{\pi(\mathbf{x})}{\pi(\mathbf{x}_{-k})}
+
+   Now check detailed balance:
+
+   .. math::
+
+      \pi(\mathbf{x}) \, T(\mathbf{x} \to \mathbf{x}')
+      = \pi(\mathbf{x}) \, \frac{\pi(\mathbf{x}')}{\pi(\mathbf{x}_{-k})}
+
+   .. math::
+
+      \pi(\mathbf{x}') \, T(\mathbf{x}' \to \mathbf{x})
+      = \pi(\mathbf{x}') \, \frac{\pi(\mathbf{x})}{\pi(\mathbf{x}_{-k})}
+
+   Both sides are equal to
+   :math:`\pi(\mathbf{x}) \pi(\mathbf{x}') / \pi(\mathbf{x}_{-k})`.
+   Therefore detailed balance holds, and :math:`\pi` is a stationary
+   distribution of the chain. :math:`\square`
+
+   In ARGweaver, :math:`x_k` is the thread of chromosome :math:`k`, and
+   :math:`\mathbf{x}_{-k}` is the partial ARG of all other chromosomes.
+   The HMM forward-backward algorithm computes
+   :math:`P(\text{thread}_k \mid \text{partial ARG}, \text{data})` exactly,
+   and stochastic traceback samples from it --- satisfying the Gibbs
+   requirement.
+
+.. admonition:: Solution 2: Mixing time analysis
+
+   This is the **coupon collector problem**: if at each iteration we choose
+   one of :math:`n` chromosomes uniformly at random to re-thread, the expected
+   number of iterations until every chromosome has been re-threaded at least
+   once is:
+
+   .. math::
+
+      E[\text{iterations}] = n \cdot H_n = n \sum_{i=1}^{n} \frac{1}{i}
+
+   .. code-block:: python
+
+      def harmonic(n):
+          return sum(1.0 / i for i in range(1, n + 1))
+
+      n = 10
+      Hn = harmonic(n)
+      expected_iters = n * Hn
+      print(f"n = {n}")
+      print(f"H_n = {Hn:.4f}")
+      print(f"Expected iterations for full coverage: {expected_iters:.1f}")
+
+      # n = 10
+      # H_n = 2.9290
+      # Expected iterations for full coverage: 29.3
+
+   For :math:`n = 10`: :math:`H_{10} = 1 + 1/2 + 1/3 + \cdots + 1/10 \approx 2.929`,
+   so the expected number of iterations is :math:`10 \times 2.929 \approx 29.3`.
+
+   This means after about 30 iterations, every chromosome has been re-threaded
+   at least once in expectation. This is one "sweep" through the chromosomes.
+   For good mixing, ARGweaver typically runs many sweeps (hundreds to thousands
+   of total iterations), with thinning every :math:`n` iterations.
+
+   Note: this analysis only ensures every chromosome gets *one chance* to move.
+   Actual mixing --- convergence to the stationary distribution --- typically
+   requires many more sweeps, because changing one chromosome's thread only
+   partially decorrelates the chain from its previous state.
+
+.. admonition:: Solution 3: Implement the full loop
+
+   .. code-block:: python
+
+      import random
+      from math import exp, log
+
+      def simplified_mcmc(n_haps=4, n_sites=100, n_iters=1000,
+                          Ne=10000, mu=1.4e-8, rho=1e-8,
+                          ntimes=20, maxtime=160000, delta=0.01):
+          """
+          Simplified ARGweaver MCMC loop for demonstration.
+
+          This implementation tracks only the total tree length at a
+          fixed site across iterations, omitting the full ARG data
+          structure for clarity.
+
+          Returns
+          -------
+          tree_lengths : list of float
+              Total tree length at site 0, one per iteration.
+          """
+          times = get_time_points(ntimes=ntimes, maxtime=maxtime, delta=delta)
+          popsizes = [Ne] * (ntimes - 1)
+
+          # Initialize: sample coalescence times from the prior
+          coal_events = sorted(sample_tree(n_haps, popsizes, times))
+
+          tree_lengths = []
+
+          for iteration in range(n_iters):
+              # Pick a random chromosome to re-thread
+              remove_idx = random.randint(0, n_haps - 1)
+
+              # Simplified re-threading: re-sample one coalescence time
+              # from the coalescent prior (this is a gross simplification
+              # of the full HMM-based re-threading, but captures the
+              # spirit of the Gibbs update).
+              if coal_events:
+                  # Remove one coalescence event
+                  event_idx = min(remove_idx, len(coal_events) - 1)
+                  coal_events.pop(event_idx)
+
+                  # Re-sample a coalescence time from the prior
+                  # (conditional on current number of lineages)
+                  k_remaining = n_haps - len(coal_events)
+                  if k_remaining >= 2:
+                      new_coal = sample_tree(k_remaining, popsizes, times)
+                      if new_coal:
+                          coal_events.append(new_coal[0])
+                          coal_events.sort()
+
+              # Compute total tree length at site 0
+              # (sum of all branch lengths in the tree)
+              total_length = 0.0
+              k = n_haps
+              prev_t = 0.0
+              for ct in coal_events:
+                  total_length += k * (ct - prev_t)
+                  prev_t = ct
+                  k -= 1
+              # Add root branch (1 lineage above last coalescence)
+              if coal_events:
+                  total_length += 1 * (times[-1] - coal_events[-1])
+
+              tree_lengths.append(total_length)
+
+          return tree_lengths
+
+      # Run and check convergence
+      tree_lengths = simplified_mcmc(n_iters=1000)
+      print(f"Tree length after burn-in (last 100 iterations):")
+      print(f"  Mean:  {sum(tree_lengths[-100:]) / 100:.0f}")
+      print(f"  Stdev: {(sum((x - sum(tree_lengths[-100:])/100)**2 "
+            f"for x in tree_lengths[-100:]) / 100)**0.5:.0f}")
+
+      # The tree length should stabilize after burn-in.
+      # For n=4 haplotypes with Ne=10000, the expected total tree
+      # length is 2*Ne*(1 + 1/2 + 1/3) * 2 = approximately 73,000
+      # (the sum of expected coalescent waiting times times branch counts).
+
+   The total tree length should stabilize after an initial burn-in period
+   (typically 100--200 iterations for this small example). The equilibrium
+   value depends on :math:`N_e` and the number of haplotypes. Plotting the
+   tree length trace reveals the characteristic MCMC pattern: rapid initial
+   changes (burn-in), followed by fluctuations around a stable mean
+   (stationarity).
+
+.. admonition:: Solution 4: SINGER comparison
+
+   .. code-block:: python
+
+      import time
+
+      def argweaver_style_iteration(states, transitions, emissions,
+                                    priors, forward_probs):
+          """
+          One Gibbs iteration: run forward algorithm, then traceback.
+          Cost: O(L * S^2) for full matrix, O(L * S) with rank-1 trick.
+          Always accepted.
+          """
+          # Forward pass: O(L * S)
+          for s in range(len(emissions)):
+              pass  # placeholder for forward computation
+          # Stochastic traceback: O(L * S)
+          # Acceptance: 100%
+          return True  # always accepted
+
+      def singer_style_iteration(branch_hmm_states, time_hmm_states,
+                                 emissions, data):
+          """
+          One MH iteration: propose via two-HMM, accept/reject.
+          Cost: O(L * k) for branch HMM + O(L * n_t) for time HMM.
+          Accepted with probability alpha.
+          """
+          # Branch HMM: O(L * k)
+          # Time HMM: O(L * n_t) per branch
+          # Acceptance ratio
+          import random
+          alpha = 0.92  # typical acceptance rate
+          return random.random() < alpha
+
+      # Comparison framework (conceptual)
+      n_haps = 10
+      n_sites = 10000
+      ntimes = 20
+
+      # ARGweaver cost per iteration
+      S_argweaver = n_haps * ntimes  # ~200 states
+      cost_aw = n_sites * S_argweaver  # O(L * S) with rank-1
+
+      # SINGER cost per iteration
+      cost_singer = n_sites * n_haps  # O(L * k) for branch HMM
+
+      print(f"Cost comparison (n={n_haps}, L={n_sites}, nt={ntimes}):")
+      print(f"  ARGweaver (with rank-1): O(L * k * nt) = "
+            f"O({n_sites} * {n_haps} * {ntimes}) = O({cost_aw})")
+      print(f"  SINGER:                  O(L * k)      = "
+            f"O({n_sites} * {n_haps}) = O({cost_singer})")
+      print(f"  Ratio: ARGweaver / SINGER = {cost_aw / cost_singer:.0f}x")
+
+      # Effective sample size comparison
+      n_iters = 1000
+      acceptance_singer = 0.92
+      ess_aw = n_iters  # all accepted
+      ess_singer = n_iters * acceptance_singer
+      print(f"\n  ESS after {n_iters} iterations:")
+      print(f"    ARGweaver: {ess_aw:.0f} (100% acceptance)")
+      print(f"    SINGER:    {ess_singer:.0f} "
+            f"({acceptance_singer*100:.0f}% acceptance)")
+
+      # Efficiency = ESS / cost
+      eff_aw = ess_aw / cost_aw
+      eff_singer = ess_singer / cost_singer
+      print(f"\n  Efficiency (ESS / cost):")
+      print(f"    ARGweaver: {eff_aw:.2e}")
+      print(f"    SINGER:    {eff_singer:.2e}")
+      print(f"    SINGER / ARGweaver: {eff_singer / eff_aw:.1f}x")
+
+   **Summary of the comparison**:
+
+   **(a) Wallclock time per iteration**: ARGweaver is slower by a factor of
+   :math:`\sim n_t` (the number of time points, typically 20) because its
+   state space is :math:`O(k \cdot n_t)` vs. SINGER's :math:`O(k)`. With the
+   rank-1 optimization, the gap is :math:`n_t`-fold rather than
+   :math:`(k \cdot n_t)^2 / k`-fold.
+
+   **(b) Effective sample size**: ARGweaver's 100% acceptance rate gives it a
+   slight ESS advantage per iteration. SINGER's ~92% acceptance rate means
+   ~8% of iterations are wasted. However, SINGER's faster iterations more
+   than compensate.
+
+   **(c) Autocorrelation**: Both methods re-thread one chromosome per iteration,
+   so the autocorrelation of pairwise TMRCA decays at a similar rate per
+   sweep (one pass through all chromosomes). SINGER may mix faster if its
+   sub-graph updates move multiple nodes simultaneously.
+
+   **Conclusion**: SINGER is more efficient per unit of wallclock time for
+   :math:`k \gtrsim 10` due to its :math:`O(k)` scaling. ARGweaver is more
+   efficient per iteration (no rejected proposals) and provides exact
+   conditional samples, making it preferable for small :math:`k` or when
+   posterior accuracy is paramount.

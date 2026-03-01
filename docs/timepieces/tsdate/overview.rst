@@ -6,6 +6,18 @@ Overview of tsdate
 
    *Before assembling the watch, lay out every part and understand what it does.*
 
+.. figure:: /_static/figures/fig_mini_tsdate.png
+   :width: 100%
+   :align: center
+
+   **tsdate at a glance.** Panel A: Coalescent prior -- conditional coalescent
+   moments for different sample sizes, with gamma priors on node age shaped by
+   descendant count. Panel B: Edge likelihood -- Poisson mutation likelihood as a
+   function of parent time for edges with varying mutation counts. Panel C:
+   Inside-outside posterior distributions over a time grid for nodes with different
+   roles in a small tree. Panel D: Variational gamma -- the multiply/divide
+   operations on gamma distributions showing prior-to-posterior evolution.
+
 If tsinfer reconstructs the hidden *topology* of the ancestral recombination
 graph -- the arrangement of gears and springs inside the case -- then tsdate
 **adds calibration marks to the movement**, converting a bare mechanism into a

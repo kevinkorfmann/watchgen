@@ -986,3 +986,297 @@ Exercises
    compute the cross-population LD correlation
    :math:`E[D_0 D_1] / \sqrt{E[D_0^2] E[D_1^2]}` as a function of :math:`\rho`.
    How does split time affect the correlation?
+
+
+Solutions
+=========
+
+.. admonition:: Solution 1: LD decay curves
+
+   Compute :math:`\sigma_d^2` vs. :math:`\rho` for three demographic
+   scenarios -- constant size, 10x expansion, and 10x bottleneck -- and
+   compare their shapes.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments.LD
+
+      theta = 0.001
+      rho_values = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0]
+
+      results = {}
+
+      # (a) Constant size -- equilibrium
+      sigma_d2_const = []
+      for rho in rho_values:
+          y = moments.LD.LDstats(
+              moments.LD.Numerics.steady_state([rho], theta=theta),
+              num_pops=1, pop_ids=["pop0"]
+          )
+          sigma_d2_const.append(y.D2() / y.pi2())
+      results['constant'] = sigma_d2_const
+
+      # (b) 10x expansion, 0.1 time units ago
+      sigma_d2_exp = []
+      for rho in rho_values:
+          y = moments.LD.LDstats(
+              moments.LD.Numerics.steady_state([rho], theta=theta),
+              num_pops=1, pop_ids=["pop0"]
+          )
+          y.integrate([10.0], 0.1, rho=[rho], theta=theta)
+          sigma_d2_exp.append(y.D2() / y.pi2())
+      results['expansion'] = sigma_d2_exp
+
+      # (c) 10x bottleneck, 0.05 time units, then recovery
+      sigma_d2_bn = []
+      for rho in rho_values:
+          y = moments.LD.LDstats(
+              moments.LD.Numerics.steady_state([rho], theta=theta),
+              num_pops=1, pop_ids=["pop0"]
+          )
+          y.integrate([0.1], 0.05, rho=[rho], theta=theta)   # bottleneck
+          y.integrate([1.0], 0.05, rho=[rho], theta=theta)   # recovery
+          sigma_d2_bn.append(y.D2() / y.pi2())
+      results['bottleneck'] = sigma_d2_bn
+
+      # Print comparison
+      print(f"{'rho':>6} {'Constant':>12} {'Expansion':>12} {'Bottleneck':>12}")
+      print("-" * 46)
+      for i, rho in enumerate(rho_values):
+          print(f"{rho:6.1f} {results['constant'][i]:12.6f} "
+                f"{results['expansion'][i]:12.6f} "
+                f"{results['bottleneck'][i]:12.6f}")
+
+   **How the shapes differ**: The constant-size curve follows approximately
+   :math:`1/(1 + \rho)`.  The expansion curve lies *below* the constant-size
+   curve because weak drift in the large population creates little new LD.
+   The bottleneck curve lies *above* the constant-size curve, especially at
+   small :math:`\rho`, because the intense drift during the bottleneck
+   created excess LD that has not yet decayed.  At large :math:`\rho`,
+   recombination rapidly destroys LD regardless of demography, so all three
+   curves converge.
+
+.. admonition:: Solution 2: Admixture detection
+
+   Two populations diverge at :math:`T = 0.5`, then one receives 10%
+   admixture at :math:`T = 0.01`.  Compare :math:`\sigma_{Dz}` with and
+   without admixture.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments.LD
+
+      theta = 0.001
+      rho_values = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
+      T_split = 0.5
+      T_admix = 0.01
+      f_admix = 0.1  # 10% admixture fraction
+
+      sigma_Dz_admixed = []
+      sigma_Dz_no_admix = []
+
+      for rho in rho_values:
+          # --- Divergence phase (shared for both scenarios) ---
+          y = moments.LD.LDstats(
+              moments.LD.Numerics.steady_state([rho], theta=theta),
+              num_pops=1, pop_ids=["anc"]
+          )
+          y_div = y.split(0, new_ids=["pop0", "pop1"])
+          y_div.integrate([1.0, 1.0], T_split - T_admix,
+                          rho=[rho], theta=theta)
+
+          # --- Without admixture: continue divergence ---
+          y_no = y_div.copy()
+          y_no.integrate([1.0, 1.0], T_admix, rho=[rho], theta=theta)
+          dz_no = y_no.Dz(pops="pop0")
+          pi2_no = y_no.pi2(pops="pop0")
+          sigma_Dz_no_admix.append(dz_no / pi2_no if pi2_no > 0 else 0)
+
+          # --- With admixture: pop0 receives f_admix from pop1 ---
+          y_adm = y_div.copy()
+          y_adm = y_adm.admix(0, 1, f_admix)  # 10% of pop0 replaced by pop1
+          y_adm.integrate([1.0, 1.0], T_admix, rho=[rho], theta=theta)
+          dz_adm = y_adm.Dz(pops="pop0")
+          pi2_adm = y_adm.pi2(pops="pop0")
+          sigma_Dz_admixed.append(dz_adm / pi2_adm if pi2_adm > 0 else 0)
+
+      print(f"{'rho':>6} {'sigma_Dz (no admix)':>22} "
+            f"{'sigma_Dz (admixed)':>22} {'Ratio':>8}")
+      print("-" * 62)
+      for i, rho in enumerate(rho_values):
+          ratio = (sigma_Dz_admixed[i] / sigma_Dz_no_admix[i]
+                   if sigma_Dz_no_admix[i] != 0 else float('inf'))
+          print(f"{rho:6.1f} {sigma_Dz_no_admix[i]:22.8f} "
+                f"{sigma_Dz_admixed[i]:22.8f} {ratio:8.2f}")
+
+   Admixture is most detectable at **intermediate** recombination distances
+   (:math:`\rho \approx 1\text{--}5`).  At very small :math:`\rho`,
+   recombination has not had time to break down the admixture LD, so the
+   signal is strong but the baseline drift-LD is also high.  At very large
+   :math:`\rho`, recombination has erased the admixture signal.  The ratio
+   of :math:`\sigma_{Dz}` with vs. without admixture quantifies the
+   signal-to-noise advantage at each distance.  The :math:`E[Dz]` statistic
+   is near zero without admixture (by symmetry), so even a modest admixture
+   pulse creates a strong signal.
+
+.. admonition:: Solution 3: Joint SFS + LD inference
+
+   Show that LD constrains :math:`N_e` (via :math:`\rho = 4 N_e r`) while
+   the SFS constrains :math:`\theta = 4 N_e \mu`, and that jointly fitting
+   both gives tighter estimates.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments
+      import moments.LD
+
+      # True parameters
+      Ne_true = 10000
+      mu = 1.5e-8      # mutation rate per site per generation
+      r = 1e-8          # recombination rate per site per generation
+      L = 1e6           # 1 Mb region
+      n = 30
+
+      theta_true = 4 * Ne_true * mu * L   # = 0.6
+      rho_true = 4 * Ne_true * r           # = 4e-4 per site
+
+      # Two-epoch model: expansion by factor nu at time T
+      nu_true, T_true = 3.0, 0.1
+
+      # --- SFS data ---
+      fs_true = moments.Demographics1D.two_epoch((nu_true, T_true), [n])
+      sfs_data = np.array(fs_true) * theta_true
+
+      # --- LD data (binned by physical distance -> rho) ---
+      r_bin_centers = np.array([1e-5, 5e-5, 1e-4, 5e-4, 1e-3])
+      rho_bins_true = 4 * Ne_true * r_bin_centers
+
+      ld_data = []
+      for rho in rho_bins_true:
+          y = moments.LD.LDstats(
+              moments.LD.Numerics.steady_state([rho], theta=mu),
+              num_pops=1, pop_ids=["pop0"]
+          )
+          y.integrate([nu_true], T_true, rho=[rho], theta=mu)
+          ld_data.append(y.D2() / y.pi2())
+
+      # --- Grid search over (nu, Ne) ---
+      # SFS constrains theta = 4*Ne*mu*L, so nu and T shape are separable
+      # LD constrains rho = 4*Ne*r, so it pins down Ne
+      nu_grid = np.linspace(1.0, 8.0, 30)
+      Ne_grid = np.linspace(5000, 20000, 30)
+
+      ll_sfs_only = np.full((30, 30), -np.inf)
+      ll_ld_only = np.full((30, 30), -np.inf)
+      ll_joint = np.full((30, 30), -np.inf)
+
+      for i, nu in enumerate(nu_grid):
+          for j, Ne in enumerate(Ne_grid):
+              theta_model = 4 * Ne * mu * L
+
+              # SFS component
+              fs_model = moments.Demographics1D.two_epoch(
+                  (nu, T_true), [n]
+              )
+              sfs_model = np.array(fs_model) * theta_model
+              ll_s = sum(
+                  sfs_data[k] * np.log(sfs_model[k]) - sfs_model[k]
+                  for k in range(1, n) if sfs_model[k] > 0
+              )
+              ll_sfs_only[i, j] = ll_s
+
+              # LD component
+              rho_bins_model = 4 * Ne * r_bin_centers
+              ll_l = 0.0
+              for b, rho in enumerate(rho_bins_model):
+                  y = moments.LD.LDstats(
+                      moments.LD.Numerics.steady_state([rho], theta=mu),
+                      num_pops=1, pop_ids=["pop0"]
+                  )
+                  y.integrate([nu], T_true, rho=[rho], theta=mu)
+                  pred = y.D2() / y.pi2()
+                  # Gaussian log-likelihood (unit variance for simplicity)
+                  ll_l -= 0.5 * (ld_data[b] - pred) ** 2 * 1e6
+              ll_ld_only[i, j] = ll_l
+
+              # Joint
+              ll_joint[i, j] = ll_s + ll_l
+
+      # Find maxima
+      idx_s = np.unravel_index(np.argmax(ll_sfs_only), ll_sfs_only.shape)
+      idx_l = np.unravel_index(np.argmax(ll_ld_only), ll_ld_only.shape)
+      idx_j = np.unravel_index(np.argmax(ll_joint), ll_joint.shape)
+
+      print(f"True: nu={nu_true}, Ne={Ne_true}")
+      print(f"SFS-only best:  nu={nu_grid[idx_s[0]]:.2f}, "
+            f"Ne={Ne_grid[idx_s[1]]:.0f}")
+      print(f"LD-only best:   nu={nu_grid[idx_l[0]]:.2f}, "
+            f"Ne={Ne_grid[idx_l[1]]:.0f}")
+      print(f"Joint best:     nu={nu_grid[idx_j[0]]:.2f}, "
+            f"Ne={Ne_grid[idx_j[1]]:.0f}")
+
+   The SFS alone constrains :math:`\nu` (the shape of the expansion) well
+   but is largely flat along the :math:`N_e` axis (since it only sees
+   :math:`\theta = 4 N_e \mu L` and the optimal :math:`\theta` is absorbed
+   analytically).  The LD alone constrains :math:`N_e` (because the mapping
+   :math:`\rho = 4 N_e r` depends on :math:`N_e` directly) but has a
+   broader ridge in :math:`\nu`.  Jointly, the two likelihoods break each
+   other's degeneracies, producing a sharper peak in both dimensions.
+
+.. admonition:: Solution 4: Cross-population LD
+
+   Compute the cross-population LD correlation at various :math:`\rho`
+   values for three different split times.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments.LD
+
+      theta = 0.001
+      rho_values = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
+      T_values = [0.01, 0.1, 1.0]
+
+      print(f"{'rho':>6}", end="")
+      for T in T_values:
+          print(f"  {'T=' + str(T):>12}", end="")
+      print()
+      print("-" * (6 + 14 * len(T_values)))
+
+      for rho in rho_values:
+          print(f"{rho:6.1f}", end="")
+          for T in T_values:
+              # Equilibrium -> split -> diverge
+              y = moments.LD.LDstats(
+                  moments.LD.Numerics.steady_state([rho], theta=theta),
+                  num_pops=1, pop_ids=["anc"]
+              )
+              y = y.split(0, new_ids=["pop0", "pop1"])
+              y.integrate([1.0, 1.0], T, rho=[rho], theta=theta)
+
+              DD_00 = y.D2(pops="pop0")
+              DD_11 = y.D2(pops="pop1")
+              DD_01 = y.D2(pops=["pop0", "pop1"])
+
+              corr = DD_01 / np.sqrt(DD_00 * DD_11) if DD_00 > 0 and DD_11 > 0 else 0
+              print(f"  {corr:12.6f}", end="")
+          print()
+
+      print()
+      print("Interpretation:")
+      print("  T=0.01 (very recent split): correlation near 1.0 at all rho")
+      print("  T=0.1  (moderate split):    correlation decays with rho")
+      print("  T=1.0  (ancient split):     correlation near 0 everywhere")
+
+   **How split time affects the correlation**: Right after a split, the two
+   populations share identical LD patterns (correlation = 1).  Over time,
+   independent drift in each population creates new, uncorrelated LD, while
+   recombination destroys the shared ancestral LD.  For short-range LD (high
+   :math:`\rho`), recombination rapidly erases the shared signal, so the
+   correlation drops first at large :math:`\rho`.  For long-range LD (low
+   :math:`\rho`), ancestral LD persists longer, maintaining the correlation.
+   At :math:`T = 1.0` (ancient split), essentially all ancestral LD has
+   been replaced by independent drift, giving correlations near zero.

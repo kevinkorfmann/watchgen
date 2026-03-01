@@ -33,6 +33,10 @@ Instead, we disassemble only the **core mechanism** -- the Wright-Fisher
 generation cycle -- and then build a few **recipes** that demonstrate the
 key ideas: a selective sweep, background selection, and tree-sequence recording.
 
+.. admonition:: Primary Reference
+
+   :cite:`slim`
+
 The three gears of our simplified SLiM:
 
 1. **The Wright-Fisher Cycle** (the escapement) -- The discrete-generation
@@ -100,3 +104,4 @@ Chapters
    overview
    wright_fisher
    recipes
+   demo

@@ -647,3 +647,229 @@ Exercises
    a local tree before and after compression.
 
 Next: :ref:`tsinfer_sample_matching` -- threading the actual samples through the ancestor tree.
+
+
+Solutions
+==========
+
+.. admonition:: Solution 1: Panel growth analysis
+
+   We simulate a dataset, generate ancestors, group them by time, and track
+   how the reference panel size :math:`k` grows as each time group is
+   processed.
+
+   .. code-block:: python
+
+      import numpy as np
+      import matplotlib.pyplot as plt
+
+      # Simulate a variant matrix
+      np.random.seed(42)
+      n, m = 100, 200
+      D = np.random.binomial(1, 0.3, size=(n, m))
+      ancestral_known = np.ones(m, dtype=bool)
+
+      # Generate ancestors (using functions from Gear 1)
+      ancestors, inference_sites = generate_ancestors(D, ancestral_known)
+      ancestors = add_ultimate_ancestor(ancestors, len(inference_sites))
+
+      # Group by time and track panel growth
+      groups = matching_order(ancestors[1:])  # Exclude the ultimate ancestor
+      panel_sizes = []
+      cumulative = 1  # Start with just the ultimate ancestor
+
+      for group_idx, group in enumerate(groups):
+          panel_sizes.append(cumulative)
+          cumulative += len(group)
+
+      group_indices = np.arange(len(panel_sizes))
+      group_times = [g[0]['time'] for g in groups]
+
+      fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+      ax1.plot(group_indices, panel_sizes, 'o-')
+      ax1.set_xlabel("Time group index (oldest first)")
+      ax1.set_ylabel("Panel size k")
+      ax1.set_title("Reference Panel Growth During Matching")
+
+      ax2.plot(group_times, panel_sizes, 'o-')
+      ax2.set_xlabel("Time (derived allele frequency)")
+      ax2.set_ylabel("Panel size k")
+      ax2.set_title("Panel Size vs. Ancestor Time")
+      ax2.invert_xaxis()  # Oldest (highest freq) on the left
+
+      plt.tight_layout()
+      plt.show()
+
+      # Computational cost analysis
+      print("Panel size at each time group:")
+      for i, (k, t) in enumerate(zip(panel_sizes, group_times)):
+          group_size = len(groups[i])
+          cost = k * group_size  # O(k) per ancestor, times group size
+          print(f"  Group {i}: time={t:.2f}, k={k}, "
+                f"ancestors={group_size}, cost ~ {cost}")
+
+   **Key observations:**
+
+   - The panel grows monotonically: each time group adds its ancestors to the
+     panel for subsequent groups. The growth is roughly linear in the number
+     of groups.
+   - Computational cost per ancestor is :math:`O(mk)` where :math:`m` is the
+     number of inference sites and :math:`k` is the current panel size. Since
+     :math:`k` is smallest for the oldest ancestors and largest for the
+     youngest, the youngest ancestors are the most expensive to match.
+   - The total cost across all ancestors is
+     :math:`\sum_{g=0}^{G-1} |g| \cdot k_g \cdot m`, where :math:`|g|` is
+     the group size and :math:`k_g` is the panel size at group :math:`g`.
+     This sums to roughly :math:`O(A^2 m / 2)` where :math:`A` is the total
+     number of ancestors, dominated by the last (youngest) groups.
+
+.. admonition:: Solution 2: Edge count analysis
+
+   We compare the number of edges produced by ancestor matching against the
+   number of edges in the true (simulated) tree sequence.
+
+   .. code-block:: python
+
+      import msprime
+      import numpy as np
+
+      # Simulate a tree sequence
+      ts = msprime.simulate(
+          sample_size=100, Ne=10_000, length=1e5,
+          mutation_rate=1e-8, recombination_rate=1e-8,
+          random_seed=42)
+
+      print(f"True tree sequence:")
+      print(f"  Nodes: {ts.num_nodes}")
+      print(f"  Edges: {ts.num_edges}")
+      print(f"  Trees: {ts.num_trees}")
+      print(f"  Mutations: {ts.num_mutations}")
+
+      # Build the variant matrix
+      G = ts.genotype_matrix()  # (num_sites, num_samples)
+      D = G.T  # (n, m)
+      n, m = D.shape
+      positions = np.array([s.position for s in ts.sites()])
+      ancestral_known = np.ones(m, dtype=bool)
+
+      # Run ancestor generation
+      ancestors, inference_sites = generate_ancestors(D, ancestral_known)
+      ancestors = add_ultimate_ancestor(ancestors, len(inference_sites))
+      inf_positions = positions[inference_sites]
+
+      # Run ancestor matching
+      builder = match_ancestors(
+          ancestors, inference_sites, inf_positions,
+          recombination_rate=1e-8, mismatch_ratio=1.0,
+          sequence_length=ts.sequence_length)
+
+      print(f"\nInferred ancestor tree:")
+      print(f"  Ancestor nodes: {len(builder.nodes)}")
+      print(f"  Edges: {len(builder.edges)}")
+
+      # Each Viterbi transition creates a new edge, so the edge count
+      # is approximately: num_ancestors + total_recombination_breakpoints
+      num_ancestors = len(ancestors) - 1  # Exclude ultimate
+      avg_edges_per_ancestor = len(builder.edges) / max(num_ancestors, 1)
+      print(f"\n  Ancestors matched: {num_ancestors}")
+      print(f"  Avg edges per ancestor: {avg_edges_per_ancestor:.1f}")
+      print(f"  Ratio inferred/true edges: "
+            f"{len(builder.edges) / ts.num_edges:.2f}")
+
+   **Key observations:**
+
+   - The inferred tree typically has *more* edges than the true tree
+     sequence because: (a) every ancestor creates at least one edge, and
+     (b) Viterbi recombination breakpoints may not align perfectly with
+     the true breakpoints, introducing extra edge boundaries.
+   - After simplification (which removes ancestors not ancestral to any
+     sample), the edge count drops substantially and approaches the true
+     edge count.
+   - The ratio of inferred-to-true edges depends on the recombination
+     rate and sample size. Higher recombination creates more breakpoints
+     in both the true and inferred trees.
+
+.. admonition:: Solution 3: Path compression impact
+
+   We apply path compression to the raw ancestor tree edges and measure
+   how many PC nodes are created and how many edges are affected.
+
+   .. code-block:: python
+
+      import numpy as np
+      from collections import defaultdict
+
+      # Use the example from the chapter or build from a simulation
+      # Here we construct a scenario with deliberate polytomies
+      edges_raw = [
+          (0, 5000, 0, 1),     # Three children of node 0 on [0, 5000)
+          (0, 5000, 0, 2),
+          (0, 5000, 0, 3),
+          (5000, 10000, 0, 1), # Two children of node 0 on [5000, 10000)
+          (5000, 10000, 0, 4),
+          (0, 10000, 1, 5),    # Single child -- not compressed
+          (0, 10000, 1, 6),    # Two children of node 1 on [0, 10000)
+      ]
+      nodes_raw = [
+          {'id': i, 'time': 1.0 - i * 0.1, 'is_sample': i >= 5}
+          for i in range(7)
+      ]
+
+      # Apply path compression
+      compressed_edges, compressed_nodes = path_compress(edges_raw, nodes_raw)
+
+      # Analysis
+      original_edge_count = len(edges_raw)
+      compressed_edge_count = len(compressed_edges)
+      pc_nodes = compressed_nodes[len(nodes_raw):]
+      num_pc_nodes = len(pc_nodes)
+
+      print(f"Before compression:")
+      print(f"  Edges: {original_edge_count}")
+      print(f"  Nodes: {len(nodes_raw)}")
+      for e in edges_raw:
+          print(f"    [{e[0]}, {e[1]}): {e[2]} -> {e[3]}")
+
+      print(f"\nAfter compression:")
+      print(f"  Edges: {compressed_edge_count}")
+      print(f"  Nodes: {len(compressed_nodes)}")
+      print(f"  PC nodes added: {num_pc_nodes}")
+      for e in compressed_edges:
+          print(f"    [{e[0]}, {e[1]}): {e[2]} -> {e[3]}")
+
+      # Count affected edges: edges in groups with 2+ children
+      groups = defaultdict(list)
+      for l, r, p, c in edges_raw:
+          groups[(l, r, p)].append(c)
+
+      affected_original = sum(len(children) for children in groups.values()
+                              if len(children) > 1)
+      print(f"\n  Edges in polytomies (before): {affected_original}")
+      print(f"  Fraction of edges affected: "
+            f"{affected_original / original_edge_count:.1%}")
+
+      # Verify: total edges after = sum over groups of
+      # (1 parent->PC + |children| PC->child) for multi-child groups
+      # plus unchanged edges for single-child groups
+      expected = sum(
+          1 + len(ch) if len(ch) > 1 else 1
+          for ch in groups.values()
+      )
+      assert compressed_edge_count == expected, \
+          f"Expected {expected}, got {compressed_edge_count}"
+      print(f"  Edge count verification: [ok]")
+
+   **Key observations:**
+
+   - Each polytomy (a parent with :math:`c > 1` children over the same
+     interval) generates one PC node. The :math:`c` original edges are
+     replaced by :math:`c + 1` edges (one parent-to-PC, :math:`c`
+     PC-to-children). So path compression *increases* the total edge count.
+   - The number of PC nodes is exactly equal to the number of distinct
+     ``(left, right, parent)`` triples that have more than one child.
+   - Path compression resolves polytomies into binary-ish structure,
+     which is important for downstream analysis (e.g., ``tsdate``
+     expects resolved tree topologies). The epsilon time offset
+     :math:`1/2^{32}` ensures valid parent-child time ordering without
+     implying a biologically meaningful coalescence time for PC nodes.

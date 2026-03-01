@@ -13,8 +13,8 @@ of Bayes' rule. The challenge now is *combining* them. Each node's age
 depends on the ages of its parents and children through the edge likelihoods,
 creating a coupled system that cannot be solved node-by-node.
 
-The inside-outside method is tsdate's original dating algorithm (Wohns et al.,
-2022). It discretizes time into a grid, represents each node's posterior as a
+The inside-outside method is tsdate's original dating algorithm. It discretizes
+time into a grid, represents each node's posterior as a
 probability vector over grid points, and propagates information through the tree
 using two passes: **inside** (leaves to root) and **outside** (root to leaves).
 

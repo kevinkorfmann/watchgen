@@ -1,17 +1,10 @@
 .. _argweaver_timepiece:
 
 ====================================
-Timepiece IV: ARGweaver
+Timepiece V: ARGweaver
 ====================================
 
    *Bayesian Sampling of Ancestral Recombination Graphs via the Discrete SMC*
-
-.. epigraph::
-
-   "We develop a sampling algorithm for ARGs, conditional on the sequence data, using
-   a discretized sequentially Markov coalescent (SMC) process."
-
-   -- Rasmussen, Hubisz, Gronau, and Siepel (2014)
 
 The Mechanism at a Glance
 ==========================
@@ -34,6 +27,10 @@ sweep of a second hand. What it loses in time resolution, it gains in computatio
 simplicity -- the exact forward-backward algorithm works because the state space is
 finite. Understanding ARGweaver is valuable both as an algorithm in its own right and
 as context for appreciating SINGER's continuous-time innovations.
+
+.. admonition:: Primary Reference
+
+   :cite:`argweaver`
 
 The five gears of ARGweaver:
 
@@ -99,3 +96,4 @@ Chapters
    transition_probabilities
    emission_probabilities
    mcmc_sampling
+   demo

@@ -36,7 +36,8 @@ By the end of this chapter, you will understand exactly what happens inside
    If you are comfortable with the idea "velocity tells you how position
    changes," you already have the right intuition for ODEs: here, the
    "position" is the SFS and the "velocity" is given by the operators
-   we derive below.
+   we derive below.  For a thorough introduction to ODEs and numerical
+   solvers, see the prerequisite chapter :ref:`odes`.
 
 
 Step 1: The Wright-Fisher Model in One Slide
@@ -145,9 +146,10 @@ which is why everything is naturally expressed in scaled parameters like
    by the number of steps (:math:`2N`) gives a variance of order 1 per unit
    time -- exactly the :math:`x(1-x)` we see above.
 
-The diffusion gives us a PDE for the *density* :math:`\phi(x,t)`.  The key
-innovation of ``moments`` is to bypass that PDE and work directly with the
-SFS entries -- the moments of :math:`\phi`.
+The diffusion gives us a PDE for the *density* :math:`\phi(x,t)` (the
+Fokker-Planck equation -- see :ref:`diffusion_approximation` for the full
+derivation).  The key innovation of ``moments`` is to bypass that PDE and work
+directly with the SFS entries -- the moments of :math:`\phi`.
 
 
 Step 3: What Are "Moments"?
@@ -1024,6 +1026,195 @@ Exercises
    rate :math:`M`, the expected :math:`F_{ST}` is approximately
    :math:`1/(1 + 4M)` (Wright's island model). Simulate this with ``moments``
    for :math:`M = 0.1, 1, 10` and compare to the theoretical expectation.
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Verify the drift equilibrium
+
+   Start from a flat SFS and integrate the drift + mutation ODE for a long
+   time.  Drift drains probability from the interior toward the boundaries
+   while mutation continuously injects singletons.  The balance produces the
+   :math:`\theta / j` equilibrium.
+
+   .. code-block:: python
+
+      import numpy as np
+      from scipy.integrate import solve_ivp
+
+      n = 30
+      theta = 1.0
+
+      # Start from a flat SFS (far from equilibrium)
+      phi_init = np.ones(n + 1)
+      phi_init[0] = 0.0
+      phi_init[n] = 0.0
+
+      # Integrate for T = 10 diffusion time units (constant size nu = 1)
+      phi_flat_start = integrate_sfs(
+          phi_init, n, T=10.0, nu_func=lambda t: 1.0, theta=theta
+      )
+
+      # Compare to the expected neutral equilibrium theta / j
+      print(f"{'j':>3} {'Integrated':>12} {'theta/j':>10} {'Rel. error':>12}")
+      for j in range(1, min(n, 10)):
+          expected = theta / j
+          rel_err = abs(phi_flat_start[j] - expected) / expected
+          print(f"{j:3d} {phi_flat_start[j]:12.6f} {expected:10.6f} {rel_err:12.2e}")
+
+      # All entries should agree to within ~1e-4 or better after T = 10.
+      max_rel_err = max(
+          abs(phi_flat_start[j] - theta / j) / (theta / j) for j in range(1, n)
+      )
+      print(f"\nMax relative error: {max_rel_err:.2e}")
+      assert max_rel_err < 1e-3, "SFS did not converge to theta/j"
+
+   The key insight is that :math:`T = 10` (i.e., 20 :math:`N_e` generations) is
+   long enough for the system to reach steady state, regardless of the starting
+   condition.  The drift operator acts as a tridiagonal diffusion matrix and the
+   mutation operator provides a constant source at :math:`j = 1`; their balance
+   uniquely determines the :math:`\theta / j` spectrum.
+
+.. admonition:: Solution 2: Selection shifts the SFS
+
+   With :math:`\gamma < 0` (purifying selection), deleterious alleles are
+   removed before reaching high frequency, enriching rare variants.  With
+   :math:`\gamma > 0` (positive selection), the derived allele is pushed toward
+   fixation, enriching common variants.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 50
+      theta = 1.0
+      gamma_values = [-5, 0, 5]
+
+      results = {}
+      for gamma in gamma_values:
+          # Start from neutral equilibrium
+          phi_eq = expected_sfs_neutral(n, theta)
+          # Integrate with selection for a long time to reach new equilibrium
+          phi_sel = integrate_sfs(
+              phi_eq, n, T=10.0,
+              nu_func=lambda t: 1.0,
+              theta=theta,
+              gamma=gamma,
+              h=0.5  # additive selection
+          )
+          results[gamma] = phi_sel
+
+      # Print a comparison table
+      print(f"{'j':>3} {'gamma=-5':>12} {'gamma=0':>12} {'gamma=+5':>12}")
+      for j in range(1, 10):
+          print(f"{j:3d} {results[-5][j]:12.6f} "
+                f"{results[0][j]:12.6f} {results[5][j]:12.6f}")
+
+      # Verify the expected pattern:
+      # gamma < 0 => more singletons (phi[1] larger), fewer high-freq (phi[n-1] smaller)
+      # gamma > 0 => fewer singletons (phi[1] smaller), more high-freq (phi[n-1] larger)
+      assert results[-5][1] > results[0][1], "Purifying should enrich singletons"
+      assert results[5][1] < results[0][1], "Positive should deplete singletons"
+      assert results[-5][n-1] < results[0][n-1], "Purifying should deplete high-freq"
+      assert results[5][n-1] > results[0][n-1], "Positive should enrich high-freq"
+      print("\nAll assertions passed: selection shifts the SFS as expected.")
+
+   Plotting the three spectra on a log-log scale makes the pattern vivid:
+   the :math:`\gamma = -5` curve is steeper than :math:`1/j` (excess rare
+   variants), while the :math:`\gamma = +5` curve is shallower (excess common
+   variants).
+
+.. admonition:: Solution 3: Compare with moments
+
+   Build a two-epoch model (constant size, then expansion) using our
+   ``integrate_sfs`` function and compare entry-by-entry against
+   ``moments.Demographics1D.two_epoch``.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments
+
+      n = 20
+      theta = 1.0
+      nu_expansion = 5.0
+      T_expansion = 0.3
+
+      # --- Our manual implementation ---
+      phi_eq = expected_sfs_neutral(n, theta)
+      phi_manual = integrate_sfs(
+          phi_eq, n, T=T_expansion,
+          nu_func=lambda t: nu_expansion,
+          theta=theta
+      )
+
+      # --- moments built-in ---
+      fs_moments = moments.Demographics1D.two_epoch(
+          (nu_expansion, T_expansion), [n]
+      )
+      # moments returns a unit-theta SFS; scale to match
+      phi_moments = np.array(fs_moments) * theta
+
+      # Compare
+      n_match_6 = 0
+      print(f"{'j':>3} {'Manual':>12} {'moments':>12} {'Match (6 dp)':>14}")
+      for j in range(1, n):
+          match = np.isclose(phi_manual[j], phi_moments[j], atol=1e-6)
+          if match:
+              n_match_6 += 1
+          print(f"{j:3d} {phi_manual[j]:12.8f} {phi_moments[j]:12.8f} "
+                f"{'YES' if match else 'NO':>14}")
+
+      print(f"\nEntries matching to 6 decimal places: {n_match_6} / {n - 1}")
+
+   The number of matching entries depends on the accuracy of the ODE solver
+   tolerances and the drift operator discretisation.  With ``rtol=1e-10`` and
+   ``atol=1e-12`` (as used in ``integrate_sfs``), most entries should agree to
+   at least 6 decimal places.  Discrepancies arise from the jackknife moment
+   closure used internally by ``moments``, which our simplified drift operator
+   approximates slightly differently.
+
+.. admonition:: Solution 4: Migration equilibrium
+
+   Wright's island model predicts :math:`F_{ST} \approx 1/(1 + 4M)` for
+   symmetric migration rate :math:`M`.  We verify this using ``moments``
+   for :math:`M = 0.1, 1, 10`.
+
+   .. code-block:: python
+
+      import numpy as np
+      import moments
+
+      M_values = [0.1, 1.0, 10.0]
+      n1, n2 = 20, 20
+
+      print(f"{'M':>6} {'Fst (moments)':>16} {'Fst (theory)':>14} {'Rel. error':>12}")
+      for M in M_values:
+          # Start from equilibrium with total sample size n1 + n2
+          fs = moments.Demographics1D.snm([n1 + n2])
+          # Split into two populations
+          fs = moments.Manips.split_1D_to_2D(fs, n1, n2)
+          # Integrate with symmetric migration for a long time (T = 10)
+          # to reach migration-drift equilibrium
+          mig_mat = np.array([[0, M], [M, 0]])
+          fs.integrate([1.0, 1.0], 10.0, m=mig_mat)
+
+          fst_moments = fs.Fst()
+          fst_theory = 1.0 / (1.0 + 4.0 * M)
+          rel_err = abs(fst_moments - fst_theory) / fst_theory
+
+          print(f"{M:6.1f} {fst_moments:16.6f} {fst_theory:14.6f} {rel_err:12.2e}")
+
+      # The agreement should be good (within a few percent) for large M;
+      # for small M the approximation 1/(1+4M) is less precise because it
+      # assumes infinite island model whereas we have only two populations.
+
+   The :math:`1/(1 + 4M)` formula is exact for an infinite-island model.
+   For two populations, deviations are expected, especially at low migration
+   rates.  Nevertheless, the ``moments`` result and the analytical
+   approximation should agree within a few percent for
+   :math:`M \geq 1`, confirming that the migration operator and the ODE
+   integration are correctly implemented.
 
 Next: :ref:`demographic_inference` -- we use these moment equations to find
 the parameters that best explain observed data.

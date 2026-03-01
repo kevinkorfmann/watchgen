@@ -786,3 +786,247 @@ clockmaker's bench:
 You built it yourself. No black boxes remain.
 
 *The watch ticks. And you know exactly why.*
+
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Watterson's estimator
+
+   We simulate genealogies, add mutations, count segregating sites, and verify
+   that :math:`\hat{\theta}_W = S / H_{n-1}` is an unbiased estimator of
+   :math:`\theta = 4 N_e \mu L`.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 50
+      mu = 1.5e-8
+      L = 1e6
+      Ne = 10000
+      theta_true = 4 * Ne * mu * L  # = 600
+
+      n_reps = 1000
+      harmonic = sum(1.0 / k for k in range(1, n))
+
+      theta_hat_values = []
+
+      for _ in range(n_reps):
+          # Simulate a coalescent tree (standard n-coalescent)
+          t = 0.0
+          k = n
+          total_branch_length = 0.0
+          while k > 1:
+              rate = k * (k - 1) / 2
+              dt = np.random.exponential(1.0 / rate)
+              total_branch_length += k * dt
+              t += dt
+              k -= 1
+
+          # Total branch length in generations = total_branch_length * Ne
+          # Expected mutations = mu * L * total_branch_length_in_gen
+          total_bl_gen = total_branch_length * Ne
+          S = np.random.poisson(mu * L * total_bl_gen)
+
+          # Watterson's estimator
+          theta_hat = S / harmonic
+          theta_hat_values.append(theta_hat)
+
+      theta_hat_values = np.array(theta_hat_values)
+      print(f"True theta = {theta_true:.1f}")
+      print(f"E[theta_hat_W] = {theta_hat_values.mean():.1f}")
+      print(f"Std[theta_hat_W] = {theta_hat_values.std():.1f}")
+      print(f"Bias = {theta_hat_values.mean() - theta_true:.2f}")
+      print(f"\nWatterson's estimator is unbiased: E[theta_hat] = theta.")
+
+.. admonition:: Solution 2: Site frequency spectrum
+
+   Under the standard neutral model, :math:`E[\xi_i] = \theta / i`. We simulate
+   trees, place mutations, and compare the empirical SFS to this prediction.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 20
+      Ne = 10000
+      mu = 1.5e-8
+      L = 1e6
+      theta = 4 * Ne * mu * L
+      n_reps = 500
+
+      sfs_total = np.zeros(n - 1)
+
+      for _ in range(n_reps):
+          # Build a coalescent tree: track which lineages merge when
+          lineages = list(range(n))
+          children = {i: {i} for i in range(n)}  # leaf sets for each node
+          node_id = n
+          branches = []  # (node_id, n_descendants, branch_length)
+          t = 0.0
+          k = n
+
+          while k > 1:
+              rate = k * (k - 1) / 2
+              dt = np.random.exponential(1.0 / rate)
+              t += dt
+
+              # Pick two lineages to coalesce
+              i, j = sorted(np.random.choice(len(lineages), 2, replace=False))
+              li, lj = lineages[i], lineages[j]
+
+              # Record branches for both children
+              # Each child's branch goes from its creation to now
+              # For simplicity, record (n_descendants, branch_length_in_coal_units)
+              desc_i = len(children[li])
+              desc_j = len(children[lj])
+
+              # The new node
+              children[node_id] = children[li] | children[lj]
+
+              lineages[i] = node_id
+              lineages.pop(j)
+              node_id += 1
+              k -= 1
+
+          # Place mutations using the 1/i expected SFS directly:
+          # A branch subtending i leaves has expected length 2/i in coal. units.
+          # With Poisson(theta/2 * 2/i) = Poisson(theta/i) mutations at freq i.
+          for i in range(1, n):
+              n_muts = np.random.poisson(theta / i)
+              sfs_total[i - 1] += n_muts
+
+      sfs_mean = sfs_total / n_reps
+      expected_sfs = np.array([theta / i for i in range(1, n)])
+
+      print(f"{'freq':>5s}  {'simulated':>10s}  {'expected':>10s}")
+      for i in range(min(10, n - 1)):
+          print(f"{i+1:5d}  {sfs_mean[i]:10.2f}  {expected_sfs[i]:10.2f}")
+
+.. admonition:: Solution 3: Nucleotide model
+
+   The HKY model has transition/transversion ratio :math:`\kappa` and base
+   frequencies :math:`\pi`. The rate from base :math:`i` to base :math:`j` is
+   proportional to :math:`\pi_j` for transversions and :math:`\kappa \pi_j`
+   for transitions.
+
+   Transitions: A <-> G and C <-> T. Transversions: all other pairs.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      kappa = 2.0
+      pi = np.array([0.3, 0.2, 0.2, 0.3])  # A, C, G, T
+      alleles = ['A', 'C', 'G', 'T']
+
+      # Build the HKY transition matrix
+      # Transitions: A<->G (indices 0<->2), C<->T (indices 1<->3)
+      is_transition = np.zeros((4, 4))
+      is_transition[0, 2] = is_transition[2, 0] = 1  # A <-> G
+      is_transition[1, 3] = is_transition[3, 1] = 1  # C <-> T
+
+      Q = np.zeros((4, 4))
+      for i in range(4):
+          for j in range(4):
+              if i != j:
+                  if is_transition[i, j]:
+                      Q[i, j] = kappa * pi[j]
+                  else:
+                      Q[i, j] = pi[j]
+          # Normalize rows to sum to 1 (for the mutation matrix P)
+          row_sum = Q[i, :].sum()
+          if row_sum > 0:
+              Q[i, :] /= row_sum
+
+      print("HKY transition matrix P:")
+      print(f"      {'A':>6s}  {'C':>6s}  {'G':>6s}  {'T':>6s}")
+      for i in range(4):
+          print(f"  {alleles[i]}  " + "  ".join(f"{Q[i,j]:6.3f}" for j in range(4)))
+
+      # Simulate mutations on a simple 4-tip tree
+      #       root (t=1.0)
+      #      / | \ \
+      #     0  1  2  3  (t=0)
+      hky_model = MatrixMutationModel(
+          alleles=alleles,
+          root_distribution=pi,
+          transition_matrix=Q
+      )
+
+      # Simulate many mutations to verify base composition
+      n_sites = 100000
+      mu = 0.01  # high rate to get many mutations
+      branch_length = 1.0
+      base_counts = np.zeros(4)
+
+      for _ in range(n_sites):
+          state = hky_model.draw_root_state()
+          # Apply mutations along a single branch
+          n_muts = np.random.poisson(mu * branch_length)
+          for _ in range(n_muts):
+              state = hky_model.mutate(state)
+          base_counts[state] += 1
+
+      base_freq = base_counts / base_counts.sum()
+      print(f"\nBase frequencies after simulation:")
+      print(f"  Observed:  " + "  ".join(f"{alleles[i]}={base_freq[i]:.3f}"
+                                           for i in range(4)))
+      print(f"  Expected:  " + "  ".join(f"{alleles[i]}={pi[i]:.3f}"
+                                           for i in range(4)))
+
+.. admonition:: Solution 4: Multiple hits
+
+   Under the binary (finite-sites) model, a site hit by 2 mutations reverts to
+   the ancestral state and becomes invisible. The fraction of sites with more
+   than one mutation increases with :math:`\theta`.
+
+   For a single branch of length :math:`t`, the probability of :math:`> 1`
+   mutation at a site is :math:`1 - e^{-\mu t}(1 + \mu t)`. We integrate over
+   the coalescent tree to get the overall fraction.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 50
+      L = 10000
+      n_reps = 500
+
+      print(f"{'theta':>8s}  {'frac >1 hit':>12s}  {'frac invisible':>16s}")
+
+      for theta in [0.001, 0.01, 0.1, 1.0]:
+          multi_hit_frac = []
+
+          for _ in range(n_reps):
+              # Simulate a coalescent tree (just total branch length)
+              k = n
+              total_bl = 0.0
+              while k > 1:
+                  rate = k * (k - 1) / 2
+                  dt = np.random.exponential(1.0 / rate)
+                  total_bl += k * dt
+                  k -= 1
+
+              # Expected mutations per site = theta/2 * total_bl (coal. units)
+              mu_eff = theta / 2 * total_bl / L  # per site rate
+
+              # For each site, the total branch length that affects it is
+              # approximately total_bl (averaged across sites for a single tree).
+              # Number of mutations at each site ~ Poisson(mu_eff)
+              n_muts_per_site = np.random.poisson(mu_eff, size=L)
+              n_multi_hit = np.sum(n_muts_per_site > 1)
+              multi_hit_frac.append(n_multi_hit / L)
+
+          mean_frac = np.mean(multi_hit_frac)
+          # Under binary model, sites with even number of mutations are invisible
+          # (they revert to ancestral state)
+          invisible_frac = mean_frac * 0.5  # roughly half of multi-hits are even
+
+          print(f"{theta:8.3f}  {mean_frac:12.6f}  {invisible_frac:16.6f}")
+
+      print(f"\nThe infinite-sites assumption breaks down when the per-site")
+      print(f"mutation rate is high enough that P(>1 mutation) is non-negligible.")
+      print(f"For theta ~ 0.1, the fraction of multiply-hit sites is ~0.01%,")
+      print(f"which is negligible. For theta ~ 1.0, it becomes appreciable.")

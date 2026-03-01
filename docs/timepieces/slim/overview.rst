@@ -6,6 +6,17 @@ Overview of SLiM
 
    *Before firing up the forge, understand what it can build.*
 
+.. figure:: /_static/figures/fig_mini_slim.png
+   :width: 100%
+   :align: center
+
+   **SLiM at a glance.** Core capabilities of the mini forward-time Wright-Fisher
+   simulator: allele frequency trajectories under selection showing stochastic
+   fixation and loss, fixation probability vs selection coefficient compared to
+   Kimura's :math:`2s` theory, the site frequency spectrum under neutrality
+   matching the expected :math:`\theta/k` pattern, and background selection
+   reducing diversity near a selected locus.
+
 What Does SLiM Do?
 ===================
 

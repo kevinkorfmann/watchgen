@@ -6,6 +6,16 @@ Overview of Threads
 
    *Before assembling the watch, lay out every part and understand what it does.*
 
+.. figure:: /_static/figures/fig_mini_threads.png
+   :width: 100%
+   :align: center
+
+   **Threads at a glance.** Segment dating estimators showing how MLE and
+   Bayesian age estimates respond to recombination distance, mutation count,
+   and demographic history. The comparison between bottleneck and constant-size
+   scenarios illustrates how the demographic prior shapes age inference at
+   biobank scale.
+
 Threads is a method for inferring Ancestral Recombination Graphs (ARGs) at
 biobank scale. Given a set of phased genotypes, it produces **threading
 instructions** -- for each sample at each genomic position, a threading target

@@ -1,17 +1,10 @@
 .. _tsinfer_timepiece:
 
 ====================================
-Timepiece V: tsinfer
+Timepiece VI: tsinfer
 ====================================
 
    *Tree Sequence Inference from Genetic Variation Data*
-
-.. epigraph::
-
-   "We introduce a method for inferring the correlated genealogies underlying
-   a set of DNA sequences, scaling to millions of genomes and variable sites."
-
-   -- Kelleher, Wong, Wohns, Bridget, Burrill, and McVean (2019)
 
 The Mechanism at a Glance
 ==========================
@@ -32,6 +25,10 @@ scale. What it sacrifices in statistical sophistication (no Bayesian posterior, 
 uncertainty quantification), it gains in raw throughput. And like a good quartz
 movement, it's remarkably accurate for most practical purposes.
 
+.. admonition:: Primary Reference
+
+   :cite:`tsinfer`
+
 The four gears of tsinfer:
 
 1. **Ancestor Generation** (the escapement) -- Infer putative ancestral haplotypes from
@@ -40,7 +37,7 @@ The four gears of tsinfer:
    extracted.
 
 2. **The Copying Model** (the gear train) -- A Li & Stephens HMM engine (from
-   :ref:`Timepiece II <lshmm_timepiece>`) that finds the best way to express one
+   :ref:`Timepiece III <lshmm_timepiece>`) that finds the best way to express one
    haplotype as a mosaic of others. This is the workhorse shared by both the ancestor
    matching and sample matching phases.
 
@@ -108,7 +105,7 @@ These gears mesh together into a three-phase pipeline:
    - :ref:`Ancestral Recombination Graphs <args>` -- tree sequences and marginal trees
    - :ref:`Hidden Markov Models <hmms>` -- the forward algorithm and the
      Li-Stephens :math:`O(K)` trick
-   - :ref:`Li & Stephens HMM <lshmm_timepiece>` -- the copying model (Timepiece II)
+   - :ref:`Li & Stephens HMM <lshmm_timepiece>` -- the copying model (Timepiece III)
 
 Chapters
 ========
@@ -121,6 +118,7 @@ Chapters
    copying_model
    ancestor_matching
    sample_matching
+   demo
 
 Each chapter derives the math, explains the intuition, implements the code,
 and verifies it works. By the end, you'll have built a complete tree sequence

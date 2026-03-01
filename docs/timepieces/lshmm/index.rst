@@ -1,17 +1,10 @@
 .. _lshmm_timepiece:
 
 ====================================
-Timepiece II: The Li & Stephens HMM
+Timepiece III: The Li & Stephens HMM
 ====================================
 
    *Your genome is a mosaic. This model finds the seams.*
-
-.. epigraph::
-
-   "Modeling linkage disequilibrium and identifying recombination hotspots using
-   single-nucleotide polymorphism data"
-
-   -- Li and Stephens (2003)
 
 The Mechanism at a Glance
 ==========================
@@ -38,6 +31,10 @@ inside many of the other Timepieces in this collection. SINGER uses it for branc
 transitions. tsinfer uses it for ancestor and sample matching. Understanding this
 Timepiece will pay dividends throughout the rest of the book.
 
+.. admonition:: Primary Reference
+
+   :cite:`lshmm`
+
 .. admonition:: Prerequisites for this Timepiece
 
    - :ref:`Hidden Markov Models <hmms>` -- the forward algorithm, stochastic
@@ -55,6 +52,7 @@ Chapters
    copying_model
    haploid_algorithms
    diploid
+   demo
 
 Each chapter derives the math, explains the intuition, implements the code,
 and verifies it works. By the end, you'll have built a complete LS HMM library
