@@ -1,0 +1,790 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Numerical Integration &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Demographic Inference" href="demographic_inference.html" />
+    <link rel="prev" title="The Diffusion Equation" href="diffusion_equation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece XI: dadi</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece XI: dadi</a></li>
+      <li class="breadcrumb-item active">Numerical Integration</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="diffusion_equation.html" class="btn btn-neutral float-left" title="The Diffusion Equation" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demographic_inference.html" class="btn btn-neutral float-right" title="Demographic Inference" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="numerical-integration">
+<span id="dadi-numerical-integration"></span><h1>Numerical Integration<a class="headerlink" href="#numerical-integration" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The gear train – the engineering that turns a continuous equation into a computable answer.</em></p>
+</div></blockquote>
+<p>The diffusion equation is a continuous PDE defined on <span class="math notranslate nohighlight">\(x \in (0, 1)\)</span> and
+<span class="math notranslate nohighlight">\(t \in [0, T]\)</span>. To solve it numerically, <code class="docutils literal notranslate"><span class="pre">dadi</span></code> must discretize
+both the frequency axis and the time axis. This chapter examines the
+engineering choices that make this discretization accurate and efficient:
+the nonuniform grid, the finite-difference scheme, the time-stepping strategy,
+and Richardson extrapolation.</p>
+<div class="admonition-biology-aside-why-the-grid-must-be-fine-near-the-boundaries admonition">
+<p class="admonition-title">Biology Aside – Why the grid must be fine near the boundaries</p>
+<p>In a real population, most genetic variants are rare – they exist in only
+one or a few copies out of thousands of chromosomes (the “singletons” and
+“doubletons” that dominate the SFS). These low-frequency variants are the
+most informative about recent population size changes: a population
+expansion produces a flood of new rare variants, while a bottleneck
+depletes them. At the same time, a small number of variants are at very
+high frequency (nearly fixed). The allele frequency density
+<span class="math notranslate nohighlight">\(\phi(x)\)</span> is therefore strongly peaked near <span class="math notranslate nohighlight">\(x = 0\)</span> and
+<span class="math notranslate nohighlight">\(x = 1\)</span>, reflecting the biological reality that rare and near-fixed
+variants are far more numerous than common ones. A grid that fails to
+resolve these peaks will produce inaccurate SFS predictions and,
+consequently, biased demographic estimates.</p>
+</div>
+<section id="the-nonuniform-grid">
+<h2>The Nonuniform Grid<a class="headerlink" href="#the-nonuniform-grid" title="Link to this heading"></a></h2>
+<p>The allele frequency density <span class="math notranslate nohighlight">\(\phi(x)\)</span> is concentrated near the
+boundaries: under neutrality, <span class="math notranslate nohighlight">\(\phi(x) \propto 1/[x(1-x)]\)</span>, which
+diverges as <span class="math notranslate nohighlight">\(x \to 0\)</span> and <span class="math notranslate nohighlight">\(x \to 1\)</span>. A uniform grid would waste
+points in the interior and lack resolution where it matters most.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dadi</span></code> uses an <strong>exponential grid</strong> (<code class="docutils literal notranslate"><span class="pre">Numerics.default_grid</span></code>) that places
+more points near the boundaries:</p>
+<div class="math notranslate nohighlight">
+\[x_i = \frac{1}{1 + e^{-c \cdot u_i}}\]</div>
+<p>where <span class="math notranslate nohighlight">\(u_i\)</span> are uniformly spaced on <span class="math notranslate nohighlight">\([-1, 1]\)</span> and <span class="math notranslate nohighlight">\(c\)</span>
+(the “crowding” parameter, default 8) controls how strongly points cluster
+at the boundaries. The grid is then rescaled so that <span class="math notranslate nohighlight">\(x_1 &gt; 0\)</span> and
+<span class="math notranslate nohighlight">\(x_n &lt; 1\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">dadi</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">xx</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">Numerics</span><span class="o">.</span><span class="n">default_grid</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+
+<span class="c1"># Grid spacing near boundaries vs. interior</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First spacing:  </span><span class="si">{</span><span class="n">xx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">xx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Middle spacing: </span><span class="si">{</span><span class="n">xx</span><span class="p">[</span><span class="mi">20</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">xx</span><span class="p">[</span><span class="mi">19</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Last spacing:   </span><span class="si">{</span><span class="n">xx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">xx</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># First and last spacings are much smaller than the middle</span>
+</pre></div>
+</div>
+<p>The crowding parameter <span class="math notranslate nohighlight">\(c\)</span> can be tuned. <code class="docutils literal notranslate"><span class="pre">dadi</span></code> provides
+<code class="docutils literal notranslate"><span class="pre">Numerics.estimate_best_exp_grid_crwd(ns)</span></code> to estimate an optimal crowding
+based on the sample size, balancing resolution near the boundaries against
+coverage of the interior.</p>
+</section>
+<section id="the-finite-difference-scheme">
+<h2>The Finite-Difference Scheme<a class="headerlink" href="#the-finite-difference-scheme" title="Link to this heading"></a></h2>
+<p>With the frequency axis discretized onto grid points <span class="math notranslate nohighlight">\(x_1, \ldots, x_n\)</span>,
+the PDE becomes a system of coupled ODEs – one for each grid point. <code class="docutils literal notranslate"><span class="pre">dadi</span></code>
+discretizes the spatial derivatives using a finite-difference scheme.</p>
+<p>Consider the 1D diffusion equation:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial \phi_i}{\partial t} =
+\frac{1}{2}\frac{\partial^2}{\partial x^2}\left[\frac{x(1-x)}{\nu}\phi\right]_i
+- \frac{\partial}{\partial x}\left[\gamma x(1-x)(h + (1-2h)x)\phi\right]_i\]</div>
+<p>The second derivative term (drift) and first derivative term (selection) are
+approximated using the values at neighboring grid points. On a nonuniform grid
+with spacings <span class="math notranslate nohighlight">\(\Delta x_i = x_{i+1} - x_i\)</span>, <code class="docutils literal notranslate"><span class="pre">dadi</span></code> computes a
+<strong>difference factor</strong>:</p>
+<div class="math notranslate nohighlight">
+\[d_i = \frac{2}{\Delta x_{i-1} + \Delta x_i}\]</div>
+<p>which corrects for the variable grid spacing. The resulting scheme produces a
+<strong>tridiagonal system</strong>: each grid point <span class="math notranslate nohighlight">\(i\)</span> depends only on its neighbors
+<span class="math notranslate nohighlight">\(i-1\)</span>, <span class="math notranslate nohighlight">\(i\)</span>, and <span class="math notranslate nohighlight">\(i+1\)</span>.</p>
+<div class="admonition-numerical-analysis-aside-why-tridiagonal admonition">
+<p class="admonition-title">Numerical Analysis Aside – Why tridiagonal?</p>
+<p>The diffusion equation involves at most second-order spatial derivatives.
+A finite-difference approximation of a second derivative uses three points
+(the central point and its two neighbors), producing a tridiagonal matrix.
+Tridiagonal systems can be solved in <span class="math notranslate nohighlight">\(O(n)\)</span> time using the Thomas
+algorithm, making each timestep very efficient.</p>
+</div>
+</section>
+<section id="implicit-time-stepping">
+<h2>Implicit Time-Stepping<a class="headerlink" href="#implicit-time-stepping" title="Link to this heading"></a></h2>
+<p>After spatial discretization, the system is:</p>
+<div class="math notranslate nohighlight">
+\[\frac{d\boldsymbol{\phi}}{dt} = A(t) \, \boldsymbol{\phi}\]</div>
+<p>where <span class="math notranslate nohighlight">\(A\)</span> is the tridiagonal matrix encoding drift, selection, and
+mutation, and <span class="math notranslate nohighlight">\(\boldsymbol{\phi}\)</span> is the vector of density values at
+the grid points.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dadi</span></code> uses an <strong>implicit (backward Euler)</strong> time-stepping scheme:</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol{\phi}^{n+1} = (I - \Delta t \, A)^{-1} \boldsymbol{\phi}^n\]</div>
+<p>This requires solving a tridiagonal linear system at each timestep, which
+costs <span class="math notranslate nohighlight">\(O(n)\)</span>. The implicit scheme is <strong>unconditionally stable</strong> – it
+doesn’t blow up regardless of the timestep – unlike an explicit scheme which
+would require <span class="math notranslate nohighlight">\(\Delta t &lt; O(\Delta x^2)\)</span>.</p>
+<p>The timestep <span class="math notranslate nohighlight">\(\Delta t\)</span> is computed adaptively by
+<code class="docutils literal notranslate"><span class="pre">Integration._compute_dt</span></code>, which sets:</p>
+<div class="math notranslate nohighlight">
+\[\Delta t = \frac{\texttt{timescale\_factor}}{\max_i |V(x_i)| + |M(x_i)|}\]</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">timescale_factor</span></code> (default <span class="math notranslate nohighlight">\(10^{-3}\)</span>) controls accuracy. The
+timestep is small where the drift and selection coefficients are large (near
+the center of the frequency range, where <span class="math notranslate nohighlight">\(x(1-x)\)</span> is maximal).</p>
+</section>
+<section id="d-integration-walkthrough">
+<h2>1D Integration Walkthrough<a class="headerlink" href="#d-integration-walkthrough" title="Link to this heading"></a></h2>
+<p>Here’s the complete sequence for <code class="docutils literal notranslate"><span class="pre">Integration.one_pop(phi,</span> <span class="pre">xx,</span> <span class="pre">T,</span> <span class="pre">nu,</span> <span class="pre">gamma,</span> <span class="pre">h,</span> <span class="pre">theta0)</span></code>:</p>
+<ol class="arabic simple">
+<li><p><strong>Initialize:</strong> receive the density <code class="docutils literal notranslate"><span class="pre">phi</span></code> on grid <code class="docutils literal notranslate"><span class="pre">xx</span></code>, with target
+integration time <code class="docutils literal notranslate"><span class="pre">T</span></code></p></li>
+<li><p><strong>Build coefficients:</strong> compute the drift coefficient
+<span class="math notranslate nohighlight">\(V(x_i) = x_i(1-x_i)/\nu\)</span> and selection coefficient
+<span class="math notranslate nohighlight">\(M(x_i) = \gamma \, x_i(1-x_i)(h + (1-2h)x_i)\)</span> at each grid point</p></li>
+<li><p><strong>Compute timestep:</strong> <span class="math notranslate nohighlight">\(\Delta t\)</span> from the maximum coefficient value</p></li>
+<li><p><strong>Time-stepping loop:</strong> for each step <span class="math notranslate nohighlight">\(t \to t + \Delta t\)</span>:</p>
+<ol class="loweralpha simple">
+<li><p>Build the tridiagonal matrix <span class="math notranslate nohighlight">\(I - \Delta t \cdot A\)</span></p></li>
+<li><p>Solve the tridiagonal system to get <span class="math notranslate nohighlight">\(\phi^{n+1}\)</span></p></li>
+<li><p>Inject mutations: add <span class="math notranslate nohighlight">\(\theta_0 \cdot \Delta t / (2 \cdot \Delta x_1)\)</span>
+at the first interior grid point</p></li>
+<li><p>If <span class="math notranslate nohighlight">\(\nu\)</span> changes with time, update the coefficients</p></li>
+</ol>
+</li>
+<li><p><strong>Return:</strong> the density <code class="docutils literal notranslate"><span class="pre">phi</span></code> at time <span class="math notranslate nohighlight">\(T\)</span></p></li>
+</ol>
+<p>When parameters are constant over the integration interval, <code class="docutils literal notranslate"><span class="pre">dadi</span></code> uses an
+optimized path (<code class="docutils literal notranslate"><span class="pre">_one_pop_const_params</span></code>) that pre-computes the tridiagonal
+matrix once and reuses it for all timesteps.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">dadi</span>
+
+<span class="n">pts</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">xx</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">Numerics</span><span class="o">.</span><span class="n">default_grid</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span>
+
+<span class="c1"># Start from equilibrium</span>
+<span class="n">phi</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">PhiManip</span><span class="o">.</span><span class="n">phi_1D</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span>
+
+<span class="c1"># Integrate for T=0.5 with doubled population size</span>
+<span class="n">phi_evolved</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">Integration</span><span class="o">.</span><span class="n">one_pop</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">xx</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+
+<span class="c1"># The density has spread out (weaker drift in larger population)</span>
+</pre></div>
+</div>
+</section>
+<section id="multi-dimensional-integration">
+<h2>Multi-Dimensional Integration<a class="headerlink" href="#multi-dimensional-integration" title="Link to this heading"></a></h2>
+<p>For two populations, the density <span class="math notranslate nohighlight">\(\phi(x, y)\)</span> lives on a 2D grid of
+size <span class="math notranslate nohighlight">\(n \times n\)</span>. The PDE has drift and selection terms acting along
+each axis independently, plus migration terms that couple the two axes.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dadi</span></code> uses <strong>alternating direction implicit (ADI)</strong> integration: at each
+timestep, it first sweeps along the <span class="math notranslate nohighlight">\(x\)</span>-axis (treating <span class="math notranslate nohighlight">\(y\)</span> as
+fixed), then along the <span class="math notranslate nohighlight">\(y\)</span>-axis (treating <span class="math notranslate nohighlight">\(x\)</span> as fixed). Each
+sweep requires solving <span class="math notranslate nohighlight">\(n\)</span> independent tridiagonal systems – one for
+each row or column of the grid.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\phi^{n+1/2} &amp;= (I - \Delta t \, A_x)^{-1} \, \phi^n \\
+\phi^{n+1} &amp;= (I - \Delta t \, A_y)^{-1} \, \phi^{n+1/2}\end{split}\]</div>
+<p>For three populations, the density is 3D (<span class="math notranslate nohighlight">\(n^3\)</span> grid points) and three
+ADI sweeps are needed per timestep. The cost per timestep scales as
+<span class="math notranslate nohighlight">\(O(n^P)\)</span> where <span class="math notranslate nohighlight">\(P\)</span> is the number of populations – this is the
+<strong>curse of dimensionality</strong> that limits <code class="docutils literal notranslate"><span class="pre">dadi</span></code> to a few populations.</p>
+<div class="admonition-biology-aside-the-curse-of-dimensionality-in-population-genetics admonition">
+<p class="admonition-title">Biology Aside – The curse of dimensionality in population genetics</p>
+<p>Each additional population in a demographic model adds a new axis to the
+allele frequency density, and the computational cost grows exponentially.
+This is why <code class="docutils literal notranslate"><span class="pre">dadi</span></code> is typically limited to 3 populations (and sometimes
+up to 5 with heroic effort). For studies involving many populations –
+such as the global human population tree with dozens of branches – this
+is the fundamental limitation that motivated <code class="docutils literal notranslate"><span class="pre">moments</span></code> (which avoids
+the grid altogether by working with moments of the SFS) and <code class="docutils literal notranslate"><span class="pre">momi2</span></code>
+(which uses tensors that scale more gracefully with the number of
+populations). The choice among these three tools often comes down to how
+many populations are in the model: <code class="docutils literal notranslate"><span class="pre">dadi</span></code> excels for 1–3 populations,
+<code class="docutils literal notranslate"><span class="pre">moments</span></code> for 3–5, and <code class="docutils literal notranslate"><span class="pre">momi2</span></code> for 5 or more.</p>
+</div>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 30.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Populations</p></th>
+<th class="head"><p>Grid size</p></th>
+<th class="head"><p>Function</p></th>
+<th class="head"><p>Cost per step</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p><span class="math notranslate nohighlight">\(n\)</span></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">one_pop</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p><span class="math notranslate nohighlight">\(n^2\)</span></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">two_pops</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n^2)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p><span class="math notranslate nohighlight">\(n^3\)</span></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">three_pops</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(n^3)\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="richardson-extrapolation">
+<h2>Richardson Extrapolation<a class="headerlink" href="#richardson-extrapolation" title="Link to this heading"></a></h2>
+<p>The finite-difference scheme introduces <strong>discretization error</strong> that decreases
+as the grid becomes finer. For a grid with <span class="math notranslate nohighlight">\(n\)</span> points, the error in the
+SFS is approximately <span class="math notranslate nohighlight">\(O(1/n^2)\)</span> (for a second-order scheme). Rather than
+using a very fine grid (expensive), <code class="docutils literal notranslate"><span class="pre">dadi</span></code> uses <strong>Richardson extrapolation</strong>
+to cancel the leading-order error.</p>
+<p>The idea: run the computation at multiple grid sizes (e.g., <span class="math notranslate nohighlight">\(n_1 = 40\)</span>,
+<span class="math notranslate nohighlight">\(n_2 = 50\)</span>, <span class="math notranslate nohighlight">\(n_3 = 60\)</span>), then extrapolate to the
+<span class="math notranslate nohighlight">\(n \to \infty\)</span> limit. If the error is polynomial in <span class="math notranslate nohighlight">\(1/n\)</span>, a
+polynomial fit through the results eliminates the leading error terms.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dadi</span></code> provides this via <code class="docutils literal notranslate"><span class="pre">Numerics.make_extrap_func</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">dadi</span>
+
+<span class="k">def</span> <span class="nf">my_model</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="n">pts</span><span class="p">):</span>
+    <span class="n">xx</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">Numerics</span><span class="o">.</span><span class="n">default_grid</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">PhiManip</span><span class="o">.</span><span class="n">phi_1D</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span>
+    <span class="n">nu</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">params</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">Integration</span><span class="o">.</span><span class="n">one_pop</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">xx</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="n">nu</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dadi</span><span class="o">.</span><span class="n">Spectrum</span><span class="o">.</span><span class="n">from_phi</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="p">(</span><span class="n">xx</span><span class="p">,))</span>
+
+<span class="c1"># Wrap with extrapolation</span>
+<span class="n">func_ex</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">Numerics</span><span class="o">.</span><span class="n">make_extrap_log_func</span><span class="p">(</span><span class="n">my_model</span><span class="p">)</span>
+
+<span class="c1"># Run at 3 grid sizes and extrapolate</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">func_ex</span><span class="p">((</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">ns</span><span class="o">=</span><span class="p">[</span><span class="mi">20</span><span class="p">],</span> <span class="n">pts</span><span class="o">=</span><span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">60</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Internally, <code class="docutils literal notranslate"><span class="pre">make_extrap_func</span></code> runs the model function at each grid size in
+<code class="docutils literal notranslate"><span class="pre">pts</span></code>, then applies polynomial extrapolation (linear, quadratic, or higher)
+in the variable <span class="math notranslate nohighlight">\(1/n\)</span> to estimate the <span class="math notranslate nohighlight">\(n \to \infty\)</span> limit. The
+<code class="docutils literal notranslate"><span class="pre">make_extrap_log_func</span></code> variant extrapolates in log-space, which is more
+robust when SFS entries span many orders of magnitude.</p>
+<p>The extrapolation functions available are:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Function</p></th>
+<th class="head"><p>Points needed</p></th>
+<th class="head"><p>Error eliminated</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">linear_extrap</span></code></p></td>
+<td><p>2</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(1/n^2)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">quadratic_extrap</span></code></p></td>
+<td><p>3</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(1/n^2)\)</span> and <span class="math notranslate nohighlight">\(O(1/n^4)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cubic_extrap</span></code></p></td>
+<td><p>4</p></td>
+<td><p>Up to <span class="math notranslate nohighlight">\(O(1/n^6)\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>The default <code class="docutils literal notranslate"><span class="pre">make_extrap_func</span></code> uses <code class="docutils literal notranslate"><span class="pre">quadratic_extrap</span></code> with three grid
+sizes – the standard recommendation for <code class="docutils literal notranslate"><span class="pre">dadi</span></code> analyses.</p>
+<div class="admonition-numerical-analysis-aside-richardson-extrapolation admonition">
+<p class="admonition-title">Numerical Analysis Aside – Richardson extrapolation</p>
+<p>Richardson extrapolation is a general technique: if a quantity <span class="math notranslate nohighlight">\(f(h)\)</span>
+has an error expansion <span class="math notranslate nohighlight">\(f(h) = f_0 + a h^2 + b h^4 + \cdots\)</span>, then
+evaluating at two step sizes <span class="math notranslate nohighlight">\(h_1, h_2\)</span> and taking the appropriate
+linear combination eliminates the <span class="math notranslate nohighlight">\(h^2\)</span> term. With three evaluations,
+both the <span class="math notranslate nohighlight">\(h^2\)</span> and <span class="math notranslate nohighlight">\(h^4\)</span> terms can be eliminated. <code class="docutils literal notranslate"><span class="pre">dadi</span></code>
+applies this with <span class="math notranslate nohighlight">\(h = 1/n\)</span> (the grid spacing), effectively
+canceling the finite-difference bias without requiring an impractically
+fine grid.</p>
+</div>
+</section>
+<section id="from-phi-to-sfs">
+<h2>From <span class="math notranslate nohighlight">\(\phi\)</span> to SFS<a class="headerlink" href="#from-phi-to-sfs" title="Link to this heading"></a></h2>
+<p>After solving the PDE, <code class="docutils literal notranslate"><span class="pre">dadi</span></code> must convert the continuous density
+<span class="math notranslate nohighlight">\(\phi(x)\)</span> into the discrete SFS. This is done by <code class="docutils literal notranslate"><span class="pre">Spectrum.from_phi</span></code>.</p>
+<p>The expected number of sites where <span class="math notranslate nohighlight">\(j\)</span> out of <span class="math notranslate nohighlight">\(n\)</span> sampled
+chromosomes carry the derived allele is:</p>
+<div class="math notranslate nohighlight">
+\[F_j = \int_0^1 \binom{n}{j} x^j (1-x)^{n-j} \, \phi(x) \, dx\]</div>
+<p>This is a weighted integral of the frequency density against the <strong>binomial
+sampling probability</strong> – the probability that a site with population
+frequency <span class="math notranslate nohighlight">\(x\)</span> would show count <span class="math notranslate nohighlight">\(j\)</span> in a sample of <span class="math notranslate nohighlight">\(n\)</span>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dadi</span></code> evaluates this integral numerically using the trapezoidal rule on the
+grid points. For each SFS entry <span class="math notranslate nohighlight">\(j\)</span>, the integrand is the product of the
+density <code class="docutils literal notranslate"><span class="pre">phi</span></code> and the binomial coefficient evaluated at each grid point.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">dadi</span>
+
+<span class="n">pts</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">xx</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">Numerics</span><span class="o">.</span><span class="n">default_grid</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span>
+<span class="n">phi</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">PhiManip</span><span class="o">.</span><span class="n">phi_1D</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span>
+
+<span class="c1"># Extract SFS for sample size n=20</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">dadi</span><span class="o">.</span><span class="n">Spectrum</span><span class="o">.</span><span class="n">from_phi</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,),</span> <span class="n">xxs</span><span class="o">=</span><span class="p">(</span><span class="n">xx</span><span class="p">,))</span>
+
+<span class="c1"># fs[j] = expected number of sites with j derived alleles</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Singletons (j=1): </span><span class="si">{</span><span class="n">fs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Doubletons (j=2): </span><span class="si">{</span><span class="n">fs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Under neutrality, fs[j] ~ theta/j&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For multi-population spectra, the integral extends over all frequency axes:</p>
+<div class="math notranslate nohighlight">
+\[F_{j_1, j_2} = \int_0^1 \int_0^1
+\binom{n_1}{j_1} x^{j_1}(1-x)^{n_1-j_1}
+\binom{n_2}{j_2} y^{j_2}(1-y)^{n_2-j_2}
+\, \phi(x, y) \, dx \, dy\]</div>
+<p>The 2D integral is evaluated by the trapezoidal rule on the 2D grid. For
+efficient computation, <code class="docutils literal notranslate"><span class="pre">dadi</span></code> uses a linear algebra formulation
+(<code class="docutils literal notranslate"><span class="pre">_from_phi_2D_linalg</span></code>) that avoids explicit double loops.</p>
+</section>
+<section id="practical-grid-guidelines">
+<h2>Practical Grid Guidelines<a class="headerlink" href="#practical-grid-guidelines" title="Link to this heading"></a></h2>
+<p>Choosing the right grid size is a trade-off between accuracy and speed:</p>
+<ul class="simple">
+<li><p><strong>Too few points</strong> (<span class="math notranslate nohighlight">\(&lt; 30\)</span>): significant discretization error, even
+with extrapolation</p></li>
+<li><p><strong>Standard</strong> (40, 50, 60): the recommended trio for Richardson extrapolation
+in most analyses</p></li>
+<li><p><strong>Large sample sizes</strong> (<span class="math notranslate nohighlight">\(n &gt; 100\)</span>): may need pts <span class="math notranslate nohighlight">\(\geq n + 10\)</span>
+to avoid aliasing in the <code class="docutils literal notranslate"><span class="pre">from_phi</span></code> integration</p></li>
+<li><p><strong>Selection</strong> (<span class="math notranslate nohighlight">\(|\gamma| &gt; 10\)</span>): stronger selection creates steeper
+density profiles, requiring finer grids</p></li>
+</ul>
+<p>The rule of thumb: <code class="docutils literal notranslate"><span class="pre">pts</span></code> should be at least 10 larger than the largest sample
+size, and extrapolation should always be used for publication-quality results.</p>
+<div class="admonition-plain-language-summary-what-richardson-extrapolation-does-for-you admonition">
+<p class="admonition-title">Plain-language summary – What Richardson extrapolation does for you</p>
+<p>Richardson extrapolation is a clever trick: run the computation three
+times on grids of increasing fineness (e.g., 40, 50, and 60 points), then
+mathematically combine the three answers to cancel out most of the error
+from the finite grid. The result is an SFS estimate that is far more
+accurate than any of the three individual calculations – roughly as
+accurate as if you had used hundreds of grid points, but at a fraction of
+the cost. For biologists, this means you can trust that the predicted SFS
+(and therefore the inferred demographic history) is not an artifact of the
+grid resolution.</p>
+</div>
+<p>In the next chapter, we’ll examine how <code class="docutils literal notranslate"><span class="pre">dadi</span></code> uses the computed SFS to
+perform demographic inference through composite likelihood optimization.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="diffusion_equation.html" class="btn btn-neutral float-left" title="The Diffusion Equation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demographic_inference.html" class="btn btn-neutral float-right" title="Demographic Inference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

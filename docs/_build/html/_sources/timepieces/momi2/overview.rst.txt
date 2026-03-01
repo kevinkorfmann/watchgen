@@ -6,6 +6,18 @@ Overview of momi2
 
    *Before assembling the watch, lay out every part and understand what it does.*
 
+.. figure:: /_static/figures/fig_mini_momi2.png
+   :width: 100%
+   :align: center
+
+   **momi2 at a glance.** Panel A: The W-matrix (Polanski-Kimmel coefficients)
+   as a heatmap -- the combinatorial bridge between sample configurations and
+   expected branch lengths. Panel B: Moran model transition dynamics showing how
+   a delta distribution at frequency :math:`k` spreads over time. Panel C:
+   Admixture tensor -- expected migrating lineage counts as a function of
+   admixture fraction. Panel D: Expected time spent with :math:`j` lineages under
+   constant-size epochs with different population sizes :math:`N`.
+
 What Does momi2 Do?
 =====================
 

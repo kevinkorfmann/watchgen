@@ -920,3 +920,195 @@ Exercises
 
 Next: :ref:`msprime_demographics` -- how population size changes, migration,
 and growth affect the simulation.
+
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Build a minimal simulator
+
+   The expected number of distinct marginal trees grows roughly linearly with
+   the population-scaled recombination rate :math:`\rho = 4 N_e r L`. For
+   :math:`N_e = 1` (coalescent units), :math:`\rho = 4 r L`. We count trees
+   by counting how many recombination events produced distinct breakpoints.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      r = 1e-8
+      L = 1e5
+      n_reps = 50
+
+      print(f"{'n':>5s}  {'E[num trees]':>14s}  {'E[coal events]':>16s}  "
+            f"{'E[recomb events]':>18s}")
+
+      for n in [10, 50, 100]:
+          num_trees_list = []
+          coal_list = []
+          recomb_list = []
+
+          for _ in range(n_reps):
+              sim = MinimalSimulator(n=n, sequence_length=L,
+                                     recombination_rate=r, pop_size=1.0)
+              edges, nodes = sim.simulate()
+
+              # Number of trees = number of distinct edge left boundaries + 1
+              # (each recombination creates a new breakpoint and a new tree)
+              breakpoints = set()
+              for left, right, parent, child in edges:
+                  breakpoints.add(left)
+                  breakpoints.add(right)
+              num_trees = len(breakpoints) - 1  # subtract the 0 and L endpoints
+              num_trees = max(1, num_trees)
+
+              num_trees_list.append(num_trees)
+              coal_list.append(sim.num_ca_events)
+              recomb_list.append(sim.num_re_events)
+
+          print(f"{n:5d}  {np.mean(num_trees_list):14.1f}  "
+                f"{np.mean(coal_list):16.1f}  "
+                f"{np.mean(recomb_list):18.1f}")
+
+      # The number of trees grows roughly as rho * log(n) for the
+      # standard coalescent, since the expected number of recombination
+      # events on the tree is proportional to rho * sum(1/k).
+
+.. admonition:: Solution 2: Verify the exponential race
+
+   We instrument the ``MinimalSimulator`` to track which event type wins at
+   each step, then compare to the expected fractions based on the rates.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 20
+      L = 1e4
+      r = 1e-4
+      rho = 4 * 1.0 * r * L  # pop_size=1.0 in coalescent units
+
+      sim = MinimalSimulator(n=n, sequence_length=L,
+                              recombination_rate=r, pop_size=1.0)
+      edges, nodes = sim.simulate()
+
+      total_events = sim.num_ca_events + sim.num_re_events
+      coal_frac = sim.num_ca_events / total_events
+      recomb_frac = sim.num_re_events / total_events
+
+      print(f"Total events: {total_events}")
+      print(f"Coalescence events: {sim.num_ca_events} ({coal_frac:.3f})")
+      print(f"Recombination events: {sim.num_re_events} ({recomb_frac:.3f})")
+      print(f"\nNote: The fraction varies over the simulation because rates")
+      print(f"change as lineages are added (recombination) and removed")
+      print(f"(coalescence). The coalescence rate is k*(k-1)/2 while the")
+      print(f"recombination rate is proportional to total segment mass.")
+      print(f"At each step, P(coal) = coal_rate / (coal_rate + recomb_rate).")
+
+.. admonition:: Solution 3: The coalescence merge
+
+   Consider two lineages with the following segment chains:
+
+   .. code-block:: text
+
+      Lineage x: [0, 400: node 0] -> [600, 1000: node 0]
+      Lineage y: [200, 800: node 1]
+
+   Walking through ``merge_two_ancestors``:
+
+   1. Both active, x.left=0 < y.left=200: x starts before y.
+      x.right=400 > y.left=200, and x.left=0 < y.left=200, so partial overlap.
+      Trim prefix: create segment [0, 200: node 0] (passes through from x).
+      Set x.left = 200.
+
+   2. Now x=[200, 400: node 0], y=[200, 800: node 1]. Both start at 200.
+      **Coalescence!** Create ancestor node u. left=200, right=min(400,800)=400.
+      Record edges: (200, 400, u, 0) and (200, 400, u, 1).
+      Decrement overlap counter for [200, 400).
+      Create coalesced segment [200, 400: node u].
+      x is fully consumed (x.right==400), advance to x.next=[600, 1000: node 0].
+      y has leftover: y.left = 400.
+
+   3. Now x=[600, 1000: node 0], y=[400, 800: node 1]. y.left=400 < x.left=600.
+      Swap so x=y: x=[400, 800: node 1], y=[600, 1000: node 0].
+      x.right=800 > y.left=600, and x.left=400 < y.left=600: partial overlap.
+      Create segment [400, 600: node 1] (passes through from x).
+      Set x.left = 600.
+
+   4. Now x=[600, 800: node 1], y=[600, 1000: node 0]. Both start at 600.
+      **Coalescence!** left=600, right=min(800,1000)=800.
+      Record edges: (600, 800, u, 1) and (600, 800, u, 0).
+      Decrement overlap for [600, 800).
+      Create coalesced segment [600, 800: node u].
+      x is fully consumed, x=None.
+      y has leftover: y.left = 800.
+
+   5. x is None: absorb rest of y=[800, 1000: node 0].
+      Segment [800, 1000: node 0] passes through.
+
+   Final merged chain:
+
+   .. code-block:: text
+
+      [0, 200: node 0] -> [200, 400: node u] -> [400, 600: node 1]
+          -> [600, 800: node u] -> [800, 1000: node 0]
+
+   Edges recorded: (200, 400, u, 0), (200, 400, u, 1),
+   (600, 800, u, 1), (600, 800, u, 0).
+
+   The overlap counter was decremented at [200, 400) and [600, 800) --
+   the intervals where both lineages had ancestral material.
+
+.. admonition:: Solution 4: Fenwick vs naive
+
+   We replace ``FenwickTree.find()`` with a linear scan and compare wall-clock
+   times for increasing genome lengths.
+
+   .. code-block:: python
+
+      import numpy as np
+      import time
+
+      def naive_find(values, target):
+          """Linear scan to find the index where cumulative sum >= target."""
+          cumsum = 0
+          for i in range(1, len(values)):
+              cumsum += values[i]
+              if cumsum >= target:
+                  return i
+          return len(values) - 1
+
+      n = 50
+      r = 1e-8
+
+      print(f"{'L':>10s}  {'Fenwick (s)':>12s}  {'Naive (s)':>12s}  {'Speedup':>8s}")
+      for L in [1e4, 1e5, 1e6, 1e7]:
+          # Fenwick-based simulation
+          start = time.time()
+          sim = MinimalSimulator(n=n, sequence_length=L,
+                                  recombination_rate=r, pop_size=1.0)
+          sim.simulate()
+          t_fenwick = time.time() - start
+
+          # For the naive version, we estimate the time per find() operation
+          # by running find() on a flat array with the same number of segments.
+          n_segs = sim.num_re_events + n  # approximate number of segments
+          values = np.random.exponential(1.0, size=n_segs + 1)
+          total = values.sum()
+
+          n_finds = 1000
+          start = time.time()
+          for _ in range(n_finds):
+              target = np.random.uniform(0, total)
+              naive_find(values, target)
+          t_naive_per_find = (time.time() - start) / n_finds
+          total_events = sim.num_ca_events + sim.num_re_events
+          t_naive_estimate = t_naive_per_find * total_events + t_fenwick * 0.5
+
+          speedup = t_naive_estimate / max(t_fenwick, 1e-6)
+          print(f"{L:10.0f}  {t_fenwick:12.4f}  {t_naive_estimate:12.4f}  "
+                f"{speedup:8.1f}x")
+
+      print(f"\nThe Fenwick tree becomes faster when the number of segments is")
+      print(f"large enough that O(log n) << O(n). For typical genome lengths")
+      print(f"(L >= 1e5 bp), the Fenwick tree provides a significant speedup.")

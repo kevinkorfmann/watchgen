@@ -6,19 +6,92 @@ The Watchmaker's Guide to Population Genetics
 
    *A watchmaker doesn't just use a watch -- they understand every gear, every spring, every mechanism. Nothing is a black box.*
 
-.. image:: https://img.shields.io/badge/philosophy-build%20it%20yourself-blue
-   :alt: Build It Yourself
+.. only:: html
 
-----
+   .. image:: https://img.shields.io/badge/philosophy-build%20it%20yourself-blue
+      :alt: Build It Yourself
+
+   **Download:** `Read as PDF <https://watchgen.readthedocs.io/_/downloads/en/latest/pdf/>`_
+
+   *Enjoying the book?* `Support with PayPal <https://www.paypal.com/donate/?hosted_button_id=VTASTXN2KAFJQ>`_
+
+   .. note::
+
+      This book has not yet been assigned a version number. A citable release is planned for the coming days.
+      In the meantime, please cite by URL and access date.
+
+   .. raw:: html
+
+      <hr>
+
+   .. rubric:: Preface
+
+   This book was written with the assistance of Anthropic's Claude Opus 4.6, largely
+   within the one-million-token context window of Claude Code. That disclosure made,
+   let me explain what this project actually is and why it exists.
+
+   Population genetics is blessed with powerful algorithms -- but cursed with
+   inaccessible ones. Many of the field's most important methods live inside papers
+   and codebases that assume years of specialized training to read, let alone
+   reimplement. They rarely come with manuals, guided tours, or on-ramps for the
+   curious outsider -- or even for the insider who works on a different corner of
+   the field. This book is an attempt to change that: to make the algorithms not
+   only open but genuinely *accessible*, with all the prerequisites laid out and
+   every derivation shown in full.
+
+   I assembled these chapters during my transition from the University of Oregon to
+   the University of Pennsylvania, at my own expense and in my own time. The book is
+   freely available because I believe science should be. It was not, however, free to
+   create -- and I mention this only to underscore that the motivation was personal
+   before it was practical. I wanted to understand these algorithms more deeply myself.
+   Writing them out, gear by gear, was the surest way I knew how.
+
+   Nothing here is meant to diminish the original work. Each algorithm in this book
+   represents a serious intellectual achievement -- the kind that earns PhD titles and
+   advances entire subfields. The goal is translation, not judgment: to take ideas that
+   were expressed for expert audiences and re-express them for anyone willing to learn.
+   The content may contain errors -- mathematical, conceptual, or otherwise -- and
+   should ideally be read in combination with the original journal articles, which
+   remain the authoritative source for each method.
+
+   The book is accompanied by ``watchgen``, a Python package that provides minimal,
+   self-contained implementations of every algorithm covered. These mini implementations
+   are not production tools; they are pedagogical companions -- small enough to read in
+   one sitting, complete enough to run on toy examples, and tested enough to give you
+   confidence that the math on the page actually works. Think of them as the movements
+   you build on the workbench: not meant for sale, but meant to teach your hands
+   what your eyes have read.
+
+   Finally, this project is an open invitation. I welcome collaborators who want to
+   cross-check derivations, correct mistakes, improve explanations, add chapters, or
+   simply point out where things could be clearer. The ambition is a living resource
+   that grows more accurate and more useful over time, built by the community it is
+   meant to serve.
+
+   *Looking ahead.* The mini implementations in ``watchgen`` are pedagogical --
+   deliberately simple, deliberately slow. But the landscape is shifting fast. AI
+   models are growing more capable at an extraordinary pace, and within the next year
+   it may become realistic to go further: to use these same models to produce a
+   unified, production-grade software package that brings the algorithms covered here
+   under a single roof -- correct, tested, interoperable, and maintained. This book,
+   with its explicit derivations and reference implementations, is designed to serve
+   as the foundation for exactly that kind of effort.
+
+   *On versioning.* This is version 0.1 -- an unverified draft. No chapter has yet
+   been reviewed by a domain expert, and I make no claim that any derivation is free
+   of error. Future versions will name the individuals who have verified each chapter,
+   and contributors who substantially improve the content -- whether by correcting
+   proofs, rewriting sections, or adding new chapters -- will be invited as co-authors.
+   Science is a collective enterprise; this book should be too.
+
+   | Kevin Korfmann
+   | Philadelphia, 2025
+
+   .. raw:: html
+
+      <hr>
 
 Welcome to *The Watchmaker's Guide to Population Genetics*.
-
-This book exists because population genetics is full of black boxes. Powerful tools
-that produce results nobody fully understands anymore. Methods inherited from papers,
-wrapped in software, used without question. Researchers run programs, get numbers,
-and cite supplementary materials they've never read.
-
-We think there's a better way.
 
 **The Watchmaker's Guide** is a hands-on, build-it-yourself guide to the algorithms behind modern
 population genetics. Every concept is explained from first principles, every method
@@ -30,24 +103,22 @@ By the end you won't just *run* the tools -- you'll know how to *build* them. An
 a watchmaker, once you've built something by hand, you can fix it, modify it, and
 trust it completely.
 
-**The math is here. The code is here. The exercises are here. You don't need to go anywhere else.**
-
 ----
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: The Workshop
 
    philosophy
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: The Workbench (Prerequisites)
 
    prerequisites/index
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Timepieces
 
    timepieces/index
@@ -111,3 +182,7 @@ of a balance wheel keeping perfect time.
 
    Like a good watchmaker teaching an apprentice, we never hand you a tool without
    first explaining what it's for.
+
+
+.. bibliography::
+   :all:

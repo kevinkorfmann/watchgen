@@ -1,0 +1,1356 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markov Chain Monte Carlo &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Timepieces" href="../timepieces/index.html" />
+    <link rel="prev" title="Ordinary Differential Equations" href="odes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The Workbench (Prerequisites)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../timepieces/index.html">Timepieces</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/index.html#verification-status">Verification Status</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The Workbench (Prerequisites)</a></li>
+      <li class="breadcrumb-item active">Markov Chain Monte Carlo</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="odes.html" class="btn btn-neutral float-left" title="Ordinary Differential Equations" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../timepieces/index.html" class="btn btn-neutral float-right" title="Timepieces" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="markov-chain-monte-carlo">
+<span id="mcmc"></span><h1>Markov Chain Monte Carlo<a class="headerlink" href="#markov-chain-monte-carlo" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>“When you can’t find the answer, let randomness find it for you – one carefully guided step at a time.”</em></p>
+</div></blockquote>
+<p>A master watchmaker, confronted with a broken mechanism of unknown design, cannot
+simply enumerate every possible gear arrangement to find the one that matches the
+symptoms. The space of possibilities is too vast. Instead, the watchmaker makes an
+educated guess, tries a small modification, checks whether the watch runs better, and
+repeats. Over time, the modifications converge on the true mechanism – not by
+exhaustive search, but by guided exploration.</p>
+<p>Markov Chain Monte Carlo (MCMC) is the mathematical formalization of this strategy.
+In population genetics, we face exactly the same challenge: given observed sequence
+data <span class="math notranslate nohighlight">\(D\)</span>, we want to infer the genealogical history <span class="math notranslate nohighlight">\(G\)</span> – the ancestral
+recombination graph, the coalescence times, the population sizes. The posterior
+distribution <span class="math notranslate nohighlight">\(P(G \mid D)\)</span> lives in an astronomically large space, and direct
+computation is impossible. MCMC constructs a random walk through this space, visiting
+states in proportion to their posterior probability, and thereby producing samples
+from the distribution we cannot compute directly.</p>
+<p>This chapter develops MCMC from the ground up, building toward the specific forms
+used by ARGweaver (see <a class="reference internal" href="../timepieces/argweaver/mcmc_sampling.html#argweaver-mcmc"><span class="std std-ref">MCMC Sampling</span></a>), SINGER (see <a class="reference internal" href="../timepieces/singer/sgpr.html#sgpr"><span class="std std-ref">Sub-Graph Pruning and Re-grafting (SGPR)</span></a>), and PHLASH
+(see <a class="reference internal" href="../timepieces/phlash/svgd_inference.html#phlash-svgd"><span class="std std-ref">Stein Variational Gradient Descent (SVGD)</span></a>). If you have not yet read the chapter on <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a>, the
+section on Markov chains here will provide the necessary foundation. If you have,
+the connection between HMMs and MCMC will become clear: both exploit the Markov
+property, but in very different ways.</p>
+<section id="the-big-idea-why-sample">
+<h2>The Big Idea: Why Sample?<a class="headerlink" href="#the-big-idea-why-sample" title="Link to this heading"></a></h2>
+<p>In Bayesian inference, the goal is to compute the <strong>posterior distribution</strong>:</p>
+<div class="math notranslate nohighlight">
+\[P(G \mid D) = \frac{P(D \mid G) \, P(G)}{P(D)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(G\)</span> represents the unknown quantity (a genealogy, a demographic model,
+a set of parameters) and <span class="math notranslate nohighlight">\(D\)</span> is the observed data (genotype sequences,
+allele frequencies, variant calls).</p>
+<p>The posterior tells us everything we want to know: which genealogies are consistent
+with the data, how certain we are about each one, and what the range of plausible
+parameter values is. But computing it requires evaluating the normalizing constant
+<span class="math notranslate nohighlight">\(P(D) = \int P(D \mid G) P(G) \, dG\)</span>, which sums (or integrates) over every
+possible value of <span class="math notranslate nohighlight">\(G\)</span>. For an ARG with thousands of branches, millions of
+genomic positions, and continuous coalescence times, this integral is intractable.</p>
+<p>MCMC sidesteps this problem entirely. Instead of computing the posterior, it
+<strong>samples</strong> from it. The algorithm constructs a Markov chain – a sequence of
+states <span class="math notranslate nohighlight">\(G^{(0)}, G^{(1)}, G^{(2)}, \ldots\)</span> – that converges to the posterior
+distribution. After enough steps, the states visited by the chain are (approximately)
+independent draws from <span class="math notranslate nohighlight">\(P(G \mid D)\)</span>. We can then use these samples to estimate
+any quantity of interest: posterior means, credible intervals, marginal distributions.</p>
+<p>Like a blind watchmaker exploring the space of possible mechanisms – unable to see
+the full blueprint, but able to feel whether each small adjustment improves the
+mechanism or not – MCMC navigates the posterior landscape one step at a time,
+gradually concentrating its exploration on the regions that matter most.</p>
+</section>
+<section id="bayesian-inference-in-60-seconds">
+<h2>Bayesian Inference in 60 Seconds<a class="headerlink" href="#bayesian-inference-in-60-seconds" title="Link to this heading"></a></h2>
+<p>Before building the MCMC machinery, let us establish the Bayesian framework that
+motivates it.</p>
+<div class="admonition-probability-aside-bayes-theorem admonition">
+<p class="admonition-title">Probability Aside – Bayes’ theorem</p>
+<p><strong>Bayes’ theorem</strong> relates the posterior probability of a hypothesis <span class="math notranslate nohighlight">\(H\)</span>
+given data <span class="math notranslate nohighlight">\(D\)</span> to the likelihood and prior:</p>
+<div class="math notranslate nohighlight">
+\[P(H \mid D) = \frac{P(D \mid H) \, P(H)}{P(D)}\]</div>
+<p>The four components are:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(P(H)\)</span> – the <strong>prior</strong>: our belief about <span class="math notranslate nohighlight">\(H\)</span> before seeing data.</p></li>
+<li><p><span class="math notranslate nohighlight">\(P(D \mid H)\)</span> – the <strong>likelihood</strong>: how probable the data is if <span class="math notranslate nohighlight">\(H\)</span>
+is true.</p></li>
+<li><p><span class="math notranslate nohighlight">\(P(H \mid D)\)</span> – the <strong>posterior</strong>: our updated belief after seeing data.</p></li>
+<li><p><span class="math notranslate nohighlight">\(P(D)\)</span> – the <strong>evidence</strong> (or marginal likelihood): the total probability
+of the data under all hypotheses. This is the normalizing constant that makes the
+posterior sum to 1.</p></li>
+</ul>
+<p>The critical insight: <span class="math notranslate nohighlight">\(P(D)\)</span> does not depend on <span class="math notranslate nohighlight">\(H\)</span>. It is the same
+for every hypothesis. This means we can write:</p>
+<div class="math notranslate nohighlight">
+\[P(H \mid D) \propto P(D \mid H) \, P(H)\]</div>
+<p>The posterior is <em>proportional to</em> the likelihood times the prior. MCMC exploits
+this: it only needs the unnormalized posterior, never the evidence.</p>
+</div>
+<p>Let us make this concrete with an example where the posterior is known exactly, so
+we can verify our MCMC results later.</p>
+<p><strong>The Beta-Binomial model.</strong> Suppose we observe <span class="math notranslate nohighlight">\(k\)</span> successes in <span class="math notranslate nohighlight">\(n\)</span>
+trials (say, <span class="math notranslate nohighlight">\(k = 7\)</span> derived alleles out of <span class="math notranslate nohighlight">\(n = 20\)</span> sites), and we
+want to infer the success probability <span class="math notranslate nohighlight">\(\theta\)</span>.</p>
+<ul class="simple">
+<li><p><strong>Prior</strong>: <span class="math notranslate nohighlight">\(\theta \sim \text{Beta}(\alpha, \beta)\)</span> with density
+<span class="math notranslate nohighlight">\(p(\theta) \propto \theta^{\alpha - 1}(1 - \theta)^{\beta - 1}\)</span>.</p></li>
+<li><p><strong>Likelihood</strong>: <span class="math notranslate nohighlight">\(P(k \mid \theta, n) = \binom{n}{k} \theta^k (1 - \theta)^{n-k}\)</span>.</p></li>
+<li><p><strong>Posterior</strong>: By Bayes’ theorem, the posterior is also a Beta distribution:
+<span class="math notranslate nohighlight">\(\theta \mid k \sim \text{Beta}(\alpha + k, \beta + n - k)\)</span>.</p></li>
+</ul>
+<p>This is a <strong>conjugate</strong> model: the prior and posterior belong to the same family.
+This is the exception, not the rule – for most real problems (including ARG
+inference), no conjugate form exists, and we must resort to MCMC.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
+
+<span class="k">def</span> <span class="nf">beta_binomial_demo</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Demonstrate exact Bayesian inference with a conjugate model.</span>
+
+<span class="sd">    We use this as a ground truth to verify MCMC results later.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha_post : float</span>
+<span class="sd">        Posterior alpha parameter.</span>
+<span class="sd">    beta_post : float</span>
+<span class="sd">        Posterior beta parameter.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Observed data: 7 derived alleles out of 20 sites</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">7</span>
+
+    <span class="c1"># Prior: Beta(2, 2) -- a gentle prior favoring values near 0.5</span>
+    <span class="n">alpha_prior</span><span class="p">,</span> <span class="n">beta_prior</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span>
+
+    <span class="c1"># Posterior: Beta(alpha + k, beta + n - k)</span>
+    <span class="n">alpha_post</span> <span class="o">=</span> <span class="n">alpha_prior</span> <span class="o">+</span> <span class="n">k</span>       <span class="c1"># 2 + 7 = 9</span>
+    <span class="n">beta_post</span> <span class="o">=</span> <span class="n">beta_prior</span> <span class="o">+</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">k</span><span class="p">)</span>   <span class="c1"># 2 + 13 = 15</span>
+
+    <span class="c1"># The posterior mean is alpha / (alpha + beta)</span>
+    <span class="n">post_mean</span> <span class="o">=</span> <span class="n">alpha_post</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha_post</span> <span class="o">+</span> <span class="n">beta_post</span><span class="p">)</span>
+    <span class="n">post_var</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_post</span> <span class="o">*</span> <span class="n">beta_post</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">alpha_post</span> <span class="o">+</span> <span class="n">beta_post</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">alpha_post</span> <span class="o">+</span> <span class="n">beta_post</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Prior: Beta(</span><span class="si">{</span><span class="n">alpha_prior</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">beta_prior</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> successes in </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> trials&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Posterior: Beta(</span><span class="si">{</span><span class="n">alpha_post</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">beta_post</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Posterior mean: </span><span class="si">{</span><span class="n">post_mean</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Posterior std:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">post_var</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Verify: the posterior should integrate to 1</span>
+    <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">beta</span> <span class="k">as</span> <span class="n">beta_fn</span>
+    <span class="n">integral</span> <span class="o">=</span> <span class="n">beta_fn</span><span class="p">(</span><span class="n">alpha_post</span><span class="p">,</span> <span class="n">beta_post</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Beta function B(</span><span class="si">{</span><span class="n">alpha_post</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">beta_post</span><span class="si">}</span><span class="s2">) = </span><span class="si">{</span><span class="n">integral</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (normalization constant)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">alpha_post</span><span class="p">,</span> <span class="n">beta_post</span>
+
+<span class="n">alpha_post</span><span class="p">,</span> <span class="n">beta_post</span> <span class="o">=</span> <span class="n">beta_binomial_demo</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="markov-chains">
+<h2>Markov Chains<a class="headerlink" href="#markov-chains" title="Link to this heading"></a></h2>
+<p>MCMC works by constructing a Markov chain whose stationary distribution is the
+target posterior. Before building the full algorithm, we need to understand Markov
+chains themselves.</p>
+<p>A <strong>Markov chain</strong> is a sequence of random variables <span class="math notranslate nohighlight">\(X_0, X_1, X_2, \ldots\)</span>
+where the distribution of <span class="math notranslate nohighlight">\(X_{t+1}\)</span> depends only on <span class="math notranslate nohighlight">\(X_t\)</span>, not on
+earlier values. This is the same Markov property that drives the HMMs in
+<a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a> – but here the chain operates in <em>algorithm time</em> (MCMC iterations)
+rather than along the genome.</p>
+<p>Formally, a Markov chain on a state space <span class="math notranslate nohighlight">\(\mathcal{S}\)</span> is defined by a
+<strong>transition kernel</strong> <span class="math notranslate nohighlight">\(T(x, y)\)</span>: the probability (or probability density) of
+moving from state <span class="math notranslate nohighlight">\(x\)</span> to state <span class="math notranslate nohighlight">\(y\)</span> in one step.</p>
+<p>For a finite state space <span class="math notranslate nohighlight">\(\{1, 2, \ldots, K\}\)</span>, the transition kernel is a
+matrix <span class="math notranslate nohighlight">\(T_{ij} = P(X_{t+1} = j \mid X_t = i)\)</span>, exactly like the transition
+matrix of an HMM. Each row sums to 1, meaning the chain must go somewhere at each
+step.</p>
+<section id="stationary-distribution">
+<h3>Stationary Distribution<a class="headerlink" href="#stationary-distribution" title="Link to this heading"></a></h3>
+<p>A probability distribution <span class="math notranslate nohighlight">\(\pi\)</span> over the state space is <strong>stationary</strong> for
+the chain if it is unchanged by one step of the transition:</p>
+<div class="math notranslate nohighlight">
+\[\pi_j = \sum_{i} \pi_i \, T_{ij} \quad \text{for all } j\]</div>
+<p>In matrix notation: <span class="math notranslate nohighlight">\(\pi T = \pi\)</span>. If the chain starts in distribution
+<span class="math notranslate nohighlight">\(\pi\)</span>, it stays in distribution <span class="math notranslate nohighlight">\(\pi\)</span> forever.</p>
+<p><strong>Ergodicity</strong> is the property that guarantees the chain converges to <span class="math notranslate nohighlight">\(\pi\)</span>
+regardless of the starting state. A chain is ergodic if it is:</p>
+<ul class="simple">
+<li><p><strong>Irreducible</strong>: every state can be reached from every other state (eventually).</p></li>
+<li><p><strong>Aperiodic</strong>: the chain does not get trapped in deterministic cycles.</p></li>
+</ul>
+<p>For an ergodic chain, no matter where we start, the distribution of <span class="math notranslate nohighlight">\(X_t\)</span>
+converges to <span class="math notranslate nohighlight">\(\pi\)</span> as <span class="math notranslate nohighlight">\(t \to \infty\)</span>. This is the fundamental theorem
+that makes MCMC work: if we design a chain whose stationary distribution is our
+target posterior, then running the chain long enough produces samples from that
+posterior.</p>
+<div class="admonition-probability-aside-detailed-balance admonition">
+<p class="admonition-title">Probability Aside – Detailed balance</p>
+<p>A sufficient (but not necessary) condition for <span class="math notranslate nohighlight">\(\pi\)</span> to be stationary is
+<strong>detailed balance</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\pi_i \, T_{ij} = \pi_j \, T_{ji} \quad \text{for all } i, j\]</div>
+<p>This says: the probability of being in state <span class="math notranslate nohighlight">\(i\)</span> and transitioning to
+<span class="math notranslate nohighlight">\(j\)</span> equals the probability of being in state <span class="math notranslate nohighlight">\(j\)</span> and transitioning
+to <span class="math notranslate nohighlight">\(i\)</span>. In other words, the “flow” between every pair of states is
+balanced.</p>
+<p>To see that detailed balance implies stationarity, sum both sides over <span class="math notranslate nohighlight">\(i\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\sum_i \pi_i \, T_{ij} = \sum_i \pi_j \, T_{ji} = \pi_j \sum_i T_{ji} = \pi_j\]</div>
+<p>where the last step uses <span class="math notranslate nohighlight">\(\sum_i T_{ji} = 1\)</span> (the rows of <span class="math notranslate nohighlight">\(T\)</span> sum
+to 1). This gives <span class="math notranslate nohighlight">\(\sum_i \pi_i T_{ij} = \pi_j\)</span>, which is exactly the
+stationarity condition. Most MCMC algorithms (including Metropolis-Hastings and
+Gibbs sampling) are designed to satisfy detailed balance.</p>
+</div>
+<p>Let us see convergence to a stationary distribution in action with a simple
+finite-state Markov chain.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">markov_chain_convergence</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Demonstrate that a finite Markov chain converges to its stationary distribution.</span>
+
+<span class="sd">    We define a 3-state chain, run it for many steps, and compare the</span>
+<span class="sd">    empirical state frequencies to the theoretical stationary distribution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Transition matrix for a 3-state chain</span>
+    <span class="c1"># T[i, j] = P(X_{t+1} = j | X_t = i)</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>   <span class="c1"># from state 0</span>
+        <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>   <span class="c1"># from state 1</span>
+        <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span>   <span class="c1"># from state 2</span>
+    <span class="p">])</span>
+
+    <span class="c1"># Verify rows sum to 1</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">),</span> <span class="s2">&quot;Rows must sum to 1&quot;</span>
+
+    <span class="c1"># Find the stationary distribution by solving pi * T = pi</span>
+    <span class="c1"># This is equivalent to finding the left eigenvector with eigenvalue 1.</span>
+    <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="c1"># Find the eigenvector corresponding to eigenvalue 1</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">eigenvalues</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">))</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">eigenvectors</span><span class="p">[:,</span> <span class="n">idx</span><span class="p">])</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">pi</span> <span class="o">/</span> <span class="n">pi</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>   <span class="c1"># normalize to a probability distribution</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stationary distribution (theory): </span><span class="si">{</span><span class="n">pi</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Simulate the chain for 100,000 steps starting from state 0</span>
+    <span class="n">n_steps</span> <span class="o">=</span> <span class="mi">100_000</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+        <span class="c1"># np.random.choice(3, p=T[state]) draws the next state</span>
+        <span class="c1"># according to the transition probabilities from &#39;state&#39;.</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">T</span><span class="p">[</span><span class="n">state</span><span class="p">])</span>
+        <span class="n">counts</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Empirical frequencies should match the stationary distribution</span>
+    <span class="n">empirical</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">n_steps</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empirical frequencies:             </span><span class="si">{</span><span class="n">empirical</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max absolute error:                </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">pi</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">empirical</span><span class="p">))</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Verify detailed balance: pi[i]*T[i,j] should equal pi[j]*T[j,i]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="n">lhs</span> <span class="o">=</span> <span class="n">pi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+            <span class="n">rhs</span> <span class="o">=</span> <span class="n">pi</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">T</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  pi[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]*T[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">lhs</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, pi[</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">]*T[</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">rhs</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot;ratio = </span><span class="si">{</span><span class="n">lhs</span><span class="o">/</span><span class="n">rhs</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">markov_chain_convergence</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="the-metropolis-hastings-algorithm">
+<h2>The Metropolis-Hastings Algorithm<a class="headerlink" href="#the-metropolis-hastings-algorithm" title="Link to this heading"></a></h2>
+<p>The <strong>Metropolis-Hastings (MH)</strong> algorithm is the workhorse of MCMC. It constructs
+an ergodic Markov chain whose stationary distribution is any target distribution
+<span class="math notranslate nohighlight">\(\pi(x)\)</span> that we can evaluate up to a normalizing constant.</p>
+<p>The algorithm is remarkably simple:</p>
+<ol class="arabic">
+<li><p>From the current state <span class="math notranslate nohighlight">\(x\)</span>, <strong>propose</strong> a new state <span class="math notranslate nohighlight">\(x'\)</span> from a
+proposal distribution <span class="math notranslate nohighlight">\(q(x' \mid x)\)</span>.</p></li>
+<li><p>Compute the <strong>acceptance ratio</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\alpha = \min\left(1, \; \frac{\pi(x') \, q(x \mid x')}{\pi(x) \, q(x' \mid x)}\right)\]</div>
+</li>
+<li><p><strong>Accept</strong> <span class="math notranslate nohighlight">\(x'\)</span> with probability <span class="math notranslate nohighlight">\(\alpha\)</span>; otherwise stay at <span class="math notranslate nohighlight">\(x\)</span>.</p></li>
+</ol>
+<p>That is the entire algorithm. The magic is in the acceptance ratio: it automatically
+adjusts for the proposal distribution, ensuring that the chain’s stationary
+distribution is <span class="math notranslate nohighlight">\(\pi(x)\)</span> regardless of the choice of <span class="math notranslate nohighlight">\(q\)</span>.</p>
+<div class="admonition-probability-aside-why-the-mh-ratio-works admonition">
+<p class="admonition-title">Probability Aside – Why the MH ratio works</p>
+<p>We need to verify that the MH algorithm satisfies detailed balance with respect
+to <span class="math notranslate nohighlight">\(\pi\)</span>. The transition probability from <span class="math notranslate nohighlight">\(x\)</span> to <span class="math notranslate nohighlight">\(x'\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[T(x, x') = q(x' \mid x) \cdot \min\left(1, \frac{\pi(x') q(x \mid x')}{\pi(x) q(x' \mid x)}\right)\]</div>
+<p>To check detailed balance, we need <span class="math notranslate nohighlight">\(\pi(x) T(x, x') = \pi(x') T(x', x)\)</span>.</p>
+<p>Without loss of generality, assume <span class="math notranslate nohighlight">\(\pi(x') q(x \mid x') \leq \pi(x) q(x' \mid x)\)</span>.
+Then the acceptance ratio for moving <span class="math notranslate nohighlight">\(x \to x'\)</span> is
+<span class="math notranslate nohighlight">\(\frac{\pi(x') q(x \mid x')}{\pi(x) q(x' \mid x)}\)</span>, and the acceptance
+ratio for the reverse move <span class="math notranslate nohighlight">\(x' \to x\)</span> is 1. So:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\pi(x) T(x, x') &amp;= \pi(x) \cdot q(x' \mid x) \cdot \frac{\pi(x') q(x \mid x')}{\pi(x) q(x' \mid x)} \\
+&amp;= \pi(x') \cdot q(x \mid x')\end{split}\]</div>
+<div class="math notranslate nohighlight">
+\[\begin{split}\pi(x') T(x', x) &amp;= \pi(x') \cdot q(x \mid x') \cdot 1 \\
+&amp;= \pi(x') \cdot q(x \mid x')\end{split}\]</div>
+<p>Both sides are equal. Detailed balance holds, so <span class="math notranslate nohighlight">\(\pi\)</span> is the stationary
+distribution.</p>
+<p>The key insight: the normalizing constant of <span class="math notranslate nohighlight">\(\pi\)</span> cancels in the ratio
+<span class="math notranslate nohighlight">\(\pi(x') / \pi(x)\)</span>. This is why MCMC does not need to compute the
+evidence <span class="math notranslate nohighlight">\(P(D)\)</span> – it only needs the unnormalized posterior.</p>
+</div>
+<p><strong>Random walk Metropolis-Hastings.</strong> The simplest choice of proposal is a symmetric
+random walk: <span class="math notranslate nohighlight">\(x' = x + \epsilon\)</span> where <span class="math notranslate nohighlight">\(\epsilon \sim \mathcal{N}(0, \sigma^2)\)</span>.
+Since the proposal is symmetric (<span class="math notranslate nohighlight">\(q(x' \mid x) = q(x \mid x')\)</span>), the ratio
+simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\alpha = \min\left(1, \frac{\pi(x')}{\pi(x)}\right)\]</div>
+<p>If the proposed state has higher posterior density, always accept. If lower, accept
+with probability equal to the density ratio. This allows the chain to explore
+regions of lower density (important for characterizing uncertainty) while spending
+most of its time in high-density regions.</p>
+<p>Let us implement MH and use it to sample from a mixture of Gaussians – a
+distribution with multiple modes that tests whether the chain can explore the full
+landscape.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">metropolis_hastings_mixture</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MH sampling from a mixture of two Gaussians.</span>
+
+<span class="sd">    Target: 0.3 * N(-2, 0.5^2) + 0.7 * N(3, 1^2)</span>
+<span class="sd">    This tests whether the chain can jump between modes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">log_target</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log of the (unnormalized) target density.</span>
+
+<span class="sd">        A mixture of two Gaussians. We work in log space to avoid</span>
+<span class="sd">        underflow when the density is very small.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># scipy.special.logsumexp would be more numerically stable,</span>
+        <span class="c1"># but for clarity we use the direct computation.</span>
+        <span class="n">comp1</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+        <span class="n">comp2</span> <span class="o">=</span> <span class="mf">0.7</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">comp1</span> <span class="o">+</span> <span class="n">comp2</span> <span class="o">+</span> <span class="mf">1e-300</span><span class="p">)</span>  <span class="c1"># small constant prevents log(0)</span>
+
+    <span class="c1"># MH parameters</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">50_000</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="mf">1.5</span>          <span class="c1"># proposal standard deviation (step size)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+    <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>     <span class="c1"># starting point</span>
+    <span class="n">n_accepted</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+        <span class="c1"># Propose: symmetric random walk</span>
+        <span class="n">x_current</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">x_proposed</span> <span class="o">=</span> <span class="n">x_current</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+        <span class="c1"># Acceptance ratio (in log space to avoid overflow/underflow)</span>
+        <span class="n">log_alpha</span> <span class="o">=</span> <span class="n">log_target</span><span class="p">(</span><span class="n">x_proposed</span><span class="p">)</span> <span class="o">-</span> <span class="n">log_target</span><span class="p">(</span><span class="n">x_current</span><span class="p">)</span>
+
+        <span class="c1"># Accept or reject</span>
+        <span class="c1"># np.log(np.random.uniform()) gives a uniform draw in log space</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">())</span> <span class="o">&lt;</span> <span class="n">log_alpha</span><span class="p">:</span>
+            <span class="n">samples</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_proposed</span>
+            <span class="n">n_accepted</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">samples</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_current</span>
+
+    <span class="n">acceptance_rate</span> <span class="o">=</span> <span class="n">n_accepted</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Discard burn-in (first 5000 samples)</span>
+    <span class="n">burn_in</span> <span class="o">=</span> <span class="mi">5000</span>
+    <span class="n">post_burnin</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">burn_in</span><span class="p">:]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Acceptance rate: </span><span class="si">{</span><span class="n">acceptance_rate</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sample mean: </span><span class="si">{</span><span class="n">post_burnin</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sample std:  </span><span class="si">{</span><span class="n">post_burnin</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check: samples near each mode</span>
+    <span class="n">near_mode1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">post_burnin</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">post_burnin</span><span class="p">)</span>
+    <span class="n">near_mode2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">post_burnin</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">post_burnin</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fraction near mode 1 (x&lt;0): </span><span class="si">{</span><span class="n">near_mode1</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> (expected ~0.3)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fraction near mode 2 (x&gt;=0): </span><span class="si">{</span><span class="n">near_mode2</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> (expected ~0.7)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">samples</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">samples_mixture</span> <span class="o">=</span> <span class="n">metropolis_hastings_mixture</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Now let us apply MH to a problem closer to population genetics: inferring the
+mutation rate parameter <span class="math notranslate nohighlight">\(\theta\)</span> from an observed site frequency spectrum
+(SFS).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">mh_sfs_inference</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MH for inferring theta from an observed site frequency spectrum.</span>
+
+<span class="sd">    Under the standard neutral coalescent with n samples, the expected</span>
+<span class="sd">    number of SNPs with i derived alleles (out of n) is:</span>
+<span class="sd">        E[SFS_i] = theta / i   for i = 1, ..., n-1</span>
+
+<span class="sd">    We observe an SFS and infer theta using MCMC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Simulated &quot;observed&quot; SFS for n=10 samples with true theta=5</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">theta_true</span> <span class="o">=</span> <span class="mf">5.0</span>
+    <span class="c1"># Expected SFS: theta/i for i = 1, ..., n-1</span>
+    <span class="n">expected_sfs</span> <span class="o">=</span> <span class="n">theta_true</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="c1"># Observed SFS: Poisson draws around the expected values</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+    <span class="n">observed_sfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">expected_sfs</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Observed SFS: </span><span class="si">{</span><span class="n">observed_sfs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">log_likelihood</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">sfs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Poisson log-likelihood for the SFS given theta.</span>
+
+<span class="sd">        Each SFS entry sfs[i] is Poisson with mean theta/(i+1).</span>
+<span class="sd">        The log-likelihood is sum of Poisson log-PMFs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">theta</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sfs</span><span class="p">)):</span>
+            <span class="n">lam</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>        <span class="c1"># expected count for frequency class i+1</span>
+            <span class="c1"># Poisson log-PMF: k*log(lam) - lam - log(k!)</span>
+            <span class="n">ll</span> <span class="o">+=</span> <span class="n">sfs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span> <span class="o">-</span> <span class="n">lam</span>
+        <span class="k">return</span> <span class="n">ll</span>
+
+    <span class="k">def</span> <span class="nf">log_prior</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log of an exponential prior with mean 10.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">theta</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">theta</span> <span class="o">/</span> <span class="mf">10.0</span>  <span class="c1"># Exp(rate=0.1), ignoring the constant</span>
+
+    <span class="c1"># Run MH</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">30_000</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">chain</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+    <span class="n">chain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>   <span class="c1"># start far from the true value</span>
+    <span class="n">n_accepted</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+        <span class="n">theta_current</span> <span class="o">=</span> <span class="n">chain</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">theta_proposed</span> <span class="o">=</span> <span class="n">theta_current</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+        <span class="n">log_alpha</span> <span class="o">=</span> <span class="p">(</span><span class="n">log_likelihood</span><span class="p">(</span><span class="n">theta_proposed</span><span class="p">,</span> <span class="n">observed_sfs</span><span class="p">)</span> <span class="o">+</span> <span class="n">log_prior</span><span class="p">(</span><span class="n">theta_proposed</span><span class="p">)</span>
+                     <span class="o">-</span> <span class="n">log_likelihood</span><span class="p">(</span><span class="n">theta_current</span><span class="p">,</span> <span class="n">observed_sfs</span><span class="p">)</span> <span class="o">-</span> <span class="n">log_prior</span><span class="p">(</span><span class="n">theta_current</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">())</span> <span class="o">&lt;</span> <span class="n">log_alpha</span><span class="p">:</span>
+            <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">theta_proposed</span>
+            <span class="n">n_accepted</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">theta_current</span>
+
+    <span class="n">burn_in</span> <span class="o">=</span> <span class="mi">5000</span>
+    <span class="n">post_burnin</span> <span class="o">=</span> <span class="n">chain</span><span class="p">[</span><span class="n">burn_in</span><span class="p">:]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True theta: </span><span class="si">{</span><span class="n">theta_true</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Posterior mean: </span><span class="si">{</span><span class="n">post_burnin</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Posterior std:  </span><span class="si">{</span><span class="n">post_burnin</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;95% CI: (</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">post_burnin</span><span class="p">,</span><span class="w"> </span><span class="mf">2.5</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">post_burnin</span><span class="p">,</span><span class="w"> </span><span class="mf">97.5</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Acceptance rate: </span><span class="si">{</span><span class="n">n_accepted</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">n_samples</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">mh_sfs_inference</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="gibbs-sampling">
+<h2>Gibbs Sampling<a class="headerlink" href="#gibbs-sampling" title="Link to this heading"></a></h2>
+<p><strong>Gibbs sampling</strong> is a special case of Metropolis-Hastings where the proposal is
+drawn from the <strong>full conditional distribution</strong> – the distribution of one variable
+given all the others. The remarkable property of Gibbs sampling is that every
+proposal is accepted.</p>
+<p>To see why, suppose we are updating variable <span class="math notranslate nohighlight">\(x_k\)</span> while holding all other
+variables <span class="math notranslate nohighlight">\(x_{-k}\)</span> fixed. The Gibbs proposal draws <span class="math notranslate nohighlight">\(x_k'\)</span> from:</p>
+<div class="math notranslate nohighlight">
+\[q(x_k' \mid x_k, x_{-k}) = P(x_k' \mid x_{-k})\]</div>
+<p>Now compute the MH acceptance ratio. The target distribution is the joint
+<span class="math notranslate nohighlight">\(\pi(x_k, x_{-k})\)</span>, and the proposal is <span class="math notranslate nohighlight">\(q(x_k' \mid x_k, x_{-k}) = \pi(x_k' \mid x_{-k})\)</span>. Substituting into the MH ratio:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\alpha &amp;= \min\left(1, \frac{\pi(x_k', x_{-k}) \, q(x_k \mid x_k', x_{-k})}{\pi(x_k, x_{-k}) \, q(x_k' \mid x_k, x_{-k})}\right) \\
+&amp;= \min\left(1, \frac{\pi(x_k', x_{-k}) \cdot \pi(x_k \mid x_{-k})}{\pi(x_k, x_{-k}) \cdot \pi(x_k' \mid x_{-k})}\right)\end{split}\]</div>
+<p>Using the identity <span class="math notranslate nohighlight">\(\pi(x_k, x_{-k}) = \pi(x_k \mid x_{-k}) \cdot \pi(x_{-k})\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\alpha &amp;= \min\left(1, \frac{\pi(x_k' \mid x_{-k}) \, \pi(x_{-k}) \cdot \pi(x_k \mid x_{-k})}{\pi(x_k \mid x_{-k}) \, \pi(x_{-k}) \cdot \pi(x_k' \mid x_{-k})}\right) = \min(1, 1) = 1\]</div>
+<p>Every Gibbs proposal is accepted. This is enormously efficient – no samples are
+wasted on rejected proposals. The price is that we must be able to sample from the
+full conditional <span class="math notranslate nohighlight">\(P(x_k \mid x_{-k})\)</span> exactly, which is not always possible.</p>
+<p><strong>Connection to ARGweaver.</strong> ARGweaver (see <a class="reference internal" href="../timepieces/argweaver/mcmc_sampling.html#argweaver-mcmc"><span class="std std-ref">MCMC Sampling</span></a>) uses Gibbs
+sampling to update its ARG. At each iteration, one haplotype’s “thread” through
+the ARG is removed, and a new thread is sampled from the conditional posterior
+<span class="math notranslate nohighlight">\(P(\text{thread}_k \mid \text{ARG}_{-k}, D)\)</span>. Because the time-discretized
+HMM allows exact computation of this conditional via the forward algorithm and
+stochastic traceback, the Gibbs update is exact and the acceptance rate is 1. This
+is precisely the strategy described in the <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>: the forward
+algorithm computes state probabilities, and stochastic traceback samples a path.</p>
+<p>Let us implement Gibbs sampling for a bivariate Normal distribution, where the
+conditional distributions are known analytically.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">gibbs_bivariate_normal</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gibbs sampling from a bivariate Normal distribution.</span>
+
+<span class="sd">    Target: (X, Y) ~ N(mu, Sigma) where</span>
+<span class="sd">        mu = (0, 0)</span>
+<span class="sd">        Sigma = [[1, rho], [rho, 1]]</span>
+
+<span class="sd">    The conditional distributions are:</span>
+<span class="sd">        X | Y=y ~ N(rho*y, 1 - rho^2)</span>
+<span class="sd">        Y | X=x ~ N(rho*x, 1 - rho^2)</span>
+
+<span class="sd">    These conditionals are easy to sample from, making Gibbs ideal.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="mf">0.8</span>                <span class="c1"># correlation coefficient</span>
+    <span class="n">cond_var</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">rho</span><span class="o">**</span><span class="mi">2</span>    <span class="c1"># conditional variance</span>
+    <span class="n">cond_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cond_var</span><span class="p">)</span>
+
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">20_000</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>  <span class="c1"># starting point</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+        <span class="c1"># Update X given Y: X | Y ~ N(rho * Y, 1 - rho^2)</span>
+        <span class="n">y_current</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">rho</span> <span class="o">*</span> <span class="n">y_current</span><span class="p">,</span> <span class="n">cond_std</span><span class="p">)</span>
+
+        <span class="c1"># Update Y given X: Y | X ~ N(rho * X, 1 - rho^2)</span>
+        <span class="n">x_current</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># use the NEWLY sampled X</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">rho</span> <span class="o">*</span> <span class="n">x_current</span><span class="p">,</span> <span class="n">cond_std</span><span class="p">)</span>
+
+    <span class="n">burn_in</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">post_burnin</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">burn_in</span><span class="p">:]</span>
+
+    <span class="c1"># Check moments against the true distribution</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Correlation rho = </span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean X: </span><span class="si">{</span><span class="n">post_burnin</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> (expected 0.0)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean Y: </span><span class="si">{</span><span class="n">post_burnin</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> (expected 0.0)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Var X:  </span><span class="si">{</span><span class="n">post_burnin</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">var</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> (expected 1.0)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Var Y:  </span><span class="si">{</span><span class="n">post_burnin</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">var</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> (expected 1.0)&quot;</span><span class="p">)</span>
+    <span class="n">empirical_corr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">post_burnin</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">post_burnin</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empirical correlation: </span><span class="si">{</span><span class="n">empirical_corr</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> (expected </span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Gibbs always accepts, so acceptance rate is 1.0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Acceptance rate: 1.0 (by construction)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">post_burnin</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">gibbs_samples</span> <span class="o">=</span> <span class="n">gibbs_bivariate_normal</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="convergence-diagnostics">
+<h2>Convergence Diagnostics<a class="headerlink" href="#convergence-diagnostics" title="Link to this heading"></a></h2>
+<p>Running an MCMC chain is only half the battle. How do we know the chain has
+converged to the target distribution? How many samples are actually useful? These
+questions are addressed by <strong>convergence diagnostics</strong>.</p>
+<p><strong>Burn-in.</strong> The initial samples from an MCMC chain are influenced by the starting
+point, not by the target distribution. The period before the chain has “forgotten”
+its starting point is called the <strong>burn-in</strong>. These samples should be discarded.
+There is no universal formula for how long the burn-in should be – it depends on
+the problem, the proposal, and the starting point. A common heuristic is to discard
+the first 10–50% of the chain.</p>
+<p><strong>Trace plots.</strong> A trace plot shows the sampled values as a function of iteration
+number. A well-mixed chain looks like a “hairy caterpillar” – rapidly fluctuating
+around a stable mean, with no long-term trends or flat regions. A poorly mixed chain
+shows slow drifts, long periods stuck at one value, or clear trends.</p>
+<p><strong>Autocorrelation.</strong> Consecutive MCMC samples are correlated (each sample is a small
+perturbation of the previous one). The <strong>autocorrelation function</strong> (ACF) at lag
+<span class="math notranslate nohighlight">\(k\)</span> measures this:</p>
+<div class="math notranslate nohighlight">
+\[\rho(k) = \frac{\text{Cov}(X_t, X_{t+k})}{\text{Var}(X_t)}\]</div>
+<p>For a well-mixed chain, the ACF decays quickly to zero. For a poorly mixed chain,
+it remains positive for many lags, meaning consecutive samples carry redundant
+information.</p>
+<p><strong>Thinning.</strong> To reduce autocorrelation, we can keep only every <span class="math notranslate nohighlight">\(m\)</span>-th sample.
+If the ACF drops to near zero at lag <span class="math notranslate nohighlight">\(m\)</span>, thinning by <span class="math notranslate nohighlight">\(m\)</span> produces
+approximately independent samples. However, thinning discards information and is
+often unnecessary – it is usually better to keep all samples and account for
+autocorrelation through ESS.</p>
+<div class="admonition-probability-aside-effective-sample-size admonition">
+<p class="admonition-title">Probability Aside – Effective sample size</p>
+<p>The <strong>effective sample size</strong> (ESS) quantifies how many <em>independent</em> samples
+your chain is equivalent to. If you have <span class="math notranslate nohighlight">\(N\)</span> total samples with
+autocorrelation, the ESS is:</p>
+<div class="math notranslate nohighlight">
+\[\text{ESS} = \frac{N}{1 + 2\sum_{k=1}^{\infty} \rho(k)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\rho(k)\)</span> is the autocorrelation at lag <span class="math notranslate nohighlight">\(k\)</span>. The denominator
+is called the <strong>integrated autocorrelation time</strong> (IAT) <span class="math notranslate nohighlight">\(\tau\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\tau = 1 + 2\sum_{k=1}^{\infty} \rho(k)\]</div>
+<p>and <span class="math notranslate nohighlight">\(\text{ESS} = N / \tau\)</span>. If <span class="math notranslate nohighlight">\(\tau = 10\)</span>, then 10,000 MCMC
+samples are worth only about 1,000 independent samples.</p>
+<p>High autocorrelation (large <span class="math notranslate nohighlight">\(\tau\)</span>, small ESS) means the chain is exploring
+slowly – each new sample does not move far from the previous one. This is the
+central diagnostic of MCMC efficiency: a well-tuned algorithm has small
+<span class="math notranslate nohighlight">\(\tau\)</span> and large ESS.</p>
+</div>
+<p><strong>Gelman-Rubin</strong> <span class="math notranslate nohighlight">\(\hat{R}\)</span>. When running multiple chains from different
+starting points, the <span class="math notranslate nohighlight">\(\hat{R}\)</span> statistic compares the variance within each
+chain to the variance between chains. If <span class="math notranslate nohighlight">\(\hat{R} \approx 1\)</span>, the chains have
+converged to the same distribution. Values significantly above 1 (say,
+<span class="math notranslate nohighlight">\(\hat{R} &gt; 1.1\)</span>) indicate that the chains have not yet converged.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">compute_acf_and_ess</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="n">max_lag</span><span class="o">=</span><span class="mi">200</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the autocorrelation function and effective sample size.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    chain : ndarray of shape (N,)</span>
+<span class="sd">        MCMC samples (after burn-in).</span>
+<span class="sd">    max_lag : int</span>
+<span class="sd">        Maximum lag to compute ACF for.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    acf : ndarray of shape (max_lag + 1,)</span>
+<span class="sd">        Autocorrelation at each lag from 0 to max_lag.</span>
+<span class="sd">    ess : float</span>
+<span class="sd">        Estimated effective sample size.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">var</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">max_lag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="mf">1.0</span>
+
+    <span class="c1"># Compute autocorrelation at each lag</span>
+    <span class="n">acf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">max_lag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_lag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Autocorrelation at lag k:</span>
+        <span class="c1"># rho(k) = (1/N) * sum_{t=0}^{N-k-1} (x_t - mean)(x_{t+k} - mean) / var</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">acf</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># chain[:-k] is the series shifted by 0 (first N-k elements)</span>
+            <span class="c1"># chain[k:] is the series shifted by k (last N-k elements)</span>
+            <span class="n">acf</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">chain</span><span class="p">[:</span><span class="o">-</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">chain</span><span class="p">[</span><span class="n">k</span><span class="p">:]</span> <span class="o">-</span> <span class="n">mean</span><span class="p">))</span> <span class="o">/</span> <span class="n">var</span>
+
+    <span class="c1"># Compute ESS using the initial monotone sequence estimator:</span>
+    <span class="c1"># sum autocorrelations until they become negative (conservative cutoff)</span>
+    <span class="n">iat</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># integrated autocorrelation time, starts at 1 (lag 0)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_lag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">acf</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">iat</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">acf</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+    <span class="n">ess</span> <span class="o">=</span> <span class="n">N</span> <span class="o">/</span> <span class="n">iat</span>
+
+    <span class="k">return</span> <span class="n">acf</span><span class="p">,</span> <span class="n">ess</span>
+
+<span class="c1"># Demonstrate with the MH chain from the SFS inference example</span>
+<span class="c1"># First, regenerate the chain</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="c1"># Simple MH chain targeting N(0,1) with different step sizes</span>
+<span class="k">def</span> <span class="nf">run_mh_chain</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">20000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run MH targeting standard Normal with step size sigma.&quot;&quot;&quot;</span>
+    <span class="n">chain</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+    <span class="n">chain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span>  <span class="c1"># start far from the mode</span>
+    <span class="n">n_acc</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+        <span class="n">proposal</span> <span class="o">=</span> <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+        <span class="n">log_alpha</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">proposal</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">())</span> <span class="o">&lt;</span> <span class="n">log_alpha</span><span class="p">:</span>
+            <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">proposal</span>
+            <span class="n">n_acc</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">chain</span><span class="p">[</span><span class="mi">2000</span><span class="p">:],</span> <span class="n">n_acc</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">sigma</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.4</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">]:</span>
+    <span class="n">chain</span><span class="p">,</span> <span class="n">acc_rate</span> <span class="o">=</span> <span class="n">run_mh_chain</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
+    <span class="n">acf</span><span class="p">,</span> <span class="n">ess</span> <span class="o">=</span> <span class="n">compute_acf_and_ess</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sigma=</span><span class="si">{</span><span class="n">sigma</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2">: acceptance=</span><span class="si">{</span><span class="n">acc_rate</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;ESS=</span><span class="si">{</span><span class="n">ess</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, IAT=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span><span class="o">/</span><span class="n">ess</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;ACF at lag 10=</span><span class="si">{</span><span class="n">acf</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="practical-considerations">
+<h2>Practical Considerations<a class="headerlink" href="#practical-considerations" title="Link to this heading"></a></h2>
+<p>The theoretical foundations of MCMC are elegant, but making MCMC work well in
+practice requires careful attention to several practical issues. These issues are
+not mere technicalities – they determine whether your MCMC run produces useful
+results in hours or useless results in weeks.</p>
+<section id="proposal-tuning">
+<h3>Proposal Tuning<a class="headerlink" href="#proposal-tuning" title="Link to this heading"></a></h3>
+<p>The most critical practical decision in random walk MH is the <strong>proposal step
+size</strong> <span class="math notranslate nohighlight">\(\sigma\)</span>. This is the standard deviation of the Normal perturbation
+<span class="math notranslate nohighlight">\(\epsilon \sim \mathcal{N}(0, \sigma^2)\)</span>.</p>
+<ul class="simple">
+<li><p><strong>Too small</strong> (<span class="math notranslate nohighlight">\(\sigma \ll 1\)</span>): Almost every proposal is accepted (the new
+state is barely different from the old one), but the chain explores very slowly.
+It takes many steps to traverse the parameter space. The autocorrelation is high
+and the ESS is low.</p></li>
+<li><p><strong>Too large</strong> (<span class="math notranslate nohighlight">\(\sigma \gg 1\)</span>): Most proposals land in regions of very low
+posterior density and are rejected. The chain gets stuck at one location for many
+steps before a proposal is finally accepted. Again, autocorrelation is high and
+ESS is low.</p></li>
+<li><p><strong>Just right</strong>: There is a sweet spot where the chain makes reasonably large moves
+that are accepted often enough to explore efficiently. For random walk MH on a
+<span class="math notranslate nohighlight">\(d\)</span>-dimensional target, the optimal acceptance rate is approximately
+<strong>23.4%</strong> (Roberts et al., 1997). This theoretical result, while derived for
+specific conditions, provides a useful practical guideline.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">proposal_tuning_demo</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Demonstrate the effect of proposal step size on MCMC efficiency.</span>
+
+<span class="sd">    We run MH targeting a 5-dimensional standard Normal with different</span>
+<span class="sd">    step sizes and compare acceptance rates and ESS.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="mi">5</span>          <span class="c1"># dimensionality</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">50_000</span>
+
+    <span class="k">def</span> <span class="nf">log_target</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log density of a d-dimensional standard Normal.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sigma</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.4</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">]:</span>
+        <span class="n">chain</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
+        <span class="n">chain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="n">n_accepted</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+            <span class="n">proposal</span> <span class="o">=</span> <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">log_alpha</span> <span class="o">=</span> <span class="n">log_target</span><span class="p">(</span><span class="n">proposal</span><span class="p">)</span> <span class="o">-</span> <span class="n">log_target</span><span class="p">(</span><span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">())</span> <span class="o">&lt;</span> <span class="n">log_alpha</span><span class="p">:</span>
+                <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">proposal</span>
+                <span class="n">n_accepted</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">chain</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">acc_rate</span> <span class="o">=</span> <span class="n">n_accepted</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Compute ESS for the first component</span>
+        <span class="n">burn_in</span> <span class="o">=</span> <span class="mi">5000</span>
+        <span class="n">first_coord</span> <span class="o">=</span> <span class="n">chain</span><span class="p">[</span><span class="n">burn_in</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_coord</span><span class="p">)</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">first_coord</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">first_coord</span><span class="o">.</span><span class="n">var</span><span class="p">()</span>
+
+        <span class="n">iat</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">500</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;=</span> <span class="n">N</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">rho_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">first_coord</span><span class="p">[:</span><span class="o">-</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">first_coord</span><span class="p">[</span><span class="n">k</span><span class="p">:]</span> <span class="o">-</span> <span class="n">mean</span><span class="p">))</span> <span class="o">/</span> <span class="n">var</span>
+            <span class="k">if</span> <span class="n">rho_k</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">iat</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">rho_k</span>
+
+        <span class="n">ess</span> <span class="o">=</span> <span class="n">N</span> <span class="o">/</span> <span class="n">iat</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sigma</span><span class="p">,</span> <span class="n">acc_rate</span><span class="p">,</span> <span class="n">ess</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sigma=</span><span class="si">{</span><span class="n">sigma</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">: acceptance=</span><span class="si">{</span><span class="n">acc_rate</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, ESS=</span><span class="si">{</span><span class="n">ess</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Find the step size closest to 23.4% acceptance</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.234</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Closest to optimal (23.4%): sigma=</span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;with acceptance=</span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> and ESS=</span><span class="si">{</span><span class="n">best</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">proposal_tuning_demo</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="data-informed-proposals">
+<h3>Data-Informed Proposals<a class="headerlink" href="#data-informed-proposals" title="Link to this heading"></a></h3>
+<p>Random walk proposals are simple but uninformed – they do not use the data to
+guide the exploration. This is like a blind watchmaker making random adjustments
+without listening to whether the mechanism sounds better or worse.</p>
+<p><strong>SINGER’s innovation</strong> (see <a class="reference internal" href="../timepieces/singer/sgpr.html#sgpr"><span class="std std-ref">Sub-Graph Pruning and Re-grafting (SGPR)</span></a>) is to replace the random walk with a
+<strong>data-informed proposal</strong>. In SINGER’s SGPR (Sub-Graph Pruning and Re-grafting)
+move, a piece of the ARG is removed and then re-threaded using the forward
+algorithm and stochastic traceback from the <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">HMM chapter</span></a>. This
+proposal incorporates the observed sequence data directly: the HMM “listens” to
+the data and proposes a new thread that is already likely under the posterior.</p>
+<p>The result is dramatically higher acceptance rates – approaching 1.0 for large
+sample sizes – compared to the random walk proposals that earlier ARG sampling
+methods used. This is the difference between a blind watchmaker making random
+adjustments and one who carefully examines the mechanism before each modification.</p>
+</section>
+<section id="parallel-tempering">
+<h3>Parallel Tempering<a class="headerlink" href="#parallel-tempering" title="Link to this heading"></a></h3>
+<p>Multimodal posteriors (distributions with multiple well-separated peaks) are
+notoriously difficult for standard MCMC. The chain can get trapped in one mode
+for a very long time before finding enough momentum to jump to another.</p>
+<p><strong>Parallel tempering</strong> (also called replica exchange) addresses this by running
+multiple chains at different “temperatures.” A chain at temperature <span class="math notranslate nohighlight">\(T\)</span>
+targets the tempered distribution <span class="math notranslate nohighlight">\(\pi(x)^{1/T}\)</span>. At <span class="math notranslate nohighlight">\(T = 1\)</span>, this is
+the original posterior. At <span class="math notranslate nohighlight">\(T &gt; 1\)</span>, the distribution is flattened – the
+valleys between modes are shallower, making it easier to cross between them.</p>
+<p>Periodically, adjacent-temperature chains propose to swap their states. The swap
+acceptance probability ensures that the <span class="math notranslate nohighlight">\(T = 1\)</span> chain still targets the correct
+posterior. Hot chains explore broadly and pass their discoveries to colder chains.</p>
+</section>
+<section id="when-mcmc-is-not-enough">
+<h3>When MCMC Is Not Enough<a class="headerlink" href="#when-mcmc-is-not-enough" title="Link to this heading"></a></h3>
+<p>Sometimes the parameter space is so large, or the posterior is so complex, that
+even well-tuned MCMC cannot converge in a reasonable time. This is the situation
+faced by <strong>PHLASH</strong> (see <a class="reference internal" href="../timepieces/phlash/svgd_inference.html#phlash-svgd"><span class="std std-ref">Stein Variational Gradient Descent (SVGD)</span></a>), which needs to infer a
+high-dimensional population size history.</p>
+<p>Instead of MCMC, PHLASH uses <strong>Stein Variational Gradient Descent (SVGD)</strong> – a
+deterministic optimization method that maintains a collection of “particles” and
+moves them to approximate the posterior. SVGD is faster than MCMC for
+high-dimensional problems because it uses gradient information (the slope of the
+log-posterior) to guide all particles simultaneously, rather than making random
+proposals one at a time.</p>
+<p>The trade-off: SVGD is an approximation (it may not converge to the exact
+posterior), while MCMC is exact in the limit of infinite samples. For the
+specific problem PHLASH solves – inferring piecewise-constant population size
+histories – the speed advantage of SVGD outweighs the loss in exactness.</p>
+</section>
+</section>
+<section id="mcmc-in-population-genetics-three-applications">
+<h2>MCMC in Population Genetics: Three Applications<a class="headerlink" href="#mcmc-in-population-genetics-three-applications" title="Link to this heading"></a></h2>
+<p>The Timepieces in this book use three different strategies for exploring posterior
+distributions. Each one can be understood as a variation on the MCMC theme
+developed in this chapter.</p>
+<section id="argweaver-gibbs-sampling-over-args">
+<h3>ARGweaver: Gibbs Sampling over ARGs<a class="headerlink" href="#argweaver-gibbs-sampling-over-args" title="Link to this heading"></a></h3>
+<p>ARGweaver (see <a class="reference internal" href="../timepieces/argweaver/mcmc_sampling.html#argweaver-mcmc"><span class="std std-ref">MCMC Sampling</span></a>) uses <strong>Gibbs sampling</strong> to explore the space
+of ancestral recombination graphs. At each iteration, one haplotype’s thread is
+removed from the ARG, and a new thread is sampled from the exact conditional
+posterior <span class="math notranslate nohighlight">\(P(\text{thread}_k \mid \text{ARG}_{-k}, D)\)</span>.</p>
+<p>This is possible because ARGweaver discretizes time (see
+<a class="reference internal" href="../timepieces/argweaver/time_discretization.html#argweaver-time-discretization"><span class="std std-ref">Time Discretization</span></a>), reducing the continuous coalescent to a
+finite-state HMM. The forward algorithm (from <a class="reference internal" href="hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a>) computes the conditional
+posterior exactly, and stochastic traceback draws a sample. Because the sample comes
+from the exact conditional, the Gibbs acceptance rate is 1 – no proposals are
+wasted.</p>
+<p>The cost of this elegance is the time discretization itself: it introduces an
+approximation, and the number of HMM states grows with the number of time points
+and samples. But the guarantee of 100% acceptance makes the approach efficient
+despite these limitations.</p>
+</section>
+<section id="singer-mh-with-data-informed-proposals">
+<h3>SINGER: MH with Data-Informed Proposals<a class="headerlink" href="#singer-mh-with-data-informed-proposals" title="Link to this heading"></a></h3>
+<p>SINGER (see <a class="reference internal" href="../timepieces/singer/sgpr.html#sgpr"><span class="std std-ref">Sub-Graph Pruning and Re-grafting (SGPR)</span></a>) also updates the ARG one thread at a time, but it works in
+<strong>continuous time</strong> – no discretization is needed. The SGPR (Sub-Graph Pruning and
+Re-grafting) move removes a sub-graph from the ARG and re-threads it using the
+branch sampling and time sampling HMMs.</p>
+<p>Because the proposal distribution is constructed from the data (via the HMM forward
+algorithm), it closely approximates the posterior. The Metropolis-Hastings acceptance
+ratio is therefore close to 1, though not exactly 1 as in Gibbs sampling. The key
+formula (derived in <a class="reference internal" href="../timepieces/singer/sgpr.html#sgpr"><span class="std std-ref">Sub-Graph Pruning and Re-grafting (SGPR)</span></a>) compares the probability of the old thread under
+the new proposal to the probability of the new thread under the old proposal,
+combined with the prior ratio.</p>
+<p>SINGER’s innovation is that the data-informed proposal makes MCMC practical for
+continuous-time ARG inference – something that would be hopelessly inefficient
+with random walk proposals.</p>
+</section>
+<section id="phlash-beyond-mcmc">
+<h3>PHLASH: Beyond MCMC<a class="headerlink" href="#phlash-beyond-mcmc" title="Link to this heading"></a></h3>
+<p>PHLASH (see <a class="reference internal" href="../timepieces/phlash/svgd_inference.html#phlash-svgd"><span class="std std-ref">Stein Variational Gradient Descent (SVGD)</span></a>) takes a different path entirely. Instead of
+sampling from the posterior via MCMC, it uses <strong>Stein Variational Gradient Descent
+(SVGD)</strong> to directly approximate the posterior with a set of particles.</p>
+<p>Why abandon MCMC? PHLASH infers a high-dimensional population size history
+<span class="math notranslate nohighlight">\(\eta(t)\)</span>, parameterized as a piecewise-constant function with many epochs.
+The parameter space is large enough that MCMC chains converge very slowly, and the
+composite likelihood used by PHLASH (which approximates the full likelihood for
+computational efficiency) makes exact Gibbs updates unavailable.</p>
+<p>SVGD maintains a collection of particles and iteratively moves them to minimize a
+divergence from the posterior. Each particle update uses the gradient of the
+log-posterior (the “score function,” see <a class="reference internal" href="../timepieces/phlash/score_function.html#phlash-score-function"><span class="std std-ref">The Score Function Algorithm</span></a>), making the
+exploration much more directed than random walk MCMC. The result is fast convergence
+to an approximate posterior, at the cost of giving up the exactness guarantees of
+MCMC.</p>
+</section>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Concept</p></th>
+<th class="head"><p>Key Idea</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Bayesian posterior</p></td>
+<td><p><span class="math notranslate nohighlight">\(P(G \mid D) \propto P(D \mid G) \, P(G)\)</span>;
+the normalizing constant <span class="math notranslate nohighlight">\(P(D)\)</span> is intractable</p></td>
+</tr>
+<tr class="row-odd"><td><p>Markov chain</p></td>
+<td><p>A sequence where the next state depends only on the current state;
+characterized by a transition kernel and stationary distribution</p></td>
+</tr>
+<tr class="row-even"><td><p>Detailed balance</p></td>
+<td><p><span class="math notranslate nohighlight">\(\pi(x) T(x, y) = \pi(y) T(y, x)\)</span>;
+sufficient condition for <span class="math notranslate nohighlight">\(\pi\)</span> to be stationary</p></td>
+</tr>
+<tr class="row-odd"><td><p>Metropolis-Hastings</p></td>
+<td><p>Propose, then accept/reject with ratio
+<span class="math notranslate nohighlight">\(\min(1, \frac{\pi(x')q(x|x')}{\pi(x)q(x'|x)})\)</span>;
+works for any proposal <span class="math notranslate nohighlight">\(q\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Gibbs sampling</p></td>
+<td><p>Propose from the full conditional; always accepted;
+requires tractable conditionals</p></td>
+</tr>
+<tr class="row-odd"><td><p>Effective sample size</p></td>
+<td><p>ESS = <span class="math notranslate nohighlight">\(N / (1 + 2\sum_k \rho(k))\)</span>;
+measures how many independent samples the chain yields</p></td>
+</tr>
+<tr class="row-even"><td><p>Proposal tuning</p></td>
+<td><p>Optimal acceptance rate <span class="math notranslate nohighlight">\(\approx 23\%\)</span> for random walk MH;
+too narrow or too wide proposals reduce ESS</p></td>
+</tr>
+<tr class="row-odd"><td><p>Data-informed proposals</p></td>
+<td><p>SINGER’s SGPR uses HMM-based proposals that incorporate the data,
+achieving near-perfect acceptance rates</p></td>
+</tr>
+<tr class="row-even"><td><p>When MCMC fails</p></td>
+<td><p>High-dimensional or complex posteriors may require alternatives
+like SVGD (used by PHLASH)</p></td>
+</tr>
+</tbody>
+</table>
+<p>These tools form the <strong>winding mechanism</strong> of several Timepieces. ARGweaver
+(see <a class="reference internal" href="../timepieces/argweaver/index.html#argweaver-timepiece"><span class="std std-ref">Timepiece V: ARGweaver</span></a>) uses Gibbs sampling to cycle through haplotype
+threads, producing exact conditional updates. SINGER (see <a class="reference internal" href="../timepieces/singer/index.html#singer-timepiece"><span class="std std-ref">Timepiece VII: SINGER</span></a>)
+uses Metropolis-Hastings with data-informed SGPR proposals to explore the space of
+continuous-time ARGs. And PHLASH (see <a class="reference internal" href="../timepieces/phlash/index.html#phlash-timepiece"><span class="std std-ref">Timepiece XIV: PHLASH</span></a>) demonstrates when the
+MCMC paradigm itself must be transcended, replacing random sampling with
+gradient-guided particle optimization. Understanding the strengths and limitations of
+MCMC – when it shines and when it is not enough – is essential for understanding
+why each Timepiece is built the way it is.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="odes.html" class="btn btn-neutral float-left" title="Ordinary Differential Equations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../timepieces/index.html" class="btn btn-neutral float-right" title="Timepieces" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

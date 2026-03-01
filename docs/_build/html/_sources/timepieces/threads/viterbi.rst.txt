@@ -85,6 +85,51 @@ set is **complete** if each :math:`P(\omega_n)` is the Li-Stephens-optimal path
 ending at haplotype :math:`n`. When the set is complete, the active segment
 with minimum penalty gives a Viterbi path.
 
+.. code-block:: python
+
+   from dataclasses import dataclass, field
+   from typing import Optional
+
+   @dataclass
+   class Segment:
+       """A path segment in the Threads-Viterbi algorithm.
+
+       Parameters
+       ----------
+       start : int
+           Start site of this segment.
+       target : int
+           Reference haplotype index this segment copies from.
+       penalty : float
+           Cumulative negative log-likelihood up to this segment.
+       parent : Segment or None
+           Traceback pointer to the previous segment.
+       """
+       start: int
+       target: int
+       penalty: float
+       parent: Optional['Segment'] = field(default=None, repr=False)
+
+       def traceback(self):
+           """Follow traceback pointers to reconstruct the full path."""
+           path = []
+           seg = self
+           while seg is not None:
+               path.append((seg.start, seg.target))
+               seg = seg.parent
+           return list(reversed(path))
+
+   # Demonstrate the segment structure
+   seg0 = Segment(start=0, target=3, penalty=10.0)
+   seg1 = Segment(start=500, target=7, penalty=15.0, parent=seg0)
+   seg2 = Segment(start=1200, target=3, penalty=22.0, parent=seg1)
+
+   path = seg2.traceback()
+   print("Viterbi path segments:")
+   for start, target in path:
+       print(f"  Site {start}: copy from haplotype {target}")
+   print(f"Total penalty: {seg2.penalty:.1f}")
+
 
 The Branch Step (Theorem 1)
 =============================
@@ -120,6 +165,96 @@ where :math:`\mu_n` is the match/mismatch penalty at site :math:`m + 1`.
 giving :math:`O(NM)` total segments across all sites. In practice, new
 segments are created only at inferred recombination events, which are rare.
 
+.. code-block:: python
+
+   def branch_step(active_segments, query_allele, ref_alleles,
+                   rho_penalty, rho_c_penalty, mismatch_penalty):
+       """Perform the branch step at one site.
+
+       For each active segment, decide whether continuing without
+       recombination is better than recombining from the best path.
+
+       Parameters
+       ----------
+       active_segments : list of Segment
+           One active segment per reference haplotype.
+       query_allele : int
+           Query haplotype's allele at this site (0 or 1).
+       ref_alleles : ndarray, shape (N,)
+           Reference panel alleles at this site.
+       rho_penalty : float
+           Penalty for recombination (-log(rho/N)).
+       rho_c_penalty : float
+           Penalty for no recombination (-log(1 - rho)).
+       mismatch_penalty : float
+           Penalty for allele mismatch.
+
+       Returns
+       -------
+       new_active : list of Segment
+           Updated active segments for the next site.
+       n_new_segments : int
+           Number of new segments created (recombination events).
+       """
+       N = len(active_segments)
+       # Find the best current path (minimum penalty)
+       best = min(active_segments, key=lambda s: s.penalty)
+       site = active_segments[0].start + 1  # next site
+
+       new_active = []
+       n_new = 0
+       for n in range(N):
+           seg = active_segments[n]
+           # Emission penalty: mismatch if alleles differ
+           mu_n = mismatch_penalty if ref_alleles[n] != query_allele else 0.0
+
+           # Cost of continuing vs. recombining
+           cost_continue = seg.penalty + rho_c_penalty + mu_n
+           cost_recombine = best.penalty + rho_penalty + mu_n
+
+           if cost_recombine < cost_continue:
+               # Create a new segment (recombination event)
+               new_seg = Segment(
+                   start=site, target=n,
+                   penalty=cost_recombine, parent=best
+               )
+               new_active.append(new_seg)
+               n_new += 1
+           else:
+               # Continue the existing segment
+               seg_updated = Segment(
+                   start=seg.start, target=n,
+                   penalty=cost_continue, parent=seg.parent
+               )
+               new_active.append(seg_updated)
+
+       return new_active, n_new
+
+   # Demonstrate on a small example
+   N = 4
+   ref = np.array([[0,0,1,0,0,1,0,0],
+                    [0,0,0,0,1,1,0,0],
+                    [0,1,1,0,0,0,0,1],
+                    [0,0,1,0,0,1,1,0]])
+   query = np.array([0,0,1,0,0,1,0,1])
+
+   active = [Segment(start=0, target=n, penalty=0.0) for n in range(N)]
+   total_new = 0
+   for site in range(1, len(query)):
+       active, n_new = branch_step(
+           active, query[site], ref[:, site],
+           rho_penalty=5.0, rho_c_penalty=0.01, mismatch_penalty=3.0
+       )
+       total_new += n_new
+
+   best = min(active, key=lambda s: s.penalty)
+   path = best.traceback()
+   print(f"Query: {query.tolist()}")
+   print(f"Viterbi path ({total_new} recombination events):")
+   for start, target in path:
+       print(f"  From site {start}: copy haplotype {target}")
+   print(f"Final penalty: {best.penalty:.2f}")
+
 
 The Bound Step (Theorem 2)
 ============================
@@ -146,6 +281,41 @@ Threads applies the bound step at regular intervals using a heuristic threshold:
 
 This balances pruning frequency against the risk of memory spikes from rapid
 segment accumulation.
+
+.. code-block:: python
+
+   def bound_step(all_segments, active_segments):
+       """Prune segments not on any active traceback path.
+
+       Parameters
+       ----------
+       all_segments : list of Segment
+           All segments accumulated so far.
+       active_segments : list of Segment
+           Currently active segments (one per haplotype).
+
+       Returns
+       -------
+       pruned : list of Segment
+           Only segments reachable from active traceback paths.
+       """
+       # Collect all segments on traceback paths from active segments
+       reachable = set()
+       for seg in active_segments:
+           current = seg
+           while current is not None and id(current) not in reachable:
+               reachable.add(id(current))
+               current = current.parent
+
+       pruned = [s for s in all_segments if id(s) in reachable]
+       return pruned
+
+   # Demonstrate pruning
+   print(f"\nBound step example:")
+   print(f"  Before pruning: {len(active) + total_new} segments")
+   pruned = bound_step(active, active)
+   print(f"  After pruning:  {len(pruned)} segments")
+   print("  (Undercut segments are discarded)")
 
 
 Traceback

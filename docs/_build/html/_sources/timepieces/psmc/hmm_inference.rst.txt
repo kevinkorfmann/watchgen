@@ -1208,3 +1208,267 @@ Exercises
    some intervals converge faster than others?
 
 Next: :ref:`psmc_decoding` -- reading the population size history from the inferred parameters.
+
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Build and verify the HMM
+
+   We construct the PSMC HMM for a constant population and verify three properties:
+   numerical stability of forward probabilities, monotonic log-likelihood increase
+   under EM, and convergence of :math:`\hat{\theta}` to the true value.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # Setup
+      n = 10
+      theta_true = 0.001
+      rho_true = theta_true / 5
+      lambdas = np.ones(n + 1)
+
+      # Build HMM with true parameters
+      hmm = PSMC_HMM(n, theta_true, rho_true, lambdas)
+
+      # Simulate a 10,000-bin sequence
+      np.random.seed(42)
+      seq, _ = simulate_psmc_input(10000, theta_true, rho_true, lambda t: 1.0)
+
+      # (a) Verify forward probabilities compute without issues
+      alpha_hat, ll = hmm.forward_scaled(seq)
+      print(f"(a) Forward algorithm on 10,000 bins:")
+      print(f"  Log-likelihood: {ll:.2f}")
+      print(f"  alpha_hat min: {alpha_hat.min():.2e}")
+      print(f"  alpha_hat max: {alpha_hat.max():.2e}")
+      print(f"  Any NaN? {np.any(np.isnan(alpha_hat))}")
+      print(f"  Any Inf? {np.any(np.isinf(alpha_hat))}")
+
+      # (b) Verify log-likelihood increases across EM iterations
+      # Start with a perturbed theta to give EM room to improve
+      hmm_init = PSMC_HMM(n, theta_true * 0.5, rho_true, lambdas)
+      log_likelihoods = []
+
+      current_hmm = hmm_init
+      for i in range(10):
+          ll_i = current_hmm.log_likelihood(seq)
+          log_likelihoods.append(ll_i)
+          current_hmm, _ = psmc_em_step(current_hmm, seq)
+          print(f"  Iteration {i}: LL = {ll_i:.2f}, "
+                f"theta = {current_hmm.theta:.6f}")
+
+      # Check monotonicity
+      for i in range(1, len(log_likelihoods)):
+          assert log_likelihoods[i] >= log_likelihoods[i-1] - 1e-6, \
+              f"LL decreased at iteration {i}!"
+      print(f"\n(b) Log-likelihood monotonically non-decreasing: PASSED")
+
+      # (c) Check theta convergence
+      print(f"\n(c) Theta convergence:")
+      print(f"  True theta:  {theta_true:.6f}")
+      print(f"  Final theta: {current_hmm.theta:.6f}")
+      print(f"  Relative error: "
+            f"{abs(current_hmm.theta - theta_true)/theta_true:.4f}")
+
+   **(a)** The scaled forward algorithm should produce no NaN or Inf values, even
+   for a 10,000-bin sequence. The scaling (normalizing at each position) prevents
+   the underflow that would occur with raw forward probabilities, which shrink
+   exponentially with sequence length.
+
+   **(b)** The log-likelihood must be monotonically non-decreasing -- this is
+   guaranteed by EM theory (the ELBO argument). Any decrease indicates a bug.
+
+   **(c)** After ~10 iterations, :math:`\hat{\theta}` should be within a few
+   percent of the true value. The estimate improves with longer sequences; with
+   10,000 bins, expect a relative error of roughly 5--10%.
+
+.. admonition:: Solution 2: EM on simulated bottleneck data
+
+   We simulate data under a bottleneck model and run PSMC to see if it recovers
+   the true population history.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # Bottleneck model: lambda=1 for t<0.5, lambda=0.1 for 0.5<=t<1.5, lambda=1 for t>=1.5
+      def bottleneck_lambda(t):
+          if t < 0.5:
+              return 1.0
+          elif t < 1.5:
+              return 0.1
+          else:
+              return 1.0
+
+      # Simulate 100,000 bins
+      np.random.seed(123)
+      theta = 0.001
+      rho = theta / 5
+      seq, _ = simulate_psmc_input(100000, theta, rho, bottleneck_lambda)
+
+      print(f"Observed heterozygosity: {np.mean(seq):.4f}")
+
+      # Run PSMC with n=20 intervals for tractability
+      n = 20
+      results = psmc_inference(seq, n=n, t_max=15.0, n_iters=20,
+                                pattern=f"{n+1}*1")
+
+      # Compare inferred lambdas to truth
+      final = results[-1]
+      t = compute_time_intervals(n, t_max=15.0)
+      print(f"\nInferred vs. true lambda:")
+      print(f"{'Interval':>10} {'t_mid':>8} {'True':>8} {'Inferred':>10}")
+      print("-" * 40)
+      for k in range(n + 1):
+          t_mid = (t[k] + t[k+1]) / 2.0
+          lam_true = bottleneck_lambda(t_mid)
+          lam_inferred = final['lambdas'][k]
+          print(f"{k:>10} {t_mid:>8.3f} {lam_true:>8.2f} {lam_inferred:>10.4f}")
+
+   The inferred :math:`\lambda_k` values should show a clear dip (values
+   significantly less than 1) in the intervals corresponding to
+   :math:`t \in [0.5, 1.5]`, matching the bottleneck. The depth of the
+   inferred bottleneck may not exactly reach 0.1 due to the discretization
+   smoothing the sharp edges, but the qualitative pattern should be clear.
+   The constant-size intervals (:math:`t < 0.5` and :math:`t > 1.5`)
+   should have :math:`\lambda_k \approx 1.0`.
+
+.. admonition:: Solution 3: The effect of sequence length
+
+   We run PSMC on sequences of increasing length to study how statistical power
+   scales with data. The key insight is that PSMC accuracy improves with
+   :math:`\sqrt{L}` (standard statistical scaling), and a minimum of ~50,000
+   bins is needed for reliable inference.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      def bottleneck_lambda(t):
+          if t < 0.5:
+              return 1.0
+          elif t < 1.5:
+              return 0.1
+          else:
+              return 1.0
+
+      theta = 0.001
+      rho = theta / 5
+      n = 10  # fewer intervals for speed
+
+      lengths = [1000, 10000, 100000, 1000000]
+      t = compute_time_intervals(n, t_max=15.0)
+
+      for L in lengths:
+          np.random.seed(42)
+          seq, _ = simulate_psmc_input(L, theta, rho, bottleneck_lambda)
+          results = psmc_inference(seq, n=n, t_max=15.0, n_iters=15,
+                                    pattern=f"{n+1}*1")
+          final_lambdas = results[-1]['lambdas']
+
+          # Compute mean squared error against truth
+          mse = 0.0
+          for k in range(n + 1):
+              t_mid = (t[k] + t[k+1]) / 2.0
+              lam_true = bottleneck_lambda(t_mid)
+              mse += (final_lambdas[k] - lam_true) ** 2
+          mse /= (n + 1)
+
+          print(f"L={L:>8}: RMSE = {np.sqrt(mse):.4f}, "
+                f"final LL = {results[-1]['log_likelihood']:.2f}")
+
+   **Expected results:**
+
+   - **L = 1,000:** Very noisy. The inferred :math:`\lambda_k` will be far from
+     the truth. With ~1 heterozygous site per 1,000 bins, there is almost no
+     signal. RMSE will be high (:math:`> 0.5`).
+
+   - **L = 10,000:** Marginal. The bottleneck may be faintly visible but with
+     large errors. RMSE improves but remains substantial.
+
+   - **L = 100,000:** Reliable. The bottleneck should be clearly detected with
+     quantitative accuracy. This is the minimum recommended sequence length for
+     PSMC. RMSE should be below 0.2.
+
+   - **L = 1,000,000:** Excellent. The inferred :math:`\lambda_k` closely match
+     the true values. RMSE should be well below 0.1.
+
+   The accuracy scales approximately as :math:`1/\sqrt{L}`, consistent with
+   standard statistical theory -- doubling the data reduces the error by a
+   factor of :math:`\sqrt{2}`.
+
+.. admonition:: Solution 4: Watch the EM gears turn
+
+   We track :math:`\lambda_k` across 25 EM iterations to visualize how the
+   parameters converge from the initial guess to the final estimate.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      def bottleneck_lambda(t):
+          if t < 0.5:
+              return 1.0
+          elif t < 1.5:
+              return 0.1
+          else:
+              return 1.0
+
+      np.random.seed(42)
+      n = 10
+      theta = 0.001
+      rho = theta / 5
+      seq, _ = simulate_psmc_input(100000, theta, rho, bottleneck_lambda)
+      t = compute_time_intervals(n, t_max=15.0)
+
+      # Run PSMC and record lambdas at each iteration
+      results = psmc_inference(seq, n=n, t_max=15.0, n_iters=25,
+                                pattern=f"{n+1}*1")
+
+      # Print lambda trajectories for selected intervals
+      # Pick one interval in the bottleneck and one outside
+      bottleneck_interval = None
+      normal_interval = None
+      for k in range(n + 1):
+          t_mid = (t[k] + t[k+1]) / 2.0
+          if bottleneck_interval is None and 0.5 < t_mid < 1.5:
+              bottleneck_interval = k
+          if normal_interval is None and t_mid < 0.3:
+              normal_interval = k
+
+      print(f"Tracking interval {bottleneck_interval} (in bottleneck) "
+            f"and interval {normal_interval} (outside):")
+      print(f"{'Iter':>5} {'lambda_bottleneck':>18} {'lambda_normal':>15} "
+            f"{'LL':>12}")
+      print("-" * 55)
+      for r in results:
+          lam_b = r['lambdas'][bottleneck_interval]
+          lam_n = r['lambdas'][normal_interval]
+          print(f"{r['iteration']:>5} {lam_b:>18.4f} {lam_n:>15.4f} "
+                f"{r['log_likelihood']:>12.2f}")
+
+   **Expected behavior:**
+
+   - **All :math:`\lambda_k` start at 1.0** (the initial flat guess).
+
+   - **The bottleneck intervals converge fastest.** Within 5--10 iterations,
+     the :math:`\lambda_k` for intervals in :math:`[0.5, 1.5]` drop sharply
+     toward 0.1. This is because the emission signal is strongest there -- the
+     pronounced lack of heterozygosity in those time intervals provides a clear
+     gradient for the M-step optimizer.
+
+   - **The non-bottleneck intervals converge more slowly.** They remain near 1.0
+     but may fluctuate slightly before settling. Intervals in the very recent or
+     very ancient past converge last because they have the least statistical
+     power (fewest recombination events).
+
+   - **Convergence is not uniform.** Intervals with more expected recombination
+     events (as measured by :math:`C_\sigma \sigma_k`) converge faster because
+     the expected sufficient statistics are more precisely estimated there. This
+     is analogous to a watch where some gears engage frequently and are quickly
+     tuned, while others engage rarely and take longer to adjust.
+
+   - **The log-likelihood plateaus** after roughly 15--20 iterations, indicating
+     convergence. The rate of improvement should decrease exponentially -- large
+     gains in the first few iterations, then diminishing returns.

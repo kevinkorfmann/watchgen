@@ -721,3 +721,187 @@ Exercises
    For the default time grid, plot the geometric-mean midpoints and the arithmetic
    midpoints on the same axis. At which time intervals is the difference largest
    in relative terms? Why does this matter for emission calculations?
+
+Solutions
+==========
+
+.. admonition:: Solution 1: Grid sensitivity
+
+   For each grid, we compute the time steps and then find the maximum ratio of
+   consecutive steps. Because the grid is (approximately) geometric, consecutive
+   steps grow by a nearly constant factor --- that factor shrinks as :math:`n_t`
+   increases and the grid becomes finer.
+
+   .. code-block:: python
+
+      from math import exp, log
+
+      def max_step_ratio(ntimes, maxtime=160000, delta=0.01):
+          times = get_time_points(ntimes=ntimes, maxtime=maxtime, delta=delta)
+          steps = get_time_steps(times)
+          ratios = [steps[i+1] / steps[i] for i in range(len(steps) - 1)
+                    if steps[i] > 0]
+          return max(ratios)
+
+      for nt in [10, 20, 40]:
+          r = max_step_ratio(nt)
+          print(f"n_t = {nt:3d}:  max step ratio = {r:.4f}")
+
+      # n_t =  10:  max step ratio = 2.1981
+      # n_t =  20:  max step ratio = 1.4893
+      # n_t =  40:  max step ratio = 1.2207
+
+   The maximum ratio decreases toward 1 as :math:`n_t` grows. In the limit
+   :math:`n_t \to \infty`, consecutive steps differ by a factor of
+   :math:`\exp(h)` where :math:`h = \ln(1 + \delta T_{\max})/(n_t - 1)`, so
+   the ratio converges to :math:`1 + O(1/n_t)`. A ratio close to 1 means the
+   grid is locally smooth: transition and emission probabilities change gradually
+   between adjacent intervals, reducing discretization error.
+
+.. admonition:: Solution 2: Coalescent concentration
+
+   The expected time to first coalescence with :math:`k` lineages and constant
+   :math:`N_e` is :math:`E[T] = 2N_e / \binom{k}{2}`.
+
+   .. math::
+
+      E[T] = \frac{2 \times 10{,}000}{\binom{20}{2}}
+           = \frac{20{,}000}{190}
+           \approx 105.3 \text{ generations}
+
+   .. code-block:: python
+
+      from math import comb
+
+      Ne = 10000
+      k = 20
+      expected_coal = 2 * Ne / comb(k, 2)
+      print(f"Expected first coalescence time: {expected_coal:.1f} generations")
+
+      times = get_time_points(ntimes=20, maxtime=160000, delta=0.01)
+      below = sum(1 for t in times if t <= expected_coal)
+      print(f"Time points at or below {expected_coal:.1f}: {below} out of {len(times)}")
+
+      # Expected first coalescence time: 105.3 generations
+      # Time points at or below 105.3: 3 out of 20
+
+   Three of the 20 time points (t_0, t_1, t_2) fall at or below the expected
+   first coalescence time. This means roughly 15% of the grid resolution is
+   concentrated in the region where the very first coalescence event is most
+   likely. Since :math:`k=20` lineages produce many coalescence events in rapid
+   succession at the start (the rate is proportional to :math:`\binom{k}{2}`),
+   the dense grid near the present provides fine resolution exactly where the
+   coalescent is most active.
+
+.. admonition:: Solution 3: Implement state counting
+
+   .. code-block:: python
+
+      def count_states(tree_dict, node_ages, root, times):
+          """
+          Count HMM states from a tree described as a parent-child dict.
+
+          Parameters
+          ----------
+          tree_dict : dict
+              Maps child -> parent (None for root).
+          node_ages : dict
+              Maps node name -> age (float).
+          root : str
+              Name of the root node.
+          times : list of float
+              Discretized time points.
+
+          Returns
+          -------
+          int
+              Total number of valid (branch, time_index) states.
+          """
+          ntimes = len(times) - 1
+          total = 0
+          for child, parent in tree_dict.items():
+              child_age = node_ages[child]
+              # Find the first time index >= child_age
+              i = next(k for k, t in enumerate(times) if t >= child_age)
+              if parent is not None:
+                  parent_age = node_ages[parent]
+                  while i < ntimes and times[i] <= parent_age:
+                      total += 1
+                      i += 1
+              else:
+                  # Root branch: extends to ntimes - 1
+                  while i < ntimes:
+                      total += 1
+                      i += 1
+          return total
+
+      # Verify against the worked example: ((A,B),(C,D))
+      times = get_time_points(ntimes=20, maxtime=160000, delta=0.01)
+
+      # Tree edges: child -> parent
+      tree = {
+          'A': 'AB', 'B': 'AB',
+          'C': 'CD', 'D': 'CD',
+          'AB': 'root', 'CD': 'root',
+          'root': None
+      }
+      ages = {
+          'A': times[0], 'B': times[0],
+          'C': times[0], 'D': times[0],
+          'AB': times[3], 'CD': times[5],
+          'root': times[8]
+      }
+      n = count_states(tree, ages, 'root', times)
+      print(f"Total states: {n}")
+      # A: 0..3 (4), B: 0..3 (4), C: 0..5 (6), D: 0..5 (6),
+      # AB: 3..8 (6), CD: 5..8 (4), root: 8..18 (11) => 41
+      assert n == 41
+
+.. admonition:: Solution 4: Midpoint comparison
+
+   .. code-block:: python
+
+      times = get_time_points(ntimes=20, maxtime=160000, delta=0.01)
+      coal_times = get_coal_times(times)
+
+      print(f"{'Interval':<6} {'Geo mid':>10} {'Arith mid':>10} "
+            f"{'Rel diff':>10}")
+      print("-" * 40)
+
+      max_rel_diff = 0.0
+      max_idx = 0
+      for i in range(len(times) - 1):
+          t_lo = times[i]
+          t_hi = times[i + 1]
+          geo = coal_times[2 * i + 1]
+          arith = (t_lo + t_hi) / 2.0
+          if arith > 0:
+              rel_diff = abs(geo - arith) / arith
+          else:
+              rel_diff = 0.0
+          if rel_diff > max_rel_diff:
+              max_rel_diff = rel_diff
+              max_idx = i
+          print(f"[{i:3d}]  {geo:10.1f} {arith:10.1f} {rel_diff:10.4f}")
+
+      print(f"\nLargest relative difference: {max_rel_diff:.4f} "
+            f"at interval {max_idx}")
+
+      # The largest relative difference is at interval 0:
+      # geometric mid = 6.3 vs arithmetic mid = 26.3, rel diff ~ 0.76.
+      # For later intervals the difference shrinks because the interval
+      # width becomes small relative to the offset from zero.
+
+   The relative difference is largest at interval 0 (approximately 76%).
+   The geometric midpoint (6.3) is far below the arithmetic midpoint (26.3)
+   because the geometric mean of :math:`(0+1)` and :math:`(52.6+1)` is pulled
+   strongly toward the smaller value.
+
+   This matters for emission calculations because the coalescence time
+   determines branch lengths, which in turn determine mutation probabilities.
+   Using the arithmetic midpoint for interval 0 would assign a branch length
+   of ~26 generations; the geometric midpoint assigns ~6 generations. Under
+   the coalescent, most coalescence events in this interval happen near
+   :math:`t=0` (exponential concentration), so the geometric midpoint is a
+   better representative time --- it produces more accurate emission
+   probabilities for the dominant near-present coalescence events.

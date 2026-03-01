@@ -1,0 +1,1115 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>discoal and msprime: Two Takes on Sweeps &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Demo: Running discoal on Simulated Data" href="demo.html" />
+    <link rel="prev" title="Hard, Soft, and Partial Sweeps" href="sweep_types.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece XVIII: discoal</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece XVIII: discoal</a></li>
+      <li class="breadcrumb-item active">discoal and msprime: Two Takes on Sweeps</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="sweep_types.html" class="btn btn-neutral float-left" title="Hard, Soft, and Partial Sweeps" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo.html" class="btn btn-neutral float-right" title="Demo: Running discoal on Simulated Data" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="discoal-and-msprime-two-takes-on-sweeps">
+<span id="discoal-msprime-comparison"></span><h1>discoal and msprime: Two Takes on Sweeps<a class="headerlink" href="#discoal-and-msprime-two-takes-on-sweeps" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>Two watchmakers build the same mechanism – one from scratch, one by extending an existing movement.</em></p>
+</div></blockquote>
+<p>discoal (Kern &amp; Schrider, 2016) and msprime 1.0 (Baumdicker et al., 2022) both
+simulate selective sweeps using the same mathematical framework: generate an allele
+frequency trajectory, then run the structured coalescent conditioned on that
+trajectory. They are implementations of the same theory – but the engineering
+differs profoundly.</p>
+<p>This chapter puts the two side by side: the shared mathematical core, the API
+differences, the translation of discoal’s C code into Python using msprime’s
+internals, and the features that distinguish each tool. If the previous chapters
+built discoal’s mechanism from scratch, this chapter shows how the same mechanism
+was grafted onto msprime’s existing neutral coalescent.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Prerequisites.</strong> This chapter assumes you have worked through:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="structured_coalescent.html#discoal-structured-coalescent"><span class="std std-ref">The Structured Coalescent Under Selection</span></a> – the two-class structured coalescent</p></li>
+<li><p><a class="reference internal" href="../msprime/hudson_algorithm.html#hudson-algorithm"><span class="std std-ref">Hudson’s Algorithm</span></a> – msprime’s simulation loop</p></li>
+<li><p>Familiarity with both tools’ APIs is helpful but not required</p></li>
+</ul>
+</div>
+<section id="the-shared-mathematical-core">
+<h2>The Shared Mathematical Core<a class="headerlink" href="#the-shared-mathematical-core" title="Link to this heading"></a></h2>
+<p>Both tools implement the same algorithm at the mathematical level:</p>
+<p><strong>Step 1:</strong> Generate an allele frequency trajectory <span class="math notranslate nohighlight">\(x(t)\)</span> for the
+beneficial allele.</p>
+<p><strong>Step 2:</strong> Run the structured coalescent backward in time. During the sweep
+phase, lineages are on background <span class="math notranslate nohighlight">\(B\)</span> (beneficial) or <span class="math notranslate nohighlight">\(b\)</span>
+(wild-type). Coalescence within each background scales inversely with background
+size. Recombination between the neutral locus and the selected site acts as
+migration between backgrounds.</p>
+<p>The event rates are identical in both implementations:</p>
+<div class="math notranslate nohighlight">
+\[\lambda_B = \frac{n_B(n_B-1)}{2 \cdot 2Nx}, \qquad
+\lambda_b = \frac{n_b(n_b-1)}{2 \cdot 2N(1-x)}\]</div>
+<div class="math notranslate nohighlight">
+\[M_{B \to b} = n_B \cdot r \cdot (1-x), \qquad
+M_{b \to B} = n_b \cdot r \cdot x\]</div>
+<p>The physics is the same. The engineering is where they diverge.</p>
+</section>
+<section id="engineering-differences">
+<h2>Engineering Differences<a class="headerlink" href="#engineering-differences" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 40.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Aspect</p></th>
+<th class="head"><p>discoal</p></th>
+<th class="head"><p>msprime 1.0</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Language</p></td>
+<td><p>C (standalone binary)</p></td>
+<td><p>C with Python API</p></td>
+</tr>
+<tr class="row-odd"><td><p>Output format</p></td>
+<td><p>ms-compatible text (haplotype matrix)</p></td>
+<td><p>Tree sequence (tskit)</p></td>
+</tr>
+<tr class="row-even"><td><p>Parameter convention</p></td>
+<td><p>Scaled: <span class="math notranslate nohighlight">\(\theta = 4N\mu\)</span>, <span class="math notranslate nohighlight">\(\rho = 4Nr\)</span>, <span class="math notranslate nohighlight">\(\alpha = 2Ns\)</span></p></td>
+<td><p>Raw: <span class="math notranslate nohighlight">\(\mu\)</span>, <span class="math notranslate nohighlight">\(r\)</span>, <span class="math notranslate nohighlight">\(s\)</span> (per bp per gen), explicit <span class="math notranslate nohighlight">\(N\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Trajectory generation</p></td>
+<td><p>Deterministic (logistic) or stochastic (conditioned jump process)</p></td>
+<td><p>Stochastic only (conditioned jump process)</p></td>
+</tr>
+<tr class="row-even"><td><p>Internal representation</p></td>
+<td><p>Array of haplotypes, <span class="math notranslate nohighlight">\(O(nS)\)</span> memory</p></td>
+<td><p>Tree sequence, <span class="math notranslate nohighlight">\(O(n + S)\)</span> memory</p></td>
+</tr>
+<tr class="row-odd"><td><p>Sweep position</p></td>
+<td><p>Anywhere along the sequence (<code class="docutils literal notranslate"><span class="pre">-x</span></code> flag)</p></td>
+<td><p>Midpoint of sequence (can be customized)</p></td>
+</tr>
+<tr class="row-even"><td><p>Multiple sweeps</p></td>
+<td><p>Not supported</p></td>
+<td><p>Possible via chaining sweep models</p></td>
+</tr>
+<tr class="row-odd"><td><p>Soft sweeps</p></td>
+<td><p>Standing variation (<code class="docutils literal notranslate"><span class="pre">-f</span></code>), recurrent mutation (<code class="docutils literal notranslate"><span class="pre">-uA</span></code>), neutral
+fixation (<code class="docutils literal notranslate"><span class="pre">-wn</span></code>)</p></td>
+<td><p>Hard sweep only (as of msprime 1.0)</p></td>
+</tr>
+<tr class="row-even"><td><p>Partial sweeps</p></td>
+<td><p>Yes (<code class="docutils literal notranslate"><span class="pre">-c</span></code> flag)</p></td>
+<td><p>Not directly supported</p></td>
+</tr>
+<tr class="row-odd"><td><p>Demographics</p></td>
+<td><p>Population size changes (<code class="docutils literal notranslate"><span class="pre">-en</span></code>, <code class="docutils literal notranslate"><span class="pre">-eN</span></code>)</p></td>
+<td><p>Full demographic models (splits, admixture, migration)</p></td>
+</tr>
+<tr class="row-even"><td><p>Gene conversion</p></td>
+<td><p>Yes (<code class="docutils literal notranslate"><span class="pre">-gc</span></code> flag)</p></td>
+<td><p>Not during sweeps</p></td>
+</tr>
+<tr class="row-odd"><td><p>Performance</p></td>
+<td><p>Good for moderate <span class="math notranslate nohighlight">\(n\)</span></p></td>
+<td><p>Orders of magnitude faster for large <span class="math notranslate nohighlight">\(n\)</span> due to tree sequences</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="parameter-translation">
+<h2>Parameter Translation<a class="headerlink" href="#parameter-translation" title="Link to this heading"></a></h2>
+<p>Converting between discoal and msprime parameters:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">discoal_to_msprime</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert discoal&#39;s scaled parameters to msprime&#39;s raw parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Population-scaled mutation rate (4*N*mu*L).</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Population-scaled recombination rate (4*N*r*L).</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Population-scaled selection coefficient (2*N*s).</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Sample size.</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Sequence length in bp.</span>
+<span class="sd">    N : int</span>
+<span class="sd">        Diploid effective population size.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    params : dict</span>
+<span class="sd">        Dictionary of msprime parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">N</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">N</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">N</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="n">n</span><span class="p">,</span>
+        <span class="s1">&#39;sequence_length&#39;</span><span class="p">:</span> <span class="n">L</span><span class="p">,</span>
+        <span class="s1">&#39;mutation_rate&#39;</span><span class="p">:</span> <span class="n">mu</span><span class="p">,</span>
+        <span class="s1">&#39;recombination_rate&#39;</span><span class="p">:</span> <span class="n">r</span><span class="p">,</span>
+        <span class="s1">&#39;population_size&#39;</span><span class="p">:</span> <span class="n">N</span><span class="p">,</span>
+        <span class="s1">&#39;selection_coefficient&#39;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">msprime_to_discoal</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert msprime&#39;s raw parameters to discoal&#39;s scaled parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Sample size.</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Sequence length in bp.</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Mutation rate per bp per generation.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Recombination rate per bp per generation.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Selection coefficient.</span>
+<span class="sd">    N : int</span>
+<span class="sd">        Diploid effective population size.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    params : dict</span>
+<span class="sd">        Dictionary of discoal command-line parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">N</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">L</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">N</span> <span class="o">*</span> <span class="n">r</span> <span class="o">*</span> <span class="n">L</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">N</span> <span class="o">*</span> <span class="n">s</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;n&#39;</span><span class="p">:</span> <span class="n">n</span><span class="p">,</span>
+        <span class="s1">&#39;L&#39;</span><span class="p">:</span> <span class="n">L</span><span class="p">,</span>
+        <span class="s1">&#39;theta&#39;</span><span class="p">:</span> <span class="n">theta</span><span class="p">,</span>
+        <span class="s1">&#39;rho&#39;</span><span class="p">:</span> <span class="n">rho</span><span class="p">,</span>
+        <span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="n">alpha</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="c1"># Example: a typical human-like simulation</span>
+<span class="n">N</span> <span class="o">=</span> <span class="mi">10_000</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mi">100_000</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">1.25e-8</span>
+<span class="n">r</span> <span class="o">=</span> <span class="mf">1e-8</span>
+<span class="n">s</span> <span class="o">=</span> <span class="mf">0.01</span>
+
+<span class="n">discoal_params</span> <span class="o">=</span> <span class="n">msprime_to_discoal</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;discoal command:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  discoal </span><span class="si">{</span><span class="n">discoal_params</span><span class="p">[</span><span class="s1">&#39;n&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> 1 </span><span class="si">{</span><span class="n">discoal_params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;-t </span><span class="si">{</span><span class="n">discoal_params</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;-r </span><span class="si">{</span><span class="n">discoal_params</span><span class="p">[</span><span class="s1">&#39;rho&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;-ws 0 -a </span><span class="si">{</span><span class="n">discoal_params</span><span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> -x 0.5&quot;</span><span class="p">)</span>
+
+<span class="n">msprime_params</span> <span class="o">=</span> <span class="n">discoal_to_msprime</span><span class="p">(</span>
+    <span class="n">discoal_params</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">],</span> <span class="n">discoal_params</span><span class="p">[</span><span class="s1">&#39;rho&#39;</span><span class="p">],</span>
+    <span class="n">discoal_params</span><span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">],</span> <span class="mi">100</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">N</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">msprime equivalent:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  samples=</span><span class="si">{</span><span class="n">msprime_params</span><span class="p">[</span><span class="s1">&#39;samples&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  sequence_length=</span><span class="si">{</span><span class="n">msprime_params</span><span class="p">[</span><span class="s1">&#39;sequence_length&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  mutation_rate=</span><span class="si">{</span><span class="n">msprime_params</span><span class="p">[</span><span class="s1">&#39;mutation_rate&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  recombination_rate=</span><span class="si">{</span><span class="n">msprime_params</span><span class="p">[</span><span class="s1">&#39;recombination_rate&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  population_size=</span><span class="si">{</span><span class="n">msprime_params</span><span class="p">[</span><span class="s1">&#39;population_size&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  s=</span><span class="si">{</span><span class="n">msprime_params</span><span class="p">[</span><span class="s1">&#39;selection_coefficient&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="a-python-translation-of-the-discoal-algorithm">
+<h2>A Python Translation of the discoal Algorithm<a class="headerlink" href="#a-python-translation-of-the-discoal-algorithm" title="Link to this heading"></a></h2>
+<p>Here is a complete, self-contained Python implementation of discoal’s core
+algorithm. This is a faithful translation of the C code’s logic into readable
+Python, covering the main simulation loop for a hard sweep at a single locus.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">SweepState</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;State of the structured coalescent during a sweep.&quot;&quot;&quot;</span>
+    <span class="n">n_B</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>          <span class="c1"># lineages in beneficial background</span>
+    <span class="n">n_b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>          <span class="c1"># lineages in wild-type background</span>
+    <span class="n">coal_times_B</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">coal_times_b</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">migrations_Bb</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">migrations_bB</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">discoal_core</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">r_per_site</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">tau_4N</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                  <span class="n">trajectory_mode</span><span class="o">=</span><span class="s1">&#39;deterministic&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A Python translation of discoal&#39;s core simulation algorithm.</span>
+
+<span class="sd">    Simulates a selective sweep at position L/2, with neutral sites</span>
+<span class="sd">    along a chromosome of length L.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Sample size (haploid).</span>
+<span class="sd">    N : int</span>
+<span class="sd">        Diploid effective population size.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Selection coefficient (genic).</span>
+<span class="sd">    r_per_site : float</span>
+<span class="sd">        Recombination rate per site per generation.</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Sequence length (number of sites).</span>
+<span class="sd">    tau_4N : float</span>
+<span class="sd">        Time since fixation in units of 4N generations.</span>
+<span class="sd">    trajectory_mode : str</span>
+<span class="sd">        &#39;deterministic&#39; or &#39;stochastic&#39;.</span>
+<span class="sd">    seed : int</span>
+<span class="sd">        Random seed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    result : dict</span>
+<span class="sd">        Contains &#39;diversity&#39; (pi), &#39;n_segregating&#39;, &#39;tajimas_D_sign&#39;,</span>
+<span class="sd">        and diagnostic information about the sweep.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">two_N</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">N</span>
+    <span class="n">tau_gen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tau_4N</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">N</span><span class="p">)</span>
+
+    <span class="c1"># --- Step 1: Generate trajectory ---</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">two_N</span>
+    <span class="k">if</span> <span class="n">trajectory_mode</span> <span class="o">==</span> <span class="s1">&#39;deterministic&#39;</span><span class="p">:</span>
+        <span class="n">traj</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x0</span>
+        <span class="k">while</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">two_N</span><span class="p">:</span>
+            <span class="n">traj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="c1"># One generation of logistic growth</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">s</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">s</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+            <span class="c1"># Clip to [0, 1]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">traj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">traj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">traj</span> <span class="o">=</span> <span class="n">stochastic_trajectory</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+
+    <span class="n">T_sweep</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+
+    <span class="c1"># --- Step 2: Simulate at multiple neutral sites ---</span>
+    <span class="c1"># For each site, compute its recombination distance to the selected</span>
+    <span class="c1"># site at position L/2, then run the structured coalescent.</span>
+    <span class="n">selected_pos</span> <span class="o">=</span> <span class="n">L</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">site_tmrcas</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Sample a few representative sites</span>
+    <span class="n">test_positions</span> <span class="o">=</span> <span class="p">[</span><span class="n">selected_pos</span><span class="p">,</span>  <span class="c1"># at the selected site</span>
+                      <span class="n">selected_pos</span> <span class="o">+</span> <span class="n">L</span> <span class="o">//</span> <span class="mi">10</span><span class="p">,</span>  <span class="c1"># nearby</span>
+                      <span class="n">selected_pos</span> <span class="o">+</span> <span class="n">L</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span>   <span class="c1"># intermediate</span>
+                      <span class="mi">0</span><span class="p">]</span>                        <span class="c1"># far away</span>
+
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">test_positions</span><span class="p">:</span>
+        <span class="n">r_site</span> <span class="o">=</span> <span class="n">r_per_site</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pos</span> <span class="o">-</span> <span class="n">selected_pos</span><span class="p">)</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="n">SweepState</span><span class="p">(</span><span class="n">n_B</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">n_b</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">coal_times</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Phase A: Neutral coalescent (present to tau)</span>
+        <span class="n">n_current</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">n_current</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">tau_gen</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">n_current</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_current</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">two_N</span><span class="p">)</span>
+            <span class="n">wait</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">+</span> <span class="n">wait</span> <span class="o">&gt;</span> <span class="n">tau_gen</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">t</span> <span class="o">+=</span> <span class="n">wait</span>
+            <span class="n">n_current</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">coal_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># Phase B: Structured coalescent through sweep</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">=</span> <span class="n">n_current</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T_sweep</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">traj</span><span class="p">[</span><span class="n">step</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">+</span> <span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="n">bg_B</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">two_N</span> <span class="o">*</span> <span class="n">x</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">bg_b</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">two_N</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+
+            <span class="c1"># Compute rates</span>
+            <span class="n">rate_cB</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">*</span> <span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">bg_B</span><span class="p">)</span> <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">rate_cb</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">*</span> <span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">bg_b</span><span class="p">)</span> <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">rate_mBb</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">*</span> <span class="n">r_site</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">rate_mbB</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">*</span> <span class="n">r_site</span> <span class="o">*</span> <span class="n">x</span> <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">total</span> <span class="o">=</span> <span class="n">rate_cB</span> <span class="o">+</span> <span class="n">rate_cb</span> <span class="o">+</span> <span class="n">rate_mBb</span> <span class="o">+</span> <span class="n">rate_mbB</span>
+
+            <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Check if event happens in this generation</span>
+            <span class="k">if</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">u</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">*</span> <span class="n">total</span>
+                <span class="n">t_event</span> <span class="o">=</span> <span class="n">tau_gen</span> <span class="o">+</span> <span class="p">(</span><span class="n">T_sweep</span> <span class="o">-</span> <span class="n">step</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">rate_cB</span><span class="p">:</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="n">coal_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t_event</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">rate_cB</span> <span class="o">+</span> <span class="n">rate_cb</span><span class="p">:</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="n">coal_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t_event</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">rate_cB</span> <span class="o">+</span> <span class="n">rate_cb</span> <span class="o">+</span> <span class="n">rate_mBb</span><span class="p">:</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">migrations_Bb</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">n_b</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">state</span><span class="o">.</span><span class="n">migrations_bB</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Forced coalescence at sweep origin for remaining B lineages</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">coal_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tau_gen</span> <span class="o">+</span> <span class="n">T_sweep</span><span class="p">)</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Phase C: Neutral coalescent before sweep</span>
+        <span class="n">n_remaining</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">n_B</span> <span class="o">+</span> <span class="n">state</span><span class="o">.</span><span class="n">n_b</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">tau_gen</span> <span class="o">+</span> <span class="n">T_sweep</span>
+        <span class="k">while</span> <span class="n">n_remaining</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">n_remaining</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_remaining</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">two_N</span><span class="p">)</span>
+            <span class="n">wait</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">+=</span> <span class="n">wait</span>
+            <span class="n">n_remaining</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">coal_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="n">tmrca</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">coal_times</span><span class="p">)</span> <span class="k">if</span> <span class="n">coal_times</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">site_tmrcas</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pos</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pos</span> <span class="o">-</span> <span class="n">selected_pos</span><span class="p">),</span> <span class="n">tmrca</span><span class="p">,</span> <span class="n">state</span><span class="p">))</span>
+
+    <span class="c1"># Report</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;selected_position&#39;</span><span class="p">:</span> <span class="n">selected_pos</span><span class="p">,</span>
+        <span class="s1">&#39;sweep_duration_gen&#39;</span><span class="p">:</span> <span class="n">T_sweep</span><span class="p">,</span>
+        <span class="s1">&#39;sites&#39;</span><span class="p">:</span> <span class="p">[]</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="n">pos</span><span class="p">,</span> <span class="n">dist</span><span class="p">,</span> <span class="n">tmrca</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">site_tmrcas</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;sites&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;position&#39;</span><span class="p">:</span> <span class="n">pos</span><span class="p">,</span>
+            <span class="s1">&#39;distance_to_selected&#39;</span><span class="p">:</span> <span class="n">dist</span><span class="p">,</span>
+            <span class="s1">&#39;r_to_selected&#39;</span><span class="p">:</span> <span class="n">r_per_site</span> <span class="o">*</span> <span class="n">dist</span><span class="p">,</span>
+            <span class="s1">&#39;tmrca_gen&#39;</span><span class="p">:</span> <span class="n">tmrca</span><span class="p">,</span>
+            <span class="s1">&#39;tmrca_coalescent_units&#39;</span><span class="p">:</span> <span class="n">tmrca</span> <span class="o">/</span> <span class="n">two_N</span><span class="p">,</span>
+            <span class="s1">&#39;migrations_Bb&#39;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">migrations_Bb</span><span class="p">,</span>
+            <span class="s1">&#39;migrations_bB&#39;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">migrations_bB</span><span class="p">,</span>
+        <span class="p">})</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="c1"># Run the translation</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">discoal_core</span><span class="p">(</span>
+    <span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">r_per_site</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="mi">100_000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sweep duration: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;sweep_duration_gen&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> generations</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Position&#39;</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Distance&#39;</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;r_site&#39;</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}</span><span class="s2"> &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;TMRCA (gen)&#39;</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;TMRCA (coal)&#39;</span><span class="si">:</span><span class="s2">&gt;14</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Mig B-&gt;b&#39;</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">75</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;sites&#39;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;position&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;distance_to_selected&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;r_to_selected&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;12.2e</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;tmrca_gen&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;12,.0f</span><span class="si">}</span><span class="s2"> &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;tmrca_coalescent_units&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;14.4f</span><span class="si">}</span><span class="s2"> &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;migrations_Bb&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-msprime-way-using-sweepgenicselection">
+<h2>The msprime Way: Using SweepGenicSelection<a class="headerlink" href="#the-msprime-way-using-sweepgenicselection" title="Link to this heading"></a></h2>
+<p>msprime 1.0 provides the same functionality through a different API. Instead of
+a standalone binary with command-line flags, msprime integrates sweeps into its
+composable model framework.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># How you would run the same simulation in msprime:</span>
+<span class="c1">#</span>
+<span class="c1"># import msprime</span>
+<span class="c1">#</span>
+<span class="c1"># sweep = msprime.SweepGenicSelection(</span>
+<span class="c1">#     position=50_000,           # selected site position</span>
+<span class="c1">#     start_frequency=1/(2*N),   # start from single copy</span>
+<span class="c1">#     end_frequency=1 - 1/(2*N), # sweep to near-fixation</span>
+<span class="c1">#     s=0.01,                    # selection coefficient</span>
+<span class="c1">#     dt=1e-6,                   # trajectory time step</span>
+<span class="c1"># )</span>
+<span class="c1">#</span>
+<span class="c1"># ts = msprime.sim_ancestry(</span>
+<span class="c1">#     samples=20,</span>
+<span class="c1">#     sequence_length=100_000,</span>
+<span class="c1">#     recombination_rate=1e-8,</span>
+<span class="c1">#     population_size=10_000,</span>
+<span class="c1">#     model=[</span>
+<span class="c1">#         sweep,                    # the sweep phase</span>
+<span class="c1">#         msprime.StandardCoalescent(),  # neutral before and after</span>
+<span class="c1">#     ],</span>
+<span class="c1"># )</span>
+<span class="c1">#</span>
+<span class="c1"># # Add mutations</span>
+<span class="c1"># ts = msprime.sim_mutations(ts, rate=1.25e-8)</span>
+<span class="c1">#</span>
+<span class="c1"># # Analyze diversity around the sweep</span>
+<span class="c1"># diversity = ts.diversity(windows=np.linspace(0, 100_000, 51))</span>
+</pre></div>
+</div>
+<p>The key differences in the msprime API:</p>
+<ol class="arabic simple">
+<li><p><strong>Model composition.</strong> The sweep is one “phase” in a list of models. msprime
+automatically transitions between phases.</p></li>
+<li><p><strong>Tree sequence output.</strong> The result is a tree sequence, not a haplotype matrix.
+This enables efficient downstream analysis.</p></li>
+<li><p><strong>Raw parameters.</strong> You specify <span class="math notranslate nohighlight">\(s\)</span>, <span class="math notranslate nohighlight">\(N\)</span>, <span class="math notranslate nohighlight">\(r\)</span> directly, not
+<span class="math notranslate nohighlight">\(\alpha\)</span>, <span class="math notranslate nohighlight">\(\rho\)</span>, <span class="math notranslate nohighlight">\(\theta\)</span>.</p></li>
+<li><p><strong>No soft sweeps.</strong> msprime’s <code class="docutils literal notranslate"><span class="pre">SweepGenicSelection</span></code> currently supports only
+hard sweeps (from <span class="math notranslate nohighlight">\(1/(2N)\)</span> to near-fixation).</p></li>
+</ol>
+</section>
+<section id="what-discoal-can-do-that-msprime-cannot">
+<h2>What discoal Can Do That msprime Cannot<a class="headerlink" href="#what-discoal-can-do-that-msprime-cannot" title="Link to this heading"></a></h2>
+<p>As of msprime 1.0, discoal offers several features that msprime’s sweep model
+does not:</p>
+<ol class="arabic simple">
+<li><p><strong>Soft sweeps from standing variation</strong> (<code class="docutils literal notranslate"><span class="pre">-f</span></code> flag). Start the sweep from
+frequency <span class="math notranslate nohighlight">\(x_0 &gt; 1/(2N)\)</span>, modeling the case where a previously neutral
+allele becomes beneficial.</p></li>
+<li><p><strong>Soft sweeps from recurrent mutation</strong> (<code class="docutils literal notranslate"><span class="pre">-uA</span></code> flag). Multiple independent
+origins of the beneficial allele, each on a different haplotypic background.</p></li>
+<li><p><strong>Partial sweeps</strong> (<code class="docutils literal notranslate"><span class="pre">-c</span></code> flag). The beneficial allele is at intermediate
+frequency in the present.</p></li>
+<li><p><strong>Neutral fixation trajectories</strong> (<code class="docutils literal notranslate"><span class="pre">-wn</span></code> flag). Simulate the trajectory of
+an allele that fixes by drift alone (no selection). Useful as a null model.</p></li>
+<li><p><strong>Gene conversion during sweeps</strong> (<code class="docutils literal notranslate"><span class="pre">-gc</span></code> flag). Gene conversion
+(non-crossover recombination) can also move lineages between backgrounds.</p></li>
+<li><p><strong>Deterministic trajectories</strong> (<code class="docutils literal notranslate"><span class="pre">-wd</span></code> flag). The logistic trajectory, which
+is faster and may be preferable for very strong selection.</p></li>
+</ol>
+</section>
+<section id="what-msprime-does-better">
+<h2>What msprime Does Better<a class="headerlink" href="#what-msprime-does-better" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Performance.</strong> For large sample sizes (<span class="math notranslate nohighlight">\(n &gt; 1000\)</span>), msprime is orders
+of magnitude faster because it uses tree sequences internally. discoal stores
+an <span class="math notranslate nohighlight">\(n \times S\)</span> haplotype matrix, which becomes prohibitive for large
+<span class="math notranslate nohighlight">\(n\)</span>.</p></li>
+<li><p><strong>Tree sequence output.</strong> The compact, queryable tree sequence format enables
+efficient computation of any statistic (diversity, SFS, LD, <span class="math notranslate nohighlight">\(F_{ST}\)</span>,
+etc.) without re-simulating.</p></li>
+<li><p><strong>Composable models.</strong> Sweeps can be combined with arbitrary demographic
+models (population splits, admixture, migration) and chained with neutral
+phases in a single simulation.</p></li>
+<li><p><strong>Ecosystem integration.</strong> Output plugs directly into tskit, tsinfer, tsdate,
+and the broader tree sequence toolkit.</p></li>
+<li><p><strong>Active development.</strong> msprime is actively maintained and extended. Future
+versions may add soft sweep support and other features.</p></li>
+</ol>
+</section>
+<section id="the-architecture-comparison">
+<h2>The Architecture Comparison<a class="headerlink" href="#the-architecture-comparison" title="Link to this heading"></a></h2>
+<p>At the deepest level, the difference is <strong>architectural</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>discoal architecture:
+=====================
+1. Generate trajectory  ───&gt; array of floats
+2. Structured coalescent ───&gt; modify haplotype matrix in place
+3. Neutral coalescent    ───&gt; modify haplotype matrix in place
+4. Add mutations         ───&gt; fill haplotype matrix
+5. Output: n x S matrix  ───&gt; print to stdout
+
+msprime architecture:
+=====================
+1. Initialize tree sequence tables (nodes, edges, sites, mutations)
+2. Event loop:
+   - Neutral phase: Hudson&#39;s algorithm with segments and Fenwick tree
+   - Sweep phase: structured coalescent with two labels
+     (same math, different data structure)
+   - Neutral phase: back to Hudson&#39;s algorithm
+3. Output: tree sequence ───&gt; tskit object
+
+Key difference: msprime never materializes the haplotype matrix.
+It builds the *genealogy* directly, and mutations are added afterward.
+</pre></div>
+</div>
+<p>discoal’s approach is simpler to understand (and to implement from scratch), but
+msprime’s approach is more powerful: the tree sequence representation allows
+<span class="math notranslate nohighlight">\(O(n)\)</span> storage instead of <span class="math notranslate nohighlight">\(O(nS)\)</span>, and genealogical statistics can
+be computed in <span class="math notranslate nohighlight">\(O(n)\)</span> time instead of <span class="math notranslate nohighlight">\(O(nS)\)</span>.</p>
+</section>
+<section id="building-it-yourself-the-minimal-sweep-simulator">
+<h2>Building It Yourself: The Minimal Sweep Simulator<a class="headerlink" href="#building-it-yourself-the-minimal-sweep-simulator" title="Link to this heading"></a></h2>
+<p>To consolidate everything from this Timepiece, here is a minimal but complete
+sweep simulator in Python. It generates a trajectory, runs the structured
+coalescent, and computes the expected diversity reduction around the selected site.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">minimal_discoal</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">r_per_site</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">n_sites</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A minimal discoal-like simulator that computes the diversity</span>
+<span class="sd">    profile around a selective sweep.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Sample size.</span>
+<span class="sd">    N : int</span>
+<span class="sd">        Diploid effective population size.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Selection coefficient.</span>
+<span class="sd">    r_per_site : float</span>
+<span class="sd">        Recombination rate per site per generation.</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Sequence length.</span>
+<span class="sd">    n_sites : int</span>
+<span class="sd">        Number of sites to evaluate along the sequence.</span>
+<span class="sd">    seed : int</span>
+<span class="sd">        Random seed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    positions : ndarray</span>
+<span class="sd">        Positions along the sequence.</span>
+<span class="sd">    relative_diversity : ndarray</span>
+<span class="sd">        Diversity at each position relative to neutral expectation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">two_N</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">N</span>
+    <span class="n">selected_pos</span> <span class="o">=</span> <span class="n">L</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="c1"># Generate trajectory (deterministic for speed)</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">two_N</span>
+    <span class="n">traj</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x0</span>
+    <span class="k">while</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">two_N</span><span class="p">:</span>
+        <span class="n">traj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">s</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">s</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">traj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">traj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+    <span class="n">T_sweep</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+
+    <span class="c1"># Neutral expected TMRCA for comparison</span>
+    <span class="n">neutral_expected_tmrca</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">two_N</span> <span class="o">/</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+                                  <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">n_sites</span><span class="p">)</span>
+    <span class="n">tmrcas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_sites</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">positions</span><span class="p">):</span>
+        <span class="n">r_site</span> <span class="o">=</span> <span class="n">r_per_site</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pos</span> <span class="o">-</span> <span class="n">selected_pos</span><span class="p">)</span>
+
+        <span class="c1"># Run structured coalescent (simplified: track only TMRCA)</span>
+        <span class="n">n_B</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="n">n_b</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_total</span> <span class="o">=</span> <span class="n">n</span>
+
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T_sweep</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">n_total</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">traj</span><span class="p">[</span><span class="n">step</span><span class="p">]</span>
+            <span class="n">bg_B</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">two_N</span> <span class="o">*</span> <span class="n">x</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">bg_b</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">two_N</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+
+            <span class="c1"># Check for events this generation</span>
+            <span class="n">rate_cB</span> <span class="o">=</span> <span class="n">n_B</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_B</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">bg_B</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_B</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">rate_cb</span> <span class="o">=</span> <span class="n">n_b</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_b</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">bg_b</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_b</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">rate_mBb</span> <span class="o">=</span> <span class="n">n_B</span> <span class="o">*</span> <span class="n">r_site</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_B</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">rate_mbB</span> <span class="o">=</span> <span class="n">n_b</span> <span class="o">*</span> <span class="n">r_site</span> <span class="o">*</span> <span class="n">x</span> <span class="k">if</span> <span class="n">n_b</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">total</span> <span class="o">=</span> <span class="n">rate_cB</span> <span class="o">+</span> <span class="n">rate_cb</span> <span class="o">+</span> <span class="n">rate_mBb</span> <span class="o">+</span> <span class="n">rate_mbB</span>
+
+            <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">u</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">*</span> <span class="n">total</span>
+                <span class="k">if</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">rate_cB</span><span class="p">:</span>
+                    <span class="n">n_B</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">n_total</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">rate_cB</span> <span class="o">+</span> <span class="n">rate_cb</span><span class="p">:</span>
+                    <span class="n">n_b</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">n_total</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">rate_cB</span> <span class="o">+</span> <span class="n">rate_cb</span> <span class="o">+</span> <span class="n">rate_mBb</span><span class="p">:</span>
+                    <span class="n">n_B</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">n_b</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">n_b</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">n_B</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Forced coalescence of remaining B lineages</span>
+        <span class="k">if</span> <span class="n">n_B</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">n_total</span> <span class="o">-=</span> <span class="p">(</span><span class="n">n_B</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">n_B</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Neutral coalescent for remaining lineages</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">T_sweep</span>
+        <span class="k">while</span> <span class="n">n_total</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">n_total</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_total</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">two_N</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">+=</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+            <span class="n">n_total</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="n">tmrcas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="n">relative_diversity</span> <span class="o">=</span> <span class="n">tmrcas</span> <span class="o">/</span> <span class="n">neutral_expected_tmrca</span>
+    <span class="k">return</span> <span class="n">positions</span><span class="p">,</span> <span class="n">relative_diversity</span>
+
+<span class="c1"># Generate the classic diversity valley around a sweep</span>
+<span class="n">positions</span><span class="p">,</span> <span class="n">rel_div</span> <span class="o">=</span> <span class="n">minimal_discoal</span><span class="p">(</span>
+    <span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">r_per_site</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="mi">200_000</span><span class="p">,</span> <span class="n">n_sites</span><span class="o">=</span><span class="mi">100</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Diversity profile around a hard sweep (s=0.01, N=10000):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Position&#39;</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Relative diversity&#39;</span><span class="si">:</span><span class="s2">&gt;20</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">positions</span><span class="p">),</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">positions</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;10.0f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">rel_div</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;20.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># The characteristic &quot;valley&quot; pattern:</span>
+<span class="c1"># - At the selected site (center): diversity ~ 0 (compressed by the sweep)</span>
+<span class="c1"># - Far from the site: diversity ~ 1 (neutral)</span>
+<span class="c1"># - The width of the valley depends on r/s</span>
+</pre></div>
+</div>
+</section>
+<section id="summary-the-same-gears-different-cases">
+<h2>Summary: The Same Gears, Different Cases<a class="headerlink" href="#summary-the-same-gears-different-cases" title="Link to this heading"></a></h2>
+<p>discoal and msprime implement the same mathematical model – the structured
+coalescent under selection – but wrap it in different engineering:</p>
+<ol class="arabic simple">
+<li><p><strong>discoal</strong> is a standalone tool that speaks the language of population genetics
+(<span class="math notranslate nohighlight">\(\theta\)</span>, <span class="math notranslate nohighlight">\(\rho\)</span>, <span class="math notranslate nohighlight">\(\alpha\)</span>), supports the full range of
+sweep types (hard, soft, partial), and outputs classic ms-format haplotype
+matrices. It was purpose-built for sweep simulation.</p></li>
+<li><p><strong>msprime</strong> is a general-purpose coalescent simulator that added sweep support
+by grafting the structured coalescent onto its existing tree sequence machinery.
+It currently supports only hard sweeps, but the tree sequence output and
+composable model framework make it the better choice for large-scale
+simulations and integration with other tools.</p></li>
+</ol>
+<p>For training data for machine learning classifiers (as in Kern &amp; Schrider’s
+diploS/HIC), discoal remains the tool of choice: its soft sweep and partial
+sweep support is essential for generating the training data that distinguishes
+these sweep types.</p>
+<p>For understanding the algorithm itself, both implementations teach the same lesson:
+<strong>natural selection at one site reshapes the genealogy at linked sites, and the
+structured coalescent is the mathematical lens that makes this visible</strong>.</p>
+<div class="admonition-the-watchmaker-s-postscript admonition">
+<p class="admonition-title">The watchmaker’s postscript</p>
+<p>Building this Timepiece, you have seen how a single parameter – the selection
+coefficient <span class="math notranslate nohighlight">\(s\)</span> – transforms the neutral clockwork into something richer.
+The mainspring (trajectory) drives the escapement (structured coalescent),
+which turns the gear train (recombination as migration), which moves the hands
+on the dial (the diversity profile).</p>
+<p>The mechanism is the same whether you build it in C (discoal) or graft it onto
+an existing movement (msprime). What matters is understanding the gears.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sweep_types.html" class="btn btn-neutral float-left" title="Hard, Soft, and Partial Sweeps" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo.html" class="btn btn-neutral float-right" title="Demo: Running discoal on Simulated Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

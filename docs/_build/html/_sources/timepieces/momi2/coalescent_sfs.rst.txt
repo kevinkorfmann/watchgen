@@ -67,6 +67,23 @@ SFS entry :math:`b \in \{1, \ldots, n-1\}` and columns indexed by epoch
    W_{b,j} &= \frac{(2j+1)(n - 2b)}{j(n + j + 1)} W_{b,j-1}
               - \frac{(j+1)(2j+3)(n-j)}{j(2j-1)(n+j+1)} W_{b,j-2}
 
+**Why these specific coefficients?** The W-matrix entries are derived from the
+hypergeometric distribution. When there are :math:`j` ancestral lineages
+partitioning :math:`n` samples, the probability that a random lineage has
+exactly :math:`b` descendants involves Hahn polynomials -- a family of
+orthogonal polynomials on discrete sets. The three-term recurrence above is the
+recurrence relation for these polynomials. Notice two features:
+
+- The factor :math:`(n - 2b)` appears in both :math:`W_{b,2}` and the
+  recursion. When :math:`b = n/2` (the folded midpoint), this factor is zero,
+  which reflects the symmetry of the neutral SFS: singletons and
+  :math:`(n-1)`-tons have the same expectation under exchangeability.
+
+- The recursion is **three-term** (each :math:`W_{b,j}` depends on the two
+  previous columns), which is characteristic of orthogonal polynomial
+  recurrences. This structure allows the entire matrix to be computed in
+  :math:`O(n^2)` time -- one pass through the columns.
+
 .. code-block:: python
 
    import numpy as np
@@ -311,5 +328,177 @@ Exercises
    does the joint SFS have? For what values of :math:`k` and :math:`n` does
    this become impractical to store? How does ``momi2``'s approach avoid this
    problem?
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Verify the neutral SFS
+
+   Under a constant population, the expected time with :math:`j` lineages is
+   :math:`E[T_{jj}] = 2 / (j(j-1))`. Multiplying by the W-matrix should yield
+   an SFS proportional to :math:`1/b`.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      for n in [10, 50, 100]:
+          W = w_matrix(n)
+          j_vals = np.arange(2, n + 1)
+          E_Tjj = 2.0 / (j_vals * (j_vals - 1))
+          expected_sfs = W @ E_Tjj
+
+          bb = np.arange(1, n)
+          ratio = expected_sfs / (1.0 / bb)
+          # All ratios should be identical (SFS proportional to 1/b)
+          assert np.allclose(ratio, ratio[0], atol=1e-10), f"Failed for n={n}"
+          print(f"n={n}: ratio = {ratio[0]:.6f} (constant across all b)")
+
+   The ratio is constant for every sample size, confirming that the W-matrix
+   correctly converts neutral coalescence times into the :math:`1/b` spectrum.
+
+.. admonition:: Solution 2: Population expansion and the SFS
+
+   We model a 10-fold expansion at time :math:`T = 0.1 \times 2N_0`. Before the
+   expansion (going backward), the population had size :math:`N_0`; after, it has
+   size :math:`10 N_0`. We compute expected coalescence times in each epoch and
+   combine them.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 30
+      N0 = 1000
+      N_new = 10 * N0
+      T = 0.1 * 2 * N0  # expansion time in generations
+
+      j_vals = np.arange(2, n + 1)
+      rate = j_vals * (j_vals - 1) / 2.0
+
+      # Recent epoch (size N_new, duration T)
+      t_recent = 2.0 * T / N_new
+      E_Tjj_recent = (1.0 - np.exp(-rate * t_recent)) / rate
+
+      # Ancestral epoch (size N0, infinite duration)
+      # Probability of j lineages surviving the recent epoch
+      p_survive = np.exp(-rate * t_recent)
+      E_Tjj_ancient = p_survive / rate  # remaining expected time in ancestral epoch
+
+      # Scale ancestral epoch by ratio of population sizes
+      # (the rate matrix is the same but time runs at different speed)
+      E_Tjj_total = E_Tjj_recent + E_Tjj_ancient
+
+      W = w_matrix(n)
+      sfs_expansion = W @ E_Tjj_total
+
+      # Neutral expectation for comparison
+      E_Tjj_neutral = 2.0 / (j_vals * (j_vals - 1))
+      sfs_neutral = W @ E_Tjj_neutral
+
+      bb = np.arange(1, n)
+      ratio = sfs_expansion / sfs_neutral
+      print("SFS ratio (expansion / neutral):")
+      for b in range(len(bb)):
+          print(f"  b={bb[b]}: {ratio[b]:.4f}")
+
+   The expansion creates an **excess of rare variants** (low-frequency entries,
+   small :math:`b`). This is because the large recent population size suppresses
+   coalescence, leaving many young lineages that accumulate singleton and
+   doubleton mutations. High-frequency entries are relatively depleted.
+
+.. admonition:: Solution 3: Bottleneck signature
+
+   A bottleneck is modeled as three epochs: recent (size :math:`N_0`), bottleneck
+   (size :math:`0.1 N_0`, duration :math:`0.05 \times 2N_0`), and ancestral
+   (size :math:`N_0`).
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 30
+      N0 = 1000
+      N_bot = 0.1 * N0
+      T_bot_start = 0.2 * 2 * N0   # bottleneck starts (going backward)
+      T_bot_dur = 0.05 * 2 * N0    # bottleneck duration
+
+      j_vals = np.arange(2, n + 1)
+      rate = j_vals * (j_vals - 1) / 2.0
+
+      # Epoch 1: recent (size N0, duration T_bot_start)
+      t1 = 2.0 * T_bot_start / N0
+      E_Tjj_1 = (1.0 - np.exp(-rate * t1)) / rate
+      p_surv_1 = np.exp(-rate * t1)
+
+      # Epoch 2: bottleneck (size N_bot, duration T_bot_dur)
+      t2 = 2.0 * T_bot_dur / N_bot
+      E_Tjj_2 = p_surv_1 * (1.0 - np.exp(-rate * t2)) / rate
+      p_surv_2 = p_surv_1 * np.exp(-rate * t2)
+
+      # Epoch 3: ancestral (size N0, infinite)
+      E_Tjj_3 = p_surv_2 / rate
+
+      E_Tjj_total = E_Tjj_1 + E_Tjj_2 + E_Tjj_3
+
+      W = w_matrix(n)
+      sfs_bottleneck = W @ E_Tjj_total
+
+      # Neutral expectation
+      E_Tjj_neutral = 2.0 / (j_vals * (j_vals - 1))
+      sfs_neutral = W @ E_Tjj_neutral
+
+      # Simple size change (permanently smaller, no recovery)
+      t_simple = 2.0 * T_bot_start / N0
+      E_Tjj_simple_1 = (1.0 - np.exp(-rate * t_simple)) / rate
+      p_surv_simple = np.exp(-rate * t_simple)
+      E_Tjj_simple_2 = p_surv_simple / rate * (N0 / N_bot)
+      sfs_simple = W @ (E_Tjj_simple_1 + E_Tjj_simple_2)
+
+      bb = np.arange(1, n)
+      print("Ratio to neutral (bottleneck vs simple size change):")
+      for b in range(min(10, len(bb))):
+          print(f"  b={bb[b]}: bottleneck={sfs_bottleneck[b]/sfs_neutral[b]:.4f}, "
+                f"simple={sfs_simple[b]/sfs_neutral[b]:.4f}")
+
+   Unlike a simple permanent size change, the bottleneck produces a
+   characteristic **U-shaped distortion**: an excess of both rare and common
+   variants (compared to neutral) with a deficit at intermediate frequencies.
+   The brief period of intense drift forces rapid coalescence of many lineages,
+   followed by recovery to normal drift rates. A permanent size change, by
+   contrast, shifts the entire spectrum monotonically.
+
+.. admonition:: Solution 4: Multi-population SFS dimensions
+
+   For :math:`k` populations each of sample size :math:`n`, the joint SFS has
+   shape :math:`(n+1)^k`, so the total number of entries is:
+
+   .. math::
+
+      \text{entries} = (n+1)^k
+
+   .. code-block:: python
+
+      import numpy as np
+
+      print("Joint SFS dimensions (n+1)^k:")
+      for k in [2, 3, 4, 5, 6]:
+          for n in [10, 20, 50]:
+              entries = (n + 1) ** k
+              mem_gb = entries * 8 / 1e9  # 8 bytes per float64
+              print(f"  k={k}, n={n}: {entries:.2e} entries ({mem_gb:.2f} GB)")
+
+   For :math:`k = 3, n = 50`: :math:`51^3 \approx 1.3 \times 10^5` entries (manageable).
+   For :math:`k = 5, n = 50`: :math:`51^5 \approx 3.5 \times 10^8` entries (~2.7 GB).
+   For :math:`k = 6, n = 50`: :math:`51^6 \approx 1.8 \times 10^{10}` entries (~133 GB, impractical).
+
+   Grid-based methods like ``dadi`` are limited by this exponential scaling.
+   ``momi2`` avoids it by **never constructing the full joint SFS tensor**.
+   Instead, it processes the event tree one node at a time, only ever
+   holding tensors with as many axes as the number of *currently active*
+   populations at that point in the tree. At a merge event, two axes are
+   replaced by one (via convolution), keeping the working tensor small.
+   The cost scales as :math:`O(\sum_{\text{events}} n_{\text{local}}^2)` rather
+   than :math:`O((n+1)^k)`.
 
 Next: :ref:`moran_model`

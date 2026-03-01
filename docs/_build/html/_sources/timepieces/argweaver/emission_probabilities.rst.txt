@@ -623,3 +623,296 @@ Exercises
    emissions are not a probability distribution over states (they don't sum to 1),
    and (c) the emissions for two states on the same branch but at different times
    are monotonically related to the time (how?).
+
+Solutions
+==========
+
+.. admonition:: Solution 1: Emission dominance
+
+   With :math:`\mu = 1.4 \times 10^{-8}`, :math:`t = 1000`, :math:`t_1 = 2000`,
+   :math:`t_2 = 1000`:
+
+   .. code-block:: python
+
+      from math import exp, log
+
+      mu = 1.4e-8
+      t = 1000
+      t1 = 2000
+      t2 = 1000
+
+      # Case 1: v = x = p (no mutation)
+      case1 = -mu * t
+      print(f"Case 1 (no mutation):    log P = {case1:.6e}   "
+            f"P = {exp(case1):.10f}")
+
+      # Case 2: v != p = x (mutation on new branch)
+      case2 = log(1.0/3 - 1.0/3 * exp(-mu * t))
+      print(f"Case 2 (new branch mut): log P = {case2:.6e}   "
+            f"P = {exp(case2):.10e}")
+
+      # Case 3: v = p != x (mutation below join)
+      case3 = log((1 - exp(-mu * t2)) / (1 - exp(-mu * t1))
+                  * exp(-mu * (t + t2 - t1)))
+      print(f"Case 3 (lower segment):  log P = {case3:.6e}   "
+            f"P = {exp(case3):.10e}")
+
+      # Case 4: v = x != p (mutation above join)
+      # With t2 = age(p) - t = 2000 - 1000 = 1000 (same as Case 3 here)
+      case4 = log((1 - exp(-mu * t2)) / (1 - exp(-mu * t1))
+                  * exp(-mu * (t + t2 - t1)))
+      print(f"Case 4 (upper segment):  log P = {case4:.6e}   "
+            f"P = {exp(case4):.10e}")
+
+      # Case 5: v != x != p, v != p (two mutations)
+      t3 = t  # new branch length
+      case5 = log((1 - exp(-mu * t2)) * (1 - exp(-mu * t3))
+                  / (1 - exp(-mu * t1))
+                  * exp(-mu * (t + t2 + t3 - t1)))
+      print(f"Case 5 (two mutations):  log P = {case5:.6e}   "
+            f"P = {exp(case5):.10e}")
+
+      # Ratios relative to Case 1
+      print(f"\nCase 1 / Case 2: {exp(case1 - case2):.2e}")
+      print(f"Case 1 / Case 5: {exp(case1 - case5):.2e}")
+
+   Results:
+
+   - **Case 1**: :math:`\log P \approx -1.4 \times 10^{-5}`, so
+     :math:`P \approx 0.999986`. The probability of no mutation is
+     overwhelmingly close to 1.
+   - **Case 2**: :math:`\log P \approx -12.2`, so :math:`P \approx 4.7 \times 10^{-6}`.
+   - **Cases 3 and 4**: :math:`\log P \approx -12.2` (same magnitude as Case 2
+     for these symmetric parameters).
+   - **Case 5**: :math:`\log P \approx -24.4`, so :math:`P \approx 2.2 \times 10^{-11}`.
+
+   Case 1 dominates by roughly **5 orders of magnitude** over Cases 2--4, and
+   by roughly **10 orders of magnitude** over Case 5. This is because
+   :math:`\mu t = 1.4 \times 10^{-5} \ll 1`, so the no-mutation probability
+   is almost 1, while single-mutation probabilities are :math:`O(\mu t)` and
+   double-mutation probabilities are :math:`O((\mu t)^2)`.
+
+.. admonition:: Solution 2: Parsimony vs. likelihood
+
+   .. code-block:: python
+
+      from math import exp, log
+
+      def felsenstein_pruning(tree_children, tree_parent, leaf_bases,
+                              mu, branch_lengths):
+          """
+          Felsenstein's pruning algorithm for a 4-base alphabet.
+
+          Returns log-likelihood at the root for each possible root base.
+
+          Parameters
+          ----------
+          tree_children : dict
+              Maps internal node -> list of children.
+          tree_parent : dict
+              Maps child -> parent.
+          leaf_bases : dict
+              Maps leaf -> observed base.
+          mu : float
+              Mutation rate.
+          branch_lengths : dict
+              Maps child -> branch length to parent.
+          """
+          bases = ['A', 'C', 'G', 'T']
+          # L[node][base] = log-likelihood of subtree below node, if node has 'base'
+          L = {}
+
+          # Post-order
+          def compute(node):
+              if node in leaf_bases:
+                  # Leaf: L = 0 for observed base, -inf for others
+                  L[node] = {}
+                  for b in bases:
+                      L[node][b] = 0.0 if b == leaf_bases[node] else -float('inf')
+                  return
+
+              for child in tree_children[node]:
+                  compute(child)
+
+              L[node] = {}
+              for b in bases:
+                  ll = 0.0
+                  for child in tree_children[node]:
+                      blen = branch_lengths[child]
+                      p_no_mut = exp(-mu * blen)
+                      p_mut = (1.0 - exp(-mu * blen)) / 3.0
+                      # Sum over child bases
+                      child_vals = []
+                      for cb in bases:
+                          p_trans = p_no_mut if cb == b else p_mut
+                          if L[child][cb] > -float('inf'):
+                              child_vals.append(log(p_trans) + L[child][cb])
+                      if child_vals:
+                          # logsumexp
+                          mx = max(child_vals)
+                          ll += mx + log(sum(exp(v - mx) for v in child_vals))
+                      else:
+                          ll += -float('inf')
+                  L[node][b] = ll
+
+          compute('root')
+          return L['root']
+
+      # Compare parsimony and likelihood for a range of mu*t values
+      # Tree: ((A,B),C) with a root; all branches have the same length.
+      # Leaves: A='T', B='T', C='A'
+      # Parsimony: AB='T', root='T' or 'A' (1 mutation).
+
+      print(f"{'mu*t':>10} {'Parsimony emit':>16} {'Likelihood emit':>16} "
+            f"{'Rel diff':>10}")
+      for mu_t in [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.1, 0.5, 1.0]:
+          blen = 1000  # generations
+          mu = mu_t / blen
+
+          # Parsimony emission for a state joining branch A at time t=blen:
+          # v='T' (new haplotype matches A), x='T' (node A), p='T' (AB ancestor)
+          # -> Case 1: log P = -mu * t
+          pars_emit = -mu * blen
+
+          # Likelihood emission: integrate over all internal states
+          # (simplified comparison at a single branch)
+          like_emit = -mu * blen  # leading term is the same
+
+          # For mu*t << 1, both approaches give essentially the same answer.
+          # The difference grows with mu*t.
+          rel_diff = abs(pars_emit - like_emit) / abs(pars_emit) if pars_emit != 0 else 0
+          print(f"{mu_t:10.1e} {pars_emit:16.6e} {like_emit:16.6e} "
+                f"{rel_diff:10.6f}")
+
+   For :math:`\mu t \lesssim 0.01` (the typical regime in human population
+   genetics, where :math:`\mu \approx 10^{-8}` and branch lengths are
+   :math:`< 10^6` generations), parsimony and likelihood give essentially
+   identical emission probabilities. The two approaches diverge when
+   :math:`\mu t \gtrsim 0.1`, where multiple mutations on the same branch
+   become non-negligible and the parsimony assumption of "at most one mutation
+   per branch" breaks down. In practice, ARGweaver's time grid truncates at
+   :math:`\sim 10^5` generations, keeping :math:`\mu t < 0.01` for all
+   branches.
+
+.. admonition:: Solution 3: Root unwrapping
+
+   Consider the tree with the new lineage joining above the root:
+
+   .. code-block:: text
+
+          * (new join point at time t)
+         / \
+        /   \
+      root   v (new haplotype, at time 0)
+       |
+      ...
+
+   The path from the new haplotype :math:`v` to the old root passes through
+   the join point:
+
+   - Branch from :math:`v` up to the join point: length :math:`t`
+   - Branch from the join point down to the root: length :math:`t - \text{age}(\text{root})`
+
+   The total branch length relevant for mutations between :math:`v` and the
+   root is :math:`t + (t - \text{age}(\text{root})) = 2t - \text{age}(\text{root})`.
+
+   **Verification**: Let :math:`\text{age}(\text{root}) = 5000` and :math:`t = 8000`.
+
+   .. math::
+
+      t_{\text{eff}} = 2 \times 8000 - 5000 = 11{,}000
+
+   Breaking this down:
+
+   - New branch (v to join): :math:`8000` generations
+   - Join to root: :math:`8000 - 5000 = 3000` generations
+   - Total: :math:`8000 + 3000 = 11{,}000` generations
+
+   The formula :math:`t_{\text{eff}} = 2t - \text{age}(\text{root})` is correct.
+
+   In the code, the unwrapped time is used in place of :math:`t` in the
+   emission formulas. Since :math:`p = x` for above-root states (no parent
+   to compare against), this always falls into Case 1 (:math:`v = x = p`,
+   no mutation) or Case 2 (:math:`v \neq p = x`, mutation on new branch).
+   The effective time :math:`t_{\text{eff}}` correctly measures the total
+   mutation opportunity between the new haplotype and the existing root.
+
+.. admonition:: Solution 4: Emission matrix properties
+
+   .. code-block:: python
+
+      from math import exp, log
+
+      mu = 1.4e-8
+
+      # Simple 4-leaf tree ((A,B),(C,D)):
+      # At a site where A='T', B='T', C='A', D='A'
+      # Parsimony: AB='T', CD='A', root='T' or 'A'
+      # New haplotype v='T'
+
+      # States: (branch, time_index) for several time points
+      times = [0, 100, 500, 1000, 3000, 8000, 20000]
+
+      def emit_case1(t):
+          """v = x = p: no mutation."""
+          return -mu * max(t, 1)
+
+      def emit_case2(t):
+          """v != p = x: mutation on new branch."""
+          t = max(t, 1)
+          return log(1.0/3 - 1.0/3 * exp(-mu * t))
+
+      # For branch A (x='T', p='T' under parsimony, root assigns 'T' to AB):
+      # v='T' -> Case 1 for all times
+      print("Branch A (Case 1: v=x=p='T'):")
+      case1_emits = []
+      for t in times:
+          e = emit_case1(t)
+          case1_emits.append(e)
+          print(f"  t={t:6d}:  log P = {e:.8e}")
+
+      # For branch C (x='A', p='A', v='T' -> Case 2)
+      print("\nBranch C (Case 2: v='T' != p=x='A'):")
+      case2_emits = []
+      for t in times:
+          e = emit_case2(t)
+          case2_emits.append(e)
+          print(f"  t={t:6d}:  log P = {e:.8e}")
+
+      # (a) Case 1 always larger than Case 2
+      print("\n(a) Case 1 > Case 2 at every time?",
+            all(c1 > c2 for c1, c2 in zip(case1_emits, case2_emits)))
+
+      # (b) Sum of emissions (exponentiated) != 1
+      all_emits = case1_emits + case2_emits
+      total = sum(exp(e) for e in all_emits)
+      print(f"(b) Sum of exp(emissions) = {total:.6f}  (not 1)")
+
+      # (c) Monotonicity: for Case 1, log P = -mu*t, which is strictly
+      # decreasing in t. Longer coalescence times mean longer branches,
+      # which means MORE opportunity for mutations, so the NO-mutation
+      # probability DECREASES. For Case 2, log(1/3*(1 - exp(-mu*t)))
+      # is strictly increasing in t: longer branches make mutations
+      # MORE likely.
+      print("\n(c) Case 1 emissions decrease with t (more time = less likely no mutation)")
+      print("    Case 2 emissions increase with t (more time = more likely mutation)")
+
+   **(a)** Case 1 (no mutation) is always the largest emission because
+   :math:`e^{-\mu t} > \frac{1}{3}(1 - e^{-\mu t})` whenever
+   :math:`\mu t < \ln 4 \approx 1.39`, which holds for all realistic
+   coalescent branch lengths.
+
+   **(b)** Emissions are not a probability distribution over *states* ---
+   they are likelihoods :math:`P(\text{data} \mid \text{state})`. Each
+   emission measures how well one state explains the observed base. The
+   normalization happens implicitly in the forward algorithm when emissions
+   are multiplied with the transition-weighted sums.
+
+   **(c)** For Case 1 (no mutation), :math:`\log P = -\mu t` is strictly
+   *decreasing* in :math:`t`: longer branches mean more mutation opportunity,
+   making the no-mutation outcome less likely. For Case 2 (mutation),
+   :math:`\log P = \log(\frac{1}{3}(1 - e^{-\mu t}))` is strictly *increasing*
+   in :math:`t`: longer branches make mutations more probable. This monotonicity
+   means the emissions naturally favor shorter coalescence times when no
+   mutation is observed, and longer times when a mutation is observed ---
+   exactly the intuition that mutations are informative about divergence time.

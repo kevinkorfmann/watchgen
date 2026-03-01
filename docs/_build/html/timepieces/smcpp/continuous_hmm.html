@@ -1,0 +1,868 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Continuous HMM &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Population Splits" href="population_splits.html" />
+    <link rel="prev" title="The ODE System" href="ode_system.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece II: SMC++</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece II: SMC++</a></li>
+      <li class="breadcrumb-item active">The Continuous HMM</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="ode_system.html" class="btn btn-neutral float-left" title="The ODE System" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="population_splits.html" class="btn btn-neutral float-right" title="Population Splits" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-continuous-hmm">
+<span id="smcpp-hmm"></span><h1>The Continuous HMM<a class="headerlink" href="#the-continuous-hmm" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>From ODE rates to a working inference engine.</em></p>
+</div></blockquote>
+<section id="building-the-transition-matrix">
+<h2>Building the Transition Matrix<a class="headerlink" href="#building-the-transition-matrix" title="Link to this heading"></a></h2>
+<p>In <a class="reference internal" href="../psmc/index.html#psmc-timepiece"><span class="std std-ref">Timepiece I</span></a>, PSMC’s transition matrix encodes how the
+coalescence time <span class="math notranslate nohighlight">\(T\)</span> changes between adjacent genomic positions. The same
+structure applies in SMC++, but with a modified transition density that accounts
+for the undistinguished lineages.</p>
+<p>Recall the SMC transition mechanism from the <a class="reference internal" href="../../prerequisites/smc.html#smc"><span class="std std-ref">SMC prerequisite</span></a>:</p>
+<ol class="arabic simple">
+<li><p>At position <span class="math notranslate nohighlight">\(a\)</span>, the coalescence time is <span class="math notranslate nohighlight">\(T_a = s\)</span> (the current state).</p></li>
+<li><p>With probability <span class="math notranslate nohighlight">\(1 - e^{-\rho s}\)</span>, a recombination occurs on the two
+branches (total length <span class="math notranslate nohighlight">\(2s\)</span>).</p></li>
+<li><p>If recombination occurs, one lineage detaches at a time <span class="math notranslate nohighlight">\(u \in [0, s]\)</span> and
+must re-coalesce with the remaining lineage.</p></li>
+<li><p>The new coalescence time <span class="math notranslate nohighlight">\(T_{a+1}\)</span> depends on when re-coalescence happens.</p></li>
+</ol>
+<p>In PSMC, re-coalescence involves just two lineages: the detached lineage and the
+one it was separated from. In SMC++, the detached lineage may re-coalesce with
+<strong>any</strong> of the <span class="math notranslate nohighlight">\(j\)</span> lineages present at time <span class="math notranslate nohighlight">\(u\)</span> – the undistinguished
+lineages plus the one remaining from the original pair. The re-coalescence rate is
+therefore <span class="math notranslate nohighlight">\(h(u)\)</span> rather than <span class="math notranslate nohighlight">\(1/\lambda(u)\)</span>.</p>
+<p>This modifies the transition density. Where PSMC has:</p>
+<div class="math notranslate nohighlight">
+\[q_{\text{PSMC}}(t \mid s) = \frac{1}{\lambda(t)} \, \exp\!\left(-\int_s^t
+\frac{du}{\lambda(u)}\right) \quad \text{(for } t &gt; s \text{)}\]</div>
+<p>SMC++ has:</p>
+<div class="math notranslate nohighlight">
+\[q_{\text{SMC++}}(t \mid s) = h(t) \, \exp\!\left(-\int_s^t h(u) \, du\right)
+\quad \text{(for } t &gt; s \text{)}\]</div>
+<p>The structure is identical – both are <strong>hazard-function formulas</strong> from
+survival analysis: the probability of re-coalescence at time <span class="math notranslate nohighlight">\(t\)</span> equals
+the instantaneous rate at <span class="math notranslate nohighlight">\(t\)</span> (first factor) times the probability of
+<em>not</em> having re-coalesced before <span class="math notranslate nohighlight">\(t\)</span> (exponential factor). The only
+difference is the rate function:</p>
+<ul class="simple">
+<li><p><strong>PSMC</strong> (<span class="math notranslate nohighlight">\(1/\lambda(t)\)</span>): In the pairwise case, the detached lineage
+has exactly one partner to coalesce with, and the coalescence rate with that
+partner is <span class="math notranslate nohighlight">\(1/\lambda(t)\)</span> (the inverse population size at time <span class="math notranslate nohighlight">\(t\)</span>).</p></li>
+<li><p><strong>SMC++</strong> (<span class="math notranslate nohighlight">\(h(t)\)</span>): The detached lineage can coalesce with any of the
+<span class="math notranslate nohighlight">\(j\)</span> lineages present at time <span class="math notranslate nohighlight">\(t\)</span> – the <span class="math notranslate nohighlight">\(j - 1\)</span>
+undistinguished lineages plus the one remaining from the original pair. The
+rate is <span class="math notranslate nohighlight">\(h(t) = E[J(t)] / \lambda(t)\)</span>, where <span class="math notranslate nohighlight">\(E[J(t)]\)</span> is the
+expected number of available lineages from the ODE system. When <span class="math notranslate nohighlight">\(n = 1\)</span>
+(no undistinguished lineages), <span class="math notranslate nohighlight">\(E[J(t)] = 1\)</span> and <span class="math notranslate nohighlight">\(h(t)\)</span> reduces
+to <span class="math notranslate nohighlight">\(1/\lambda(t)\)</span> – recovering PSMC exactly.</p></li>
+</ul>
+<div class="admonition-biology-aside-why-more-lineages-help-with-recent-history admonition">
+<p class="admonition-title">Biology Aside – Why more lineages help with recent history</p>
+<p>In PSMC, the single pair of lineages coalesces quickly, so the HMM spends
+most of its time in deep coalescence-time states and has little power to
+resolve recent population size changes. In SMC++, the undistinguished
+lineages dramatically increase the coalescence rate in the recent past
+(many lineages means rapid coalescence), giving the HMM much more data
+about recent history. This is why SMC++ can resolve population size changes
+down to ~1,000 years ago while PSMC cannot see below ~20,000 years.</p>
+</div>
+</section>
+<section id="discretization">
+<h2>Discretization<a class="headerlink" href="#discretization" title="Link to this heading"></a></h2>
+<p>Following PSMC, we discretize the coalescence time into <span class="math notranslate nohighlight">\(K\)</span> intervals
+<span class="math notranslate nohighlight">\([t_0, t_1), [t_1, t_2), \ldots, [t_{K-1}, t_K)\)</span> with log-spacing. The
+transition matrix <span class="math notranslate nohighlight">\(P_{kl}\)</span> gives the probability of transitioning from
+interval <span class="math notranslate nohighlight">\(k\)</span> to interval <span class="math notranslate nohighlight">\(l\)</span> between adjacent positions.</p>
+<p>The discretized transition probability is:</p>
+<div class="math notranslate nohighlight">
+\[P_{kl} = (1 - r_k) \, \delta_{kl} + r_k \, q_{kl}\]</div>
+<p>where <span class="math notranslate nohighlight">\(r_k\)</span> is the probability of recombination given coalescence time in
+interval <span class="math notranslate nohighlight">\(k\)</span>, and <span class="math notranslate nohighlight">\(q_{kl}\)</span> is the probability that re-coalescence
+lands in interval <span class="math notranslate nohighlight">\(l\)</span>.</p>
+<p>The key difference from PSMC is that <span class="math notranslate nohighlight">\(q_{kl}\)</span> is computed using <span class="math notranslate nohighlight">\(h(t)\)</span>
+instead of <span class="math notranslate nohighlight">\(1/\lambda(t)\)</span>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="kn">import</span> <span class="n">expm</span>
+
+<span class="k">def</span> <span class="nf">compute_transition_matrix</span><span class="p">(</span><span class="n">time_breaks</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">n_undist</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the SMC++ transition matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_breaks : array-like</span>
+<span class="sd">        K+1 time boundaries [t_0, ..., t_K].</span>
+<span class="sd">    lambdas : array-like</span>
+<span class="sd">        Relative population sizes in each time interval.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Scaled recombination rate per bin.</span>
+<span class="sd">    n_undist : int</span>
+<span class="sd">        Number of undistinguished lineages.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    P : ndarray of shape (K, K)</span>
+<span class="sd">        Transition matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_breaks</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c1"># First solve the ODE to get h(t) at each time break</span>
+    <span class="n">Q_rate</span> <span class="o">=</span> <span class="n">build_rate_matrix</span><span class="p">(</span><span class="n">n_undist</span><span class="p">)</span>
+    <span class="n">p0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_undist</span><span class="p">)</span>
+    <span class="n">p0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="c1"># Compute h(t) at midpoints of each interval</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+    <span class="n">p_current</span> <span class="o">=</span> <span class="n">p0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">time_breaks</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">time_breaks</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">lam</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="c1"># Expected undistinguished lineages at midpoint</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">expm</span><span class="p">(</span><span class="n">dt</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">lam</span><span class="p">)</span> <span class="o">*</span> <span class="n">Q_rate</span><span class="p">)</span>
+        <span class="n">p_mid</span> <span class="o">=</span> <span class="n">M</span> <span class="o">@</span> <span class="n">p_current</span>
+        <span class="n">j_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_undist</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">h</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">j_values</span><span class="p">,</span> <span class="n">p_mid</span><span class="p">)</span> <span class="o">/</span> <span class="n">lam</span>
+        <span class="c1"># Advance to end of interval</span>
+        <span class="n">M_full</span> <span class="o">=</span> <span class="n">expm</span><span class="p">(</span><span class="n">dt</span> <span class="o">/</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">Q_rate</span><span class="p">)</span>
+        <span class="n">p_current</span> <span class="o">=</span> <span class="n">M_full</span> <span class="o">@</span> <span class="n">p_current</span>
+
+    <span class="c1"># Build transition matrix</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+        <span class="n">t_mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_breaks</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">time_breaks</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">lam_k</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="c1"># Recombination probability: 1 - exp(-rho * t_mid)</span>
+        <span class="n">r_k</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">t_mid</span><span class="p">)</span>
+
+        <span class="c1"># No recombination: stay in same state</span>
+        <span class="n">P</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">r_k</span>
+
+        <span class="c1"># With recombination: transition to new state via h(t)</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="n">dt_l</span> <span class="o">=</span> <span class="n">time_breaks</span><span class="p">[</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">time_breaks</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+            <span class="c1"># Approximate: probability of landing in interval l</span>
+            <span class="c1"># proportional to h * exp(-integral of h) * interval width</span>
+            <span class="n">q_kl</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="nb">sum</span><span class="p">(</span>
+                <span class="n">h</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">time_breaks</span><span class="p">[</span><span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">time_breaks</span><span class="p">[</span><span class="n">m</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+            <span class="p">))</span> <span class="o">*</span> <span class="n">dt_l</span>
+            <span class="n">P</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">+=</span> <span class="n">r_k</span> <span class="o">*</span> <span class="n">q_kl</span>
+
+    <span class="c1"># Normalize rows</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">P</span> <span class="o">/</span> <span class="n">P</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">P</span>
+
+<span class="c1"># Import from ode_system chapter</span>
+<span class="kn">from</span> <span class="nn">smcpp_ode_helpers</span> <span class="kn">import</span> <span class="n">build_rate_matrix</span>  <span class="c1"># conceptual import</span>
+</pre></div>
+</div>
+</section>
+<section id="emission-probabilities">
+<h2>Emission Probabilities<a class="headerlink" href="#emission-probabilities" title="Link to this heading"></a></h2>
+<p>The emission probabilities are essentially the same as in PSMC. For a bin with
+coalescence time in interval <span class="math notranslate nohighlight">\(k\)</span>, with midpoint time <span class="math notranslate nohighlight">\(t_k^*\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[e_k(1) = 1 - e^{-\theta \, t_k^*}, \qquad e_k(0) = e^{-\theta \, t_k^*}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\theta\)</span> is the scaled mutation rate per bin.</p>
+<p>For <strong>unphased diploid</strong> genotypes at a segregating site, the emission probabilities
+are modified to account for the ambiguity of which allele belongs to the
+distinguished lineage. The emission for a genotype <span class="math notranslate nohighlight">\(g \in \{0, 1, 2\}\)</span> (count
+of derived alleles) at the distinguished individual, given that the derived allele
+is present in some undistinguished lineages:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">emission_probability</span><span class="p">(</span><span class="n">genotype</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">allele_count</span><span class="p">,</span> <span class="n">n_undist</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Emission probability for unphased diploid data at the distinguished individual.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    genotype : int</span>
+<span class="sd">        0, 1, or 2 (count of derived alleles at the focal individual).</span>
+<span class="sd">    t : float</span>
+<span class="sd">        Coalescence time of the distinguished lineage.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Scaled mutation rate per bin.</span>
+<span class="sd">    allele_count : int</span>
+<span class="sd">        Number of derived alleles observed in the undistinguished panel.</span>
+<span class="sd">    n_undist : int</span>
+<span class="sd">        Total number of undistinguished haplotypes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        P(genotype, allele_count | T = t).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_mut</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">theta</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="c1"># For the distinguished haplotype:</span>
+    <span class="c1"># If genotype = 0: both alleles ancestral -&gt; (1 - p_mut)</span>
+    <span class="c1"># If genotype = 1: one derived, one ancestral -&gt; p_mut (approximately)</span>
+    <span class="c1"># If genotype = 2: both derived -&gt; p_mut (rare case)</span>
+
+    <span class="c1"># Simplified emission (full model integrates over allele assignments)</span>
+    <span class="k">if</span> <span class="n">genotype</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">theta</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">genotype</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">theta</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">theta</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span>
+</pre></div>
+</div>
+</section>
+<section id="composite-likelihood">
+<h2>Composite Likelihood<a class="headerlink" href="#composite-likelihood" title="Link to this heading"></a></h2>
+<p>SMC++ does not compute a single joint likelihood over all samples. Instead, it
+forms a <strong>composite likelihood</strong>: the product of marginal likelihoods computed
+for each choice of distinguished lineage.</p>
+<p>For <span class="math notranslate nohighlight">\(n\)</span> diploid samples, let <span class="math notranslate nohighlight">\(\mathbf{X}^{(i)}\)</span> denote the data when
+individual <span class="math notranslate nohighlight">\(i\)</span> is the distinguished sample and the remaining <span class="math notranslate nohighlight">\(n - 1\)</span>
+individuals form the undistinguished panel. The composite log-likelihood is:</p>
+<div class="math notranslate nohighlight">
+\[\ell_C(\boldsymbol{\lambda}) = \sum_{i=1}^{n} \ell_i(\boldsymbol{\lambda})
+= \sum_{i=1}^{n} \log P\!\left(\mathbf{X}^{(i)} \mid \boldsymbol{\lambda}\right)\]</div>
+<p>Each term <span class="math notranslate nohighlight">\(\ell_i\)</span> is computed using a standard HMM forward algorithm, with the
+transition matrix and emission probabilities specific to the <span class="math notranslate nohighlight">\((n - 1)\)</span>-lineage
+background.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">composite_log_likelihood</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">time_breaks</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the composite log-likelihood for SMC++.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : list of ndarray</span>
+<span class="sd">        data[i] is the observation sequence for the i-th distinguished sample.</span>
+<span class="sd">    time_breaks : array-like</span>
+<span class="sd">        Time interval boundaries.</span>
+<span class="sd">    lambdas : array-like</span>
+<span class="sd">        Piecewise-constant population sizes.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Scaled mutation rate.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Scaled recombination rate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Composite log-likelihood.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">n_undist</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># Haploid lineages minus the distinguished one</span>
+
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_breaks</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">total_ll</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
+        <span class="c1"># Build HMM for this distinguished sample</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">compute_transition_matrix</span><span class="p">(</span><span class="n">time_breaks</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">n_undist</span><span class="p">)</span>
+
+        <span class="c1"># Initial distribution (stationary)</span>
+        <span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">K</span><span class="p">)</span> <span class="o">/</span> <span class="n">K</span>  <span class="c1"># Simplified; true stationary from h(t)</span>
+
+        <span class="c1"># Forward algorithm</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">K</span><span class="p">))</span>
+
+        <span class="c1"># Initialize</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="n">t_mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_breaks</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">time_breaks</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">pi</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">emission_probability</span><span class="p">(</span><span class="n">obs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">t_mid</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_undist</span><span class="p">)</span>
+
+        <span class="c1"># Scale for numerical stability</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+        <span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/=</span> <span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Forward recursion</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="n">alpha</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="n">a</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">P</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">))</span>
+                <span class="n">t_mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_breaks</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">+</span> <span class="n">time_breaks</span><span class="p">[</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">alpha</span><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span> <span class="o">*=</span> <span class="n">emission_probability</span><span class="p">(</span><span class="n">obs</span><span class="p">[</span><span class="n">a</span><span class="p">],</span> <span class="n">t_mid</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_undist</span><span class="p">)</span>
+            <span class="n">scale</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">scale</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">alpha</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">/=</span> <span class="n">scale</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+
+        <span class="n">total_ll</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">scale</span><span class="p">[</span><span class="n">scale</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]))</span>
+
+    <span class="k">return</span> <span class="n">total_ll</span>
+</pre></div>
+</div>
+</section>
+<section id="gradient-based-optimization">
+<h2>Gradient-Based Optimization<a class="headerlink" href="#gradient-based-optimization" title="Link to this heading"></a></h2>
+<p>Unlike PSMC, which uses the EM algorithm, SMC++ uses <strong>gradient-based optimization</strong>
+(L-BFGS-B or similar). The gradient of the composite log-likelihood with respect to
+the population size parameters <span class="math notranslate nohighlight">\(\lambda_k\)</span> can be computed efficiently using:</p>
+<ol class="arabic simple">
+<li><p><strong>Automatic differentiation</strong> through the matrix exponential (using the
+eigendecomposition from the previous chapter).</p></li>
+<li><p><strong>The forward-backward algorithm</strong> to compute expected sufficient statistics.</p></li>
+</ol>
+<p>The optimization proceeds as:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Initialize lambda_k = 1 for all k
+             |
+             v
++-------&gt; Solve ODE system for current lambda
+|                |
+|                v
+|         Build HMM (transitions from h(t), emissions from theta)
+|                |
+|                v
+|         Forward algorithm -&gt; composite log-likelihood
+|                |
+|                v
+|         Compute gradient d(ell_C) / d(lambda_k)
+|                |
+|                v
+|         L-BFGS-B update: lambda &lt;- lambda + step * direction
+|                |
+|         Converged?
+|         NO ---+
+|
+YES
+|
+v
+Output: optimized lambda_0, ..., lambda_K
+</pre></div>
+</div>
+<p>The use of L-BFGS-B instead of EM has two advantages:</p>
+<ul class="simple">
+<li><p><strong>Faster convergence</strong>: L-BFGS-B typically converges in fewer iterations than EM,
+especially near the optimum where EM’s linear convergence is slow.</p></li>
+<li><p><strong>Regularization</strong>: It is straightforward to add penalty terms (e.g., smoothness
+penalties on <span class="math notranslate nohighlight">\(\lambda_k\)</span>) to the objective function, which helps prevent
+overfitting.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize</span>
+
+<span class="k">def</span> <span class="nf">fit_smcpp</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">time_breaks</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit SMC++ model using L-BFGS-B optimization.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : list of ndarray</span>
+<span class="sd">        Observation sequences for each distinguished sample.</span>
+<span class="sd">    time_breaks : array-like</span>
+<span class="sd">        Time interval boundaries.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Scaled mutation rate (fixed).</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Scaled recombination rate (fixed).</span>
+<span class="sd">    max_iter : int</span>
+<span class="sd">        Maximum optimization iterations.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lambdas : ndarray</span>
+<span class="sd">        Estimated piecewise-constant population sizes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_breaks</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c1"># Optimize in log-space for positivity</span>
+    <span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">log_lambdas</span><span class="p">):</span>
+        <span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_lambdas</span><span class="p">)</span>
+        <span class="c1"># Negative log-likelihood (minimize)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">composite_log_likelihood</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">time_breaks</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+
+    <span class="c1"># Initial guess: constant population</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
+        <span class="n">objective</span><span class="p">,</span>
+        <span class="n">x0</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="s1">&#39;L-BFGS-B&#39;</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="n">max_iter</span><span class="p">,</span> <span class="s1">&#39;disp&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="comparison-with-psmc">
+<h2>Comparison with PSMC<a class="headerlink" href="#comparison-with-psmc" title="Link to this heading"></a></h2>
+<p>The following table summarizes how SMC++ differs from PSMC:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 26.3%" />
+<col style="width: 36.8%" />
+<col style="width: 36.8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>PSMC</p></th>
+<th class="head"><p>SMC++</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Input</strong></p></td>
+<td><p>1 diploid genome (phased)</p></td>
+<td><p>1–hundreds of diploids (unphased)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Hidden state</strong></p></td>
+<td><p>Coalescence time <span class="math notranslate nohighlight">\(T\)</span></p></td>
+<td><p>Same: coalescence time <span class="math notranslate nohighlight">\(T\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Coalescence rate</strong></p></td>
+<td><p><span class="math notranslate nohighlight">\(1/\lambda(t)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(h(t) = E[J(t)]/\lambda(t)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Extra machinery</strong></p></td>
+<td><p>None</p></td>
+<td><p>ODE system for <span class="math notranslate nohighlight">\(p_j(t)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Optimization</strong></p></td>
+<td><p>EM algorithm</p></td>
+<td><p>L-BFGS-B with gradients</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Recent resolution</strong></p></td>
+<td><p>Poor (<span class="math notranslate nohighlight">\(&gt; 20{,}000\)</span> years)</p></td>
+<td><p>Good (down to <span class="math notranslate nohighlight">\(\sim 1{,}000\)</span> years)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Phasing required</strong></p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+</tr>
+</tbody>
+</table>
+<p>The fundamental architecture is the same: an HMM whose hidden states are discretized
+coalescence times. SMC++ adds one new gear (the ODE system) and replaces one
+(EM with L-BFGS-B), but the overall structure is recognizably PSMC’s.</p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>The continuous HMM is the mainspring of SMC++. It takes the coalescence rate
+<span class="math notranslate nohighlight">\(h(t)\)</span> from the ODE system and builds a complete inference engine:
+transition matrix, emission probabilities, composite likelihood across samples,
+and gradient-based optimization. The result is a demographic inference method
+that inherits PSMC’s elegant structure while dramatically improving resolution
+in the recent past.</p>
+<p>In the final chapter, we extend SMC++ to handle <strong>population splits</strong> –
+estimating divergence times and population-specific size histories from
+cross-population comparisons.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ode_system.html" class="btn btn-neutral float-left" title="The ODE System" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="population_splits.html" class="btn btn-neutral float-right" title="Population Splits" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

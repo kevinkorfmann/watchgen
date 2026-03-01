@@ -6,6 +6,18 @@ Overview of PSMC
 
    *Before assembling the watch, lay out every part and understand what it does.*
 
+.. figure:: /_static/figures/fig_mini_psmc.png
+   :width: 100%
+   :align: center
+
+   **PSMC at a glance.** Panel A: Coalescent density and survival functions under
+   different population sizes -- the statistical foundation that connects coalescence
+   times to demography. Panel B: Log-spaced time discretization converting continuous
+   time into HMM states. Panel C: The transition matrix heatmap showing how
+   coalescence times change between adjacent genomic bins. Panel D: Population size
+   reconstruction -- true vs inferred :math:`N(t)` under a bottleneck scenario,
+   demonstrating that the algorithm recovers the correct demographic history.
+
 Imagine holding the simplest watch that still tells useful time. It has just two
 hands -- no complications, no chronograph, no moon phase. Yet those two hands,
 driven by a precise internal mechanism, can tell you something profound: what

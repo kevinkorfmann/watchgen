@@ -1,0 +1,780 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Forward-Backward CS-HMM &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Segmentation and Caching" href="segmentation_and_caching.html" />
+    <link rel="prev" title="The Flow Field" href="flow_field.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece XIII: Gamma-SMC</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece XIII: Gamma-SMC</a></li>
+      <li class="breadcrumb-item active">The Forward-Backward CS-HMM</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="flow_field.html" class="btn btn-neutral float-left" title="The Flow Field" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="segmentation_and_caching.html" class="btn btn-neutral float-right" title="Segmentation and Caching" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-forward-backward-cs-hmm">
+<span id="gamma-smc-forward-backward"></span><h1>The Forward-Backward CS-HMM<a class="headerlink" href="#the-forward-backward-cs-hmm" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The mainspring: the engine that drives inference from one end of the genome to the other.</em></p>
+</div></blockquote>
+<p>With the gamma approximation (<a class="reference internal" href="gamma_approximation.html#gamma-smc-gamma-approximation"><span class="std std-ref">The Gamma Approximation</span></a>) providing
+exact emission updates and the flow field (<a class="reference internal" href="flow_field.html#gamma-smc-flow-field"><span class="std std-ref">The Flow Field</span></a>)
+providing approximate transition updates, we can now assemble the complete
+inference algorithm. This chapter describes the forward pass, the backward
+pass, and the formula for combining them into a full posterior at each
+position.</p>
+<p>In a mechanical watch, the mainspring stores energy and releases it steadily
+to drive the gear train. In Gamma-SMC, the forward-backward algorithm is the
+mainspring: it sweeps the accumulated evidence from one end of the genome to
+the other, building up the posterior at each position.</p>
+<div class="admonition-biology-aside-reading-the-genome-like-a-tape admonition">
+<p class="admonition-title">Biology Aside – Reading the genome like a tape</p>
+<p>The forward-backward algorithm scans the genome from left to right (and
+then right to left), accumulating evidence about the TMRCA at each
+position. This is possible because the genome is a linear sequence of
+observations – heterozygous or homozygous at each site – and the
+TMRCA at adjacent sites is correlated (it changes only when
+recombination occurs). The forward pass builds a running estimate: “given
+everything I’ve seen so far on this chromosome, what do I think the TMRCA
+is here?” The backward pass does the same from the other end. Combining
+both gives the best possible estimate at every position, using all the
+data from the entire chromosome.</p>
+</div>
+<section id="the-forward-algorithm">
+<h2>The Forward Algorithm<a class="headerlink" href="#the-forward-algorithm" title="Link to this heading"></a></h2>
+<p>The forward algorithm in a continuous-state HMM (CS-HMM) tracks the
+<strong>forward density</strong> – the probability density of the hidden state at
+position <span class="math notranslate nohighlight">\(i\)</span>, given all observations up to and including position
+<span class="math notranslate nohighlight">\(i\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\alpha}(x_i) := P(X_i = x_i \mid Y_{1:i} = y_{1:i})\]</div>
+<p>This is the continuous-state analogue of the forward variable
+<span class="math notranslate nohighlight">\(\alpha_k(i)\)</span> in discrete HMMs (see <a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">Hidden Markov Models</span></a>). Instead of a
+probability vector over <span class="math notranslate nohighlight">\(n\)</span> states, we have a probability density
+function over the continuous TMRCA.</p>
+<p>The recursion is:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\alpha}(x_i) = \frac{1}{c_i} \cdot P(y_i \mid x_i)
+\int_0^\infty P(x_i \mid x_{i-1}) \, \hat{\alpha}(x_{i-1}) \, dx_{i-1}\]</div>
+<p>where <span class="math notranslate nohighlight">\(c_i\)</span> is a scaling factor that ensures <span class="math notranslate nohighlight">\(\hat{\alpha}\)</span> is
+a normalized density. This recursion says: take the previous forward density,
+propagate it through the transition kernel (the integral), then update with
+the emission probability, and normalize.</p>
+<p>The <strong>Gamma-SMC forward pass</strong> approximates this recursion using two steps
+at each position:</p>
+<p><strong>Step 1: Transition.</strong> Apply the flow field <span class="math notranslate nohighlight">\(\mathcal{F}\)</span> to advance
+the gamma parameters through one transition step:</p>
+<div class="math notranslate nohighlight">
+\[(\alpha, \beta) \xrightarrow{\mathcal{F}} (\alpha', \beta')\]</div>
+<p>This replaces the integral
+<span class="math notranslate nohighlight">\(\int P(x_i \mid x_{i-1}) \hat{\alpha}(x_{i-1}) dx_{i-1}\)</span> with a
+single flow field lookup.</p>
+<p><strong>Step 2: Emission.</strong> Incorporate the observation using the conjugate update:</p>
+<div class="math notranslate nohighlight">
+\[(\alpha', \beta') \xrightarrow{Y_i} (\alpha' + Y_i, \; \beta' + \theta)\]</div>
+<p>(where <span class="math notranslate nohighlight">\(Y_i = 0\)</span> for hom, <span class="math notranslate nohighlight">\(Y_i = 1\)</span> for het, and the step is
+skipped for missing data).</p>
+<p><strong>Initialization.</strong> The prior on the TMRCA is the stationary distribution of
+the coalescent under constant population size, which is
+<span class="math notranslate nohighlight">\(\text{Exp}(1) = \text{Gamma}(1, 1)\)</span>. So the forward pass begins with
+<span class="math notranslate nohighlight">\((\alpha, \beta) = (1, 1)\)</span>, or equivalently
+<span class="math notranslate nohighlight">\((l_\mu, l_C) = (0, 0)\)</span>.</p>
+<div class="admonition-comparison-to-psmc-s-forward-pass admonition">
+<p class="admonition-title">Comparison to PSMC’s forward pass</p>
+<p>In PSMC (<a class="reference internal" href="../psmc/hmm_inference.html#psmc-hmm"><span class="std std-ref">The PSMC HMM and EM Algorithm</span></a>), the forward pass at each position performs:</p>
+<ol class="arabic simple">
+<li><p>A <strong>matrix-vector multiply</strong>: <span class="math notranslate nohighlight">\(\alpha_k(i) = \sum_l p_{lk} \alpha_l(i-1)\)</span>,
+which is <span class="math notranslate nohighlight">\(O(n^2)\)</span> in the number of time intervals.</p></li>
+<li><p>An <strong>elementwise multiply</strong>: <span class="math notranslate nohighlight">\(\alpha_k(i) \leftarrow e_k(y_i) \cdot \alpha_k(i)\)</span>,
+which is <span class="math notranslate nohighlight">\(O(n)\)</span>.</p></li>
+</ol>
+<p>Gamma-SMC replaces both operations with <span class="math notranslate nohighlight">\(O(1)\)</span> operations: a bilinear
+interpolation lookup (transition) and a parameter increment (emission). The
+difference in computational cost is dramatic: PSMC with <span class="math notranslate nohighlight">\(n = 64\)</span> time
+intervals requires <span class="math notranslate nohighlight">\(O(64^2) = O(4096)\)</span> operations per position;
+Gamma-SMC requires <span class="math notranslate nohighlight">\(O(1)\)</span>.</p>
+</div>
+<p>The forward pass proceeds along the genome, recording the gamma parameters
+<span class="math notranslate nohighlight">\((\alpha_i, \beta_i)\)</span> at each user-specified output position.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">gamma_smc_forward</span><span class="p">(</span><span class="n">observations</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">flow_field</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the Gamma-SMC forward pass.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    observations : list of int</span>
+<span class="sd">        Observation at each position: 1 (het), 0 (hom), -1 (missing).</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Scaled mutation rate per position.</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Scaled recombination rate per position.</span>
+<span class="sd">    flow_field : FlowField</span>
+<span class="sd">        Precomputed flow field with a .query(l_mu, l_C) method.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alphas : ndarray, shape (N,)</span>
+<span class="sd">        Forward shape parameter at each position.</span>
+<span class="sd">    betas : ndarray, shape (N,)</span>
+<span class="sd">        Forward rate parameter at each position.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observations</span><span class="p">)</span>
+    <span class="n">alphas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">betas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+
+    <span class="c1"># Initialize with the prior: Gamma(1, 1) = Exp(1)</span>
+    <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+        <span class="c1"># Step 1: Transition via flow field</span>
+        <span class="n">l_mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">alpha</span> <span class="o">/</span> <span class="n">beta</span><span class="p">)</span>
+        <span class="n">l_C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span>
+        <span class="n">dl_mu</span><span class="p">,</span> <span class="n">dl_C</span> <span class="o">=</span> <span class="n">flow_field</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">l_mu</span><span class="p">,</span> <span class="n">l_C</span><span class="p">)</span>
+        <span class="n">l_mu</span> <span class="o">+=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">dl_mu</span>  <span class="c1"># displacement scaled by rho</span>
+        <span class="n">l_C</span> <span class="o">+=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">dl_C</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">l_C</span><span class="p">)</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="mf">10.0</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">l_mu</span><span class="p">)</span>
+
+        <span class="c1"># Step 2: Emission update (conjugate)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># not missing</span>
+            <span class="n">alpha</span> <span class="o">+=</span> <span class="n">y</span>       <span class="c1"># +1 for het, +0 for hom</span>
+            <span class="n">beta</span> <span class="o">+=</span> <span class="n">theta</span>
+
+        <span class="n">alphas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="n">betas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">beta</span>
+
+    <span class="k">return</span> <span class="n">alphas</span><span class="p">,</span> <span class="n">betas</span>
+
+<span class="c1"># Demonstrate on a short synthetic sequence</span>
+<span class="n">obs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">50</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">30</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">19</span>
+<span class="n">theta</span><span class="p">,</span> <span class="n">rho</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0004</span>
+
+<span class="c1"># Use a trivial flow field (zero displacement) for illustration</span>
+<span class="k">class</span> <span class="nc">ZeroFlow</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">l_mu</span><span class="p">,</span> <span class="n">l_C</span><span class="p">):</span> <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+
+<span class="n">a_fwd</span><span class="p">,</span> <span class="n">b_fwd</span> <span class="o">=</span> <span class="n">gamma_smc_forward</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">ZeroFlow</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;After </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span><span class="si">}</span><span class="s2"> positions (</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span><span class="si">}</span><span class="s2"> hets):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Final forward: Gamma(</span><span class="si">{</span><span class="n">a_fwd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b_fwd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean TMRCA = </span><span class="si">{</span><span class="n">a_fwd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">b_fwd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-backward-pass-as-reversed-forward">
+<h2>The Backward Pass as Reversed Forward<a class="headerlink" href="#the-backward-pass-as-reversed-forward" title="Link to this heading"></a></h2>
+<p>In a standard discrete HMM, the backward algorithm computes
+<span class="math notranslate nohighlight">\(\beta_k(i) = P(Y_{i+1:N} \mid X_i = k)\)</span> using a recursion that runs
+from right to left. The continuous-state analogue is:</p>
+<div class="math notranslate nohighlight">
+\[\tilde{\alpha}(x_{i+1}) := P(X_{i+1} = x_{i+1} \mid Y_{i+1:N} = y_{i+1:N})\]</div>
+<p>Gamma-SMC uses a key reformulation: instead of deriving a separate backward
+recursion, it observes that the backward density can be obtained by <strong>running
+the forward algorithm on the reversed sequence</strong>. That is:</p>
+<ul class="simple">
+<li><p>Reverse the observation sequence: <span class="math notranslate nohighlight">\(y_N, y_{N-1}, \ldots, y_1\)</span>.</p></li>
+<li><p>Run the standard forward pass on this reversed sequence.</p></li>
+<li><p>At each position <span class="math notranslate nohighlight">\(i+1\)</span>, the resulting forward density is the backward
+density <span class="math notranslate nohighlight">\(\tilde{\alpha}(x_{i+1})\)</span>.</p></li>
+</ul>
+<p>This is possible because the SMC transition density is symmetric in a specific
+sense: reversing the sequence and re-running the forward algorithm produces
+the same mathematical object as the backward algorithm.</p>
+<div class="admonition-why-reuse-the-forward-algorithm admonition">
+<p class="admonition-title">Why reuse the forward algorithm?</p>
+<p>The forward-on-reversed approach has two advantages. First, it avoids
+implementing a separate backward recursion, reducing code complexity and
+the chance of bugs. Second, the flow field <span class="math notranslate nohighlight">\(\mathcal{F}\)</span> is the
+same in both directions (the SMC transition kernel under constant
+population size is time-reversible), so no additional precomputation is
+needed.</p>
+</div>
+</section>
+<section id="combining-forward-and-backward">
+<h2>Combining Forward and Backward<a class="headerlink" href="#combining-forward-and-backward" title="Link to this heading"></a></h2>
+<p>At each output position <span class="math notranslate nohighlight">\(i\)</span>, we now have:</p>
+<ul class="simple">
+<li><p>The forward density: <span class="math notranslate nohighlight">\(\hat{\alpha}(x_i) \approx \text{Gamma}(a, b)\)</span></p></li>
+<li><p>The backward density (after one transition step back from <span class="math notranslate nohighlight">\(i+1\)</span> to
+<span class="math notranslate nohighlight">\(i\)</span>): <span class="math notranslate nohighlight">\(\approx \text{Gamma}(a', b')\)</span></p></li>
+</ul>
+<p>To combine these into the full posterior
+<span class="math notranslate nohighlight">\(P(X_i = x_i \mid Y_{1:N} = y_{1:N})\)</span>, we use the result derived in
+Appendix D of the supplement:</p>
+<div class="math notranslate nohighlight">
+\[P(x_i \mid y_{1:N}) \propto \hat{\alpha}(x_i) \cdot
+\frac{\int_0^\infty P(x_i \mid x_{i+1}) \tilde{\alpha}(x_{i+1}) dx_{i+1}}{P(x_i)}\]</div>
+<p>The numerator involves the backward density propagated one step back through
+the transition. The denominator divides out the prior
+<span class="math notranslate nohighlight">\(P(x_i) = \text{Exp}(1) = \text{Gamma}(1, 1)\)</span>.</p>
+<p>Substituting the gamma approximations:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}P(x_i \mid y_{1:N})
+&amp;\propto x_i^{a-1} e^{-b x_i} \cdot x_i^{a'-1} e^{-b' x_i} / e^{-x_i} \\
+&amp;= x_i^{(a + a' - 1) - 1} \, e^{-(b + b' - 1) x_i}\end{split}\]</div>
+<p>This is the kernel of a <span class="math notranslate nohighlight">\(\text{Gamma}(a + a' - 1, b + b' - 1)\)</span>
+distribution. Therefore:</p>
+<div class="math notranslate nohighlight">
+\[X_i \mid Y_{1:N} \sim \text{Gamma}(a + a' - 1, \; b + b' - 1)\]</div>
+<div class="admonition-plain-language-summary-combining-forward-and-backward admonition">
+<p class="admonition-title">Plain-language summary – Combining forward and backward</p>
+<p>The forward pass says: “based on everything to the left on the
+chromosome, I think the TMRCA here is about X.” The backward pass says:
+“based on everything to the right, I think it’s about Y.” The combination
+merges these two independent sources of evidence into a single, more
+precise estimate. The subtraction of 1 from both parameters avoids
+counting the prior twice (both passes started from the same prior).
+The result is the <strong>full posterior</strong> at each position – the best estimate
+of the TMRCA given the entire chromosome.</p>
+</div>
+<div class="admonition-where-does-the-math-1-come-from admonition">
+<p class="admonition-title">Where does the <span class="math notranslate nohighlight">\(-1\)</span> come from?</p>
+<p>The <span class="math notranslate nohighlight">\(-1\)</span> in both <span class="math notranslate nohighlight">\(a + a' - 1\)</span> and <span class="math notranslate nohighlight">\(b + b' - 1\)</span> arises
+from dividing out the prior <span class="math notranslate nohighlight">\(\text{Gamma}(1, 1)\)</span>. The forward
+density <span class="math notranslate nohighlight">\(\text{Gamma}(a, b)\)</span> and the backward density
+<span class="math notranslate nohighlight">\(\text{Gamma}(a', b')\)</span> each include the prior once (they are
+posterior distributions that incorporate the prior). When we multiply them,
+the prior is counted twice. Dividing by the prior once gives the correct
+posterior, and dividing <span class="math notranslate nohighlight">\(\text{Gamma}(1, 1)\)</span> out of a product of
+two gammas subtracts 1 from both the shape and rate parameters.</p>
+<p>A useful sanity check: if we have no observations at all, the forward and
+backward densities are both the prior <span class="math notranslate nohighlight">\(\text{Gamma}(1, 1)\)</span>.
+Combining gives <span class="math notranslate nohighlight">\(\text{Gamma}(1 + 1 - 1, 1 + 1 - 1) = \text{Gamma}(1, 1)\)</span>,
+recovering the prior. This is correct – with no data, the posterior
+should equal the prior.</p>
+</div>
+<section id="the-backward-then-combine-procedure">
+<h3>The Backward-Then-Combine Procedure<a class="headerlink" href="#the-backward-then-combine-procedure" title="Link to this heading"></a></h3>
+<p>In practice, the combination works as follows:</p>
+<ol class="arabic simple">
+<li><p>Run the forward pass left-to-right. At each output position <span class="math notranslate nohighlight">\(i\)</span>,
+record <span class="math notranslate nohighlight">\((a_i, b_i)\)</span>.</p></li>
+<li><p>Run the forward pass right-to-left on the reversed sequence. At each
+output position <span class="math notranslate nohighlight">\(i+1\)</span>, record <span class="math notranslate nohighlight">\((a''_{i+1}, b''_{i+1})\)</span>.</p></li>
+<li><p>For each output position <span class="math notranslate nohighlight">\(i\)</span>, apply the flow field once to
+<span class="math notranslate nohighlight">\((a''_{i+1}, b''_{i+1})\)</span> to propagate the backward density from
+<span class="math notranslate nohighlight">\(i+1\)</span> back to <span class="math notranslate nohighlight">\(i\)</span>, giving <span class="math notranslate nohighlight">\((a'_i, b'_i)\)</span>.</p></li>
+<li><p>Combine:
+<span class="math notranslate nohighlight">\((\alpha_\text{post}, \beta_\text{post}) = (a_i + a'_i - 1, \; b_i + b'_i - 1)\)</span>.</p></li>
+</ol>
+<p>The additional flow field step in step 3 accounts for the transition from
+position <span class="math notranslate nohighlight">\(i+1\)</span> to position <span class="math notranslate nohighlight">\(i\)</span> – without it, the backward
+density would be aligned to position <span class="math notranslate nohighlight">\(i+1\)</span> instead of <span class="math notranslate nohighlight">\(i\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">gamma_smc_posterior</span><span class="p">(</span><span class="n">observations</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">flow_field</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the full Gamma-SMC posterior at each position.</span>
+
+<span class="sd">    Runs forward and backward passes and combines them.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    observations : list of int</span>
+<span class="sd">        Observation at each position: 1 (het), 0 (hom), -1 (missing).</span>
+<span class="sd">    theta, rho : float</span>
+<span class="sd">        Scaled mutation and recombination rates.</span>
+<span class="sd">    flow_field : FlowField</span>
+<span class="sd">        Precomputed flow field.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    post_alpha : ndarray</span>
+<span class="sd">        Posterior shape at each position.</span>
+<span class="sd">    post_beta : ndarray</span>
+<span class="sd">        Posterior rate at each position.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Forward pass (left to right)</span>
+    <span class="n">a_fwd</span><span class="p">,</span> <span class="n">b_fwd</span> <span class="o">=</span> <span class="n">gamma_smc_forward</span><span class="p">(</span><span class="n">observations</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">flow_field</span><span class="p">)</span>
+
+    <span class="c1"># Backward pass = forward pass on reversed sequence</span>
+    <span class="n">a_bwd_rev</span><span class="p">,</span> <span class="n">b_bwd_rev</span> <span class="o">=</span> <span class="n">gamma_smc_forward</span><span class="p">(</span>
+        <span class="n">observations</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">flow_field</span>
+    <span class="p">)</span>
+    <span class="c1"># Reverse the backward results to align with original positions</span>
+    <span class="n">a_bwd</span> <span class="o">=</span> <span class="n">a_bwd_rev</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">b_bwd</span> <span class="o">=</span> <span class="n">b_bwd_rev</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Combine: Gamma(a + a&#39; - 1, b + b&#39; - 1)</span>
+    <span class="n">post_alpha</span> <span class="o">=</span> <span class="n">a_fwd</span> <span class="o">+</span> <span class="n">a_bwd</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">post_beta</span> <span class="o">=</span> <span class="n">b_fwd</span> <span class="o">+</span> <span class="n">b_bwd</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">post_alpha</span><span class="p">,</span> <span class="n">post_beta</span>
+
+<span class="c1"># Demonstrate on the same synthetic sequence</span>
+<span class="n">a_post</span><span class="p">,</span> <span class="n">b_post</span> <span class="o">=</span> <span class="n">gamma_smc_posterior</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">ZeroFlow</span><span class="p">())</span>
+<span class="n">mean_tmrca</span> <span class="o">=</span> <span class="n">a_post</span> <span class="o">/</span> <span class="n">b_post</span>
+
+<span class="c1"># Sanity check: with no observations, posterior = prior Gamma(1,1)</span>
+<span class="n">a_empty</span><span class="p">,</span> <span class="n">b_empty</span> <span class="o">=</span> <span class="n">gamma_smc_posterior</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mi">10</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">ZeroFlow</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No observations: Gamma(</span><span class="si">{</span><span class="n">a_empty</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b_empty</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">) &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;(should be ~Gamma(1, 1))&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">With data (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span><span class="si">}</span><span class="s2"> positions):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Position 0:  mean TMRCA = </span><span class="si">{</span><span class="n">mean_tmrca</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Position 51 (het): mean TMRCA = </span><span class="si">{</span><span class="n">mean_tmrca</span><span class="p">[</span><span class="mi">51</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Position 99: mean TMRCA = </span><span class="si">{</span><span class="n">mean_tmrca</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="validity-of-the-combination">
+<h2>Validity of the Combination<a class="headerlink" href="#validity-of-the-combination" title="Link to this heading"></a></h2>
+<p>The combination formula
+<span class="math notranslate nohighlight">\(\text{Gamma}(a + a' - 1, b + b' - 1)\)</span> is valid only if:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(a + a' - 1 &gt; 0\)</span>, i.e., <span class="math notranslate nohighlight">\(a + a' &gt; 1\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(b + b' - 1 &gt; 0\)</span>, i.e., <span class="math notranslate nohighlight">\(b + b' &gt; 1\)</span></p></li>
+</ul>
+<p>Since the forward and backward passes both start from the prior
+<span class="math notranslate nohighlight">\(\text{Gamma}(1, 1)\)</span> and only add to the shape (via heterozygous
+observations) and rate (via homozygous and heterozygous observations), one
+might expect <span class="math notranslate nohighlight">\(a \geq 1\)</span> and <span class="math notranslate nohighlight">\(b \geq 1\)</span> throughout. However, the
+flow field transition step can decrease both <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span>
+(recombination introduces uncertainty, which can reduce the effective shape
+parameter).</p>
+<p>If the gamma approximation is accurate and the entropy of the posterior never
+exceeds the entropy of the prior, then <span class="math notranslate nohighlight">\(b \geq 1\)</span> is guaranteed. This
+is enforced by the <strong>entropy clipping</strong> mechanism described in
+<a class="reference internal" href="segmentation_and_caching.html#gamma-smc-segmentation-caching"><span class="std std-ref">Segmentation and Caching</span></a>. Without entropy clipping, it is
+possible (though rare) for the approximation to drift into a region where
+<span class="math notranslate nohighlight">\(b + b' &lt; 1\)</span>, producing an invalid combined distribution.</p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>The Gamma-SMC forward-backward algorithm:</p>
+<ol class="arabic simple">
+<li><p><strong>Forward pass</strong>: sweep left-to-right, applying
+<span class="math notranslate nohighlight">\(\mathcal{F}\)</span> (transition) then conjugate update (emission) at each
+position. Cost: <span class="math notranslate nohighlight">\(O(N)\)</span>.</p></li>
+<li><p><strong>Backward pass</strong>: run the forward algorithm on the reversed sequence.
+Cost: <span class="math notranslate nohighlight">\(O(N)\)</span>.</p></li>
+<li><p><strong>Combination</strong>: at each output position, combine forward
+<span class="math notranslate nohighlight">\(\text{Gamma}(a, b)\)</span> and backward <span class="math notranslate nohighlight">\(\text{Gamma}(a', b')\)</span> into
+<span class="math notranslate nohighlight">\(\text{Gamma}(a + a' - 1, b + b' - 1)\)</span>. Cost: <span class="math notranslate nohighlight">\(O(1)\)</span> per
+output position.</p></li>
+</ol>
+<p>Total cost: <span class="math notranslate nohighlight">\(O(N)\)</span> for the entire genome, with no matrix operations
+and no time discretization. This makes Gamma-SMC orders of magnitude faster
+than PSMC for the same task.</p>
+<p>Next: <a class="reference internal" href="segmentation_and_caching.html#gamma-smc-segmentation-caching"><span class="std std-ref">Segmentation and Caching</span></a> – the engineering tricks that
+make the <span class="math notranslate nohighlight">\(O(N)\)</span> algorithm fast in practice.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="flow_field.html" class="btn btn-neutral float-left" title="The Flow Field" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="segmentation_and_caching.html" class="btn btn-neutral float-right" title="Segmentation and Caching" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

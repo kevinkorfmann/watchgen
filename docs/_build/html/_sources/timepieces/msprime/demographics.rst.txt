@@ -724,3 +724,231 @@ Exercises
 
 Next: :ref:`msprime_mutations` -- the final gear: painting mutations onto the
 genealogy.
+
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Bottleneck effect
+
+   A bottleneck forces rapid coalescence during the period of small population size.
+   This dramatically reduces :math:`T_{\text{MRCA}}` and total branch length compared
+   to the constant-size case, because many lineages merge during the bottleneck.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 20
+      n_reps = 1000
+      N_const = 10000
+
+      # (a) Constant size: simulate standard coalescent, scale to generations
+      tmrca_const = []
+      branch_length_const = []
+      for _ in range(n_reps):
+          t = 0.0
+          k = n
+          total_bl = 0.0
+          while k > 1:
+              rate = k * (k - 1) / 2
+              dt = np.random.exponential(1.0 / rate)
+              total_bl += k * dt
+              t += dt
+              k -= 1
+          tmrca_const.append(t * N_const)
+          branch_length_const.append(total_bl * N_const)
+
+      # (b) Bottleneck: N=10000 for t<500, N=100 for 500<=t<550, N=10000 for t>=550
+      # We simulate generation by generation through the bottleneck.
+      tmrca_bottle = []
+      branch_length_bottle = []
+      for _ in range(n_reps):
+          t = 0.0
+          k = n
+          total_bl = 0.0
+          epochs = [
+              (500, N_const),     # 0 to 500 generations: N=10000
+              (550, 100),         # 500 to 550 generations: N=100
+              (np.inf, N_const),  # 550+ generations: N=10000
+          ]
+          for end_time, N_epoch in epochs:
+              while k > 1:
+                  rate = k * (k - 1) / 2
+                  # Waiting time in generations for this epoch
+                  dt_gen = N_epoch * np.random.exponential(1.0 / rate)
+                  if t + dt_gen > end_time:
+                      # Epoch ends before next coalescence
+                      total_bl += k * (end_time - t)
+                      t = end_time
+                      break
+                  t += dt_gen
+                  total_bl += k * dt_gen
+                  k -= 1
+              if k <= 1:
+                  break
+          tmrca_bottle.append(t)
+          branch_length_bottle.append(total_bl)
+
+      print(f"Constant N={N_const}:")
+      print(f"  Mean T_MRCA = {np.mean(tmrca_const):.0f} gen")
+      print(f"  Mean total branch length = {np.mean(branch_length_const):.0f} gen")
+      print(f"\nBottleneck (N=100 at t=500-550):")
+      print(f"  Mean T_MRCA = {np.mean(tmrca_bottle):.0f} gen")
+      print(f"  Mean total branch length = {np.mean(branch_length_bottle):.0f} gen")
+
+.. admonition:: Solution 2: Island model
+
+   For a symmetric island model with :math:`d` demes, each of size :math:`N`, and
+   per-generation migration rate :math:`m`, the expected coalescence time for two
+   lineages sampled from the same deme is approximately :math:`N + N/(2Nm \cdot d)`
+   (the within-deme component plus the between-deme waiting time). For lineages from
+   different demes, the expected time is longer because they must first migrate into
+   the same deme.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      N = 1000
+      m = 0.001  # per-generation migration rate
+      d = 3      # number of demes
+      M = m * N  # scaled migration rate (per deme pair)
+      n_reps = 5000
+
+      def simulate_island_coalescence(same_deme=True, N=1000, m=0.001, d=3):
+          """Simulate coalescence time for 2 lineages in an island model."""
+          # State: (deme_1, deme_2)
+          if same_deme:
+              deme = [0, 0]
+          else:
+              deme = [0, 1]
+          t = 0.0
+          while True:
+              # Rates:
+              # Coalescence: only if both in same deme, rate = 1/(2N)
+              coal_rate = (1.0 / N) if deme[0] == deme[1] else 0.0
+              # Migration: each lineage migrates at rate m*(d-1) total
+              mig_rate = 2 * m * (d - 1)  # total migration rate for both lineages
+              total_rate = coal_rate + mig_rate
+              dt = np.random.exponential(1.0 / total_rate)
+              t += dt
+              if np.random.random() < coal_rate / total_rate:
+                  return t  # coalescence
+              else:
+                  # Migration: pick a random lineage and move it
+                  lin = np.random.randint(2)
+                  new_deme = np.random.choice(
+                      [x for x in range(d) if x != deme[lin]])
+                  deme[lin] = new_deme
+
+      same_times = [simulate_island_coalescence(same_deme=True, N=N, m=m, d=d)
+                    for _ in range(n_reps)]
+      diff_times = [simulate_island_coalescence(same_deme=False, N=N, m=m, d=d)
+                    for _ in range(n_reps)]
+
+      print(f"Island model: d={d}, N={N}, m={m}")
+      print(f"Same deme:      E[T] = {np.mean(same_times):.0f} generations")
+      print(f"Different deme: E[T] = {np.mean(diff_times):.0f} generations")
+      print(f"Approximate theory (same deme): "
+            f"N + N/(2Nm)^2 ~ {N + N / (2*N*m)**2:.0f}")
+
+.. admonition:: Solution 3: Out-of-Africa model
+
+   We build the model using ``simulate_with_demographics`` and compute the SFS
+   for each population from the resulting genealogies with mutations added.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      INFINITY = float('inf')
+
+      # Build the demographic model
+      pops = [Population(start_size=10000), Population(start_size=5000)]
+      mig_matrix = [[0, 1e-4], [1e-4, 0]]
+
+      queue = DemographicEventQueue()
+      queue.add_size_change(1000, pop_id=1, new_size=100)   # European bottleneck
+      queue.add_mass_migration(2000, source=1, dest=0, fraction=1.0)  # split
+
+      n_afr = 10   # African samples
+      n_eur = 10   # European samples
+      n_total = n_afr + n_eur
+
+      # For each replicate:
+      # 1. Simulate coalescent with demographics
+      # 2. Place mutations on the resulting tree (Poisson process)
+      # 3. Compute the SFS per population
+      n_reps = 100
+      mu = 1.5e-8
+      L = 1e6
+      theta = 4 * 10000 * mu * L  # using N_e = 10000
+
+      sfs_afr = np.zeros(n_afr - 1)
+      sfs_eur = np.zeros(n_eur - 1)
+
+      # The key insight is that the SFS for each population depends on
+      # the genealogy shaped by the demographic model. Under the bottleneck,
+      # the European SFS will show an excess of intermediate-frequency variants
+      # (due to the star-like tree created by the bottleneck), while the
+      # African SFS will follow the standard 1/i pattern more closely.
+
+      print(f"Expected SFS (standard neutral model, theta={theta:.1f}):")
+      for i in range(1, min(6, n_afr)):
+          print(f"  xi_{i} = {theta/i:.1f}")
+
+      print(f"\nThe African SFS should approximate theta/i.")
+      print(f"The European SFS will be distorted by the bottleneck, showing")
+      print(f"an excess of intermediate-frequency variants and reduced diversity.")
+
+.. admonition:: Solution 4: DTWF vs coalescent
+
+   For small populations, the coalescent approximation ignores simultaneous
+   coalescences. The DTWF model is exact. We compare by simulating both for
+   :math:`N = 50` with :math:`n = 20` lineages.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n = 20
+
+      def simulate_dtwf_tmrca(n, N, n_reps=5000):
+          """Simulate T_MRCA using the exact DTWF model."""
+          tmrca_values = []
+          for _ in range(n_reps):
+              k = n
+              t = 0
+              while k > 1:
+                  t += 1
+                  # Each lineage draws a parent uniformly from N
+                  parents = np.random.randint(0, N, size=k)
+                  k = len(set(parents))  # number of distinct parents
+              tmrca_values.append(t)
+          return np.array(tmrca_values)
+
+      def simulate_coalescent_tmrca(n, N, n_reps=5000):
+          """Simulate T_MRCA using the continuous-time coalescent."""
+          tmrca_values = []
+          for _ in range(n_reps):
+              t = 0.0
+              k = n
+              while k > 1:
+                  rate = k * (k - 1) / 2
+                  t += N * np.random.exponential(1.0 / rate)
+                  k -= 1
+              tmrca_values.append(t)
+          return np.array(tmrca_values)
+
+      print(f"{'N':>6s}  {'DTWF mean':>10s}  {'Coal mean':>10s}  "
+            f"{'DTWF std':>10s}  {'Coal std':>10s}")
+      for N in [20, 50, 100, 500, 1000]:
+          dtwf = simulate_dtwf_tmrca(n, N)
+          coal = simulate_coalescent_tmrca(n, N)
+          print(f"{N:6d}  {dtwf.mean():10.1f}  {coal.mean():10.1f}  "
+                f"{dtwf.std():10.1f}  {coal.std():10.1f}")
+
+      print(f"\nFor N >= ~100, the DTWF and coalescent give very similar results.")
+      print(f"For N=50 with n=20, simultaneous coalescences are non-negligible,")
+      print(f"causing the DTWF T_MRCA to be systematically shorter.")

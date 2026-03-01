@@ -1,0 +1,1253 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Wright-Fisher HMM &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Emission Probabilities" href="emission_probabilities.html" />
+    <link rel="prev" title="Overview: Detecting Selection" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece XV: CLUES</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece XV: CLUES</a></li>
+      <li class="breadcrumb-item active">The Wright-Fisher HMM</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview: Detecting Selection" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="emission_probabilities.html" class="btn btn-neutral float-right" title="Emission Probabilities" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-wright-fisher-hmm">
+<span id="clues-wright-fisher-hmm"></span><h1>The Wright-Fisher HMM<a class="headerlink" href="#the-wright-fisher-hmm" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The escapement: how selection biases the random walk of allele frequencies.</em></p>
+</div></blockquote>
+<p>This chapter builds the Hidden Markov Model at the heart of CLUES. The hidden
+states are discretized allele frequencies, and the transitions encode one-generation
+steps of the Wright-Fisher diffusion with selection. By the end, you will have
+implemented the frequency bin construction and the transition matrix – the
+mathematical backbone of the entire inference machine.</p>
+<section id="step-1-the-wright-fisher-diffusion-with-selection">
+<h2>Step 1: The Wright-Fisher Diffusion With Selection<a class="headerlink" href="#step-1-the-wright-fisher-diffusion-with-selection" title="Link to this heading"></a></h2>
+<p>Recall from the <a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">coalescent theory prerequisite</span></a> that the
+Wright-Fisher model describes a population of <span class="math notranslate nohighlight">\(2N\)</span> gene copies (haploid size)
+at a biallelic locus. Each generation, the next generation’s alleles are drawn by
+sampling with replacement from the current generation, weighted by fitness.</p>
+<p>Let <span class="math notranslate nohighlight">\(x_t\)</span> be the derived allele frequency at generation <span class="math notranslate nohighlight">\(t\)</span>. Under
+the diploid fitness model with genotype fitnesses <span class="math notranslate nohighlight">\(w_{AA} = 1\)</span>,
+<span class="math notranslate nohighlight">\(w_{AD} = 1 + hs\)</span>, <span class="math notranslate nohighlight">\(w_{DD} = 1 + s\)</span>:</p>
+<p>The <strong>expected frequency</strong> of the derived allele in the next generation is:</p>
+<div class="math notranslate nohighlight">
+\[\mathbb{E}[x_{t+1} \mid x_t] = \frac{x_t^2 (1 + s) + x_t(1 - x_t)(1 + hs)}{
+x_t^2 (1 + s) + 2 x_t(1 - x_t)(1 + hs) + (1 - x_t)^2}\]</div>
+<p>This is obtained by computing the mean fitness-weighted frequency. The numerator
+counts the expected contribution of derived alleles: homozygous <span class="math notranslate nohighlight">\(DD\)</span> (frequency
+<span class="math notranslate nohighlight">\(x_t^2\)</span>, each contributing 2 derived copies with fitness <span class="math notranslate nohighlight">\(1+s\)</span>) plus
+heterozygous <span class="math notranslate nohighlight">\(AD\)</span> (frequency <span class="math notranslate nohighlight">\(2x_t(1-x_t)\)</span>, each contributing 1 derived
+copy with fitness <span class="math notranslate nohighlight">\(1+hs\)</span>). After simplification and dividing by the mean
+fitness <span class="math notranslate nohighlight">\(\bar{w}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\mathbb{E}[x_{t+1}] = \frac{x_t(1 + s \cdot x_t + hs(1 - x_t))}{1 + s \cdot x_t(x_t + 2h(1 - x_t))}\]</div>
+<p>For <strong>additive selection</strong> (<span class="math notranslate nohighlight">\(h = 0.5\)</span>), this simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\mathbb{E}[x_{t+1}] = \frac{x_t(1 + s x_t)}{1 + s x_t} + \frac{s x_t(1 - x_t)}{2(1 + s x_t)}\]</div>
+<p>The <strong>variance</strong> of the frequency change per generation, due to genetic drift, is:</p>
+<div class="math notranslate nohighlight">
+\[\text{Var}[x_{t+1} \mid x_t] = \frac{x_t(1 - x_t)}{2N}\]</div>
+<p>This is the binomial sampling variance: drawing <span class="math notranslate nohighlight">\(2N\)</span> copies with probability
+<span class="math notranslate nohighlight">\(x_t\)</span> gives a variance of <span class="math notranslate nohighlight">\(x_t(1-x_t)/(2N)\)</span>.</p>
+<div class="admonition-why-does-selection-affect-the-mean-but-not-the-variance admonition">
+<p class="admonition-title">Why does selection affect the mean but not the variance?</p>
+<p>The mean frequency change has two components: drift (zero mean) and selection
+(directional bias). The variance is dominated by the sampling noise of
+reproduction, which depends on <span class="math notranslate nohighlight">\(x_t\)</span> and <span class="math notranslate nohighlight">\(N\)</span> but not on <span class="math notranslate nohighlight">\(s\)</span>
+(to first order). Selection shifts the <em>center</em> of the distribution of next-
+generation frequencies; drift determines its <em>width</em>. For typical values of
+<span class="math notranslate nohighlight">\(s\)</span> (less than 0.1), the correction to the variance is negligible.</p>
+</div>
+<section id="going-backward-in-time">
+<h3>Going Backward in Time<a class="headerlink" href="#going-backward-in-time" title="Link to this heading"></a></h3>
+<p>CLUES models the allele frequency trajectory <strong>backward in time</strong> (from present to
+past), because the backward direction is natural for the coalescent. Going backward,
+the expected frequency at time <span class="math notranslate nohighlight">\(t+1\)</span> (one generation further into the past)
+given frequency <span class="math notranslate nohighlight">\(x_t\)</span> at time <span class="math notranslate nohighlight">\(t\)</span> is the <em>inverse</em> of the forward
+mapping.</p>
+<p>If the forward mapping is <span class="math notranslate nohighlight">\(x_{t+1} = g(x_t)\)</span>, then the backward mapping is
+<span class="math notranslate nohighlight">\(x_t = g^{-1}(x_{t+1})\)</span>. For the general dominance model, the backward
+mean is:</p>
+<div class="math notranslate nohighlight">
+\[\mu(x) = x + \frac{s(-1 + x) \cdot x \cdot (-x + h(-1 + 2x))}{-1 + s(2h(-1 + x) - x) \cdot x}\]</div>
+<p>This is the formula used in the CLUES2 source code. For additive selection
+(<span class="math notranslate nohighlight">\(h = 0.5\)</span>), it simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\mu(x) = x + \frac{s \cdot x(1-x)}{2(1 + sx)}\]</div>
+<p><strong>Intuition:</strong> Going backward in time, a positively selected allele (<span class="math notranslate nohighlight">\(s &gt; 0\)</span>)
+was at a <em>lower</em> frequency in the past. So the backward mean is shifted <em>downward</em>
+relative to the current frequency – the <span class="math notranslate nohighlight">\(s\)</span>-dependent term is negative when
+<span class="math notranslate nohighlight">\(x &gt; 0\)</span> and <span class="math notranslate nohighlight">\(s &gt; 0\)</span>. (The formula above uses the convention that
+<span class="math notranslate nohighlight">\(\mu(x) &lt; x\)</span> when <span class="math notranslate nohighlight">\(s &gt; 0\)</span>, consistent with looking backward.)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">backward_mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expected allele frequency one generation further into the past.</span>
+
+<span class="sd">    Given current derived allele frequency x, selection coefficient s,</span>
+<span class="sd">    and dominance coefficient h, compute the mean of the backward</span>
+<span class="sd">    Wright-Fisher transition.</span>
+
+<span class="sd">    For additive selection (h=0.5), this simplifies to:</span>
+<span class="sd">        mu = x + s * x * (1-x) / (2 * (1 + s*x))</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : float</span>
+<span class="sd">        Current derived allele frequency (0 &lt; x &lt; 1).</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Selection coefficient. Positive = derived allele favored.</span>
+<span class="sd">    h : float</span>
+<span class="sd">        Dominance coefficient. Default 0.5 (additive).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Expected frequency one generation into the past.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">numerator</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="n">x</span> <span class="o">+</span> <span class="n">h</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span><span class="p">))</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">h</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+
+<span class="k">def</span> <span class="nf">backward_std</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Standard deviation of allele frequency change per generation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : float</span>
+<span class="sd">        Current derived allele frequency.</span>
+<span class="sd">    N : float</span>
+<span class="sd">        Haploid effective population size (= 2 * diploid N_e).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sigma : float</span>
+<span class="sd">        Standard deviation of the frequency change.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">N</span><span class="p">)</span>
+
+<span class="c1"># Verify: under neutrality (s=0), backward mean equals current frequency</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]:</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">backward_mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x = </span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, s = 0:   mu = </span><span class="si">{</span><span class="n">mu</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (expected: </span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Under positive selection, backward mean &lt; current frequency</span>
+<span class="c1"># (the allele was rarer in the past)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]:</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">backward_mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x = </span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, s = 0.05: mu = </span><span class="si">{</span><span class="n">mu</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (shift: </span><span class="si">{</span><span class="n">mu</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x</span><span class="si">:</span><span class="s2">+.6f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="step-2-frequency-bin-construction">
+<h2>Step 2: Frequency Bin Construction<a class="headerlink" href="#step-2-frequency-bin-construction" title="Link to this heading"></a></h2>
+<p>The continuous allele frequency <span class="math notranslate nohighlight">\(x \in [0, 1]\)</span> must be discretized into
+<span class="math notranslate nohighlight">\(K\)</span> bins for the HMM. The choice of bin placement matters: we need more
+resolution near the boundaries (0 and 1), where the dynamics are slowest and the
+allele may linger for many generations before fixing or being lost.</p>
+<p>CLUES uses the <strong>quantile function of a Beta(1/2, 1/2) distribution</strong> to place the
+frequency bins. The Beta(1/2, 1/2) distribution (also known as the arcsine
+distribution) has most of its mass near 0 and 1, so its quantiles are densely
+packed near the boundaries and sparser in the middle – exactly the spacing we want.</p>
+<div class="admonition-probability-aside-the-beta-distribution-and-its-quantile-function admonition">
+<p class="admonition-title">Probability Aside: the Beta distribution and its quantile function</p>
+<p>The <strong>Beta distribution</strong> <span class="math notranslate nohighlight">\(\text{Beta}(\alpha, \beta)\)</span> is a family of
+distributions on <span class="math notranslate nohighlight">\([0, 1]\)</span>. Its density is:</p>
+<div class="math notranslate nohighlight">
+\[f(x; \alpha, \beta) = \frac{x^{\alpha-1}(1-x)^{\beta-1}}{B(\alpha, \beta)}\]</div>
+<p>The special case <span class="math notranslate nohighlight">\(\text{Beta}(1/2, 1/2)\)</span> has density
+<span class="math notranslate nohighlight">\(f(x) = 1/(\pi \sqrt{x(1-x)})\)</span>, which is U-shaped: it concentrates
+mass near 0 and 1. This is related to the stationary distribution of the
+Wright-Fisher diffusion under neutrality, making it a natural choice for
+spacing frequency bins.</p>
+<p>The <strong>quantile function</strong> (inverse CDF) <span class="math notranslate nohighlight">\(Q(p)\)</span> maps a uniform
+probability <span class="math notranslate nohighlight">\(p \in [0,1]\)</span> to the value <span class="math notranslate nohighlight">\(x\)</span> such that
+<span class="math notranslate nohighlight">\(P(X \leq x) = p\)</span>. Evaluating <span class="math notranslate nohighlight">\(Q\)</span> at equally-spaced points in
+<span class="math notranslate nohighlight">\([0, 1]\)</span> produces unevenly-spaced <span class="math notranslate nohighlight">\(x\)</span> values – more
+concentrated where the CDF is flat (near 0 and 1), which is exactly where
+the diffusion dynamics are slowest.</p>
+</div>
+<p><strong>The construction.</strong> Given <span class="math notranslate nohighlight">\(K\)</span> bins (default <span class="math notranslate nohighlight">\(K = 450\)</span>):</p>
+<ol class="arabic simple">
+<li><p>Create <span class="math notranslate nohighlight">\(K\)</span> equally-spaced points <span class="math notranslate nohighlight">\(u_1, u_2, \ldots, u_K\)</span> in
+<span class="math notranslate nohighlight">\([0, 1]\)</span>.</p></li>
+<li><p>Map each through the Beta(1/2, 1/2) quantile function:
+<span class="math notranslate nohighlight">\(x_k = Q_{\text{Beta}(1/2, 1/2)}(u_k)\)</span>.</p></li>
+<li><p>Set the boundary values: <span class="math notranslate nohighlight">\(x_1 = 0\)</span> (loss), <span class="math notranslate nohighlight">\(x_K = 1\)</span> (fixation).
+These are <strong>absorbing states</strong> – once the allele is lost or fixed, it stays
+there.</p></li>
+<li><p>For log-probability computations, use <span class="math notranslate nohighlight">\(\log(x_1) = \log(\epsilon)\)</span> and
+<span class="math notranslate nohighlight">\(\log(1 - x_K) = \log(\epsilon)\)</span> with <span class="math notranslate nohighlight">\(\epsilon = 10^{-12}\)</span> to
+avoid <span class="math notranslate nohighlight">\(-\infty\)</span>.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">beta</span> <span class="k">as</span> <span class="n">beta_dist</span>
+
+<span class="k">def</span> <span class="nf">build_frequency_bins</span><span class="p">(</span><span class="n">K</span><span class="o">=</span><span class="mi">450</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct the K allele frequency bins using Beta(1/2, 1/2) quantiles.</span>
+
+<span class="sd">    The bins are denser near 0 and 1, where the Wright-Fisher dynamics</span>
+<span class="sd">    are slowest (frequency changes are small when the allele is very</span>
+<span class="sd">    rare or very common).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    K : int</span>
+<span class="sd">        Number of frequency bins. Default 450 (as in CLUES2).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    freqs : ndarray of shape (K,)</span>
+<span class="sd">        Frequency bin centers. freqs[0] = 0 (loss), freqs[-1] = 1 (fixation).</span>
+<span class="sd">    logfreqs : ndarray of shape (K,)</span>
+<span class="sd">        log(freqs), with a small epsilon to avoid -inf at boundaries.</span>
+<span class="sd">    log1minusfreqs : ndarray of shape (K,)</span>
+<span class="sd">        log(1 - freqs), with a small epsilon at boundaries.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: equally-spaced points in [0, 1]</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: map through Beta(1/2, 1/2) quantile function</span>
+    <span class="n">freqs</span> <span class="o">=</span> <span class="n">beta_dist</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: set boundary values for log computations</span>
+    <span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-12</span>
+    <span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">eps</span>       <span class="c1"># temporarily, for log computation</span>
+    <span class="n">freqs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">eps</span>  <span class="c1"># temporarily, for log computation</span>
+
+    <span class="n">logfreqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span>
+    <span class="n">log1minusfreqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">freqs</span><span class="p">)</span>
+
+    <span class="c1"># Now set the actual boundary values</span>
+    <span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">freqs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="k">return</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span>
+
+<span class="c1"># Build the bins and examine the spacing</span>
+<span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span> <span class="o">=</span> <span class="n">build_frequency_bins</span><span class="p">(</span><span class="n">K</span><span class="o">=</span><span class="mi">450</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of bins: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First 10 bins: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">freqs</span><span class="p">[:</span><span class="mi">10</span><span class="p">],</span><span class="w"> </span><span class="mi">6</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Last 10 bins:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:],</span><span class="w"> </span><span class="mi">6</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bin spacing near 0: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">freqs</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bin spacing near 0.5: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="mi">220</span><span class="p">:</span><span class="mi">226</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bin spacing near 1: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The output shows that the bins are very finely spaced near 0 and 1 (spacing
+<span class="math notranslate nohighlight">\(\sim 10^{-5}\)</span>) and coarser near 0.5 (spacing <span class="math notranslate nohighlight">\(\sim 0.005\)</span>). This is
+exactly what we need: the Wright-Fisher diffusion spends a lot of time near the
+boundaries before absorption, and we need fine resolution there to track the
+trajectory accurately.</p>
+</section>
+<section id="step-3-the-transition-matrix">
+<h2>Step 3: The Transition Matrix<a class="headerlink" href="#step-3-the-transition-matrix" title="Link to this heading"></a></h2>
+<p>The transition matrix <span class="math notranslate nohighlight">\(\mathbf{P}\)</span> has entries <span class="math notranslate nohighlight">\(P_{ij}\)</span> giving the
+probability of moving from frequency bin <span class="math notranslate nohighlight">\(i\)</span> to frequency bin <span class="math notranslate nohighlight">\(j\)</span> in
+one generation (backward in time). We approximate each row using a <strong>normal
+distribution</strong> centered at the backward mean <span class="math notranslate nohighlight">\(\mu_i\)</span> with standard deviation
+<span class="math notranslate nohighlight">\(\sigma_i\)</span>.</p>
+<p>For each starting frequency <span class="math notranslate nohighlight">\(x_i\)</span> (with <span class="math notranslate nohighlight">\(0 &lt; x_i &lt; 1\)</span>):</p>
+<ol class="arabic">
+<li><p>Compute the backward mean <span class="math notranslate nohighlight">\(\mu_i = \mu(x_i)\)</span> and standard deviation
+<span class="math notranslate nohighlight">\(\sigma_i = \sqrt{x_i(1 - x_i)/(2N)}\)</span>.</p></li>
+<li><p>For the boundary bin <span class="math notranslate nohighlight">\(j = 0\)</span> (frequency 0, allele loss):</p>
+<div class="math notranslate nohighlight">
+\[P_{i,0} = \Phi\left(\frac{(x_0 + x_1)/2 - \mu_i}{\sigma_i}\right)\]</div>
+<p>All probability mass below the midpoint between the first two bins is placed
+in the loss bin.</p>
+</li>
+<li><p>For the boundary bin <span class="math notranslate nohighlight">\(j = K-1\)</span> (frequency 1, fixation):</p>
+<div class="math notranslate nohighlight">
+\[P_{i,K-1} = 1 - \Phi\left(\frac{(x_{K-2} + x_{K-1})/2 - \mu_i}{\sigma_i}\right)\]</div>
+</li>
+<li><p>For interior bins <span class="math notranslate nohighlight">\(0 &lt; j &lt; K-1\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[P_{i,j} = \Phi\left(\frac{(x_j + x_{j+1})/2 - \mu_i}{\sigma_i}\right)
+        - \Phi\left(\frac{(x_{j-1} + x_j)/2 - \mu_i}{\sigma_i}\right)\]</div>
+</li>
+<li><p><strong>Absorbing states:</strong> <span class="math notranslate nohighlight">\(P_{0,0} = 1\)</span> and <span class="math notranslate nohighlight">\(P_{K-1,K-1} = 1\)</span>.
+Once the allele is lost or fixed, it stays there forever.</p></li>
+<li><p><strong>Renormalize</strong> each row to sum to 1, to correct for numerical truncation.</p></li>
+</ol>
+<div class="admonition-why-the-normal-approximation admonition">
+<p class="admonition-title">Why the normal approximation?</p>
+<p>The Wright-Fisher model produces a binomial distribution of next-generation
+frequencies, but for large <span class="math notranslate nohighlight">\(N\)</span>, the binomial is well approximated by a
+normal distribution with the same mean and variance. This is the <strong>diffusion
+approximation</strong> – the same idea that underpins the Wright-Fisher diffusion
+equation. For population sizes in the thousands, the approximation is
+excellent. CLUES exploits this to compute transition probabilities using the
+fast, numerically stable normal CDF rather than expensive binomial sums.</p>
+</div>
+<p><strong>Sparsity optimization.</strong> Most of the probability mass in row <span class="math notranslate nohighlight">\(i\)</span> is
+concentrated within <span class="math notranslate nohighlight">\(\pm 3.3\sigma_i\)</span> of the mean <span class="math notranslate nohighlight">\(\mu_i\)</span>. Beyond
+this range, the probability is less than 0.1%. CLUES only computes transition
+probabilities within this range, producing a <strong>sparse, banded transition matrix</strong>.
+This is Approximation A1 from the CLUES2 paper and provides the first major speedup.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+
+<span class="k">def</span> <span class="nf">build_transition_matrix</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the K x K log-transition matrix for the Wright-Fisher HMM.</span>
+
+<span class="sd">    Each entry P[i, j] is the log-probability of transitioning from</span>
+<span class="sd">    frequency bin i to frequency bin j in one generation (backward in time).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    freqs : ndarray of shape (K,)</span>
+<span class="sd">        Frequency bin centers (from build_frequency_bins).</span>
+<span class="sd">    N : float</span>
+<span class="sd">        Haploid effective population size.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Selection coefficient.</span>
+<span class="sd">    h : float</span>
+<span class="sd">        Dominance coefficient (default 0.5 = additive).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    logP : ndarray of shape (K, K)</span>
+<span class="sd">        Log-transition matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span>
+    <span class="n">logP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+    <span class="c1"># Midpoints between consecutive bins (used for CDF integration)</span>
+    <span class="n">midpoints</span> <span class="o">=</span> <span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">freqs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+    <span class="c1"># Absorbing states: loss and fixation</span>
+    <span class="n">logP</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>       <span class="c1"># log(1) = 0</span>
+    <span class="n">logP</span><span class="p">[</span><span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">freqs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">backward_mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">backward_std</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sigma</span> <span class="o">&lt;</span> <span class="mf">1e-15</span><span class="p">:</span>
+            <span class="c1"># Degenerate case: no drift, all mass at mu</span>
+            <span class="n">closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freqs</span> <span class="o">-</span> <span class="n">mu</span><span class="p">))</span>
+            <span class="n">logP</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">closest</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Only compute within +/- 3.3 sigma (99.9% of probability mass)</span>
+        <span class="n">lower_freq</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">-</span> <span class="mf">3.3</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">upper_freq</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">+</span> <span class="mf">3.3</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">j_lower</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">lower_freq</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">j_upper</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">upper_freq</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Compute probability mass in each bin using normal CDF</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j_lower</span><span class="p">,</span> <span class="n">j_upper</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># All mass below midpoint[0] goes to bin 0 (loss)</span>
+                <span class="n">row</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">midpoints</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">j</span> <span class="o">==</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># All mass above midpoint[-1] goes to bin K-1 (fixation)</span>
+                <span class="n">row</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">midpoints</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Mass between midpoints[j-1] and midpoints[j]</span>
+                <span class="n">row</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">midpoints</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+                          <span class="o">-</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">midpoints</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">))</span>
+
+        <span class="c1"># Renormalize (corrects for truncation beyond 3.3 sigma)</span>
+        <span class="n">row_sum</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">row_sum</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">/=</span> <span class="n">row_sum</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">row</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freqs</span> <span class="o">-</span> <span class="n">mu</span><span class="p">))]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="c1"># Convert to log probabilities</span>
+        <span class="n">logP</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">row</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">row</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">logP</span>
+
+<span class="c1"># Build and verify the transition matrix</span>
+<span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span> <span class="o">=</span> <span class="n">build_frequency_bins</span><span class="p">(</span><span class="n">K</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="n">N_haploid</span> <span class="o">=</span> <span class="mf">20000.0</span>  <span class="c1"># haploid size (= 2 * diploid N_e of 10,000)</span>
+
+<span class="c1"># Neutral transition matrix</span>
+<span class="n">logP_neutral</span> <span class="o">=</span> <span class="n">build_transition_matrix</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">N_haploid</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">P_neutral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logP_neutral</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Row sums (should be ~1.0):&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">P_neutral</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:</span><span class="mi">5</span><span class="p">],</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="c1"># Selection transition matrix (s = 0.05)</span>
+<span class="n">logP_selected</span> <span class="o">=</span> <span class="n">build_transition_matrix</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">N_haploid</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="n">P_selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logP_selected</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Row sums (should be ~1.0):&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">P_selected</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:</span><span class="mi">5</span><span class="p">],</span> <span class="mi">6</span><span class="p">))</span>
+</pre></div>
+</div>
+<section id="visualizing-the-effect-of-selection-on-transitions">
+<h3>Visualizing the Effect of Selection on Transitions<a class="headerlink" href="#visualizing-the-effect-of-selection-on-transitions" title="Link to this heading"></a></h3>
+<p>Let’s compare the transition probabilities from a frequency of <span class="math notranslate nohighlight">\(x = 0.3\)</span>
+under neutrality vs. positive selection:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find the bin closest to x = 0.3</span>
+<span class="n">target_freq</span> <span class="o">=</span> <span class="mf">0.3</span>
+<span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freqs</span> <span class="o">-</span> <span class="n">target_freq</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting frequency bin: x[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">freqs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Extract transition probabilities from that bin</span>
+<span class="n">trans_neutral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logP_neutral</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
+<span class="n">trans_selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logP_selected</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
+
+<span class="c1"># Show the shift in the distribution</span>
+<span class="n">mean_neutral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">freqs</span> <span class="o">*</span> <span class="n">trans_neutral</span><span class="p">)</span>
+<span class="n">mean_selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">freqs</span> <span class="o">*</span> <span class="n">trans_selected</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean next frequency (neutral):  </span><span class="si">{</span><span class="n">mean_neutral</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean next frequency (s=0.05):   </span><span class="si">{</span><span class="n">mean_selected</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shift due to selection:         </span><span class="si">{</span><span class="n">mean_selected</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">mean_neutral</span><span class="si">:</span><span class="s2">+.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(Going backward, s&gt;0 shifts the allele to lower past frequency)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Under positive selection, the backward transition shifts the distribution <em>downward</em>
+– the allele was at a lower frequency in the past, consistent with it having
+been pushed upward by selection.</p>
+</section>
+</section>
+<section id="step-4-the-dominance-extension">
+<h2>Step 4: The Dominance Extension<a class="headerlink" href="#step-4-the-dominance-extension" title="Link to this heading"></a></h2>
+<p>The general dominance model allows the fitness of the heterozygote <span class="math notranslate nohighlight">\(AD\)</span> to be
+anywhere between <span class="math notranslate nohighlight">\(AA\)</span> and <span class="math notranslate nohighlight">\(DD\)</span>. The dominance coefficient <span class="math notranslate nohighlight">\(h\)</span>
+controls this:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 25.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><span class="math notranslate nohighlight">\(h\)</span></p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>Heterozygote fitness</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>Recessive</p></td>
+<td><p><span class="math notranslate nohighlight">\(w_{AD} = 1\)</span> (same as <span class="math notranslate nohighlight">\(AA\)</span>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.5</p></td>
+<td><p>Additive</p></td>
+<td><p><span class="math notranslate nohighlight">\(w_{AD} = 1 + s/2\)</span> (halfway between)</p></td>
+</tr>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>Dominant</p></td>
+<td><p><span class="math notranslate nohighlight">\(w_{AD} = 1 + s\)</span> (same as <span class="math notranslate nohighlight">\(DD\)</span>)</p></td>
+</tr>
+</tbody>
+</table>
+<p>The backward mean for general <span class="math notranslate nohighlight">\(h\)</span> is the full formula we implemented in
+<code class="docutils literal notranslate"><span class="pre">backward_mean</span></code>. The key difference from additive selection:</p>
+<ul class="simple">
+<li><p><strong>Recessive</strong> (<span class="math notranslate nohighlight">\(h = 0\)</span>): selection is weak when the allele is rare
+(most copies are in heterozygotes, which have no fitness advantage). The allele
+frequency trajectory shows a slow initial rise followed by rapid fixation.</p></li>
+<li><p><strong>Dominant</strong> (<span class="math notranslate nohighlight">\(h = 1\)</span>): selection is strong even when the allele is rare
+(heterozygotes already have the full advantage). The trajectory shows a rapid
+initial rise followed by a slow approach to fixation.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compare backward means under different dominance models</span>
+<span class="n">x_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="mf">0.05</span>
+
+<span class="k">for</span> <span class="n">h_val</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="p">[(</span><span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;Recessive (h=0)&quot;</span><span class="p">),</span>
+                       <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;Additive (h=0.5)&quot;</span><span class="p">),</span>
+                       <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;Dominant (h=1)&quot;</span><span class="p">)]:</span>
+    <span class="n">shifts</span> <span class="o">=</span> <span class="p">[</span><span class="n">backward_mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="n">h_val</span><span class="p">)</span> <span class="o">-</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_vals</span><span class="p">]</span>
+    <span class="c1"># The shift should be negative (allele was rarer in the past)</span>
+    <span class="n">max_shift_freq</span> <span class="o">=</span> <span class="n">x_vals</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">shifts</span><span class="p">)]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: max backward shift at x = </span><span class="si">{</span><span class="n">max_shift_freq</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;shift = </span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="n">shifts</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># For recessive: max shift is at high x (selection acts mainly on homozygotes)</span>
+<span class="c1"># For dominant: max shift is at low x (selection acts on heterozygotes)</span>
+<span class="c1"># For additive: max shift is at x ~ 0.5</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-precomputing-the-standard-normal-cdf">
+<h2>Step 5: Precomputing the Standard Normal CDF<a class="headerlink" href="#step-5-precomputing-the-standard-normal-cdf" title="Link to this heading"></a></h2>
+<p>CLUES2 avoids calling <code class="docutils literal notranslate"><span class="pre">scipy.stats.norm.cdf</span></code> millions of times by precomputing a
+lookup table of the standard normal CDF. The transition matrix computation for each
+row involves evaluating the normal CDF at several points, and doing this <span class="math notranslate nohighlight">\(K\)</span>
+times per generation can be expensive. The lookup table uses linear interpolation
+for speed.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">build_normal_cdf_lookup</span><span class="p">(</span><span class="n">n_points</span><span class="o">=</span><span class="mi">2000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Precompute a lookup table for the standard normal CDF.</span>
+
+<span class="sd">    The standard normal CDF Phi(z) is evaluated on a grid of z-values</span>
+<span class="sd">    and stored for fast interpolation. Any normal CDF can be computed</span>
+<span class="sd">    from the standard normal by the transformation:</span>
+<span class="sd">        Phi((x - mu) / sigma) = P(N(mu, sigma^2) &lt;= x)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_points : int</span>
+<span class="sd">        Number of grid points for the lookup table.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    z_bins : ndarray</span>
+<span class="sd">        Grid of z-values (from ~-37 to ~37 for n_points=2000).</span>
+<span class="sd">    z_cdf : ndarray</span>
+<span class="sd">        Standard normal CDF values at each z-bin.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create points in (0, 1), avoiding exactly 0 and 1</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_points</span><span class="p">)</span>
+    <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-10</span>
+    <span class="n">u</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-10</span>
+
+    <span class="c1"># Map through the inverse normal CDF (quantile function)</span>
+    <span class="n">z_bins</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+    <span class="n">z_cdf</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">z_bins</span><span class="p">)</span>  <span class="c1"># = u (by construction), but useful for interpolation</span>
+
+    <span class="k">return</span> <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span>
+
+<span class="k">def</span> <span class="nf">fast_normal_cdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate the normal CDF at x using the precomputed lookup table.</span>
+
+<span class="sd">    Transforms (x - mu) / sigma to a standard normal z-score,</span>
+<span class="sd">    then interpolates from the lookup table.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : float</span>
+<span class="sd">        Point at which to evaluate the CDF.</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Mean of the normal distribution.</span>
+<span class="sd">    sigma : float</span>
+<span class="sd">        Standard deviation.</span>
+<span class="sd">    z_bins : ndarray</span>
+<span class="sd">        Precomputed z-values.</span>
+<span class="sd">    z_cdf : ndarray</span>
+<span class="sd">        Precomputed CDF values.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cdf_value : float</span>
+<span class="sd">        Phi((x - mu) / sigma).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">)</span>
+
+<span class="c1"># Verify the lookup table</span>
+<span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span> <span class="o">=</span> <span class="n">build_normal_cdf_lookup</span><span class="p">()</span>
+<span class="n">test_points</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Verification of fast normal CDF lookup:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">test_points</span><span class="p">:</span>
+    <span class="n">exact</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+    <span class="n">approx</span> <span class="o">=</span> <span class="n">fast_normal_cdf</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  z = </span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">: exact = </span><span class="si">{</span><span class="n">exact</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2">, approx = </span><span class="si">{</span><span class="n">approx</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;error = </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">exact</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">approx</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-putting-it-together-building-the-complete-transition-matrix">
+<h2>Step 6: Putting It Together – Building the Complete Transition Matrix<a class="headerlink" href="#step-6-putting-it-together-building-the-complete-transition-matrix" title="Link to this heading"></a></h2>
+<p>Here is the optimized version that uses the sparse computation and precomputed
+lookup table, closely following the CLUES2 implementation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">build_transition_matrix_fast</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the log-transition matrix using sparse computation.</span>
+
+<span class="sd">    This is the optimized version that only computes entries within</span>
+<span class="sd">    3.3 sigma of the mean, matching the CLUES2 implementation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    freqs : ndarray of shape (K,)</span>
+<span class="sd">        Frequency bins.</span>
+<span class="sd">    N : float</span>
+<span class="sd">        Haploid effective population size.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Selection coefficient.</span>
+<span class="sd">    z_bins : ndarray</span>
+<span class="sd">        Precomputed standard normal z-values.</span>
+<span class="sd">    z_cdf : ndarray</span>
+<span class="sd">        Precomputed standard normal CDF values.</span>
+<span class="sd">    h : float</span>
+<span class="sd">        Dominance coefficient.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    logP : ndarray of shape (K, K)</span>
+<span class="sd">        Log-transition matrix.</span>
+<span class="sd">    lower_indices : ndarray of shape (K,)</span>
+<span class="sd">        First nonzero column index for each row.</span>
+<span class="sd">    upper_indices : ndarray of shape (K,)</span>
+<span class="sd">        Last nonzero column index (+1) for each row.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span>
+    <span class="n">logP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="n">lower_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">upper_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Midpoints between bins</span>
+    <span class="n">midpoints</span> <span class="o">=</span> <span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">freqs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+    <span class="c1"># Absorbing states</span>
+    <span class="n">logP</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">logP</span><span class="p">[</span><span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">lower_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">upper_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">lower_indices</span><span class="p">[</span><span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">upper_indices</span><span class="p">[</span><span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">K</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">freqs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">backward_mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">backward_std</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sigma</span> <span class="o">&lt;</span> <span class="mf">1e-15</span><span class="p">:</span>
+            <span class="n">closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freqs</span> <span class="o">-</span> <span class="n">mu</span><span class="p">))</span>
+            <span class="n">logP</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">closest</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">lower_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">closest</span>
+            <span class="n">upper_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">closest</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Bounds for sparse computation (3.3 sigma captures 99.9%)</span>
+        <span class="n">lower_freq</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">-</span> <span class="mf">3.3</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">upper_freq</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">+</span> <span class="mf">3.3</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">j_lo</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">lower_freq</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">j_hi</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">upper_freq</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Compute row probabilities</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j_lo</span><span class="p">,</span> <span class="n">j_hi</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">row</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">fast_normal_cdf</span><span class="p">(</span><span class="n">midpoints</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span>
+                                          <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">j</span> <span class="o">==</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">row</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">fast_normal_cdf</span><span class="p">(</span><span class="n">midpoints</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span>
+                                                 <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">row</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">fast_normal_cdf</span><span class="p">(</span><span class="n">midpoints</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span>
+                                           <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">)</span>
+                          <span class="o">-</span> <span class="n">fast_normal_cdf</span><span class="p">(</span><span class="n">midpoints</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span>
+                                             <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">))</span>
+
+        <span class="c1"># Renormalize and convert to log</span>
+        <span class="n">row_sum</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">row_sum</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">/=</span> <span class="n">row_sum</span>
+        <span class="n">logP</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">row</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">row</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+        <span class="c1"># Record nonzero range for fast summation (Approximation A2)</span>
+        <span class="n">nonzero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">row</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nonzero</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lower_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nonzero</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">upper_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nonzero</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lower_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">upper_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">K</span>
+
+    <span class="k">return</span> <span class="n">logP</span><span class="p">,</span> <span class="n">lower_indices</span><span class="p">,</span> <span class="n">upper_indices</span>
+
+<span class="c1"># Build and verify</span>
+<span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span> <span class="o">=</span> <span class="n">build_frequency_bins</span><span class="p">(</span><span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span> <span class="o">=</span> <span class="n">build_normal_cdf_lookup</span><span class="p">()</span>
+<span class="n">N_haploid</span> <span class="o">=</span> <span class="mf">20000.0</span>
+
+<span class="n">logP</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">build_transition_matrix_fast</span><span class="p">(</span>
+    <span class="n">freqs</span><span class="p">,</span> <span class="n">N_haploid</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">z_bins</span><span class="o">=</span><span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="o">=</span><span class="n">z_cdf</span><span class="p">)</span>
+
+<span class="c1"># Check sparsity: how many nonzero entries per row?</span>
+<span class="n">nnz_per_row</span> <span class="o">=</span> <span class="p">[</span><span class="n">hi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">lo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">))]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Average nonzero entries per row: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">nnz_per_row</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max nonzero entries: </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">nnz_per_row</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Matrix size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sparsity: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">nnz_per_row</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">))</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">% zeros&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="the-log-sum-exp-trick">
+<h3>The Log-Sum-Exp Trick<a class="headerlink" href="#the-log-sum-exp-trick" title="Link to this heading"></a></h3>
+<p>Throughout CLUES, all probabilities are stored in <strong>log space</strong> to avoid numerical
+underflow. The key operation is the <strong>log-sum-exp</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\log\left(\sum_j e^{a_j}\right) = a_{\max} + \log\left(\sum_j e^{a_j - a_{\max}}\right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(a_{\max} = \max_j a_j\)</span>. This prevents overflow or underflow when
+the <span class="math notranslate nohighlight">\(a_j\)</span> values span a huge range.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">logsumexp</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute log(sum(exp(a))) in a numerically stable way.</span>
+
+<span class="sd">    This is the fundamental building block for all HMM computations</span>
+<span class="sd">    in log space. The trick: subtract the maximum before exponentiating,</span>
+<span class="sd">    then add it back after taking the log.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : ndarray</span>
+<span class="sd">        Array of log-probabilities.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    result : float</span>
+<span class="sd">        log(sum(exp(a))).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">a_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">a_max</span> <span class="o">==</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="k">return</span> <span class="n">a_max</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="n">a_max</span><span class="p">)))</span>
+
+<span class="c1"># Verify: log(exp(-1000) + exp(-1001)) should be about -999.69</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1000.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1001.0</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;logsumexp([-1000, -1001]) = </span><span class="si">{</span><span class="n">result</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected: </span><span class="si">{</span><span class="o">-</span><span class="mi">1000</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-frequency-bins-and-the-boundary-effect admonition">
+<p class="admonition-title">Exercise 1: Frequency bins and the boundary effect</p>
+<p>Build frequency bins with <span class="math notranslate nohighlight">\(K = 50, 100, 200, 450\)</span> and compare:</p>
+<ol class="loweralpha simple">
+<li><p>The spacing between the first 5 bins (near <span class="math notranslate nohighlight">\(x = 0\)</span>).</p></li>
+<li><p>The spacing at <span class="math notranslate nohighlight">\(x \approx 0.5\)</span>.</p></li>
+<li><p>Build the transition matrix for each <span class="math notranslate nohighlight">\(K\)</span> with <span class="math notranslate nohighlight">\(N = 10000\)</span>
+(haploid) and <span class="math notranslate nohighlight">\(s = 0.02\)</span>. What fraction of the matrix is nonzero?
+How does the sparsity change with <span class="math notranslate nohighlight">\(K\)</span>?</p></li>
+</ol>
+</div>
+<div class="admonition-exercise-2-selection-shifts-the-transition-distribution admonition">
+<p class="admonition-title">Exercise 2: Selection shifts the transition distribution</p>
+<p>For <span class="math notranslate nohighlight">\(N = 20000\)</span> (haploid), <span class="math notranslate nohighlight">\(K = 100\)</span>, starting frequency
+<span class="math notranslate nohighlight">\(x = 0.5\)</span>:</p>
+<ol class="loweralpha simple">
+<li><p>Plot the transition probability distribution (row <span class="math notranslate nohighlight">\(i\)</span> of the
+transition matrix) for <span class="math notranslate nohighlight">\(s = -0.05, 0, 0.01, 0.05\)</span>.</p></li>
+<li><p>Compute the mean and variance of the destination frequency for each
+<span class="math notranslate nohighlight">\(s\)</span>. How does the mean shift with <span class="math notranslate nohighlight">\(s\)</span>? Does the variance change?</p></li>
+<li><p>What happens when <span class="math notranslate nohighlight">\(|s|\)</span> is very large (say, <span class="math notranslate nohighlight">\(s = 0.5\)</span>)?
+Does the normal approximation still look reasonable?</p></li>
+</ol>
+</div>
+<div class="admonition-exercise-3-dominance-changes-the-dynamics admonition">
+<p class="admonition-title">Exercise 3: Dominance changes the dynamics</p>
+<p>Using the same parameters as Exercise 2, compare the backward mean
+<span class="math notranslate nohighlight">\(\mu(x)\)</span> for <span class="math notranslate nohighlight">\(h = 0, 0.5, 1\)</span> across all frequencies
+<span class="math notranslate nohighlight">\(x \in (0, 1)\)</span>.</p>
+<ol class="loweralpha simple">
+<li><p>At which frequency is the selection-driven shift largest for each <span class="math notranslate nohighlight">\(h\)</span>?</p></li>
+<li><p>Why does the recessive case (<span class="math notranslate nohighlight">\(h = 0\)</span>) have its largest shift at high
+<span class="math notranslate nohighlight">\(x\)</span>, while the dominant case (<span class="math notranslate nohighlight">\(h = 1\)</span>) has it at low <span class="math notranslate nohighlight">\(x\)</span>?</p></li>
+<li><p>Verify that all three <span class="math notranslate nohighlight">\(h\)</span> values give the same shift when
+<span class="math notranslate nohighlight">\(x = 0.5\)</span>. Why is this true?</p></li>
+</ol>
+</div>
+</section>
+<section id="solutions">
+<h2>Solutions<a class="headerlink" href="#solutions" title="Link to this heading"></a></h2>
+<div class="admonition-solution-1-frequency-bins-and-the-boundary-effect admonition">
+<p class="admonition-title">Solution 1: Frequency bins and the boundary effect</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">K</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">450</span><span class="p">]:</span>
+    <span class="n">freqs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">build_frequency_bins</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+    <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span> <span class="o">=</span> <span class="n">build_normal_cdf_lookup</span><span class="p">()</span>
+
+    <span class="n">spacing_near_0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">freqs</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span>
+    <span class="n">idx_half</span> <span class="o">=</span> <span class="n">K</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">spacing_near_half</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">idx_half</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="n">idx_half</span><span class="o">+</span><span class="mi">3</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">K = </span><span class="si">{</span><span class="n">K</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  First 5 bins: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">freqs</span><span class="p">[:</span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Spacing near 0:   </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">spacing_near_0</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Spacing near 0.5: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">spacing_near_half</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">logP</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">build_transition_matrix_fast</span><span class="p">(</span>
+        <span class="n">freqs</span><span class="p">,</span> <span class="mf">10000.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">z_bins</span><span class="o">=</span><span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="o">=</span><span class="n">z_cdf</span><span class="p">)</span>
+    <span class="n">nnz</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">lo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Nonzero entries: </span><span class="si">{</span><span class="n">nnz</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">K</span><span class="o">*</span><span class="n">K</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="mi">100</span><span class="o">*</span><span class="n">nnz</span><span class="o">/</span><span class="p">(</span><span class="n">K</span><span class="o">*</span><span class="n">K</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The boundary spacing shrinks as <span class="math notranslate nohighlight">\(K\)</span> increases, giving finer resolution
+near fixation/loss. The sparsity increases with <span class="math notranslate nohighlight">\(K\)</span> because each row’s
+nonzero band width (in bin indices) grows only as <span class="math notranslate nohighlight">\(\sqrt{K}\)</span>, while the
+total row length grows linearly.</p>
+</div>
+<div class="admonition-solution-2-selection-shifts-the-transition-distribution admonition">
+<p class="admonition-title">Solution 2: Selection shifts the transition distribution</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">K</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">freqs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">build_frequency_bins</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span> <span class="o">=</span> <span class="n">build_normal_cdf_lookup</span><span class="p">()</span>
+<span class="n">N_haploid</span> <span class="o">=</span> <span class="mf">20000.0</span>
+
+<span class="n">i_half</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freqs</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting bin: x[</span><span class="si">{</span><span class="n">i_half</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">freqs</span><span class="p">[</span><span class="n">i_half</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">s_val</span> <span class="ow">in</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">]:</span>
+    <span class="n">logP</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">build_transition_matrix_fast</span><span class="p">(</span>
+        <span class="n">freqs</span><span class="p">,</span> <span class="n">N_haploid</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">s_val</span><span class="p">,</span> <span class="n">z_bins</span><span class="o">=</span><span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="o">=</span><span class="n">z_cdf</span><span class="p">)</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logP</span><span class="p">[</span><span class="n">i_half</span><span class="p">,</span> <span class="p">:])</span>
+    <span class="n">mean_freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">freqs</span> <span class="o">*</span> <span class="n">row</span><span class="p">)</span>
+    <span class="n">var_freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">freqs</span> <span class="o">-</span> <span class="n">mean_freq</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">row</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  s = </span><span class="si">{</span><span class="n">s_val</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">: mean = </span><span class="si">{</span><span class="n">mean_freq</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;var = </span><span class="si">{</span><span class="n">var_freq</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2">, shift = </span><span class="si">{</span><span class="n">mean_freq</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">freqs</span><span class="p">[</span><span class="n">i_half</span><span class="p">]</span><span class="si">:</span><span class="s2">+.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>What happens:</strong></p>
+<ul class="simple">
+<li><p>The mean shifts proportionally to <span class="math notranslate nohighlight">\(s\)</span> (positive <span class="math notranslate nohighlight">\(s\)</span> shifts the
+backward mean downward; negative <span class="math notranslate nohighlight">\(s\)</span> shifts it upward).</p></li>
+<li><p>The variance is nearly identical for all values of <span class="math notranslate nohighlight">\(s\)</span> – it depends
+on <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(N\)</span>, not on <span class="math notranslate nohighlight">\(s\)</span>.</p></li>
+<li><p>For very large <span class="math notranslate nohighlight">\(|s|\)</span> (like 0.5), the normal approximation breaks down
+because the mean shift per generation can be comparable to the standard
+deviation. In practice, <span class="math notranslate nohighlight">\(|s| &lt; 0.1\)</span> is the regime where CLUES works
+well.</p></li>
+</ul>
+</div>
+<div class="admonition-solution-3-dominance-changes-the-dynamics admonition">
+<p class="admonition-title">Solution 3: Dominance changes the dynamics</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="mf">0.05</span>
+
+<span class="k">for</span> <span class="n">h_val</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="p">[(</span><span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;Recessive&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;Additive&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;Dominant&quot;</span><span class="p">)]:</span>
+    <span class="n">shifts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">backward_mean</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="n">h_val</span><span class="p">)</span> <span class="o">-</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_vals</span><span class="p">])</span>
+    <span class="n">peak_x</span> <span class="o">=</span> <span class="n">x_vals</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">shifts</span><span class="p">)]</span>  <span class="c1"># most negative shift</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> (h=</span><span class="si">{</span><span class="n">h_val</span><span class="si">}</span><span class="s2">): peak shift at x = </span><span class="si">{</span><span class="n">peak_x</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;shift = </span><span class="si">{</span><span class="n">shifts</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Check that all h values agree at x = 0.5</span>
+<span class="n">x_test</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="k">for</span> <span class="n">h_val</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]:</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">backward_mean</span><span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="n">h_val</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;h = </span><span class="si">{</span><span class="n">h_val</span><span class="si">}</span><span class="s2">, x = 0.5: mu = </span><span class="si">{</span><span class="n">mu</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2">, shift = </span><span class="si">{</span><span class="n">mu</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x_test</span><span class="si">:</span><span class="s2">+.8f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>(a)</strong> Recessive: peak shift near <span class="math notranslate nohighlight">\(x \approx 0.8\)</span>. Dominant: peak shift
+near <span class="math notranslate nohighlight">\(x \approx 0.2\)</span>. Additive: peak shift near <span class="math notranslate nohighlight">\(x \approx 0.5\)</span>.</p>
+<p><strong>(b)</strong> For the recessive case, selection only acts on <span class="math notranslate nohighlight">\(DD\)</span> homozygotes
+(frequency <span class="math notranslate nohighlight">\(x^2\)</span>), so the selective effect is proportional to <span class="math notranslate nohighlight">\(x^2\)</span>.
+This is largest when <span class="math notranslate nohighlight">\(x\)</span> is high. For the dominant case, selection acts
+on both <span class="math notranslate nohighlight">\(DD\)</span> and <span class="math notranslate nohighlight">\(AD\)</span> (total frequency <span class="math notranslate nohighlight">\(1 - (1-x)^2\)</span>),
+which is already large when <span class="math notranslate nohighlight">\(x\)</span> is small.</p>
+<p><strong>(c)</strong> At <span class="math notranslate nohighlight">\(x = 0.5\)</span>, the heterozygote frequency <span class="math notranslate nohighlight">\(2x(1-x) = 0.5\)</span>
+regardless of <span class="math notranslate nohighlight">\(h\)</span>. The homozygote frequencies are also <span class="math notranslate nohighlight">\(0.25\)</span> each.
+At this symmetric point, the dominance coefficient doesn’t matter because the
+average fitness effect over all genotypes is the same.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview: Detecting Selection" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="emission_probabilities.html" class="btn btn-neutral float-right" title="Emission Probabilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

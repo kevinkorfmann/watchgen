@@ -784,3 +784,277 @@ Exercises
    runtime scales as :math:`O(mk)`. Plot the results.
 
 Next: :ref:`tsinfer_ancestor_matching` -- using the copying model to build the ancestor tree.
+
+
+Solutions
+==========
+
+.. admonition:: Solution 1: Viterbi vs. forward-backward
+
+   We implement the forward-backward algorithm for the Li & Stephens model,
+   compute the marginal posterior mode at each site, and compare it with the
+   Viterbi path. The "Viterbi paradox" occurs when the globally optimal path
+   differs from the site-by-site posterior mode.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      def forward_backward_ls(query, panel, rho, mu):
+          """Forward-backward algorithm for the Li & Stephens model.
+
+          Returns the marginal posterior P(Z_ell = j | X) at each site.
+          """
+          m, k = panel.shape
+          # --- Forward pass ---
+          F = np.zeros((m, k))
+
+          # Initialization
+          for j in range(k):
+              if query[0] == panel[0, j]:
+                  F[0, j] = (1.0 / k) * (1 - mu[0])
+              else:
+                  F[0, j] = (1.0 / k) * mu[0]
+
+          # Rescaling factors
+          scales = np.zeros(m)
+          scales[0] = F[0].sum()
+          F[0] /= scales[0]
+
+          for ell in range(1, m):
+              total_prev = F[ell - 1].sum()
+              for j in range(k):
+                  # Emission
+                  if query[ell] == panel[ell, j]:
+                      e = 1 - mu[ell]
+                  else:
+                      e = mu[ell]
+                  # Transition: sum over all previous states
+                  # stay + switch = (1-rho)*F[ell-1,j] + (rho/k)*total_prev
+                  trans = (1 - rho[ell]) * F[ell - 1, j] + \
+                          (rho[ell] / k) * total_prev
+                  F[ell, j] = e * trans
+
+              scales[ell] = F[ell].sum()
+              if scales[ell] > 0:
+                  F[ell] /= scales[ell]
+
+          # --- Backward pass ---
+          B = np.zeros((m, k))
+          B[-1] = 1.0
+
+          for ell in range(m - 2, -1, -1):
+              total_B_e = 0.0
+              for j in range(k):
+                  if query[ell + 1] == panel[ell + 1, j]:
+                      e = 1 - mu[ell + 1]
+                  else:
+                      e = mu[ell + 1]
+                  total_B_e += B[ell + 1, j] * e * (rho[ell + 1] / k)
+
+              for j in range(k):
+                  if query[ell + 1] == panel[ell + 1, j]:
+                      e = 1 - mu[ell + 1]
+                  else:
+                      e = mu[ell + 1]
+                  B[ell, j] = (1 - rho[ell + 1]) * B[ell + 1, j] * e + \
+                              total_B_e
+
+              scale_b = B[ell].sum()
+              if scale_b > 0:
+                  B[ell] /= scale_b
+
+          # --- Posterior ---
+          posterior = F * B
+          # Normalize each row
+          for ell in range(m):
+              row_sum = posterior[ell].sum()
+              if row_sum > 0:
+                  posterior[ell] /= row_sum
+
+          return posterior
+
+      # --- Comparison ---
+      np.random.seed(42)
+      k, m = 5, 30
+      panel = np.random.binomial(1, 0.3, size=(m, k))
+
+      # Mosaic query: copy from ref 0 (sites 0-9), ref 2 (sites 10-19),
+      # ref 4 (sites 20-29)
+      true_path = np.array([0]*10 + [2]*10 + [4]*10)
+      query = np.array([panel[ell, true_path[ell]] for ell in range(m)])
+
+      rho = np.full(m, 0.05); rho[0] = 0.0
+      mu = np.full(m, 0.01)
+
+      # Viterbi path
+      viterbi_path, _ = viterbi_ls(query, panel, rho, mu)
+
+      # Forward-backward posterior
+      posterior = forward_backward_ls(query, panel, rho, mu)
+      fb_mode = np.argmax(posterior, axis=1)  # Marginal posterior mode
+
+      # Compare
+      disagree = np.where(viterbi_path != fb_mode)[0]
+      print(f"Sites where Viterbi != posterior mode: {len(disagree)}/{m}")
+      print(f"  Disagreement sites: {disagree}")
+
+      for ell in disagree[:5]:
+          print(f"  Site {ell}: Viterbi={viterbi_path[ell]}, "
+                f"FB mode={fb_mode[ell]}, "
+                f"posterior={np.round(posterior[ell], 3)}")
+
+   **Key observations:**
+
+   - Disagreements between Viterbi and the posterior mode (the "Viterbi
+     paradox") typically occur at or near recombination breakpoints, where
+     the posterior is spread across multiple states and the global optimality
+     constraint of Viterbi forces a different choice than the site-by-site
+     mode.
+   - At sites far from breakpoints, Viterbi and the posterior mode almost
+     always agree because the posterior is concentrated on a single state.
+   - The forward-backward posterior provides *uncertainty* information (how
+     confident is the copying assignment?) that Viterbi does not.
+
+.. admonition:: Solution 2: Effect of the mismatch ratio
+
+   We run the Viterbi algorithm with varying mismatch ratios and count
+   the number of inferred recombination breakpoints. The mismatch ratio
+   controls the trade-off between tolerating mismatches and switching
+   references.
+
+   .. code-block:: python
+
+      import numpy as np
+      import matplotlib.pyplot as plt
+
+      np.random.seed(42)
+      k, m = 10, 100
+      panel = np.random.binomial(1, 0.3, size=(m, k))
+
+      # Construct a mosaic query with exactly 3 breakpoints
+      true_path = np.array([1]*25 + [5]*25 + [3]*25 + [8]*25)
+      query = np.array([panel[ell, true_path[ell]] for ell in range(m)])
+      # Add 5% noise (simulating extra mutations not in the panel)
+      noise_sites = np.random.choice(m, size=5, replace=False)
+      query[noise_sites] = 1 - query[noise_sites]
+
+      rho = np.full(m, 0.02); rho[0] = 0.0
+
+      ratios = [0.01, 0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+      breakpoint_counts = []
+
+      for ratio in ratios:
+          mu = np.full(m, 0.02 * ratio)  # mu = rho * ratio
+          path, _ = viterbi_ls(query, panel, rho, mu)
+          bps = find_breakpoints(path, np.arange(m, dtype=float))
+          breakpoint_counts.append(len(bps))
+          print(f"Ratio={ratio:6.2f}: {len(bps)} breakpoints, "
+                f"path changes: {np.sum(np.diff(path) != 0)}")
+
+      plt.figure(figsize=(7, 5))
+      plt.plot(ratios, breakpoint_counts, 'o-', lw=2)
+      plt.axhline(y=3, color='r', linestyle='--', label="True breakpoints")
+      plt.xscale('log')
+      plt.xlabel("Mismatch ratio (mu / rho)")
+      plt.ylabel("Number of inferred breakpoints")
+      plt.title("Effect of Mismatch Ratio on Breakpoint Count")
+      plt.legend()
+      plt.tight_layout()
+      plt.show()
+
+   **Key observations:**
+
+   - **Low ratio** (:math:`\mu / \rho \ll 1`): mismatches are very costly,
+     so the Viterbi algorithm switches references to avoid *any* mismatch.
+     This produces many spurious breakpoints -- the model over-segments.
+   - **High ratio** (:math:`\mu / \rho \gg 1`): mismatches are cheap, so
+     the algorithm tolerates disagreements and rarely switches. This
+     produces too few breakpoints -- the model under-segments and misses
+     true recombination events.
+   - **Optimal ratio** (around 1.0): the model correctly balances switching
+     vs. mismatching and recovers approximately the true number of
+     breakpoints. The noise mutations are absorbed as mismatches rather than
+     triggering spurious switches.
+
+.. admonition:: Solution 3: Scaling behavior
+
+   We time the Viterbi algorithm for varying panel sizes :math:`k` and
+   site counts :math:`m`, confirming the :math:`O(mk)` scaling.
+
+   .. code-block:: python
+
+      import numpy as np
+      import time
+      import matplotlib.pyplot as plt
+
+      def time_viterbi(m, k, n_repeats=3):
+          """Time the Viterbi algorithm for given m and k."""
+          panel = np.random.binomial(1, 0.3, size=(m, k))
+          query = np.random.binomial(1, 0.3, size=m)
+          rho = np.full(m, 0.02); rho[0] = 0.0
+          mu = np.full(m, 0.01)
+
+          times_list = []
+          for _ in range(n_repeats):
+              start = time.perf_counter()
+              viterbi_ls(query, panel, rho, mu)
+              elapsed = time.perf_counter() - start
+              times_list.append(elapsed)
+
+          return np.median(times_list)
+
+      np.random.seed(42)
+
+      # Vary k with fixed m
+      m_fixed = 1000
+      ks = [10, 50, 100, 200, 500, 1000]
+      times_k = [time_viterbi(m_fixed, k) for k in ks]
+
+      # Vary m with fixed k
+      k_fixed = 100
+      ms = [100, 500, 1000, 2000, 5000, 10000]
+      times_m = [time_viterbi(m, k_fixed) for m in ms]
+
+      fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+      ax1.loglog(ks, times_k, 'o-', label="Measured")
+      # Fit a line in log-log space to verify slope ~ 1
+      coeffs_k = np.polyfit(np.log(ks), np.log(times_k), 1)
+      ax1.loglog(ks, np.exp(np.polyval(coeffs_k, np.log(ks))), '--',
+                 label=f"Slope = {coeffs_k[0]:.2f}")
+      ax1.set_xlabel("Panel size k")
+      ax1.set_ylabel("Time (seconds)")
+      ax1.set_title(f"Scaling with k (m={m_fixed})")
+      ax1.legend()
+
+      ax2.loglog(ms, times_m, 'o-', label="Measured")
+      coeffs_m = np.polyfit(np.log(ms), np.log(times_m), 1)
+      ax2.loglog(ms, np.exp(np.polyval(coeffs_m, np.log(ms))), '--',
+                 label=f"Slope = {coeffs_m[0]:.2f}")
+      ax2.set_xlabel("Number of sites m")
+      ax2.set_ylabel("Time (seconds)")
+      ax2.set_title(f"Scaling with m (k={k_fixed})")
+      ax2.legend()
+
+      plt.tight_layout()
+      plt.show()
+
+      print(f"Scaling exponent in k: {coeffs_k[0]:.2f} (expected: 1.0)")
+      print(f"Scaling exponent in m: {coeffs_m[0]:.2f} (expected: 1.0)")
+
+   **Key observations:**
+
+   - The log-log slopes should be close to 1.0 for both :math:`k` and
+     :math:`m`, confirming :math:`O(mk)` scaling. The :math:`O(k)` trick
+     from the Li & Stephens model reduces each site's computation from
+     :math:`O(k^2)` (naive transition) to :math:`O(k)` (using the global
+     max).
+   - In practice, Python's loop overhead adds a constant factor, so
+     the absolute times will be larger than a C implementation. The
+     *scaling behavior* (slopes) should match regardless.
+   - Memory usage is :math:`O(mk)` for storing the Viterbi matrix
+     :math:`V` and traceback pointers :math:`\psi`. For very large
+     problems, a space-optimized version can use :math:`O(k)` memory by
+     only storing two columns of :math:`V` at a time (though the full
+     traceback matrix still requires :math:`O(mk)`).

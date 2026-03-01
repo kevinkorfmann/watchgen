@@ -1,0 +1,443 @@
+.. _balance_wheel_comparison:
+
+=============================
+Comparison and Limitations
+=============================
+
+   *The master watchmaker keeps three timepieces on her bench: a marine
+   chronometer for absolute accuracy, a minute repeater for darkness, and a
+   split-seconds chronograph for measuring intervals. She does not ask which is
+   best. She asks which is right for the task at hand. The answer depends on
+   what you need to measure, how quickly, and how much uncertainty you can
+   tolerate.*
+
+This chapter places Balance Wheel in the full landscape of neural and classical
+methods for population-genetic inference. We compare it against the other two
+Complications, trace its connections to every relevant Timepiece, enumerate its
+limitations honestly, and provide a decision tree for choosing the right tool.
+
+
+The Three Complications
+=========================
+
+Each Complication operates at a different level of the data hierarchy and serves
+a different purpose. They are not competing approaches -- they are complementary
+tools for different questions.
+
+.. list-table:: The three Complications compared
+   :header-rows: 1
+   :widths: 18 27 27 28
+
+   * - Property
+     - :ref:`Mainspring <mainspring_complication>`
+     - :ref:`Escapement <escapement_complication>`
+     - **Balance Wheel**
+   * - Metaphor
+     - Learn to assemble the watch from blueprints
+     - Understand the physics of timekeeping
+     - Feel the aggregate pressure of evolution
+   * - Data input
+     - Raw genotypes :math:`\mathbf{D} \in \{0,1\}^{n \times L}`
+     - Raw genotypes :math:`\mathbf{D} \in \{0,1\}^{n \times L}`
+     - Site Frequency Spectrum :math:`\mathbf{D} \in \mathbb{Z}^{n-1}`
+   * - Training signal
+     - Simulated ARGs (msprime)
+     - Coalescent likelihood (analytical)
+     - Exact SFS from :ref:`moments <moments_timepiece>` / :ref:`dadi <dadi_timepiece>`
+   * - Simulations needed
+     - Yes (millions of ARGs)
+     - No
+     - No (just moments evaluations)
+   * - What it infers
+     - Full ARG + :math:`N_e(t)`
+     - Genealogy + :math:`N_e(t)`
+     - Demographic parameters only
+   * - Resolution
+     - Per-site, per-sample
+     - Per-site, per-sample
+     - Population-level (SFS)
+   * - Speed at inference
+     - ~1 second (forward pass)
+     - ~10--30 minutes (ELBO optimization)
+     - **~0.1 ms per SFS** + seconds for posterior
+   * - Closest Timepiece
+     - :ref:`tsinfer <tsinfer_timepiece>` + :ref:`tsdate <tsdate_timepiece>`
+     - :ref:`PSMC <psmc_timepiece>` + :ref:`ARGweaver <argweaver_timepiece>`
+     - :ref:`dadi <dadi_timepiece>` + :ref:`moments <moments_timepiece>`
+   * - Best for
+     - High-throughput ARG inference
+     - Deep analysis of one dataset
+     - Demographic model fitting + comparison
+
+Each operates at a different level of the data hierarchy:
+
+- **Mainspring**: sequence :math:`\to` ARG :math:`\to` demography (most
+  detailed, needs simulations)
+- **Escapement**: sequence :math:`\to` coalescent times :math:`\to` demography
+  (no simulations, per-dataset)
+- **Balance Wheel**: SFS :math:`\to` demography (fastest, most practical for
+  demographic inference)
+
+.. admonition:: The information hierarchy
+
+   Moving from Mainspring to Balance Wheel, we trade information for speed. The
+   raw genotype matrix contains all the information: haplotype structure, LD,
+   spatial patterns, allele frequencies. The SFS retains only allele frequencies.
+   This is a massive compression -- and under the Poisson Random Field model, it
+   is lossless for demographic inference. But for questions about recombination,
+   selection, or genealogy structure, the SFS is insufficient. Choose the
+   Complication that matches the question, not the one that processes the most
+   data.
+
+
+Connection to Every Timepiece
+================================
+
+Balance Wheel does not exist in isolation. Every major design decision traces to
+a mathematical insight from a Timepiece.
+
+.. list-table:: Design principles and their Timepiece origins
+   :header-rows: 1
+   :widths: 20 26 54
+
+   * - Timepiece
+     - What Balance Wheel borrows
+     - How it appears
+   * - :ref:`dadi <dadi_timepiece>`
+     - The Wright-Fisher diffusion PDE
+     - Balance Wheel learns to approximate the PDE solution. The teacher
+       (dadi) solves the PDE exactly; the student (neural network) reproduces
+       the result without solving the PDE. The diffusion theory provides the
+       mathematical foundation that makes the SFS a smooth function of
+       :math:`\Theta`.
+   * - :ref:`moments <moments_timepiece>`
+     - The ODE system for SFS entries
+     - moments is the primary teacher during training. Its ODE integrator
+       computes the exact expected SFS for each training example. Balance
+       Wheel distills this computation into a neural network.
+   * - :ref:`PSMC <psmc_timepiece>`
+     - Piecewise-constant :math:`N_e(t)` parameterization
+     - Balance Wheel extends PSMC's piecewise-constant representation to
+       continuous :math:`N_e(t)` via neural splines, while retaining the
+       piecewise-constant option as the simplest case.
+   * - :ref:`momi2 <momi2_timepiece>`
+     - Coalescent SFS computation for multi-population models
+     - momi2 serves as an alternative teacher for complex multi-population
+       topologies where moments becomes expensive. Its tensor machinery
+       inspires the factored output approach.
+   * - :ref:`Gamma-SMC <gamma_smc_timepiece>`
+     - Gamma distributions for parameter posteriors
+     - The Bayesian posterior inference via HMC produces posterior
+       distributions that are often well-approximated by gamma distributions,
+       providing a connection to Gamma-SMC's analytical posteriors.
+   * - :ref:`phlash <phlash_timepiece>`
+     - Differentiable inference engine
+     - The core idea of replacing a classical inference engine with a
+       differentiable neural alternative. phlash pioneered this for the SMC
+       likelihood; Balance Wheel does it for the SFS computation.
+   * - :ref:`SMC++ <smcpp_timepiece>`
+     - Continuous-time demographic inference
+     - The motivation for continuous :math:`N_e(t)` comes from SMC++'s
+       demonstration that piecewise-constant models are limiting.
+   * - :ref:`msprime <msprime_timepiece>`
+     - Kingman coalescent theory
+     - The prior distributions on demographic parameters are grounded in
+       coalescent expectations (e.g., expected TMRCA for pair of lineages).
+
+
+What Balance Wheel Cannot Do
+===============================
+
+Four fundamental limitations, stated without euphemism.
+
+1. Inherits the SFS's Limitations
+-------------------------------------
+
+The SFS discards:
+
+- **Linkage disequilibrium (LD)**. Two-locus statistics, haplotype blocks, and
+  LD decay patterns are invisible in the SFS. Recent selective sweeps that
+  leave strong LD signatures but modest SFS distortions will be missed.
+- **Haplotype structure**. The SFS counts allele frequencies but not which
+  alleles co-occur on the same haplotype. Admixture events that create
+  characteristic haplotype patterns (e.g., long blocks of introgressed
+  sequence) cannot be detected from the SFS alone.
+- **Spatial information**. The genomic positions of SNPs are irrelevant to the
+  SFS. Recombination rate variation, which produces spatial patterns of
+  diversity, is invisible.
+
+.. math::
+
+   \text{SFS} = f(\text{allele frequencies}) \neq g(\text{haplotype structure})
+
+For questions about selection, recombination, or genealogy structure, use
+:ref:`Escapement <escapement_complication>` or
+:ref:`Mainspring <mainspring_complication>`.
+
+2. Teacher Quality Ceiling
+-----------------------------
+
+Balance Wheel's accuracy is bounded by the teacher's accuracy. If moments has
+numerical issues for extreme parameter values -- very large or very small
+population sizes, very short epochs, very high migration rates -- the neural
+network will inherit those issues or extrapolate unpredictably.
+
+.. list-table:: Teacher accuracy in boundary cases
+   :header-rows: 1
+   :widths: 35 30 35
+
+   * - Scenario
+     - Teacher behavior
+     - Neural network behavior
+   * - :math:`N_e < 100`
+     - moments may lose precision (drift dominated)
+     - May extrapolate poorly
+   * - :math:`N_e > 10^6`
+     - moments may be slow (many ODE steps)
+     - May interpolate well if trained in range
+   * - Epoch duration < 0.001 coalescent units
+     - moments may miss the effect
+     - May smooth over the epoch
+   * - Migration rate :math:`m > 1`
+     - moments may be numerically unstable
+     - Will reflect the instability
+
+**Mitigation.** Validate the neural predictions against the teacher in the
+specific parameter regime of interest. If moments gives unreliable results in
+some regime, filter those examples from the training set and acknowledge the
+limitation.
+
+3. Generalization to Unseen Topologies
+-----------------------------------------
+
+The multi-population version is trained on a distribution of population tree
+topologies. If the true topology is:
+
+- **More complex** than the training distribution (e.g., 6 populations when
+  training covered up to 4).
+- **Structurally different** (e.g., reticulate admixture when training used only
+  tree-like splits).
+- **Extreme** (e.g., very asymmetric topologies not represented in the prior).
+
+the network may produce inaccurate joint SFS predictions. Unlike moments, which
+can compute the SFS for any topology that can be specified, the neural network
+is limited to the topologies it has seen during training.
+
+**Mitigation.** Ensure the training topology distribution covers the models of
+interest. For novel topologies, generate a focused training set and fine-tune the
+network. Always validate against moments for the specific topology being analyzed.
+
+4. Not a Replacement for Full-Likelihood
+--------------------------------------------
+
+For a single dataset analyzed once with a well-specified model, running
+:ref:`moments <moments_timepiece>` directly is more trustworthy than running
+Balance Wheel. The classical solver gives the exact expected SFS; the neural
+approximation introduces an error (typically < 1%, but still an error). Balance
+Wheel's advantages emerge only when:
+
+- You need thousands of likelihood evaluations (HMC, model comparison, bootstrap).
+- The model has :math:`k \geq 3` populations (moments becomes slow).
+- You need continuous :math:`N_e(t)` (moments requires piecewise-constant).
+- You need full posterior distributions (moments gives only the MLE).
+
+For a two-population model analyzed once to find the MLE, moments is simpler,
+more transparent, and more trustworthy.
+
+
+When to Use Which Complication
+================================
+
+A decision tree for choosing the right tool:
+
+.. code-block:: text
+
+   START
+     |
+     v
+   What is your data?
+     |
+     ├── Raw genotypes (VCF, genotype matrix)
+     |     |
+     |     v
+     |   Do you need the full ARG?
+     |     |
+     |     ├── Yes ──▶ Do you have GPU + training budget?
+     |     |            |
+     |     |            ├── Yes ──▶ MAINSPRING
+     |     |            └── No  ──▶ tsinfer + tsdate
+     |     |
+     |     └── No ──▶ Do you need per-site uncertainty?
+     |                 |
+     |                 ├── Yes ──▶ ESCAPEMENT
+     |                 └── No  ──▶ Compute SFS, then ──▶ (see SFS path)
+     |
+     └── Site Frequency Spectrum (SFS)
+           |
+           v
+         How many populations?
+           |
+           ├── 1 or 2, simple model ──▶ moments / dadi (classical)
+           |
+           ├── 1 or 2, need posterior ──▶ BALANCE WHEEL + HMC
+           |
+           ├── 3+, any analysis ──▶ BALANCE WHEEL (only viable option)
+           |
+           └── Model comparison needed ──▶ BALANCE WHEEL + marginal likelihood
+
+.. list-table:: Summary: when to use each approach
+   :header-rows: 1
+   :widths: 45 55
+
+   * - Scenario
+     - Recommended approach
+   * - Simple 2-pop split model, find MLE
+     - :ref:`moments <moments_timepiece>` directly
+   * - 2-pop model, need posterior uncertainty
+     - **Balance Wheel** + HMC
+   * - 3+ populations, any analysis
+     - **Balance Wheel** (moments too slow)
+   * - Continuous :math:`N_e(t)` inference
+     - **Balance Wheel** (moments needs piecewise-constant)
+   * - Model comparison (2-epoch vs. 3-epoch)
+     - **Balance Wheel** + marginal likelihood
+   * - Need full ARG for downstream analysis
+     - :ref:`Mainspring <mainspring_complication>`
+   * - Need per-site genealogy uncertainty
+     - :ref:`Escapement <escapement_complication>`
+   * - Screening 1,000 genomic windows for :math:`N_e(t)`
+     - :ref:`Mainspring <mainspring_complication>` (speed)
+   * - Single dataset, maximal statistical rigor
+     - Hybrid: Mainspring :math:`\to` Escapement
+   * - Teaching and understanding demographic inference
+     - :ref:`dadi <dadi_timepiece>` + :ref:`moments <moments_timepiece>` (Timepieces)
+   * - No GPU available
+     - :ref:`moments <moments_timepiece>` or :ref:`dadi <dadi_timepiece>`
+
+.. admonition:: The honest summary
+
+   Balance Wheel occupies a specific niche: fast, differentiable SFS computation
+   that enables Bayesian posterior inference and handles multi-population models
+   where the classical solvers fail. It is not a replacement for dadi or
+   moments -- it is a neural accelerator for the computation they perform. When
+   you need the MLE of a simple model, use moments. When you need the posterior
+   of a complex model, use Balance Wheel. When you need the full ARG, use
+   Mainspring or Escapement.
+
+   The three Complications form a hierarchy:
+
+   - **Balance Wheel**: SFS :math:`\to` demographic parameters (fastest,
+     least detailed)
+   - **Escapement**: genotypes :math:`\to` genealogy + demography (per-dataset,
+     principled)
+   - **Mainspring**: genotypes :math:`\to` full ARG + demography (amortized,
+     most detailed)
+
+   And the Timepieces remain the foundation. Every neural approach in this book
+   is built on the mathematical insights of the classical methods. Balance Wheel
+   without dadi's diffusion theory and moments' ODE system would have no teacher.
+   Escapement without the coalescent likelihood would have no loss function.
+   Mainspring without msprime would have no training data.
+
+   Use the simplest tool that answers your question. And always check the results
+   against a method you trust.
+
+
+Full Comparison Against Classical Methods
+============================================
+
+For completeness, we place Balance Wheel alongside all relevant Timepieces:
+
+.. list-table:: Balance Wheel vs. all SFS-based methods
+   :header-rows: 1
+   :widths: 14 14 14 14 14 14 16
+
+   * - Property
+     - :ref:`dadi <dadi_timepiece>`
+     - :ref:`moments <moments_timepiece>`
+     - :ref:`momi2 <momi2_timepiece>`
+     - **Balance Wheel**
+     - :ref:`phlash <phlash_timepiece>`
+     - :ref:`SMC++ <smcpp_timepiece>`
+   * - Data input
+     - SFS
+     - SFS
+     - SFS
+     - SFS
+     - Sequence pairs
+     - Sequence pairs
+   * - Forward model
+     - PDE solver
+     - ODE integrator
+     - Coalescent tensor
+     - Neural MLP
+     - SMC likelihood
+     - SMC likelihood
+   * - Per-eval cost
+     - ~100 ms
+     - ~10 ms
+     - ~5 ms
+     - **~0.1 ms**
+     - ~50 ms
+     - ~100 ms
+   * - Gradient
+     - Finite diff
+     - AD (ODE)
+     - Analytic
+     - Backprop
+     - Score function
+     - AD (ODE)
+   * - Multi-pop
+     - Up to 3
+     - Up to 3
+     - Up to ~5
+     - **Up to 5+**
+     - 2
+     - 2
+   * - Continuous :math:`N_e`
+     - No
+     - No
+     - No
+     - **Yes**
+     - Yes (spline)
+     - Yes (spline)
+   * - Posterior
+     - No (MLE only)
+     - No (MLE only)
+     - No (MLE only)
+     - **Yes (HMC)**
+     - Yes (SVGD)
+     - No (MLE only)
+   * - Training cost
+     - None
+     - None
+     - None
+     - One-time
+     - None
+     - None
+   * - Needs GPU
+     - No
+     - No
+     - No
+     - Yes
+     - Yes
+     - No
+
+.. admonition:: The place of each method
+
+   dadi and moments are the gold standard for SFS-based demographic inference.
+   They are classical, well-tested, and require no special hardware. For simple
+   models (:math:`k \leq 2`), they remain the best choice for finding the MLE.
+
+   Balance Wheel extends their reach: faster evaluations for complex models,
+   Bayesian posteriors via HMC, continuous demography, and multi-population
+   scaling. It trades the certainty of exact numerical computation for the speed
+   of neural approximation.
+
+   phlash and SMC++ operate on sequence-level data (not the SFS) and use the
+   SMC likelihood. They capture LD information that the SFS discards. For
+   single-population or two-population inference where LD is informative, they
+   may be more powerful than any SFS-based method.
+
+   The right choice depends on the question, the data, and the resources
+   available.

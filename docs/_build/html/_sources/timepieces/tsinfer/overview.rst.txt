@@ -6,6 +6,16 @@ Overview of tsinfer
 
    *Before assembling the watch, lay out every part and understand what it does.*
 
+.. figure:: /_static/figures/fig_mini_tsinfer.png
+   :width: 100%
+   :align: center
+
+   **tsinfer at a glance.** The deterministic tree sequence inference pipeline:
+   ancestor generation identifying shared haplotype segments, Viterbi copying
+   paths showing how each sample copies from the inferred ancestors, inference
+   site selection determining which variant positions anchor the reconstruction,
+   and the full pipeline output as a tree sequence edge diagram.
+
 If the MCMC-based methods we explored earlier -- SINGER and ARGweaver -- are
 fine mechanical watches, hand-assembled with painstaking precision, then
 **tsinfer is a quartz movement**: simpler, faster, designed for scale. A

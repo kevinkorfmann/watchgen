@@ -632,7 +632,7 @@ proceeds along the genome:
                 |       |       |               |
    Transition: prior   normal  switch  ...     normal
                 |       |       |               |
-   Forward:   α[1]    α[2]    α[3]    ...     α[L]
+   Forward:   a[1]    a[2]    a[3]    ...     a[L]
 
 At each position:
 
@@ -783,3 +783,255 @@ Exercises
    (a) all entries are non-negative, (b) rows sum to 1, (c) the no-recombination
    diagonal dominates when :math:`\rho` is small, and (d) the matrix approaches
    a uniform row-stochastic matrix when :math:`\rho` is large.
+
+Solutions
+==========
+
+.. admonition:: Solution 1: Rank-1 structure
+
+   From the full transition formula, the entry :math:`T_{(a,i) \to (b,j)}` is:
+
+   .. math::
+
+      T_{(a,i),(b,j)} = \delta_{(a,i),(b,j)} \, e^{-\rho L}
+      + \underbrace{\sum_{k=0}^{k_{\max}} P(\text{recomb at } k) \,
+        P(\text{recoal at } (b,j) \mid \text{recomb at } k)}_{q_{(b,j)}}
+
+   The second term depends on the *destination* state :math:`(b,j)` but **not**
+   on the source state :math:`(a,i)`. Call this term :math:`q_{(b,j)}`. Then:
+
+   .. math::
+
+      T = e^{-\rho L} \, I + \mathbf{1} \, \mathbf{q}^\top
+
+   where :math:`\mathbf{q} \in \mathbb{R}^S` is the vector with entries
+   :math:`q_{(b,j)}` and :math:`\mathbf{1}` is the all-ones vector.
+
+   **What is** :math:`\mathbf{q}`? Each component is the total probability of
+   arriving at destination :math:`(b,j)` via recombination anywhere on the tree
+   followed by re-coalescence at :math:`(b,j)`:
+
+   .. math::
+
+      q_{(b,j)} = \sum_{k=0}^{k_{\max}}
+      \frac{n_{\text{branches}}[k] \, \Delta t_k}{L}
+      (1 - e^{-\rho L}) \;
+      \frac{P(\text{recoal at time } j \mid \text{recomb at } k)}{n_{\text{coals}}[j]}
+
+   Since the rows of :math:`T` must sum to 1 and the diagonal contribution is
+   :math:`e^{-\rho L}`, the vector :math:`\mathbf{q}` sums to
+   :math:`1 - e^{-\rho L}`, making :math:`\mathbf{q}/(1 - e^{-\rho L})` a
+   proper probability distribution over destination states.
+
+   **The** :math:`O(S)` **trick**: For a matrix-vector product
+   :math:`\mathbf{y} = T \mathbf{x}`:
+
+   .. math::
+
+      \mathbf{y} = e^{-\rho L} \, \mathbf{x}
+                 + \mathbf{1} \, (\mathbf{q}^\top \mathbf{x})
+
+   Step 1: compute the scalar :math:`c = \mathbf{q}^\top \mathbf{x} = \sum_s q_s x_s`
+   in :math:`O(S)`. Step 2: set :math:`y_s = e^{-\rho L} x_s + c` for each :math:`s`
+   in :math:`O(S)`. Total: :math:`O(S)` instead of :math:`O(S^2)`.
+
+.. admonition:: Solution 2: Re-coalescence distribution
+
+   With :math:`k = 10`, constant :math:`N_e = 10{,}000`, and recombination at
+   :math:`t_0 = 0`, the re-coalescence distribution is the coalescent prior
+   (the state prior formula with :math:`k=0`).
+
+   .. code-block:: python
+
+      from math import exp, log
+      import numpy as np
+
+      def recoal_distribution(nbranches_const, Ne, times):
+          """
+          Compute the re-coalescence PMF across time indices,
+          starting from time 0, for a constant population size
+          and constant lineage count.
+          """
+          coal_times_list = get_coal_times(times)
+          ntimes = len(times) - 1
+          pmf = []
+          cum_log_surv = 0.0
+
+          for j in range(ntimes):
+              nbr = nbranches_const
+              A = (coal_times_list[2*j + 1] - coal_times_list[2*j]) * nbr
+              if j > 0:
+                  A += (coal_times_list[2*j] - coal_times_list[2*j - 1]) * nbr
+              coal_prob = 1.0 - exp(-A / Ne)
+              pmf.append(exp(cum_log_surv) * coal_prob)
+              cum_log_surv += -A / Ne
+
+          return pmf
+
+      times = get_time_points(ntimes=20, maxtime=160000, delta=0.01)
+      Ne = 10000
+      # With k=10 lineages, nbranches = 10 at every time index
+      # (simplified: ignoring that lineages decrease after coalescence).
+      # For the threading HMM, nbranches is computed from the existing tree.
+      # Here we use a constant 10 for illustration.
+      pmf = recoal_distribution(10, Ne, times)
+
+      print("Re-coalescence distribution (recomb at t_0 = 0, k=10, Ne=10000):")
+      mode_idx = int(np.argmax(pmf))
+      for j, p in enumerate(pmf):
+          marker = " <-- MODE" if j == mode_idx else ""
+          print(f"  j={j:2d}  t={times[j]:10.1f}  P={p:.6f}{marker}")
+
+      # The mode is at j=0 (the first interval), because with 10 lineages
+      # the coalescent rate is high: lambda = 10*9/(2*10000) = 0.0045/gen.
+      # Most re-coalescence happens near the present.
+
+   The mode is at :math:`j = 0` (the earliest interval). With 10 lineages,
+   the coalescent rate :math:`\lambda = \binom{10}{2}/(2 \times 10{,}000) = 0.00225`
+   per generation is high enough that re-coalescence overwhelmingly occurs in
+   the first few intervals. The PMF decays roughly geometrically, consistent
+   with the discrete-geometric interpretation described in the chapter.
+
+.. admonition:: Solution 3: Switch matrix sparsity
+
+   For a tree with :math:`k = 8` leaves: the tree has :math:`2k - 2 = 14`
+   branches. With :math:`n_t = 20` time points, the total number of states is
+   :math:`O(k \cdot n_t)`. For a balanced tree the exact count depends on
+   coalescence times, but a rough upper bound is :math:`14 \times 20 = 280`.
+
+   An SPR affects at most 3 branches (the recomb branch, the coal branch, and
+   the broken/sibling branch). Each affected branch spans at most :math:`n_t`
+   time intervals. So the number of **probabilistic rows** is at most
+   :math:`3 \cdot n_t = 60`.
+
+   The remaining :math:`S - 3n_t` rows (at least :math:`11 \times n_t = 220`
+   in the worst case) are **deterministic** (a single 1.0 entry).
+
+   The fraction of deterministic rows is:
+
+   .. math::
+
+      f_{\text{det}} = 1 - \frac{3 n_t}{S}
+      \geq 1 - \frac{3 n_t}{(2k-5) n_t}
+      = 1 - \frac{3}{2k - 5}
+
+   For :math:`k = 8`: :math:`f_{\text{det}} \geq 1 - 3/11 \approx 73\%`.
+   As :math:`k` grows, the fraction approaches 1. This means the switch
+   matrix is very sparse, and the matrix-vector product at switch positions
+   can be computed in :math:`O(S + 3 n_t^2)` rather than :math:`O(S^2)` by
+   handling the deterministic rows as simple copies and only doing full
+   computation for the :math:`O(n_t)` probabilistic rows.
+
+.. admonition:: Solution 4: Transition matrix verification
+
+   .. code-block:: python
+
+      import numpy as np
+      from math import exp, log
+
+      def build_simple_transition_matrix(ntimes, nbranches, ncoals,
+                                         popsizes, rho, treelen, times):
+          """
+          Build the normal transition matrix for a simplified model
+          where all states share the same lineage counts.
+
+          Returns a matrix indexed by time index (ignoring branch identity
+          for simplicity, since all branches at the same time contribute
+          equally in the rank-1 structure).
+          """
+          time_steps = get_time_steps(times)
+          coal_times_list = get_coal_times(times)
+          root_idx = ntimes - 1
+          no_recomb = exp(-rho * treelen)
+
+          # Total states = sum of ncoals across time indices
+          nstates = sum(ncoals[j] for j in range(ntimes))
+
+          # Build destination probability vector q
+          # q[j] = sum_k P(recomb at k) * P(recoal at j | recomb at k) / ncoals[j]
+          q = np.zeros(nstates)
+          state_map = []  # (time_index, branch_within_time)
+          idx = 0
+          for j in range(ntimes):
+              for b in range(ncoals[j]):
+                  state_map.append(j)
+                  idx += 1
+
+          for s_idx in range(nstates):
+              j = state_map[s_idx]
+              total = 0.0
+              for k in range(root_idx + 1):
+                  if j < k:
+                      continue
+                  recomb_p = (nbranches[k] * time_steps[k] / treelen
+                              * (1 - no_recomb))
+                  # Survival from k to j-1
+                  surv = 1.0
+                  for m in range(k, j):
+                      A = (coal_times_list[2*m+1] - coal_times_list[2*m]) * nbranches[m]
+                      if m > k:
+                          A += (coal_times_list[2*m] - coal_times_list[2*m-1]) * nbranches[max(m-1,0)]
+                      surv *= exp(-A / popsizes[m])
+                  # Coalescence at j
+                  A = (coal_times_list[2*j+1] - coal_times_list[2*j]) * nbranches[j]
+                  if j > k:
+                      A += (coal_times_list[2*j] - coal_times_list[2*j-1]) * nbranches[max(j-1,0)]
+                  cp = 1.0 - exp(-A / popsizes[j])
+                  total += recomb_p * surv * cp / max(ncoals[j], 1)
+              q[s_idx] = total
+
+          # Build T = no_recomb * I + 1 * q^T
+          T = np.outer(np.ones(nstates), q) + no_recomb * np.eye(nstates)
+          return T
+
+      # --- Verification ---
+      times = get_time_points(ntimes=10, maxtime=100000, delta=0.01)
+      ntimes = len(times) - 1  # 9
+      Ne = 10000
+      popsizes = [Ne] * ntimes
+      # Simplified 4-leaf tree: nbranches = [4,4,3,3,2,2,1,1,1]
+      nbranches = [4, 4, 3, 3, 2, 2, 1, 1, 1]
+      ncoals = [4, 4, 4, 4, 3, 3, 2, 2, 2]
+      treelen = sum(nbranches[i] * (times[i+1] - times[i])
+                    for i in range(ntimes))
+      rho_small = 1e-9
+      rho_large = 1e-2
+
+      T_small = build_simple_transition_matrix(
+          ntimes, nbranches, ncoals, popsizes, rho_small, treelen, times)
+      T_large = build_simple_transition_matrix(
+          ntimes, nbranches, ncoals, popsizes, rho_large, treelen, times)
+
+      nstates = T_small.shape[0]
+
+      # (a) Non-negativity
+      assert np.all(T_small >= -1e-15), "Negative entries found"
+      assert np.all(T_large >= -1e-15), "Negative entries found"
+      print("(a) All entries non-negative: PASS")
+
+      # (b) Row sums
+      print(f"(b) Row sums (small rho): "
+            f"[{T_small.sum(axis=1).min():.8f}, "
+            f"{T_small.sum(axis=1).max():.8f}]")
+
+      # (c) Diagonal dominance at small rho
+      diag_frac = np.diag(T_small).sum() / T_small.sum()
+      print(f"(c) Diagonal fraction (small rho): {diag_frac:.6f}")
+      # Should be close to 1 (almost all probability mass on diagonal)
+
+      # (d) Approaches uniform at large rho
+      # When rho is large, e^{-rho*L} -> 0, so T -> 1 * q^T.
+      # Each row becomes the same vector q (uniform row-stochastic).
+      row_std = np.std(T_large, axis=0)  # std across rows for each column
+      print(f"(d) Cross-row std of columns (large rho): "
+            f"max = {row_std.max():.6e}")
+      # Should be near 0: all rows are (nearly) the same.
+
+   **(a)** All entries are non-negative because they are sums/products of
+   probabilities and the exponential function. **(b)** Rows sum to 1 because
+   the no-recombination probability plus the total recombination-and-recoal
+   probability accounts for all events. **(c)** When :math:`\rho` is small,
+   :math:`e^{-\rho L} \approx 1`, so the diagonal dominates --- the state
+   almost never changes. **(d)** When :math:`\rho` is large,
+   :math:`e^{-\rho L} \to 0`, and every row converges to the same vector
+   :math:`\mathbf{q}^\top`, making the matrix rank-1 and row-uniform.

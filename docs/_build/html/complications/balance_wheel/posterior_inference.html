@@ -1,0 +1,940 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Posterior Inference via HMC &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Handling Multiple Populations" href="multi_population.html" />
+    <link rel="prev" title="Teacher-Student Training" href="teacher_student_training.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../timepieces/index.html">Timepieces</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/smcpp/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/overview.html">Overview of SMC++</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/distinguished_lineage.html">The Distinguished Lineage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/ode_system.html">The ODE System</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/continuous_hmm.html">The Continuous HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/population_splits.html">Population Splits</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/dadi/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/dadi/overview.html">Overview of dadi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/dadi/diffusion_equation.html">The Diffusion Equation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/dadi/numerical_integration.html">Numerical Integration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/dadi/demographic_inference.html">Demographic Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/gamma_smc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/overview.html">Overview of Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/gamma_approximation.html">The Gamma Approximation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/flow_field.html">The Flow Field</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/forward_backward.html">The Forward-Backward CS-HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/segmentation_and_caching.html">Segmentation and Caching</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/phlash/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/overview.html">Overview of PHLASH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/composite_likelihood.html">The Composite Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/random_discretization.html">Random Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/score_function.html">The Score Function Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/svgd_inference.html">Stein Variational Gradient Descent (SVGD)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/clues/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/clues/overview.html">Overview: Detecting Selection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/clues/wright_fisher_hmm.html">The Wright-Fisher HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/clues/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/clues/inference.html">Inference: From Gene Trees to Selection</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Complications</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Complications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../mainspring/index.html">Complication I: Mainspring</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../mainspring/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../mainspring/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/overview.html">Overview of Mainspring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/design_principles.html">Design Principles – One Per Timepiece</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/architecture.html">Architecture</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/training.html">Training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/comparison.html">Comparison and Limitations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../escapement/index.html">Complication II: Escapement</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../escapement/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../escapement/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../escapement/overview.html">Overview of Escapement</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../escapement/variational_inference.html">Variational Inference Without Simulations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../escapement/architecture.html">Architecture</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../escapement/differentiable_likelihood.html">The Differentiable Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../escapement/training.html">Training on Real Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../escapement/comparison.html">Comparison and Limitations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Complication III: Balance Wheel</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of Balance Wheel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="what_dadi_moments_compute.html">What dadi and moments Actually Compute</a></li>
+<li class="toctree-l4"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l4"><a class="reference internal" href="teacher_student_training.html">Teacher-Student Training</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Posterior Inference via HMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="multi_population.html">Handling Multiple Populations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="comparison.html">Comparison and Limitations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Complications</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Complication III: Balance Wheel</a></li>
+      <li class="breadcrumb-item active">Posterior Inference via HMC</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="teacher_student_training.html" class="btn btn-neutral float-left" title="Teacher-Student Training" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="multi_population.html" class="btn btn-neutral float-right" title="Handling Multiple Populations" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="posterior-inference-via-hmc">
+<span id="balance-wheel-posterior"></span><h1>Posterior Inference via HMC<a class="headerlink" href="#posterior-inference-via-hmc" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The chronometer test does not ask whether a watch keeps perfect time. It
+asks whether the watchmaker knows how imperfect the time is. A movement rated
+to ±2 seconds per day is more trustworthy than one claimed to be exact – the
+first acknowledges its uncertainty, the second conceals it.</em></p>
+</div></blockquote>
+<p><a class="reference internal" href="../../timepieces/dadi/index.html#dadi-timepiece"><span class="std std-ref">dadi</span></a> and <a class="reference internal" href="../../timepieces/moments/index.html#moments-timepiece"><span class="std std-ref">moments</span></a> find the
+maximum likelihood estimate (MLE) of demographic parameters. They report a
+point estimate – the single <span class="math notranslate nohighlight">\(\hat{\Theta}\)</span> that maximizes the Poisson
+log-likelihood – and, at best, profile likelihood intervals or AIC scores for
+model comparison. They do not produce a full posterior distribution over
+<span class="math notranslate nohighlight">\(\Theta\)</span>.</p>
+<p>The reason is computational: posterior sampling requires thousands of likelihood
+evaluations, and each evaluation costs 10–100 ms with moments or dadi. For
+Hamiltonian Monte Carlo (HMC), which needs gradients, the cost per step is even
+higher: 10 gradient evaluations × 10–100 ms × 2 (for finite differences in
+dadi) = 200 ms to 2 s per HMC step. Running 10,000 HMC steps would take hours
+to days.</p>
+<p>Balance Wheel changes this arithmetic. At 0.1 ms per evaluation with exact
+backpropagation gradients, each HMC step costs ~1 ms. Ten thousand steps take
+10 seconds. Full Bayesian posterior inference becomes routine.</p>
+<section id="why-bayesian-inference-matters">
+<h2>Why Bayesian Inference Matters<a class="headerlink" href="#why-bayesian-inference-matters" title="Link to this heading"></a></h2>
+<p>The MLE <span class="math notranslate nohighlight">\(\hat{\Theta}\)</span> tells you the most likely parameter values, but
+not how confident you should be. Two datasets might yield the same MLE but very
+different posterior widths – one tightly constraining the bottleneck time, the
+other barely identifying it. Without the posterior, you cannot distinguish these
+cases.</p>
+<p>Bayesian inference gives you:</p>
+<ol class="arabic simple">
+<li><p><strong>Credible intervals</strong> on each parameter. The 95% credible interval
+<span class="math notranslate nohighlight">\([a, b]\)</span> means: given the data and the model, the parameter falls in
+<span class="math notranslate nohighlight">\([a, b]\)</span> with 95% posterior probability.</p></li>
+<li><p><strong>Posterior correlations.</strong> Demographic parameters are often correlated –
+e.g., bottleneck depth and duration trade off against each other. The joint
+posterior reveals these correlations; the MLE hides them.</p></li>
+<li><p><strong>Posterior predictive checks.</strong> Sample parameters from the posterior,
+compute the expected SFS for each sample, and compare to the observed SFS.
+Systematic discrepancies indicate model misspecification.</p></li>
+<li><p><strong>Model comparison via marginal likelihood.</strong> The marginal likelihood
+<span class="math notranslate nohighlight">\(P(\mathbf{D} \mid \mathcal{M})\)</span> integrates the likelihood over the
+prior – a principled metric for comparing models of different complexity
+(e.g., two-epoch vs. three-epoch models).</p></li>
+</ol>
+</section>
+<section id="the-log-posterior">
+<h2>The Log-Posterior<a class="headerlink" href="#the-log-posterior" title="Link to this heading"></a></h2>
+<p>The posterior is proportional to the likelihood times the prior:</p>
+<div class="math notranslate nohighlight">
+\[\log p(\Theta \mid \mathbf{D}) = \underbrace{\ell(\Theta)}_{\text{Poisson
+log-likelihood}} + \underbrace{\log \pi(\Theta)}_{\text{prior}}
+- \underbrace{\log P(\mathbf{D})}_{\text{evidence (constant)}}\]</div>
+<p>The log-likelihood <span class="math notranslate nohighlight">\(\ell(\Theta)\)</span> is evaluated through Balance Wheel’s
+neural SFS Predictor. The prior <span class="math notranslate nohighlight">\(\pi(\Theta)\)</span> encodes our beliefs about
+plausible demographic parameters before seeing the data.</p>
+<section id="priors-on-demographic-parameters">
+<h3>Priors on demographic parameters<a class="headerlink" href="#priors-on-demographic-parameters" title="Link to this heading"></a></h3>
+<p>We use weakly informative priors that constrain parameters to physically
+plausible ranges without being overly prescriptive:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\log(N_e / N_{\text{ref}}) &amp;\sim \mathcal{N}(0, 2) \\
+\log(t_k) &amp;\sim \mathcal{N}(\mu_t, 1) \\
+m_{ij} &amp;\sim \text{Exponential}(10)\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(N_{\text{ref}}\)</span> is a reference population size and <span class="math notranslate nohighlight">\(\mu_t\)</span>
+is a prior mean for the log-time (typically set to the expected TMRCA).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Normal</span><span class="p">,</span> <span class="n">Exponential</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">log_prior</span><span class="p">(</span><span class="n">log_sizes</span><span class="p">,</span> <span class="n">log_times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weakly informative prior on demographic parameters.&quot;&quot;&quot;</span>
+    <span class="n">lp</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">log_sizes</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">lp</span> <span class="o">+=</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">log_times</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">lp</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">log_posterior</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">observed_sfs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">theta_L</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unnormalized log-posterior for HMC sampling.&quot;&quot;&quot;</span>
+    <span class="n">log_sizes</span><span class="p">,</span> <span class="n">log_times</span> <span class="o">=</span> <span class="n">params</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="n">log_times_sorted</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">log_times</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">log_lik</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">(</span>
+        <span class="n">log_sizes</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">log_times_sorted</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">observed_sfs</span><span class="p">,</span> <span class="n">theta_L</span><span class="p">)</span>
+    <span class="n">lp</span> <span class="o">=</span> <span class="n">log_prior</span><span class="p">(</span><span class="n">log_sizes</span><span class="p">,</span> <span class="n">log_times_sorted</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">log_lik</span> <span class="o">+</span> <span class="n">lp</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="speed-comparison">
+<h2>Speed Comparison<a class="headerlink" href="#speed-comparison" title="Link to this heading"></a></h2>
+<p>The advantage of Balance Wheel for posterior sampling is quantitative:</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Cost per HMC step (10 leapfrog steps, 8 parameters)</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Per eval</p></th>
+<th class="head"><p>Gradient</p></th>
+<th class="head"><p>Per HMC step</p></th>
+<th class="head"><p>10k steps</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>dadi (finite diff)</p></td>
+<td><p>100 ms</p></td>
+<td><p><span class="math notranslate nohighlight">\(2 \times 8 \times 100\)</span> ms</p></td>
+<td><p>16 s</p></td>
+<td><p>44 hours</p></td>
+</tr>
+<tr class="row-odd"><td><p>moments (AD)</p></td>
+<td><p>10 ms</p></td>
+<td><p>20 ms</p></td>
+<td><p>200 ms</p></td>
+<td><p>33 min</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Balance Wheel</strong></p></td>
+<td><p>0.1 ms</p></td>
+<td><p>0.2 ms</p></td>
+<td><p><strong>2 ms</strong></p></td>
+<td><p><strong>20 s</strong></p></td>
+</tr>
+</tbody>
+</table>
+<p>Balance Wheel is 100× faster than moments and 8,000× faster than dadi for HMC
+sampling. This is the difference between “theoretically possible but never done”
+and “run it during a coffee break.”</p>
+</section>
+<section id="hmc-nuts-implementation">
+<h2>HMC/NUTS Implementation<a class="headerlink" href="#hmc-nuts-implementation" title="Link to this heading"></a></h2>
+<p>Hamiltonian Monte Carlo (see <a class="reference internal" href="../../prerequisites/mcmc.html#mcmc"><span class="std std-ref">Markov Chain Monte Carlo</span></a> for the prerequisite) samples from the
+posterior by simulating Hamiltonian dynamics on the log-posterior surface. The
+No-U-Turn Sampler (NUTS) automatically tunes the number of leapfrog steps,
+eliminating the need for manual tuning.</p>
+<p>The key requirement is a differentiable log-posterior – which Balance Wheel
+provides via backpropagation through the neural SFS Predictor.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">HMCSampler</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_prob_fn</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">n_leapfrog</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_prob_fn</span> <span class="o">=</span> <span class="n">log_prob_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_size</span> <span class="o">=</span> <span class="n">step_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_leapfrog</span> <span class="o">=</span> <span class="n">n_leapfrog</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_leapfrog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prob_fn</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">q</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">p</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_size</span> <span class="o">*</span> <span class="n">grad</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_leapfrog</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">q</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_size</span> <span class="o">*</span> <span class="n">p</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">log_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prob_fn</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">q</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">p</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_size</span> <span class="o">*</span> <span class="n">grad</span>
+
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_size</span> <span class="o">*</span> <span class="n">p</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prob_fn</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">q</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">p</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_size</span> <span class="o">*</span> <span class="n">grad</span>
+
+        <span class="k">return</span> <span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">log_prob</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_init</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q_init</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">log_probs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">n_accept</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">+</span> <span class="n">warmup</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+            <span class="n">current_log_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prob_fn</span><span class="p">(</span>
+                <span class="n">q</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">))</span>
+            <span class="n">current_K</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+            <span class="n">q_new</span><span class="p">,</span> <span class="n">p_new</span><span class="p">,</span> <span class="n">new_log_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_leapfrog</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+            <span class="n">new_K</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">p_new</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+            <span class="n">log_accept</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_log_prob</span> <span class="o">-</span> <span class="n">current_log_prob</span>
+                          <span class="o">+</span> <span class="n">current_K</span> <span class="o">-</span> <span class="n">new_K</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">log_accept</span><span class="p">:</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">q_new</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+                <span class="n">n_accept</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">warmup</span><span class="p">:</span>
+                <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span>
+                <span class="n">log_probs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_log_prob</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+        <span class="n">accept_rate</span> <span class="o">=</span> <span class="n">n_accept</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_samples</span> <span class="o">+</span> <span class="n">warmup</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">samples</span><span class="p">),</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">accept_rate</span>
+</pre></div>
+</div>
+<p>For production use, we recommend using a NUTS implementation (e.g., from NumPyro
+or PyTorch’s ecosystem) that automatically tunes the step size during warmup:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_balance_wheel_hmc</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">observed_sfs</span><span class="p">,</span> <span class="n">theta_L</span><span class="p">,</span>
+                           <span class="n">n_epochs_model</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+                           <span class="n">warmup</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cuda&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Full posterior inference pipeline.&quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">observed_sfs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">observed_sfs</span> <span class="o">=</span> <span class="n">observed_sfs</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="n">init_sizes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_epochs_model</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">init_times</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n_epochs_model</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">q_init</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">init_sizes</span><span class="p">,</span> <span class="n">init_times</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">log_posterior</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">observed_sfs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">theta_L</span><span class="p">)</span>
+
+    <span class="n">sampler</span> <span class="o">=</span> <span class="n">HMCSampler</span><span class="p">(</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span> <span class="n">n_leapfrog</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">samples</span><span class="p">,</span> <span class="n">log_probs</span><span class="p">,</span> <span class="n">accept_rate</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">q_init</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="n">warmup</span><span class="p">)</span>
+
+    <span class="n">half</span> <span class="o">=</span> <span class="n">n_epochs_model</span>
+    <span class="n">size_samples</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="p">:</span><span class="n">half</span><span class="p">])</span>
+    <span class="n">time_samples</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="n">half</span><span class="p">:])[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;size_samples&#39;</span><span class="p">:</span> <span class="n">size_samples</span><span class="o">.</span><span class="n">cpu</span><span class="p">(),</span>
+        <span class="s1">&#39;time_samples&#39;</span><span class="p">:</span> <span class="n">time_samples</span><span class="o">.</span><span class="n">cpu</span><span class="p">(),</span>
+        <span class="s1">&#39;log_probs&#39;</span><span class="p">:</span> <span class="n">log_probs</span><span class="p">,</span>
+        <span class="s1">&#39;accept_rate&#39;</span><span class="p">:</span> <span class="n">accept_rate</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="what-you-get-from-the-posterior">
+<h2>What You Get from the Posterior<a class="headerlink" href="#what-you-get-from-the-posterior" title="Link to this heading"></a></h2>
+<section id="credible-intervals">
+<h3>Credible intervals<a class="headerlink" href="#credible-intervals" title="Link to this heading"></a></h3>
+<p>The 95% credible interval for each parameter is simply the 2.5th and 97.5th
+percentiles of the posterior samples:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">credible_intervals</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mf">0.95</span><span class="p">):</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">level</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">lower</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">median</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;median&#39;</span><span class="p">:</span> <span class="n">median</span><span class="p">,</span> <span class="s1">&#39;lower&#39;</span><span class="p">:</span> <span class="n">lower</span><span class="p">,</span> <span class="s1">&#39;upper&#39;</span><span class="p">:</span> <span class="n">upper</span><span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="posterior-predictive-checks">
+<h3>Posterior predictive checks<a class="headerlink" href="#posterior-predictive-checks" title="Link to this heading"></a></h3>
+<p>For each posterior sample <span class="math notranslate nohighlight">\(\Theta^{(s)}\)</span>, compute the expected SFS and
+compare to the observed SFS. Systematic discrepancies indicate model
+misspecification:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">posterior_predictive_check</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">observed_sfs</span><span class="p">,</span> <span class="n">theta_L</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate posterior predictive SFS distribution.&quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">observed_sfs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">predictive_sfs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">n_epochs</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;size_samples&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;size_samples&#39;</span><span class="p">]))):</span>
+        <span class="n">log_s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;size_samples&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">log_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;time_samples&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">log_s</span><span class="p">,</span> <span class="n">log_t</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">theta_L</span><span class="p">)</span>
+        <span class="n">predictive_sfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pred</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">predictive_sfs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">predictive_sfs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">predictive_sfs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="s1">&#39;std&#39;</span><span class="p">:</span> <span class="n">predictive_sfs</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="s1">&#39;quantile_025&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">predictive_sfs</span><span class="p">,</span> <span class="mf">0.025</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="s1">&#39;quantile_975&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">predictive_sfs</span><span class="p">,</span> <span class="mf">0.975</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>If the observed SFS falls outside the 95% predictive interval for many
+frequency classes, the model is likely misspecified – the demographic model
+cannot produce an SFS that looks like the data.</p>
+</section>
+<section id="model-comparison">
+<h3>Model comparison<a class="headerlink" href="#model-comparison" title="Link to this heading"></a></h3>
+<p>The marginal likelihood <span class="math notranslate nohighlight">\(P(\mathbf{D} \mid \mathcal{M})\)</span> can be estimated
+from the posterior samples using the harmonic mean estimator (crude but fast) or
+bridge sampling (more reliable):</p>
+<div class="math notranslate nohighlight">
+\[P(\mathbf{D} \mid \mathcal{M}) \approx \left[
+\frac{1}{S} \sum_{s=1}^{S} \frac{1}{P(\mathbf{D} \mid \Theta^{(s)})}
+\right]^{-1}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Theta^{(s)} \sim p(\Theta \mid \mathbf{D})\)</span> are posterior
+samples. This enables Bayes factor comparison between, e.g., a two-epoch and a
+three-epoch model – a principled alternative to AIC that accounts for posterior
+uncertainty.</p>
+<div class="admonition-marginal-likelihood-vs-aic admonition">
+<p class="admonition-title">Marginal likelihood vs. AIC</p>
+<p>dadi and moments typically use AIC for model comparison:
+<span class="math notranslate nohighlight">\(\text{AIC} = -2\ell(\hat{\Theta}) + 2k\)</span> where <span class="math notranslate nohighlight">\(k\)</span> is the
+number of parameters. AIC is a frequentist approximation to the marginal
+likelihood. It works when the likelihood is approximately Gaussian near the
+MLE and the sample size is large relative to <span class="math notranslate nohighlight">\(k\)</span>. For complex
+demographic models with correlated parameters and multimodal likelihoods,
+AIC can be misleading. The marginal likelihood, estimated from posterior
+samples, is more reliable but requires the posterior samples that only
+Balance Wheel can provide efficiently.</p>
+</div>
+</section>
+</section>
+<section id="comparison-with-profile-likelihood">
+<h2>Comparison with Profile Likelihood<a class="headerlink" href="#comparison-with-profile-likelihood" title="Link to this heading"></a></h2>
+<p>Profile likelihood is what dadi and moments offer as an approximation to
+posterior uncertainty. For a single parameter <span class="math notranslate nohighlight">\(\Theta_i\)</span>, the profile
+likelihood is:</p>
+<div class="math notranslate nohighlight">
+\[\ell_{\text{profile}}(\Theta_i) = \max_{\Theta_{-i}} \ell(\Theta_i, \Theta_{-i})\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Theta_{-i}\)</span> denotes all parameters except <span class="math notranslate nohighlight">\(\Theta_i\)</span>. A
+95% confidence interval is constructed by finding the values of <span class="math notranslate nohighlight">\(\Theta_i\)</span>
+where the profile likelihood drops by <span class="math notranslate nohighlight">\(\chi^2_{1,0.95}/2 = 1.92\)</span> from the
+maximum.</p>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Profile likelihood vs. full posterior</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 37.0%" />
+<col style="width: 38.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Property</p></th>
+<th class="head"><p>Profile likelihood (dadi/moments)</p></th>
+<th class="head"><p>Full posterior (Balance Wheel)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>What it estimates</p></td>
+<td><p>Confidence interval (frequentist)</p></td>
+<td><p>Credible interval (Bayesian)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Captures correlations</p></td>
+<td><p>No (marginalizes by maximization)</p></td>
+<td><p>Yes (joint posterior)</p></td>
+</tr>
+<tr class="row-even"><td><p>Model comparison</p></td>
+<td><p>AIC (point estimate)</p></td>
+<td><p>Marginal likelihood (integrated)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Computational cost</p></td>
+<td><p>Moderate (grid search per parameter)</p></td>
+<td><p>Low with Balance Wheel (~20 s)</p></td>
+</tr>
+<tr class="row-even"><td><p>Handles multimodality</p></td>
+<td><p>Poorly (finds local maximum)</p></td>
+<td><p>Yes (HMC explores modes)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Prior information</p></td>
+<td><p>Not incorporated</p></td>
+<td><p>Naturally incorporated</p></td>
+</tr>
+</tbody>
+</table>
+<p>The full posterior is strictly more informative than the profile likelihood. It
+provides everything the profile likelihood provides (marginal intervals) plus
+joint distributions, correlations, predictive checks, and marginal likelihoods.
+The only reason it was not used before is computational cost – and Balance
+Wheel removes that barrier.</p>
+<div class="admonition-when-profile-likelihood-is-sufficient admonition">
+<p class="admonition-title">When profile likelihood is sufficient</p>
+<p>For well-identified models with approximately Gaussian posteriors (e.g., a
+two-population split-time model with large sample sizes), the profile
+likelihood and the posterior credible interval will agree closely. In this
+regime, the extra cost of HMC sampling may not be justified. Use Balance
+Wheel’s full posterior when (1) parameters are correlated, (2) the posterior
+is multimodal or skewed, (3) you need model comparison, or (4) you want
+posterior predictive checks. Use profile likelihood (via moments directly)
+when the model is simple and you trust the Gaussian approximation.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="teacher_student_training.html" class="btn btn-neutral float-left" title="Teacher-Student Training" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="multi_population.html" class="btn btn-neutral float-right" title="Handling Multiple Populations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

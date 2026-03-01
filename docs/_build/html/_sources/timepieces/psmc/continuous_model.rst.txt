@@ -1070,3 +1070,155 @@ Exercises
    (c) How would you detect this bottleneck from the data?
 
 Next: :ref:`psmc_discretization` -- turning the continuous model into an HMM.
+
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Verify the stationary property
+
+   We numerically verify that :math:`\int_0^\infty q(t|s) \pi(s) \, ds = \pi(t)` for
+   several values of :math:`t` and several population size functions. The key insight is
+   that if :math:`\pi(t)` is truly stationary, applying one transition step and averaging
+   over all starting states should reproduce :math:`\pi(t)` exactly.
+
+   .. code-block:: python
+
+      from scipy.integrate import quad
+
+      def verify_stationarity_full(t_test, lambda_func, C_pi, s_max=15):
+          """Check that pi is the fixed point of q for a given t."""
+          lhs, _ = quad(
+              lambda s: psmc_transition_density_general(t_test, s, lambda_func)
+                        * stationary_distribution(s, lambda_func, C_pi),
+              0.001, s_max, limit=100)
+          rhs = stationary_distribution(t_test, lambda_func, C_pi)
+          return lhs, rhs
+
+      # Test with three demographic scenarios
+      scenarios = [
+          ("Constant (lambda=1)", lambda t: 1.0),
+          ("Exponential growth (lambda=e^t)", lambda t: np.exp(t)),
+          ("Bottleneck (lambda=0.1 for t in [1,2])",
+           lambda t: 0.1 if 1.0 < t < 2.0 else 1.0),
+      ]
+
+      t_values = [0.5, 1.0, 2.0, 3.0]
+
+      for name, lam_func in scenarios:
+          C_pi = compute_C_pi(lam_func)
+          print(f"\n{name} (C_pi = {C_pi:.4f}):")
+          for t_val in t_values:
+              lhs, rhs = verify_stationarity_full(t_val, lam_func, C_pi)
+              ratio = lhs / rhs if rhs > 0 else float('nan')
+              print(f"  t={t_val:.1f}: integral q*pi = {lhs:.6f}, "
+                    f"pi(t) = {rhs:.6f}, ratio = {ratio:.6f}")
+
+   For all scenarios and all :math:`t` values, the ratio should be very close to 1.0
+   (within numerical integration tolerance, typically :math:`\sim 10^{-6}`). This
+   confirms that :math:`\pi(t)` satisfies the fixed-point equation
+   :math:`\int q(t|s)\pi(s)\,ds = \pi(t)` regardless of the population size history.
+
+.. admonition:: Solution 2: Explore the effect of population size on :math:`\pi(t)`
+
+   We compute and compare :math:`\pi(t)` for three demographic scenarios. The key insight
+   is that :math:`\pi(t) = \frac{t}{C_\pi \lambda(t)} e^{-\Lambda(t)}`, so the shape of
+   :math:`\pi(t)` is controlled by both the local population size :math:`\lambda(t)` and
+   the cumulative hazard :math:`\Lambda(t)`.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      t_vals = np.linspace(0.01, 6.0, 200)
+
+      scenarios = {
+          "(a) Constant": lambda t: 1.0,
+          "(b) Bottleneck": lambda t: 0.1 if 1.0 < t < 2.0 else 1.0,
+          "(c) Exp. growth": lambda t: np.exp(t),
+      }
+
+      for name, lam_func in scenarios.items():
+          C_pi = compute_C_pi(lam_func)
+          pi_vals = [stationary_distribution(t, lam_func, C_pi) for t in t_vals]
+          peak_idx = np.argmax(pi_vals)
+          mean_t, _ = quad(
+              lambda t: t * stationary_distribution(t, lam_func, C_pi),
+              0.001, 20)
+          print(f"{name}: C_pi={C_pi:.4f}, peak at t={t_vals[peak_idx]:.2f}, "
+                f"mean T={mean_t:.4f}")
+
+   **How each demographic event shifts the distribution:**
+
+   - **(a) Constant:** :math:`\pi(t) = t e^{-t}`, the Gamma(2,1) distribution.
+     Peak at :math:`t = 1`, mean :math:`= 2`. This is the baseline.
+
+   - **(b) Bottleneck:** The small :math:`\lambda(t) = 0.1` in :math:`[1, 2]`
+     creates a high coalescence rate in that interval, pulling probability mass
+     toward :math:`t \approx 1`. The cumulative hazard increases sharply through
+     the bottleneck, so survival past :math:`t = 2` becomes very unlikely.
+     :math:`C_\pi` decreases (shorter expected coalescence time), and the
+     distribution is compressed toward more recent times.
+
+   - **(c) Exponential growth:** The growing :math:`\lambda(t) = e^t` reduces the
+     coalescence rate at large :math:`t`, allowing lineages to survive much longer.
+     The distribution becomes more spread out with a heavier right tail.
+     :math:`C_\pi` increases (longer expected coalescence time), and the peak
+     shifts to a larger :math:`t`.
+
+.. admonition:: Solution 3: Estimate :math:`C_\pi` for a bottleneck model
+
+   **(a)** Compute :math:`C_\pi` numerically for the piecewise population size
+   :math:`\lambda(t) = 1` for :math:`t < 1`, :math:`\lambda(t) = 0.1` for
+   :math:`t \in [1, 2]`, and :math:`\lambda(t) = 1` for :math:`t > 2`.
+
+   .. code-block:: python
+
+      def bottleneck_lambda(t):
+          if t < 1.0:
+              return 1.0
+          elif t < 2.0:
+              return 0.1
+          else:
+              return 1.0
+
+      C_pi_bottleneck = compute_C_pi(bottleneck_lambda)
+      C_pi_constant = compute_C_pi(lambda t: 1.0)
+      print(f"C_pi (bottleneck): {C_pi_bottleneck:.6f}")
+      print(f"C_pi (constant):   {C_pi_constant:.6f}")
+      print(f"Ratio: {C_pi_bottleneck / C_pi_constant:.4f}")
+
+   The bottleneck gives :math:`C_\pi \approx 0.64`, compared to :math:`C_\pi = 1.0`
+   for a constant population. The bottleneck forces most coalescence events into
+   the interval :math:`[1, 2]`, reducing the mean coalescence time.
+
+   **(b)** A smaller :math:`C_\pi` means lower expected heterozygosity, because
+   :math:`P(X_a = 1) \approx C_\pi \theta`. With :math:`C_\pi \approx 0.64`, the
+   expected heterozygosity is only 64% of what it would be under a constant
+   population. The bottleneck reduces the average time to the most recent common
+   ancestor, which means fewer mutations accumulate on average.
+
+   .. code-block:: python
+
+      theta = 0.001
+      p_het_constant = C_pi_constant * theta
+      p_het_bottleneck = C_pi_bottleneck * theta
+      print(f"Expected heterozygosity (constant):   {p_het_constant:.6f}")
+      print(f"Expected heterozygosity (bottleneck): {p_het_bottleneck:.6f}")
+      print(f"Reduction: {(1 - p_het_bottleneck/p_het_constant)*100:.1f}%")
+
+   **(c)** To detect this bottleneck from data, one would:
+
+   1. **Observe reduced heterozygosity** compared to what a constant-population
+      model would predict. The initial :math:`\hat{\theta}` estimate from the
+      data would be lower than expected.
+
+   2. **Run PSMC** and examine the inferred :math:`\lambda_k` values. The
+      bottleneck should appear as :math:`\lambda_k \ll 1` in the time intervals
+      corresponding to :math:`t \in [1, 2]` (in coalescent units). The PSMC
+      plot would show a sharp dip in :math:`N_e(t)` at that time.
+
+   3. **Check the posterior decoding**: positions with coalescence times in the
+      bottleneck interval :math:`[1, 2]` should show an excess of homozygous
+      sites (because the high coalescence rate during the bottleneck means those
+      lineages have short branch lengths and thus fewer mutations).

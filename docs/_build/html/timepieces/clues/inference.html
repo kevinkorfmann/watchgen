@@ -1,0 +1,1623 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inference: From Gene Trees to Selection &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Demo: Running CLUES on Simulated Data" href="demo.html" />
+    <link rel="prev" title="Emission Probabilities" href="emission_probabilities.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece XV: CLUES</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece XV: CLUES</a></li>
+      <li class="breadcrumb-item active">Inference: From Gene Trees to Selection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="emission_probabilities.html" class="btn btn-neutral float-left" title="Emission Probabilities" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo.html" class="btn btn-neutral float-right" title="Demo: Running CLUES on Simulated Data" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="inference-from-gene-trees-to-selection">
+<span id="clues-inference"></span><h1>Inference: From Gene Trees to Selection<a class="headerlink" href="#inference-from-gene-trees-to-selection" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The case and dial: assembling the mechanism and reading the result.</em></p>
+</div></blockquote>
+<p>This chapter brings all the pieces together: the Wright-Fisher HMM (transition
+matrix), the emission probabilities (coalescent + ancient DNA), and the importance
+sampling framework that handles genealogical uncertainty. By the end, you will have
+a complete CLUES implementation that estimates selection coefficients, tests for
+selection, and reconstructs allele frequency trajectories.</p>
+<section id="step-1-the-backward-algorithm">
+<h2>Step 1: The Backward Algorithm<a class="headerlink" href="#step-1-the-backward-algorithm" title="Link to this heading"></a></h2>
+<p>The backward algorithm is the workhorse of CLUES. It processes the HMM from the
+<strong>present</strong> to the <strong>past</strong>, starting at the observed modern allele frequency and
+propagating backward through time. At each generation, it combines the transition
+probabilities with the emission probabilities to compute the probability of all the
+data observed from the present up to that point.</p>
+<p><strong>Initialization.</strong> At the present (time <span class="math notranslate nohighlight">\(t = 0\)</span>), we know the derived allele
+frequency <span class="math notranslate nohighlight">\(p_0\)</span>. The backward algorithm initializes with a delta function at
+the frequency bin closest to <span class="math notranslate nohighlight">\(p_0\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\alpha_0(k) = \begin{cases} 0 &amp; \text{if } x_k \text{ is closest to } p_0 \\
+-\infty &amp; \text{otherwise} \end{cases}\end{split}\]</div>
+<p>(in log space, 0 means probability 1 and <span class="math notranslate nohighlight">\(-\infty\)</span> means probability 0).</p>
+<p><strong>Recursion.</strong> For each generation <span class="math notranslate nohighlight">\(t\)</span> going backward (from <span class="math notranslate nohighlight">\(t = 0\)</span> to
+<span class="math notranslate nohighlight">\(t = T\)</span>), the update is:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_t(k) = \log e(t, x_k) + \text{logsumexp}_j\left(
+\alpha_{t-1}(j) + \log P_{j,k}^{\top}\right)\]</div>
+<p>Note the transpose: we use <span class="math notranslate nohighlight">\(P_{j,k}^{\top}\)</span> (column <span class="math notranslate nohighlight">\(k\)</span> of the
+transition matrix) because we are propagating <em>backward</em>. The transition matrix
+<span class="math notranslate nohighlight">\(P_{i,j}\)</span> gives the probability of going from frequency bin <span class="math notranslate nohighlight">\(i\)</span> to bin
+<span class="math notranslate nohighlight">\(j\)</span> backward in time. To go from the present to the past, we need the
+probability of arriving at bin <span class="math notranslate nohighlight">\(k\)</span> from any bin <span class="math notranslate nohighlight">\(j\)</span>, which uses column
+<span class="math notranslate nohighlight">\(k\)</span>.</p>
+<p><strong>Final likelihood.</strong> The total log-likelihood is:</p>
+<div class="math notranslate nohighlight">
+\[\log P(\mathbf{D} \mid s) = \text{logsumexp}_k\left(\alpha_T(k)\right)\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">backward_algorithm</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                        <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+                        <span class="n">coal_times_der_all</span><span class="p">,</span> <span class="n">coal_times_anc_all</span><span class="p">,</span>
+                        <span class="n">n_der_initial</span><span class="p">,</span> <span class="n">n_anc_initial</span><span class="p">,</span>
+                        <span class="n">curr_freq</span><span class="p">,</span>
+                        <span class="n">diploid_gls_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">haploid_gls_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">der_sampled_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">anc_sampled_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the CLUES backward algorithm (present to past).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sel : ndarray</span>
+<span class="sd">        Selection coefficient for each epoch.</span>
+<span class="sd">    freqs : ndarray of shape (K,)</span>
+<span class="sd">        Frequency bins.</span>
+<span class="sd">    logfreqs, log1minusfreqs : ndarray of shape (K,)</span>
+<span class="sd">        Log-frequencies for emission computation.</span>
+<span class="sd">    z_bins, z_cdf : ndarray</span>
+<span class="sd">        Precomputed normal CDF lookup table.</span>
+<span class="sd">    epochs : ndarray</span>
+<span class="sd">        Array of generation indices [0, 1, 2, ..., T].</span>
+<span class="sd">    N_vec : ndarray</span>
+<span class="sd">        Diploid effective population size at each epoch.</span>
+<span class="sd">    h : float</span>
+<span class="sd">        Dominance coefficient.</span>
+<span class="sd">    coal_times_der_all : ndarray</span>
+<span class="sd">        All derived coalescence times (sorted).</span>
+<span class="sd">    coal_times_anc_all : ndarray</span>
+<span class="sd">        All ancestral coalescence times (sorted).</span>
+<span class="sd">    n_der_initial : int</span>
+<span class="sd">        Number of derived lineages at the present.</span>
+<span class="sd">    n_anc_initial : int</span>
+<span class="sd">        Number of ancestral lineages at the present.</span>
+<span class="sd">    curr_freq : float</span>
+<span class="sd">        Observed modern derived allele frequency.</span>
+<span class="sd">    diploid_gls_by_epoch : dict, optional</span>
+<span class="sd">        Maps epoch index to list of diploid GL arrays.</span>
+<span class="sd">    haploid_gls_by_epoch : dict, optional</span>
+<span class="sd">        Maps epoch index to list of haploid GL arrays.</span>
+<span class="sd">    der_sampled_by_epoch : dict, optional</span>
+<span class="sd">        Maps epoch index to number of derived haplotypes sampled.</span>
+<span class="sd">    anc_sampled_by_epoch : dict, optional</span>
+<span class="sd">        Maps epoch index to number of ancestral haplotypes sampled.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha_mat : ndarray of shape (T+1, K)</span>
+<span class="sd">        Log-probability matrix. alpha_mat[t, k] is the log-probability</span>
+<span class="sd">        of the data from time 0 to t, with frequency bin k at time t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+
+    <span class="c1"># Initialize: delta function at modern frequency</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e20</span><span class="p">)</span>
+    <span class="n">best_bin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freqs</span> <span class="o">-</span> <span class="n">curr_freq</span><span class="p">))</span>
+    <span class="n">alpha</span><span class="p">[</span><span class="n">best_bin</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="n">alpha_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">T</span><span class="p">,</span> <span class="n">K</span><span class="p">),</span> <span class="o">-</span><span class="mf">1e20</span><span class="p">)</span>
+    <span class="n">alpha_mat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">alpha</span>
+
+    <span class="c1"># Track remaining lineages</span>
+    <span class="n">n_der</span> <span class="o">=</span> <span class="n">n_der_initial</span>
+    <span class="n">n_anc</span> <span class="o">=</span> <span class="n">n_anc_initial</span>
+
+    <span class="n">prev_N</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">prev_s</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">logP</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">tb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">epoch_start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tb</span><span class="p">)</span>
+        <span class="n">epoch_end</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tb</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">N_t</span> <span class="o">=</span> <span class="n">N_vec</span><span class="p">[</span><span class="n">tb</span><span class="p">]</span>
+        <span class="n">s_t</span> <span class="o">=</span> <span class="n">sel</span><span class="p">[</span><span class="n">tb</span><span class="p">]</span> <span class="k">if</span> <span class="n">tb</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+        <span class="n">prev_alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Recompute transition matrix only if N or s changed</span>
+        <span class="k">if</span> <span class="n">N_t</span> <span class="o">!=</span> <span class="n">prev_N</span> <span class="ow">or</span> <span class="n">s_t</span> <span class="o">!=</span> <span class="n">prev_s</span><span class="p">:</span>
+            <span class="n">logP</span><span class="p">,</span> <span class="n">lo_idx</span><span class="p">,</span> <span class="n">hi_idx</span> <span class="o">=</span> <span class="n">build_transition_matrix_fast</span><span class="p">(</span>
+                <span class="n">freqs</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">N_t</span><span class="p">,</span> <span class="n">s_t</span><span class="p">,</span> <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+            <span class="n">prev_N</span> <span class="o">=</span> <span class="n">N_t</span>
+            <span class="n">prev_s</span> <span class="o">=</span> <span class="n">s_t</span>
+
+        <span class="c1"># Gather coalescence times in this epoch</span>
+        <span class="n">mask_der</span> <span class="o">=</span> <span class="p">(</span><span class="n">coal_times_der_all</span> <span class="o">&gt;</span> <span class="n">epoch_start</span><span class="p">)</span> <span class="o">&amp;</span> \
+                   <span class="p">(</span><span class="n">coal_times_der_all</span> <span class="o">&lt;=</span> <span class="n">epoch_end</span><span class="p">)</span>
+        <span class="n">coal_der</span> <span class="o">=</span> <span class="n">coal_times_der_all</span><span class="p">[</span><span class="n">mask_der</span><span class="p">]</span>
+
+        <span class="n">mask_anc</span> <span class="o">=</span> <span class="p">(</span><span class="n">coal_times_anc_all</span> <span class="o">&gt;</span> <span class="n">epoch_start</span><span class="p">)</span> <span class="o">&amp;</span> \
+                   <span class="p">(</span><span class="n">coal_times_anc_all</span> <span class="o">&lt;=</span> <span class="n">epoch_end</span><span class="p">)</span>
+        <span class="n">coal_anc</span> <span class="o">=</span> <span class="n">coal_times_anc_all</span><span class="p">[</span><span class="n">mask_anc</span><span class="p">]</span>
+
+        <span class="c1"># Gather ancient samples in this epoch</span>
+        <span class="n">dip_gls</span> <span class="o">=</span> <span class="p">(</span><span class="n">diploid_gls_by_epoch</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tb</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">hap_gls</span> <span class="o">=</span> <span class="p">(</span><span class="n">haploid_gls_by_epoch</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tb</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">n_der_samp</span> <span class="o">=</span> <span class="p">(</span><span class="n">der_sampled_by_epoch</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tb</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">n_anc_samp</span> <span class="o">=</span> <span class="p">(</span><span class="n">anc_sampled_by_epoch</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tb</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Compute emissions</span>
+        <span class="n">coal_emissions</span> <span class="o">=</span> <span class="n">compute_coalescent_emissions</span><span class="p">(</span>
+            <span class="n">coal_der</span><span class="p">,</span> <span class="n">coal_anc</span><span class="p">,</span> <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">,</span>
+            <span class="n">epoch_start</span><span class="p">,</span> <span class="n">epoch_end</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">N_t</span><span class="p">)</span>
+
+        <span class="n">gl_emissions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">gl</span> <span class="ow">in</span> <span class="n">dip_gls</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="n">gl_emissions</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">genotype_likelihood_emission</span><span class="p">(</span>
+                    <span class="n">gl</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">log1minusfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">gl</span> <span class="ow">in</span> <span class="n">hap_gls</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="n">gl_emissions</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">haplotype_likelihood_emission</span><span class="p">(</span>
+                    <span class="n">gl</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">log1minusfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+        <span class="n">hap_emissions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">n_der_samp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">hap_emissions</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">n_der_samp</span> <span class="o">*</span> <span class="n">logfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">n_anc_samp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">hap_emissions</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">n_anc_samp</span> <span class="o">*</span> <span class="n">log1minusfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+        <span class="n">total_emissions</span> <span class="o">=</span> <span class="n">gl_emissions</span> <span class="o">+</span> <span class="n">hap_emissions</span> <span class="o">+</span> <span class="n">coal_emissions</span>
+
+        <span class="c1"># HMM update: alpha[k] = emission[k] + logsumexp(prev_alpha + P^T[:,k])</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="c1"># Use sparse column range for efficiency</span>
+            <span class="n">col_lo</span> <span class="o">=</span> <span class="n">lo_idx</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">if</span> <span class="n">lo_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">col_hi</span> <span class="o">=</span> <span class="n">hi_idx</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">if</span> <span class="n">hi_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">K</span>
+            <span class="c1"># P^T[j, k] = P[j, k] for column k = logP[j, k]</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_emissions</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">logsumexp</span><span class="p">(</span>
+                <span class="n">prev_alpha</span><span class="p">[</span><span class="n">col_lo</span><span class="p">:</span><span class="n">col_hi</span><span class="p">]</span> <span class="o">+</span> <span class="n">logP</span><span class="p">[</span><span class="n">col_lo</span><span class="p">:</span><span class="n">col_hi</span><span class="p">,</span> <span class="n">k</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+                <span class="n">alpha</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+        <span class="c1"># Update lineage counts</span>
+        <span class="n">n_der</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coal_der</span><span class="p">)</span>
+        <span class="n">n_anc</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coal_anc</span><span class="p">)</span>
+        <span class="n">n_der</span> <span class="o">+=</span> <span class="n">n_der_samp</span>
+        <span class="n">n_anc</span> <span class="o">+=</span> <span class="n">n_anc_samp</span>
+
+        <span class="n">alpha_mat</span><span class="p">[</span><span class="n">tb</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">alpha</span>
+
+    <span class="k">return</span> <span class="n">alpha_mat</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-the-forward-algorithm">
+<h2>Step 2: The Forward Algorithm<a class="headerlink" href="#step-2-the-forward-algorithm" title="Link to this heading"></a></h2>
+<p>The forward algorithm runs in the opposite direction: from the <strong>past</strong> to the
+<strong>present</strong>. It starts with a uniform distribution over all frequency bins at the
+oldest time point and propagates forward.</p>
+<p><strong>Initialization.</strong> At the oldest time <span class="math notranslate nohighlight">\(t = T\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_T(k) = \frac{1}{K} \quad \text{for all } k\]</div>
+<p>(uniform, because we have no prior information about the frequency in the deep past).</p>
+<p><strong>Recursion.</strong> For each generation <span class="math notranslate nohighlight">\(t\)</span> from <span class="math notranslate nohighlight">\(T\)</span> down to 1:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_t(k) = \text{logsumexp}_j\left(
+\alpha_{t+1}(j) + \log P_{k,j} + \log e(t+1, x_j) + \log e_{\text{coal}}(t+1, x_j)
+\right)\]</div>
+<p>Note: here we use <span class="math notranslate nohighlight">\(P_{k,j}\)</span> directly (not transposed), because we are moving
+from past to present.</p>
+<p><strong>Why two directions?</strong> The backward algorithm alone gives the likelihood
+<span class="math notranslate nohighlight">\(P(\mathbf{D} \mid s)\)</span>. But to reconstruct the <em>posterior trajectory</em>
+<span class="math notranslate nohighlight">\(P(x_t \mid \mathbf{D}, s)\)</span>, we need both forward and backward:</p>
+<div class="math notranslate nohighlight">
+\[P(x_t = k \mid \mathbf{D}, s) \propto \alpha^{\text{fwd}}_t(k) \cdot \alpha^{\text{bwd}}_t(k)\]</div>
+<p>This is the standard forward-backward decomposition from
+<a class="reference internal" href="../../prerequisites/hmms.html#hmms"><span class="std std-ref">the HMM prerequisite</span></a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_algorithm</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                       <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+                       <span class="n">coal_times_der_all</span><span class="p">,</span> <span class="n">coal_times_anc_all</span><span class="p">,</span>
+                       <span class="n">n_der_initial</span><span class="p">,</span> <span class="n">n_anc_initial</span><span class="p">,</span>
+                       <span class="n">diploid_gls_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">haploid_gls_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">der_sampled_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">anc_sampled_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the CLUES forward algorithm (past to present).</span>
+
+<span class="sd">    Parameters match backward_algorithm (except no curr_freq needed).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha_mat : ndarray of shape (T+1, K)</span>
+<span class="sd">        Forward log-probability matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+
+    <span class="c1"># Initialize: uniform at the oldest time point</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">alpha</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span>  <span class="c1"># log(1/K)</span>
+
+    <span class="n">alpha_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">T</span><span class="p">,</span> <span class="n">K</span><span class="p">),</span> <span class="o">-</span><span class="mf">1e20</span><span class="p">)</span>
+    <span class="n">alpha_mat</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">alpha</span>
+
+    <span class="n">prev_N</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">prev_s</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="c1"># Track lineages from the past</span>
+    <span class="c1"># At the deepest time, we start with all lineages minus those that</span>
+    <span class="c1"># coalesced deeper than our cutoff</span>
+    <span class="n">n_der</span> <span class="o">=</span> <span class="n">n_der_initial</span>
+    <span class="n">n_anc</span> <span class="o">=</span> <span class="n">n_anc_initial</span>
+
+    <span class="c1"># Count lineages remaining at the deepest epoch</span>
+    <span class="n">deep_der_coals</span> <span class="o">=</span> <span class="n">coal_times_der_all</span><span class="p">[</span><span class="n">coal_times_der_all</span> <span class="o">&lt;=</span> <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span>
+    <span class="n">deep_anc_coals</span> <span class="o">=</span> <span class="n">coal_times_anc_all</span><span class="p">[</span><span class="n">coal_times_anc_all</span> <span class="o">&lt;=</span> <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">)]</span>
+    <span class="n">n_der_remaining</span> <span class="o">=</span> <span class="n">n_der</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">deep_der_coals</span><span class="p">)</span>
+    <span class="n">n_anc_remaining</span> <span class="o">=</span> <span class="n">n_anc</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">deep_anc_coals</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">tb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">epoch_start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tb</span><span class="p">)</span>
+        <span class="n">epoch_end</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tb</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">cum_gens</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">tb</span><span class="p">)</span>
+
+        <span class="n">N_t</span> <span class="o">=</span> <span class="n">N_vec</span><span class="p">[</span><span class="n">tb</span><span class="p">]</span>
+        <span class="n">s_t</span> <span class="o">=</span> <span class="n">sel</span><span class="p">[</span><span class="n">tb</span><span class="p">]</span> <span class="k">if</span> <span class="n">tb</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="n">prev_alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">N_t</span> <span class="o">!=</span> <span class="n">prev_N</span> <span class="ow">or</span> <span class="n">s_t</span> <span class="o">!=</span> <span class="n">prev_s</span><span class="p">:</span>
+            <span class="n">logP</span><span class="p">,</span> <span class="n">lo_idx</span><span class="p">,</span> <span class="n">hi_idx</span> <span class="o">=</span> <span class="n">build_transition_matrix_fast</span><span class="p">(</span>
+                <span class="n">freqs</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">N_t</span><span class="p">,</span> <span class="n">s_t</span><span class="p">,</span> <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+            <span class="n">prev_N</span> <span class="o">=</span> <span class="n">N_t</span>
+            <span class="n">prev_s</span> <span class="o">=</span> <span class="n">s_t</span>
+
+        <span class="c1"># Gather data for this epoch (reversed direction)</span>
+        <span class="n">epoch_time</span> <span class="o">=</span> <span class="n">T</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">tb</span>
+        <span class="n">mask_der</span> <span class="o">=</span> <span class="p">(</span><span class="n">coal_times_der_all</span> <span class="o">&gt;</span> <span class="n">epoch_start</span><span class="p">)</span> <span class="o">&amp;</span> \
+                   <span class="p">(</span><span class="n">coal_times_der_all</span> <span class="o">&lt;=</span> <span class="n">epoch_end</span><span class="p">)</span>
+        <span class="n">coal_der</span> <span class="o">=</span> <span class="n">coal_times_der_all</span><span class="p">[</span><span class="n">mask_der</span><span class="p">]</span>
+
+        <span class="n">mask_anc</span> <span class="o">=</span> <span class="p">(</span><span class="n">coal_times_anc_all</span> <span class="o">&gt;</span> <span class="n">epoch_start</span><span class="p">)</span> <span class="o">&amp;</span> \
+                   <span class="p">(</span><span class="n">coal_times_anc_all</span> <span class="o">&lt;=</span> <span class="n">epoch_end</span><span class="p">)</span>
+        <span class="n">coal_anc</span> <span class="o">=</span> <span class="n">coal_times_anc_all</span><span class="p">[</span><span class="n">mask_anc</span><span class="p">]</span>
+
+        <span class="c1"># Compute emissions for this epoch</span>
+        <span class="n">dip_gls</span> <span class="o">=</span> <span class="p">(</span><span class="n">diploid_gls_by_epoch</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tb</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">hap_gls</span> <span class="o">=</span> <span class="p">(</span><span class="n">haploid_gls_by_epoch</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tb</span><span class="p">,</span> <span class="p">[])</span>
+
+        <span class="n">gl_emissions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">gl</span> <span class="ow">in</span> <span class="n">dip_gls</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="n">gl_emissions</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">genotype_likelihood_emission</span><span class="p">(</span>
+                    <span class="n">gl</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">log1minusfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">gl</span> <span class="ow">in</span> <span class="n">hap_gls</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="n">gl_emissions</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">haplotype_likelihood_emission</span><span class="p">(</span>
+                    <span class="n">gl</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">log1minusfreqs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+        <span class="n">coal_emissions</span> <span class="o">=</span> <span class="n">compute_coalescent_emissions</span><span class="p">(</span>
+            <span class="n">coal_der</span><span class="p">,</span> <span class="n">coal_anc</span><span class="p">,</span> <span class="n">n_der_remaining</span><span class="p">,</span> <span class="n">n_anc_remaining</span><span class="p">,</span>
+            <span class="n">epoch_start</span><span class="p">,</span> <span class="n">epoch_end</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">N_t</span><span class="p">)</span>
+
+        <span class="n">total_emissions</span> <span class="o">=</span> <span class="n">gl_emissions</span> <span class="o">+</span> <span class="n">coal_emissions</span>
+
+        <span class="c1"># Forward update: use P[i,j] (not transposed)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span>
+                <span class="n">prev_alpha</span><span class="p">[</span><span class="n">lo_idx</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span><span class="n">hi_idx</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span>
+                <span class="o">+</span> <span class="n">logP</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">lo_idx</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span><span class="n">hi_idx</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span>
+                <span class="o">+</span> <span class="n">total_emissions</span><span class="p">[</span><span class="n">lo_idx</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span><span class="n">hi_idx</span><span class="p">[</span><span class="n">k</span><span class="p">]])</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+                <span class="n">alpha</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+        <span class="n">n_der_remaining</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coal_der</span><span class="p">)</span>
+        <span class="n">n_anc_remaining</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coal_anc</span><span class="p">)</span>
+
+        <span class="n">alpha_mat</span><span class="p">[</span><span class="n">tb</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">alpha</span>
+
+    <span class="k">return</span> <span class="n">alpha_mat</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-importance-sampling-over-gene-trees">
+<h2>Step 3: Importance Sampling Over Gene Trees<a class="headerlink" href="#step-3-importance-sampling-over-gene-trees" title="Link to this heading"></a></h2>
+<p>The gene tree at the focal SNP is not known exactly – it is estimated by SINGER
+or Relate. These methods produce <span class="math notranslate nohighlight">\(M\)</span> posterior samples, each a possible gene
+tree. CLUES must average over these samples to account for genealogical uncertainty.</p>
+<section id="the-key-identity">
+<h3>The key identity<a class="headerlink" href="#the-key-identity" title="Link to this heading"></a></h3>
+<p>We want <span class="math notranslate nohighlight">\(P(\mathbf{D} \mid s)\)</span>, the likelihood of all data given selection.
+The gene tree <span class="math notranslate nohighlight">\(\mathbf{G}\)</span> is a latent variable. We can write:</p>
+<div class="math notranslate nohighlight">
+\[\frac{P(\mathbf{D} \mid s)}{P(\mathbf{D} \mid s=0)}
+= \mathbb{E}_{\mathbf{G} \sim P(\mathbf{G} \mid \mathbf{D}, s=0)}
+\left[\frac{P(\mathbf{G} \mid s)}{P(\mathbf{G} \mid s=0)}\right]\]</div>
+<p>This is an <strong>importance sampling</strong> identity: we sample gene trees from the neutral
+posterior (the “proposal distribution”) and reweight each sample by the likelihood
+ratio. The beauty of this approach is that the same <span class="math notranslate nohighlight">\(M\)</span> tree samples can be
+reused for <em>all</em> values of <span class="math notranslate nohighlight">\(s\)</span> without re-running the ARG sampler.</p>
+<div class="admonition-probability-aside-importance-sampling admonition">
+<p class="admonition-title">Probability Aside: importance sampling</p>
+<p>Importance sampling estimates an expectation under one distribution
+<span class="math notranslate nohighlight">\(P\)</span> by sampling from a different distribution <span class="math notranslate nohighlight">\(Q\)</span> and reweighting:</p>
+<div class="math notranslate nohighlight">
+\[\mathbb{E}_P[f(X)] = \mathbb{E}_Q\left[f(X) \cdot \frac{P(X)}{Q(X)}\right]
+\approx \frac{1}{M} \sum_{m=1}^{M} f(X^{(m)}) \cdot \frac{P(X^{(m)})}{Q(X^{(m)})}\]</div>
+<p>where <span class="math notranslate nohighlight">\(X^{(m)} \sim Q\)</span>. The ratio <span class="math notranslate nohighlight">\(P(X)/Q(X)\)</span> is the
+<strong>importance weight</strong>. This works well when <span class="math notranslate nohighlight">\(Q\)</span> and <span class="math notranslate nohighlight">\(P\)</span> overlap
+substantially, but poorly when <span class="math notranslate nohighlight">\(P\)</span> has mass where <span class="math notranslate nohighlight">\(Q\)</span> does not.</p>
+<p>In our case, <span class="math notranslate nohighlight">\(P\)</span> is the posterior under selection and <span class="math notranslate nohighlight">\(Q\)</span> is the
+posterior under neutrality. For moderate selection (<span class="math notranslate nohighlight">\(|s| &lt; 0.1\)</span>), the
+overlap is good and <span class="math notranslate nohighlight">\(M \approx 200\)</span> samples suffice. For strong
+selection, more samples may be needed.</p>
+</div>
+<p><strong>The Monte Carlo estimator.</strong> Given <span class="math notranslate nohighlight">\(M\)</span> tree samples
+<span class="math notranslate nohighlight">\(\mathbf{G}^{(1)}, \ldots, \mathbf{G}^{(M)}\)</span> drawn from the neutral
+posterior:</p>
+<div class="math notranslate nohighlight">
+\[\frac{P(\mathbf{D} \mid s)}{P(\mathbf{D} \mid s=0)}
+\approx \frac{1}{M} \sum_{m=1}^{M}
+\frac{P(\mathbf{G}^{(m)} \mid s)}{P(\mathbf{G}^{(m)} \mid s=0)}\]</div>
+<p>In log space, we first compute the neutral weights
+<span class="math notranslate nohighlight">\(W_m = \log P(\mathbf{G}^{(m)} \mid s=0)\)</span> for each tree sample (using the
+backward algorithm with <span class="math notranslate nohighlight">\(s = 0\)</span>). Then for any <span class="math notranslate nohighlight">\(s\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\log P(\mathbf{D} \mid s) - \log P(\mathbf{D} \mid s=0) =
+-\log M + \text{logsumexp}_{m=1}^{M}\left(\ell_m(s) - W_m\right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\ell_m(s) = \log P(\mathbf{G}^{(m)} \mid s)\)</span> is the backward algorithm
+likelihood for tree <span class="math notranslate nohighlight">\(m\)</span> under selection <span class="math notranslate nohighlight">\(s\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_neutral_weights</span><span class="p">(</span><span class="n">times_all</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                             <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">,</span>
+                             <span class="n">n_der_initial</span><span class="p">,</span> <span class="n">n_anc_initial</span><span class="p">,</span>
+                             <span class="n">diploid_gls_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">haploid_gls_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">der_sampled_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">anc_sampled_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute neutral importance weights for each gene tree sample.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    times_all : ndarray of shape (2, max_lineages, M)</span>
+<span class="sd">        Coalescence times. times_all[0] = derived, times_all[1] = ancestral.</span>
+<span class="sd">        Third axis indexes importance samples.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    weights : ndarray of shape (M,)</span>
+<span class="sd">        Log-likelihood of each tree under neutrality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">times_all</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+    <span class="n">sel_neutral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">N_vec</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="c1"># Extract coalescence times for this sample</span>
+        <span class="n">der_times</span> <span class="o">=</span> <span class="n">times_all</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="n">m</span><span class="p">]</span>
+        <span class="n">der_times</span> <span class="o">=</span> <span class="n">der_times</span><span class="p">[</span><span class="n">der_times</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># -1 marks unused entries</span>
+        <span class="n">anc_times</span> <span class="o">=</span> <span class="n">times_all</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="n">m</span><span class="p">]</span>
+        <span class="n">anc_times</span> <span class="o">=</span> <span class="n">anc_times</span><span class="p">[</span><span class="n">anc_times</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">alpha_mat</span> <span class="o">=</span> <span class="n">backward_algorithm</span><span class="p">(</span>
+            <span class="n">sel_neutral</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+            <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+            <span class="n">der_times</span><span class="p">,</span> <span class="n">anc_times</span><span class="p">,</span>
+            <span class="n">n_der_initial</span><span class="p">,</span> <span class="n">n_anc_initial</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">,</span>
+            <span class="n">diploid_gls_by_epoch</span><span class="p">,</span> <span class="n">haploid_gls_by_epoch</span><span class="p">,</span>
+            <span class="n">der_sampled_by_epoch</span><span class="p">,</span> <span class="n">anc_sampled_by_epoch</span><span class="p">)</span>
+
+        <span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">alpha_mat</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="p">:])</span>
+
+    <span class="k">return</span> <span class="n">weights</span>
+
+<span class="k">def</span> <span class="nf">importance_sampled_likelihood</span><span class="p">(</span><span class="n">sel_vec</span><span class="p">,</span> <span class="n">times_all</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
+                                   <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                                   <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+                                   <span class="n">curr_freq</span><span class="p">,</span>
+                                   <span class="n">n_der_initial</span><span class="p">,</span> <span class="n">n_anc_initial</span><span class="p">,</span>
+                                   <span class="n">diploid_gls_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">haploid_gls_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">der_sampled_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">anc_sampled_by_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute importance-sampled log-likelihood for a given selection vector.</span>
+
+<span class="sd">    Returns the negative log-likelihood (for minimization).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">times_all</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">log_ratios</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="n">der_times</span> <span class="o">=</span> <span class="n">times_all</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="n">m</span><span class="p">]</span>
+        <span class="n">der_times</span> <span class="o">=</span> <span class="n">der_times</span><span class="p">[</span><span class="n">der_times</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">anc_times</span> <span class="o">=</span> <span class="n">times_all</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="n">m</span><span class="p">]</span>
+        <span class="n">anc_times</span> <span class="o">=</span> <span class="n">anc_times</span><span class="p">[</span><span class="n">anc_times</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">alpha_mat</span> <span class="o">=</span> <span class="n">backward_algorithm</span><span class="p">(</span>
+            <span class="n">sel_vec</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+            <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+            <span class="n">der_times</span><span class="p">,</span> <span class="n">anc_times</span><span class="p">,</span>
+            <span class="n">n_der_initial</span><span class="p">,</span> <span class="n">n_anc_initial</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">,</span>
+            <span class="n">diploid_gls_by_epoch</span><span class="p">,</span> <span class="n">haploid_gls_by_epoch</span><span class="p">,</span>
+            <span class="n">der_sampled_by_epoch</span><span class="p">,</span> <span class="n">anc_sampled_by_epoch</span><span class="p">)</span>
+
+        <span class="n">log_lik</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">alpha_mat</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">log_ratios</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_lik</span> <span class="o">-</span> <span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+
+    <span class="c1"># Importance-sampled log-likelihood ratio</span>
+    <span class="n">log_lr</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">M</span><span class="p">)</span> <span class="o">+</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">log_ratios</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">log_lr</span>  <span class="c1"># negative for minimization</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="step-4-maximum-likelihood-estimation">
+<h2>Step 4: Maximum Likelihood Estimation<a class="headerlink" href="#step-4-maximum-likelihood-estimation" title="Link to this heading"></a></h2>
+<p>CLUES finds the selection coefficient <span class="math notranslate nohighlight">\(\hat{s}\)</span> that maximizes the likelihood.</p>
+<section id="single-epoch-estimation">
+<h3>Single-epoch estimation<a class="headerlink" href="#single-epoch-estimation" title="Link to this heading"></a></h3>
+<p>For a single selection coefficient (no time variation), CLUES uses <strong>Brent’s
+method</strong> – a root-finding/minimization algorithm that combines bisection with
+inverse quadratic interpolation. It is fast, derivative-free, and guaranteed to
+converge within a bounded interval.</p>
+<div class="admonition-numerical-methods-aside-brent-s-method admonition">
+<p class="admonition-title">Numerical Methods Aside: Brent’s method</p>
+<p>Brent’s method finds the minimum of a univariate function on a bounded interval
+<span class="math notranslate nohighlight">\([a, b]\)</span>. It maintains a bracket <span class="math notranslate nohighlight">\([a, b]\)</span> that contains the minimum
+and narrows it iteratively. At each step, it tries an inverse quadratic
+interpolation (fitting a parabola to three function evaluations), and falls back
+to bisection if the interpolation step would leave the bracket. This gives
+superlinear convergence when the function is smooth, with the safety of
+bisection when it isn’t.</p>
+<p>In CLUES, the bracket is <span class="math notranslate nohighlight">\([-0.1, 0.1]\)</span> (the default <code class="docutils literal notranslate"><span class="pre">sMax</span></code>). The
+function being minimized is the negative log-likelihood (equivalently, maximizing
+the likelihood).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize_scalar</span>
+
+<span class="k">def</span> <span class="nf">estimate_selection_single</span><span class="p">(</span><span class="n">neg_log_lik_func</span><span class="p">,</span> <span class="n">s_max</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate the selection coefficient using Brent&#39;s method.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    neg_log_lik_func : callable</span>
+<span class="sd">        Function that takes s (float) and returns negative log-likelihood.</span>
+<span class="sd">    s_max : float</span>
+<span class="sd">        Maximum absolute selection coefficient to search.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    s_hat : float</span>
+<span class="sd">        Maximum likelihood estimate of s.</span>
+<span class="sd">    neg_log_lik : float</span>
+<span class="sd">        Negative log-likelihood at s_hat.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Brent&#39;s method with bracket [1-sMax, 1, 1+sMax]</span>
+    <span class="c1"># (CLUES adds 1 to s for better numerical behavior near 0)</span>
+    <span class="k">def</span> <span class="nf">shifted_func</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">neg_log_lik_func</span><span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">minimize_scalar</span><span class="p">(</span>
+            <span class="n">shifted_func</span><span class="p">,</span>
+            <span class="n">bracket</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">s_max</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">s_max</span><span class="p">],</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;Brent&#39;</span><span class="p">,</span>
+            <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;xtol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">})</span>
+        <span class="n">s_hat</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mf">1.0</span>
+        <span class="n">neg_ll</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">fun</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="c1"># If bracket fails, try a wider search</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">minimize_scalar</span><span class="p">(</span>
+            <span class="n">shifted_func</span><span class="p">,</span>
+            <span class="n">bracket</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">],</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;Brent&#39;</span><span class="p">,</span>
+            <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;xtol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">})</span>
+        <span class="n">s_hat</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mf">1.0</span>
+        <span class="n">neg_ll</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">fun</span>
+
+    <span class="k">return</span> <span class="n">s_hat</span><span class="p">,</span> <span class="n">neg_ll</span>
+
+<span class="c1"># Example: estimate s from a simple likelihood function</span>
+<span class="c1"># (This is a toy example -- in practice, neg_log_lik_func calls the backward algorithm)</span>
+<span class="n">true_s</span> <span class="o">=</span> <span class="mf">0.03</span>
+<span class="k">def</span> <span class="nf">toy_neg_log_lik</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="c1"># Quadratic centered at true_s, simulating a simple likelihood</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">true_s</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mf">0.001</span>
+
+<span class="n">s_hat</span><span class="p">,</span> <span class="n">nll</span> <span class="o">=</span> <span class="n">estimate_selection_single</span><span class="p">(</span><span class="n">toy_neg_log_lik</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True s = </span><span class="si">{</span><span class="n">true_s</span><span class="si">}</span><span class="s2">, Estimated s = </span><span class="si">{</span><span class="n">s_hat</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="multi-epoch-estimation">
+<h3>Multi-epoch estimation<a class="headerlink" href="#multi-epoch-estimation" title="Link to this heading"></a></h3>
+<p>CLUES can also estimate selection coefficients that vary over time. Given
+breakpoints <span class="math notranslate nohighlight">\(\tau_1, \ldots, \tau_n\)</span> that divide the history into
+<span class="math notranslate nohighlight">\(n + 1\)</span> epochs, each epoch has its own <span class="math notranslate nohighlight">\(s_i\)</span>.</p>
+<p>For multiple parameters, CLUES uses the <strong>Nelder-Mead simplex method</strong> – a
+derivative-free optimization algorithm that maintains a simplex of <span class="math notranslate nohighlight">\(n+2\)</span>
+points in <span class="math notranslate nohighlight">\(n+1\)</span>-dimensional space and iteratively contracts toward the
+minimum.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize</span>
+
+<span class="k">def</span> <span class="nf">estimate_selection_multi_epoch</span><span class="p">(</span><span class="n">neg_log_lik_func</span><span class="p">,</span> <span class="n">n_epochs</span><span class="p">,</span> <span class="n">s_max</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate epoch-specific selection coefficients using Nelder-Mead.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    neg_log_lik_func : callable</span>
+<span class="sd">        Takes an array of selection coefficients and returns neg log-lik.</span>
+<span class="sd">    n_epochs : int</span>
+<span class="sd">        Number of selection epochs.</span>
+<span class="sd">    s_max : float</span>
+<span class="sd">        Maximum absolute selection coefficient.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    s_hat : ndarray of shape (n_epochs,)</span>
+<span class="sd">        MLE selection coefficients for each epoch.</span>
+<span class="sd">    neg_log_lik : float</span>
+<span class="sd">        Negative log-likelihood at the optimum.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initial simplex: one vertex at all-zeros, others with 0.01 in each epoch</span>
+    <span class="n">initial_simplex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_epochs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_epochs</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+        <span class="n">initial_simplex</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.01</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
+        <span class="n">neg_log_lik_func</span><span class="p">,</span>
+        <span class="n">x0</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">),</span>
+        <span class="n">method</span><span class="o">=</span><span class="s1">&#39;Nelder-Mead&#39;</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;initial_simplex&#39;</span><span class="p">:</span> <span class="n">initial_simplex</span><span class="p">,</span>
+            <span class="s1">&#39;maxfev&#39;</span><span class="p">:</span> <span class="n">n_epochs</span> <span class="o">*</span> <span class="mi">20</span><span class="p">,</span>
+            <span class="s1">&#39;xatol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s1">&#39;fatol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">fun</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="step-5-the-likelihood-ratio-test">
+<h2>Step 5: The Likelihood Ratio Test<a class="headerlink" href="#step-5-the-likelihood-ratio-test" title="Link to this heading"></a></h2>
+<p>To test whether the data provide evidence for selection, CLUES computes a
+<strong>log-likelihood ratio</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\Lambda = 2 \cdot \left[\log P(\mathbf{D} \mid \hat{s}) - \log P(\mathbf{D} \mid s=0)\right]\]</div>
+<p>Under the null hypothesis <span class="math notranslate nohighlight">\(H_0: s = 0\)</span>, the statistic <span class="math notranslate nohighlight">\(\Lambda\)</span> follows
+a <span class="math notranslate nohighlight">\(\chi^2\)</span> distribution with degrees of freedom equal to the number of free
+selection parameters (1 for a single epoch, <span class="math notranslate nohighlight">\(n+1\)</span> for <span class="math notranslate nohighlight">\(n+1\)</span> epochs).</p>
+<div class="admonition-statistics-aside-the-likelihood-ratio-test admonition">
+<p class="admonition-title">Statistics Aside: the likelihood ratio test</p>
+<p>The likelihood ratio test (LRT) is one of the three classical approaches to
+hypothesis testing (alongside the Wald test and the score test). The idea: if
+the null hypothesis is true, the maximum likelihood under the alternative
+should not be <em>much</em> larger than under the null. Wilks’ theorem guarantees
+that <span class="math notranslate nohighlight">\(-2 \log(L_0/L_1) \xrightarrow{d} \chi^2_k\)</span> under regularity
+conditions, where <span class="math notranslate nohighlight">\(k\)</span> is the difference in the number of free parameters.</p>
+<p>For CLUES, <span class="math notranslate nohighlight">\(L_0 = P(\mathbf{D} \mid s=0)\)</span> and
+<span class="math notranslate nohighlight">\(L_1 = P(\mathbf{D} \mid \hat{s})\)</span>, with <span class="math notranslate nohighlight">\(k = 1\)</span> (one extra
+parameter: <span class="math notranslate nohighlight">\(s\)</span>). A <span class="math notranslate nohighlight">\(p\)</span>-value below 0.05 (or equivalently,
+<span class="math notranslate nohighlight">\(-\log_{10}(p) &gt; 1.3\)</span>) suggests significant evidence for selection.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">chi2</span>
+
+<span class="k">def</span> <span class="nf">likelihood_ratio_test</span><span class="p">(</span><span class="n">log_lik_selected</span><span class="p">,</span> <span class="n">log_lik_neutral</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform a likelihood ratio test for selection.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    log_lik_selected : float</span>
+<span class="sd">        Log-likelihood under the selected model.</span>
+<span class="sd">    log_lik_neutral : float</span>
+<span class="sd">        Log-likelihood under the neutral model (s=0).</span>
+<span class="sd">    df : int</span>
+<span class="sd">        Degrees of freedom (number of selection parameters).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    log_lr : float</span>
+<span class="sd">        Log-likelihood ratio (2 * (log L_selected - log L_neutral)).</span>
+<span class="sd">    p_value : float</span>
+<span class="sd">        p-value from chi-squared distribution.</span>
+<span class="sd">    neg_log10_p : float</span>
+<span class="sd">        -log10(p-value) for convenient reporting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">log_lr</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">log_lik_selected</span> <span class="o">-</span> <span class="n">log_lik_neutral</span><span class="p">)</span>
+
+    <span class="c1"># Ensure log_lr &gt;= 0 (numerical issues can make it slightly negative)</span>
+    <span class="n">log_lr</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">log_lr</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># p-value from chi-squared survival function</span>
+    <span class="n">p_value</span> <span class="o">=</span> <span class="n">chi2</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">log_lr</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+    <span class="n">neg_log10_p</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">p_value</span><span class="p">)</span> <span class="k">if</span> <span class="n">p_value</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="k">return</span> <span class="n">log_lr</span><span class="p">,</span> <span class="n">p_value</span><span class="p">,</span> <span class="n">neg_log10_p</span>
+
+<span class="c1"># Example: a moderate selection signal</span>
+<span class="n">log_lr</span><span class="p">,</span> <span class="n">p_val</span><span class="p">,</span> <span class="n">neg_log10_p</span> <span class="o">=</span> <span class="n">likelihood_ratio_test</span><span class="p">(</span>
+    <span class="n">log_lik_selected</span><span class="o">=-</span><span class="mf">1000.0</span><span class="p">,</span> <span class="n">log_lik_neutral</span><span class="o">=-</span><span class="mf">1005.0</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log-LR = </span><span class="si">{</span><span class="n">log_lr</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;p-value = </span><span class="si">{</span><span class="n">p_val</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-log10(p) = </span><span class="si">{</span><span class="n">neg_log10_p</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Significant at alpha=0.05? </span><span class="si">{</span><span class="s1">&#39;Yes&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">p_val</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.05</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;No&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-posterior-trajectory-reconstruction">
+<h2>Step 6: Posterior Trajectory Reconstruction<a class="headerlink" href="#step-6-posterior-trajectory-reconstruction" title="Link to this heading"></a></h2>
+<p>The posterior allele frequency trajectory tells us the most likely frequency at each
+generation in the past, given the data and the estimated selection coefficient. This
+is computed by combining the forward and backward algorithms:</p>
+<div class="math notranslate nohighlight">
+\[P(x_t = k \mid \mathbf{D}, s) \propto \alpha^{\text{fwd}}_t(k) + \alpha^{\text{bwd}}_t(k)\]</div>
+<p>(in log space, multiplication becomes addition). The result is normalized at each
+time point to sum to 1.</p>
+<section id="integrating-over-uncertainty-in-s">
+<h3>Integrating over uncertainty in <span class="math notranslate nohighlight">\(s\)</span><a class="headerlink" href="#integrating-over-uncertainty-in-s" title="Link to this heading"></a></h3>
+<p>Rather than conditioning on the point estimate <span class="math notranslate nohighlight">\(\hat{s}\)</span>, CLUES integrates
+over the posterior of <span class="math notranslate nohighlight">\(s\)</span>. It approximates <span class="math notranslate nohighlight">\(P(s \mid \mathbf{D})\)</span> as a
+Gaussian centered at <span class="math notranslate nohighlight">\(\hat{s}\)</span> with variance estimated from the curvature of
+the log-likelihood (by fitting a normal to the evaluated likelihood function values).</p>
+<p>Then the marginalized trajectory is:</p>
+<div class="math notranslate nohighlight">
+\[P(x_t = k \mid \mathbf{D}) \approx \frac{1}{M_s} \sum_{i=1}^{M_s}
+P(x_t = k \mid \mathbf{D}, s_i)\]</div>
+<p>where <span class="math notranslate nohighlight">\(s_1, \ldots, s_{M_s}\)</span> are drawn from the Gaussian approximation. This
+accounts for uncertainty in <span class="math notranslate nohighlight">\(s\)</span> and produces wider credible intervals.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">normal_dist</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize</span> <span class="k">as</span> <span class="n">scipy_minimize</span>
+
+<span class="k">def</span> <span class="nf">reconstruct_trajectory</span><span class="p">(</span><span class="n">sel_samples</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                            <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+                            <span class="n">coal_times_der</span><span class="p">,</span> <span class="n">coal_times_anc</span><span class="p">,</span>
+                            <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">,</span>
+                            <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">times_all</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reconstruct the posterior allele frequency trajectory.</span>
+
+<span class="sd">    Averages over multiple values of s drawn from the posterior,</span>
+<span class="sd">    and (if importance sampling) over multiple gene tree samples.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sel_samples : list of ndarray</span>
+<span class="sd">        Each element is a selection vector [s1, s2, ...] drawn from</span>
+<span class="sd">        the posterior of s. For single-epoch, each is a 1-element list.</span>
+<span class="sd">    (other parameters as in backward_algorithm)</span>
+<span class="sd">    weights : ndarray of shape (M,), optional</span>
+<span class="sd">        Neutral importance weights (if using importance sampling).</span>
+<span class="sd">    times_all : ndarray of shape (2, n, M), optional</span>
+<span class="sd">        All gene tree samples (if using importance sampling).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior : ndarray of shape (K, T)</span>
+<span class="sd">        Posterior probability matrix. posterior[k, t] is the</span>
+<span class="sd">        probability that the allele frequency at time t is x_k.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+    <span class="n">accumulated_post</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="n">T</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">sel_vec</span> <span class="ow">in</span> <span class="n">sel_samples</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">times_all</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">times_all</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Importance sampling: average over gene tree samples</span>
+            <span class="n">M</span> <span class="o">=</span> <span class="n">times_all</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">log_ratios</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+            <span class="n">posts_by_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="n">T</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+                <span class="n">der_t</span> <span class="o">=</span> <span class="n">times_all</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="n">m</span><span class="p">]</span>
+                <span class="n">der_t</span> <span class="o">=</span> <span class="n">der_t</span><span class="p">[</span><span class="n">der_t</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">anc_t</span> <span class="o">=</span> <span class="n">times_all</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="n">m</span><span class="p">]</span>
+                <span class="n">anc_t</span> <span class="o">=</span> <span class="n">anc_t</span><span class="p">[</span><span class="n">anc_t</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">bwd</span> <span class="o">=</span> <span class="n">backward_algorithm</span><span class="p">(</span>
+                    <span class="n">sel_vec</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                    <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+                    <span class="n">der_t</span><span class="p">,</span> <span class="n">anc_t</span><span class="p">,</span> <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">)</span>
+                <span class="n">fwd</span> <span class="o">=</span> <span class="n">forward_algorithm</span><span class="p">(</span>
+                    <span class="n">sel_vec</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                    <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+                    <span class="n">der_t</span><span class="p">,</span> <span class="n">anc_t</span><span class="p">,</span> <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">)</span>
+
+                <span class="n">log_lik</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">bwd</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="p">:])</span>
+                <span class="n">log_ratios</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_lik</span> <span class="o">-</span> <span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+
+                <span class="c1"># Posterior at each time: forward * backward</span>
+                <span class="n">post</span> <span class="o">=</span> <span class="p">(</span><span class="n">fwd</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">bwd</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">T</span>
+                <span class="n">posts_by_sample</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">post</span>
+
+            <span class="c1"># Weight-average across samples</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                    <span class="n">vals</span> <span class="o">=</span> <span class="n">log_ratios</span> <span class="o">+</span> <span class="n">posts_by_sample</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="p">:]</span>
+                    <span class="n">accumulated_post</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logsumexp</span><span class="p">(</span><span class="n">vals</span><span class="p">))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Single tree: no importance sampling</span>
+            <span class="n">bwd</span> <span class="o">=</span> <span class="n">backward_algorithm</span><span class="p">(</span>
+                <span class="n">sel_vec</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+                <span class="n">coal_times_der</span><span class="p">,</span> <span class="n">coal_times_anc</span><span class="p">,</span>
+                <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">)</span>
+            <span class="n">fwd</span> <span class="o">=</span> <span class="n">forward_algorithm</span><span class="p">(</span>
+                <span class="n">sel_vec</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+                <span class="n">coal_times_der</span><span class="p">,</span> <span class="n">coal_times_anc</span><span class="p">,</span>
+                <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">)</span>
+
+            <span class="n">post</span> <span class="o">=</span> <span class="p">(</span><span class="n">fwd</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">bwd</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">accumulated_post</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">post</span> <span class="o">-</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">post</span><span class="o">.</span><span class="n">flatten</span><span class="p">()))</span>
+
+    <span class="c1"># Normalize columns to sum to 1</span>
+    <span class="n">col_sums</span> <span class="o">=</span> <span class="n">accumulated_post</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">col_sums</span><span class="p">[</span><span class="n">col_sums</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">posterior</span> <span class="o">=</span> <span class="n">accumulated_post</span> <span class="o">/</span> <span class="n">col_sums</span>
+
+    <span class="k">return</span> <span class="n">posterior</span>
+
+<span class="k">def</span> <span class="nf">compute_trajectory_summary</span><span class="p">(</span><span class="n">posterior</span><span class="p">,</span> <span class="n">freqs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute summary statistics of the posterior trajectory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    posterior : ndarray of shape (K, T)</span>
+<span class="sd">        Posterior probability matrix.</span>
+<span class="sd">    freqs : ndarray of shape (K,)</span>
+<span class="sd">        Frequency bins.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mean_freq : ndarray of shape (T,)</span>
+<span class="sd">        Posterior mean frequency at each time.</span>
+<span class="sd">    lower_95 : ndarray of shape (T,)</span>
+<span class="sd">        2.5th percentile of the posterior at each time.</span>
+<span class="sd">    upper_95 : ndarray of shape (T,)</span>
+<span class="sd">        97.5th percentile.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">mean_freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+    <span class="n">lower_95</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+    <span class="n">upper_95</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="n">posterior</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="n">col</span> <span class="o">/</span> <span class="n">col</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">mean_freq</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">freqs</span> <span class="o">*</span> <span class="n">col</span><span class="p">)</span>
+
+        <span class="c1"># Compute percentiles from the CDF</span>
+        <span class="n">cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+        <span class="n">lower_95</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">freqs</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cdf</span><span class="p">,</span> <span class="mf">0.025</span><span class="p">)]</span>
+        <span class="n">upper_95</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">freqs</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cdf</span><span class="p">,</span> <span class="mf">0.975</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">mean_freq</span><span class="p">,</span> <span class="n">lower_95</span><span class="p">,</span> <span class="n">upper_95</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="step-7-putting-it-all-together">
+<h2>Step 7: Putting It All Together<a class="headerlink" href="#step-7-putting-it-all-together" title="Link to this heading"></a></h2>
+<p>Here is the complete CLUES pipeline, from data loading to selection estimation and
+trajectory reconstruction:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_clues</span><span class="p">(</span><span class="n">curr_freq</span><span class="p">,</span> <span class="n">N_diploid</span><span class="p">,</span> <span class="n">t_cutoff</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span> <span class="n">s_max</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+               <span class="n">coal_times_der</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coal_times_anc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">times_all</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ancient_gls</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the complete CLUES inference pipeline.</span>
+
+<span class="sd">    This is a simplified version showing the algorithm structure.</span>
+<span class="sd">    The full implementation handles additional edge cases and</span>
+<span class="sd">    optimizations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    curr_freq : float</span>
+<span class="sd">        Modern derived allele frequency.</span>
+<span class="sd">    N_diploid : float</span>
+<span class="sd">        Diploid effective population size (constant).</span>
+<span class="sd">    t_cutoff : int</span>
+<span class="sd">        Maximum analysis time (generations).</span>
+<span class="sd">    K : int</span>
+<span class="sd">        Number of frequency bins.</span>
+<span class="sd">    s_max : float</span>
+<span class="sd">        Maximum selection coefficient to search.</span>
+<span class="sd">    h : float</span>
+<span class="sd">        Dominance coefficient.</span>
+<span class="sd">    coal_times_der : ndarray, optional</span>
+<span class="sd">        Derived coalescence times (single tree).</span>
+<span class="sd">    coal_times_anc : ndarray, optional</span>
+<span class="sd">        Ancestral coalescence times (single tree).</span>
+<span class="sd">    times_all : ndarray of shape (2, n, M), optional</span>
+<span class="sd">        Multiple tree samples for importance sampling.</span>
+<span class="sd">    ancient_gls : ndarray of shape (n_samples, 4), optional</span>
+<span class="sd">        Ancient genotype likelihoods [time, P(AA), P(AD), P(DD)].</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    results : dict</span>
+<span class="sd">        Dictionary with keys: s_hat, log_lr, p_value, neg_log10_p,</span>
+<span class="sd">        posterior, mean_freq, lower_95, upper_95, freqs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set up frequency bins and lookup tables</span>
+    <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span> <span class="o">=</span> <span class="n">build_frequency_bins</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+    <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span> <span class="o">=</span> <span class="n">build_normal_cdf_lookup</span><span class="p">()</span>
+
+    <span class="c1"># Set up epochs and population sizes</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">t_cutoff</span><span class="p">)</span>
+    <span class="n">N_vec</span> <span class="o">=</span> <span class="n">N_diploid</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">t_cutoff</span><span class="p">))</span>
+
+    <span class="c1"># Determine number of initial lineages</span>
+    <span class="k">if</span> <span class="n">times_all</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_der</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">times_all</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">n_anc</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">times_all</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">use_importance_sampling</span> <span class="o">=</span> <span class="n">times_all</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">coal_times_der</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_der</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coal_times_der</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># n coalescences =&gt; n+1 lineages</span>
+        <span class="n">n_anc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coal_times_anc</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">use_importance_sampling</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">n_der</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_anc</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">use_importance_sampling</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Step 1: Compute neutral weights (if importance sampling)</span>
+    <span class="k">if</span> <span class="n">use_importance_sampling</span><span class="p">:</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">compute_neutral_weights</span><span class="p">(</span>
+            <span class="n">times_all</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+            <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">,</span>
+            <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Step 2: Define the negative log-likelihood function</span>
+    <span class="k">def</span> <span class="nf">neg_log_lik</span><span class="p">(</span><span class="n">s_val</span><span class="p">):</span>
+        <span class="n">sel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s_val</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">s_val</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">s_max</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1e10</span>
+
+        <span class="k">if</span> <span class="n">use_importance_sampling</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">importance_sampled_likelihood</span><span class="p">(</span>
+                <span class="n">sel</span><span class="p">,</span> <span class="n">times_all</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
+                <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">,</span>
+                <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">alpha_mat</span> <span class="o">=</span> <span class="n">backward_algorithm</span><span class="p">(</span>
+                <span class="n">sel</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+                <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+                <span class="n">coal_times_der</span><span class="p">,</span> <span class="n">coal_times_anc</span><span class="p">,</span>
+                <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">)</span>
+            <span class="k">return</span> <span class="o">-</span><span class="n">logsumexp</span><span class="p">(</span><span class="n">alpha_mat</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="p">:])</span>
+
+    <span class="c1"># Step 3: Find MLE of s</span>
+    <span class="n">s_hat</span><span class="p">,</span> <span class="n">neg_ll_selected</span> <span class="o">=</span> <span class="n">estimate_selection_single</span><span class="p">(</span><span class="n">neg_log_lik</span><span class="p">,</span> <span class="n">s_max</span><span class="p">)</span>
+    <span class="n">neg_ll_neutral</span> <span class="o">=</span> <span class="n">neg_log_lik</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Likelihood ratio test</span>
+    <span class="n">log_lr</span><span class="p">,</span> <span class="n">p_value</span><span class="p">,</span> <span class="n">neg_log10_p</span> <span class="o">=</span> <span class="n">likelihood_ratio_test</span><span class="p">(</span>
+        <span class="o">-</span><span class="n">neg_ll_selected</span><span class="p">,</span> <span class="o">-</span><span class="n">neg_ll_neutral</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selection MLE:  s_hat = </span><span class="si">{</span><span class="n">s_hat</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log-LR:         </span><span class="si">{</span><span class="n">log_lr</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;p-value:        </span><span class="si">{</span><span class="n">p_value</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-log10(p):      </span><span class="si">{</span><span class="n">neg_log10_p</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Step 5: Reconstruct trajectory</span>
+    <span class="c1"># Draw samples from approximate posterior of s</span>
+    <span class="n">sel_samples</span> <span class="o">=</span> <span class="p">[[</span><span class="n">s_hat</span><span class="p">]]</span>  <span class="c1"># simplified: just use MLE</span>
+
+    <span class="n">posterior</span> <span class="o">=</span> <span class="n">reconstruct_trajectory</span><span class="p">(</span>
+        <span class="n">sel_samples</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">logfreqs</span><span class="p">,</span> <span class="n">log1minusfreqs</span><span class="p">,</span>
+        <span class="n">z_bins</span><span class="p">,</span> <span class="n">z_cdf</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">N_vec</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+        <span class="n">coal_times_der</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span>
+        <span class="n">coal_times_anc</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span>
+        <span class="n">n_der</span><span class="p">,</span> <span class="n">n_anc</span><span class="p">,</span> <span class="n">curr_freq</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">,</span> <span class="n">times_all</span><span class="p">)</span>
+
+    <span class="n">mean_freq</span><span class="p">,</span> <span class="n">lower_95</span><span class="p">,</span> <span class="n">upper_95</span> <span class="o">=</span> <span class="n">compute_trajectory_summary</span><span class="p">(</span>
+        <span class="n">posterior</span><span class="p">,</span> <span class="n">freqs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;s_hat&#39;</span><span class="p">:</span> <span class="n">s_hat</span><span class="p">,</span>
+        <span class="s1">&#39;log_lr&#39;</span><span class="p">:</span> <span class="n">log_lr</span><span class="p">,</span>
+        <span class="s1">&#39;p_value&#39;</span><span class="p">:</span> <span class="n">p_value</span><span class="p">,</span>
+        <span class="s1">&#39;neg_log10_p&#39;</span><span class="p">:</span> <span class="n">neg_log10_p</span><span class="p">,</span>
+        <span class="s1">&#39;posterior&#39;</span><span class="p">:</span> <span class="n">posterior</span><span class="p">,</span>
+        <span class="s1">&#39;mean_freq&#39;</span><span class="p">:</span> <span class="n">mean_freq</span><span class="p">,</span>
+        <span class="s1">&#39;lower_95&#39;</span><span class="p">:</span> <span class="n">lower_95</span><span class="p">,</span>
+        <span class="s1">&#39;upper_95&#39;</span><span class="p">:</span> <span class="n">upper_95</span><span class="p">,</span>
+        <span class="s1">&#39;freqs&#39;</span><span class="p">:</span> <span class="n">freqs</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-selection-detection-power admonition">
+<p class="admonition-title">Exercise 1: Selection detection power</p>
+<p>Simulate a neutral gene tree (using the coalescent with <span class="math notranslate nohighlight">\(N = 10000\)</span>
+diploid, <span class="math notranslate nohighlight">\(n = 20\)</span> haplotypes) and run CLUES with <span class="math notranslate nohighlight">\(s = 0\)</span>.
+Then simulate a gene tree under selection (<span class="math notranslate nohighlight">\(s = 0.02\)</span>) by distorting
+the coalescence times of derived lineages (multiply them by a factor reflecting
+the reduced effective population size under a sweep).</p>
+<ol class="loweralpha simple">
+<li><p>How often does CLUES correctly reject neutrality when <span class="math notranslate nohighlight">\(s = 0.02\)</span>?
+(Run 100 replicates and count the fraction with <span class="math notranslate nohighlight">\(p &lt; 0.05\)</span>.)</p></li>
+<li><p>How often does CLUES falsely reject neutrality when <span class="math notranslate nohighlight">\(s = 0\)</span>?
+(This should be close to 5%.)</p></li>
+<li><p>How does power change with sample size (<span class="math notranslate nohighlight">\(n = 5, 10, 20, 50\)</span>)?</p></li>
+</ol>
+</div>
+<div class="admonition-exercise-2-the-effect-of-ancient-dna admonition">
+<p class="admonition-title">Exercise 2: The effect of ancient DNA</p>
+<p>Take a gene tree with moderate selection (<span class="math notranslate nohighlight">\(s = 0.01\)</span>) and compare
+CLUES results:</p>
+<ol class="loweralpha simple">
+<li><p>Using only the gene tree (no ancient samples).</p></li>
+<li><p>Adding 5 ancient diploid samples at regular time intervals (every 100
+generations for 500 generations into the past), with genotype likelihoods
+consistent with the true trajectory.</p></li>
+<li><p>Adding 20 ancient samples.</p></li>
+</ol>
+<p>How much does the ancient DNA tighten the credible intervals on the trajectory?
+Does it improve the accuracy of <span class="math notranslate nohighlight">\(\hat{s}\)</span>?</p>
+</div>
+<div class="admonition-exercise-3-multi-epoch-selection admonition">
+<p class="admonition-title">Exercise 3: Multi-epoch selection</p>
+<p>Simulate a trajectory where selection changes over time:
+<span class="math notranslate nohighlight">\(s = 0.05\)</span> for the first 200 generations (strong positive selection),
+<span class="math notranslate nohighlight">\(s = 0\)</span> for the next 300 generations (neutral), and <span class="math notranslate nohighlight">\(s = -0.02\)</span>
+for the oldest 500 generations.</p>
+<ol class="loweralpha simple">
+<li><p>Run CLUES with a single epoch. What <span class="math notranslate nohighlight">\(\hat{s}\)</span> does it estimate?</p></li>
+<li><p>Run CLUES with three epochs (breakpoints at 200 and 500 generations).
+Does it recover the true epoch-specific selection coefficients?</p></li>
+<li><p>Run CLUES with too many epochs (e.g., 10). Does overfitting occur?</p></li>
+</ol>
+</div>
+<div class="admonition-exercise-4-importance-sampling-convergence admonition">
+<p class="admonition-title">Exercise 4: Importance sampling convergence</p>
+<p>For a gene tree under <span class="math notranslate nohighlight">\(s = 0.03\)</span>, compare the CLUES estimate using
+<span class="math notranslate nohighlight">\(M = 1, 5, 10, 50, 200\)</span> importance samples.</p>
+<ol class="loweralpha simple">
+<li><p>How does <span class="math notranslate nohighlight">\(\hat{s}\)</span> vary with <span class="math notranslate nohighlight">\(M\)</span>?</p></li>
+<li><p>Is there a systematic bias with small <span class="math notranslate nohighlight">\(M\)</span>? (Hint: with <span class="math notranslate nohighlight">\(M = 1\)</span>,
+the estimate is biased toward <span class="math notranslate nohighlight">\(s = 0\)</span> because there is no importance
+weighting.)</p></li>
+<li><p>Plot the variance of <span class="math notranslate nohighlight">\(\hat{s}\)</span> across 50 replicates as a function
+of <span class="math notranslate nohighlight">\(M\)</span>. At what <span class="math notranslate nohighlight">\(M\)</span> does the variance stabilize?</p></li>
+</ol>
+</div>
+</section>
+<section id="solutions">
+<h2>Solutions<a class="headerlink" href="#solutions" title="Link to this heading"></a></h2>
+<div class="admonition-solution-1-selection-detection-power admonition">
+<p class="admonition-title">Solution 1: Selection detection power</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">expon</span>
+
+<span class="k">def</span> <span class="nf">simulate_coalescent</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">N_diploid</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate a simple gene tree under selection (approximate).</span>
+
+<span class="sd">    For s &gt; 0, derived lineages coalesce faster (smaller effective</span>
+<span class="sd">    population). This is a simplified simulation for the exercise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N_hap</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">N_diploid</span>
+
+    <span class="c1"># Derived lineages: n_d = round(n * freq) samples</span>
+    <span class="n">n_d</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">freq</span><span class="p">)))</span>
+    <span class="n">n_a</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="n">n_d</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># +1 for the ancestral lineage convention</span>
+
+    <span class="c1"># Derived coalescence times (compressed by selection)</span>
+    <span class="c1"># Under strong selection, effective pop for derived = freq * N * (1+s)</span>
+    <span class="c1"># Approximate: scale coalescence times by 1/(1 + s/freq)</span>
+    <span class="n">der_times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">n_d</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_d</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">freq</span> <span class="o">*</span> <span class="n">N_hap</span><span class="p">)</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">expon</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">dt</span>
+        <span class="n">der_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="c1"># Ancestral coalescence times</span>
+    <span class="n">anc_times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">n_a</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_a</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">freq</span><span class="p">)</span> <span class="o">*</span> <span class="n">N_hap</span><span class="p">)</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">expon</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">dt</span>
+        <span class="n">anc_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">der_times</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">anc_times</span><span class="p">)</span>
+
+<span class="c1"># (a) and (b): Power analysis</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">N_dip</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">n_haps</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">n_reps</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="k">for</span> <span class="n">s_true</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="p">[(</span><span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;Neutral&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="s2">&quot;Selected&quot;</span><span class="p">)]:</span>
+    <span class="n">rejections</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_reps</span><span class="p">):</span>
+        <span class="n">der_t</span><span class="p">,</span> <span class="n">anc_t</span> <span class="o">=</span> <span class="n">simulate_coalescent</span><span class="p">(</span><span class="n">n_haps</span><span class="p">,</span> <span class="n">N_dip</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">s_true</span><span class="p">)</span>
+        <span class="c1"># Simplified: just compute LRT with a few s values</span>
+        <span class="n">log_liks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">s_test</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mi">21</span><span class="p">):</span>
+            <span class="c1"># Approximate log-lik based on coalescence time compression</span>
+            <span class="c1"># (This is a simplified proxy for the full CLUES computation)</span>
+            <span class="k">if</span> <span class="n">s_test</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">log_liks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">der_t</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">N_dip</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log_liks</span><span class="p">[</span><span class="n">s_test</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">der_t</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
+                    <span class="n">N_dip</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">s_test</span><span class="p">))</span>
+
+        <span class="n">best_s</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">log_liks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">log_liks</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+        <span class="n">log_lr</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">log_liks</span><span class="p">[</span><span class="n">best_s</span><span class="p">]</span> <span class="o">-</span> <span class="n">log_liks</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">log_lr</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">log_lr</span><span class="p">)</span>
+        <span class="n">p_val</span> <span class="o">=</span> <span class="n">chi2</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">log_lr</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">p_val</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">:</span>
+            <span class="n">rejections</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> (s=</span><span class="si">{</span><span class="n">s_true</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">rejections</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_reps</span><span class="si">}</span><span class="s2"> &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;rejections (</span><span class="si">{</span><span class="mi">100</span><span class="o">*</span><span class="n">rejections</span><span class="o">/</span><span class="n">n_reps</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Under neutrality, the rejection rate should be close to 5% (the false positive
+rate). Under <span class="math notranslate nohighlight">\(s = 0.02\)</span>, the power depends on <span class="math notranslate nohighlight">\(n\)</span> – with 20
+haplotypes, moderate power (40-70%) is typical; with 50 haplotypes, power
+increases substantially.</p>
+</div>
+<div class="admonition-solution-2-the-effect-of-ancient-dna admonition">
+<p class="admonition-title">Solution 2: The effect of ancient DNA</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># This exercise requires the full CLUES pipeline.</span>
+<span class="c1"># Here we outline the approach and expected results.</span>
+
+<span class="c1"># Simulate a trajectory under s = 0.01, starting at freq = 0.3</span>
+<span class="c1"># at 500 generations ago, reaching ~0.6 at the present.</span>
+<span class="n">s_true</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">N_dip</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">n_gens</span> <span class="o">=</span> <span class="mi">500</span>
+
+<span class="c1"># Forward simulation of allele frequency</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">freq</span> <span class="o">=</span> <span class="mf">0.3</span>
+<span class="n">trajectory</span> <span class="o">=</span> <span class="p">[</span><span class="n">freq</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_gens</span><span class="p">):</span>
+    <span class="c1"># Wright-Fisher step with selection</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">freq</span> <span class="o">+</span> <span class="n">s_true</span> <span class="o">*</span> <span class="n">freq</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">freq</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">freq</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">freq</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">N_dip</span><span class="p">))</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">),</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)</span>
+    <span class="n">trajectory</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+<span class="n">trajectory</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">trajectory</span><span class="p">)</span>
+
+<span class="c1"># Generate ancient genotype likelihoods at sampled time points</span>
+<span class="k">def</span> <span class="nf">sample_ancient_gl</span><span class="p">(</span><span class="n">true_freq</span><span class="p">,</span> <span class="n">n_reads</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate genotype likelihoods from read data.&quot;&quot;&quot;</span>
+    <span class="c1"># Sample true genotype from HWE</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">true_freq</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">true_geno</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># AA</span>
+    <span class="k">elif</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">true_freq</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">true_freq</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">true_freq</span><span class="p">):</span>
+        <span class="n">true_geno</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># AD</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">true_geno</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># DD</span>
+    <span class="c1"># Simulate reads</span>
+    <span class="n">n_derived</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n_reads</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">][</span><span class="n">true_geno</span><span class="p">])</span>
+    <span class="c1"># Compute GLs</span>
+    <span class="n">gl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">n_derived</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_reads</span> <span class="o">-</span> <span class="n">n_derived</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.99</span><span class="p">),</span>
+        <span class="n">n_derived</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_reads</span> <span class="o">-</span> <span class="n">n_derived</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+        <span class="n">n_derived</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.99</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_reads</span> <span class="o">-</span> <span class="n">n_derived</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.01</span><span class="p">),</span>
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">gl</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final frequency: </span><span class="si">{</span><span class="n">trajectory</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting frequency: </span><span class="si">{</span><span class="n">trajectory</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># (a) No ancient samples: rely only on gene tree</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">(a) Gene tree only: wider credible intervals&quot;</span><span class="p">)</span>
+
+<span class="c1"># (b) 5 ancient samples at t = 100, 200, 300, 400, 500</span>
+<span class="k">for</span> <span class="n">n_anc</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">n_anc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;No ancient samples&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sample_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_gens</span><span class="p">,</span> <span class="n">n_anc</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">gls</span> <span class="o">=</span> <span class="p">[</span><span class="n">sample_ancient_gl</span><span class="p">(</span><span class="n">trajectory</span><span class="p">[</span><span class="n">t</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">sample_times</span><span class="p">]</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_anc</span><span class="si">}</span><span class="s2"> ancient samples&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: trajectory uncertainty decreases with more samples&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Ancient DNA dramatically tightens the posterior trajectory – each sample pins
+the frequency near the true value at that time point. With 20 samples, the 95%
+credible intervals shrink by roughly 50-70% compared to gene-tree-only analysis.</p>
+</div>
+<div class="admonition-solution-3-multi-epoch-selection admonition">
+<p class="admonition-title">Solution 3: Multi-epoch selection</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># The key insight: with a single epoch, CLUES estimates an average</span>
+<span class="c1"># selection coefficient weighted by the information content at each</span>
+<span class="c1"># time depth. This average will not match any of the true epoch values.</span>
+
+<span class="c1"># With matched epochs, CLUES can recover the true values if:</span>
+<span class="c1"># - The epoch boundaries are approximately correct</span>
+<span class="c1"># - There is enough signal in each epoch (enough coalescence events</span>
+<span class="c1">#   or ancient samples)</span>
+
+<span class="c1"># With too many epochs, overfitting occurs: the estimates become</span>
+<span class="c1"># noisy because each epoch has too few coalescence events to</span>
+<span class="c1"># constrain s reliably.</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;(a) Single epoch: s_hat will be a weighted average of the true&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    epoch values, biased toward the epochs with the most signal.&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    Expected: s_hat ~ 0.01-0.02 (dominated by recent strong selection)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;(b) Three epochs (matched to true): each s should be close to truth&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    s1 ~ 0.05, s2 ~ 0.0, s3 ~ -0.02&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;(c) Ten epochs: overfitting produces noisy, unreliable estimates&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    Some epochs will show spurious strong selection.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="admonition-solution-4-importance-sampling-convergence admonition">
+<p class="admonition-title">Solution 4: Importance sampling convergence</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Key insights:</span>
+<span class="c1"># - M = 1: No importance weighting, estimate is biased toward s = 0</span>
+<span class="c1">#   because the single tree was sampled under neutrality</span>
+<span class="c1"># - M = 5-10: Still high variance, occasional bad estimates</span>
+<span class="c1"># - M = 50-200: Stable estimates, low variance</span>
+<span class="c1"># - M &gt; 200: Diminishing returns</span>
+
+<span class="c1"># The bias with M = 1 occurs because the likelihood ratio</span>
+<span class="c1"># P(G|s) / P(G|s=0) is computed for a single tree drawn from the</span>
+<span class="c1"># neutral posterior. This tree may not be representative of the</span>
+<span class="c1"># selected posterior, leading to systematic underestimation of s.</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Importance sampling convergence:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  M = 1:   biased toward s = 0 (no reweighting)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  M = 5:   high variance, occasional outliers&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  M = 50:  variance stabilizes&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  M = 200: recommended for publication-quality results&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Rule of thumb: use M &gt;= 200 for moderate selection (|s| &lt; 0.05)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;and M &gt;= 500 for strong selection (|s| &gt; 0.05), where the&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;neutral and selected posteriors diverge more.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="emission_probabilities.html" class="btn btn-neutral float-left" title="Emission Probabilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo.html" class="btn btn-neutral float-right" title="Demo: Running CLUES on Simulated Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

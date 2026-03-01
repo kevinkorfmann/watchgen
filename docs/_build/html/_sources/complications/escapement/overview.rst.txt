@@ -1,0 +1,334 @@
+.. _escapement_overview:
+
+========================
+Overview of Escapement
+========================
+
+   *The escapement does not rely on an external standard. It generates its own
+   rhythm from the geometry of the escape wheel and the physics of the balance
+   spring. No reference clock. No calibration signal. Just first principles.*
+
+Every neural approach to population genetics faces a fundamental question: where
+does the training signal come from? :ref:`Mainspring <mainspring_complication>`
+answers with simulations -- millions of msprime runs, each producing a
+(genotype matrix, ARG, demography) triple. The network learns to invert the
+simulator. This is amortized inference: pay the computational cost once during
+training, then enjoy fast inference on new datasets.
+
+But amortized inference carries a hidden debt: the **simulation fidelity gap**.
+
+
+The Problem with Simulation-Based Inference
+=============================================
+
+Mainspring's posterior is conditioned on the simulator being correct:
+
+.. math::
+
+   q_\phi(\mathcal{A}, N_e \mid \mathbf{D}) \approx
+   p(\mathcal{A}, N_e \mid \mathbf{D}, \mathcal{M}_{\text{sim}})
+
+where :math:`\mathcal{M}_{\text{sim}}` is the simulation model (neutral
+coalescent, no gene conversion, no structural variants, no sequencing error, no
+background selection). When the real data-generating process departs from
+:math:`\mathcal{M}_{\text{sim}}` -- and it always does -- the network's
+posterior may be arbitrarily wrong. Worse, it may be *confidently* wrong,
+because the training data never included examples where the posterior should be
+diffuse.
+
+This is not a criticism specific to Mainspring. It is the fundamental limitation
+of all simulation-based inference, from ABC to neural posterior estimation. The
+training distribution defines the support of the learned posterior. If reality
+lies outside that support, the method fails silently.
+
+.. admonition:: The simulation fidelity gap
+
+   The simulation fidelity gap is the distance between the true data-generating
+   process and the simulator used for training. Every simulation-based method
+   has this gap. The question is not whether the gap exists, but whether you can
+   detect it and what you can do about it.
+
+   Classical Timepieces handle this differently: they specify a model and compute
+   the likelihood under that model. If the model is wrong, the likelihood is
+   wrong -- but you can at least *evaluate* the likelihood on real data and check
+   whether the fit is reasonable. Simulation-based methods cannot do this: they
+   never compute the likelihood directly.
+
+
+Escapement's Philosophy: The Coalescent IS the Loss Function
+==============================================================
+
+Escapement takes a fundamentally different approach. Instead of learning a
+simulator-to-inference mapping, it uses the coalescent likelihood itself as the
+training objective. The key observation is simple:
+
+Every Timepiece in this book derives two analytical quantities:
+
+1. A **prior** over genealogies: :math:`P(\tau \mid N_e, \rho)` from coalescent
+   theory (derived in :ref:`msprime <msprime_timepiece>`,
+   :ref:`PSMC <psmc_timepiece>`, :ref:`ARGweaver <argweaver_timepiece>`)
+
+2. A **likelihood** of data given a genealogy:
+   :math:`P(\mathbf{D} \mid \tau, \mu)` from the mutation model (derived in
+   :ref:`tsdate <tsdate_timepiece>`, :ref:`ARGweaver <argweaver_timepiece>`)
+
+Both are analytical. You can evaluate them in closed form for any proposed
+genealogy :math:`\tau`. You do not need simulations. The intractable part is the
+**posterior**:
+
+.. math::
+
+   P(\tau \mid \mathbf{D}, N_e, \mu) \propto
+   P(\mathbf{D} \mid \tau, \mu) \cdot P(\tau \mid N_e)
+
+The space of genealogies (tree sequences over :math:`n` samples and :math:`L`
+sites) is combinatorial and enormous. No method can enumerate it. But you can
+approximate the posterior with a parametric distribution
+:math:`q(\tau \mid \mathbf{D}, \phi)` and optimize :math:`\phi` to make
+:math:`q` as close to the true posterior as possible. This is variational
+inference.
+
+The critical insight of Escapement is that the variational posterior :math:`q`
+can be parameterized by a **neural network**, and the optimization objective --
+the Evidence Lower Bound (ELBO) -- requires only the analytical prior and
+likelihood that every Timepiece already provides:
+
+.. math::
+
+   \log P(\mathbf{D} \mid \theta) \geq
+   \mathbb{E}_{q(\tau \mid \mathbf{D}, \phi)}\!\left[
+   \log P(\mathbf{D} \mid \tau, \mu)
+   + \log P(\tau \mid N_e, \rho)
+   - \log q(\tau \mid \mathbf{D}, \phi)
+   \right]
+
+No simulations appear in this equation. The loss is computed on the **observed
+data** :math:`\mathbf{D}`, using a **sampled genealogy** :math:`\tau \sim q`,
+and **analytical coalescent formulas**. The network trains directly on real data.
+
+.. admonition:: Why "Escapement"
+
+   In a mechanical watch, the escapement is the only component that generates
+   its own timing reference. The mainspring provides energy; the gear train
+   transmits it; but the escapement *creates* the rhythm. It needs no external
+   calibration -- just the physics of the balance wheel and the geometry of the
+   escape wheel.
+
+   Similarly, Escapement creates its own training signal from the physics of the
+   coalescent. Mainspring needs an external calibration source (simulations).
+   Escapement does not.
+
+
+What Came Before
+==================
+
+The components of Escapement are not new. What is new is their combination
+into a single differentiable pipeline with a neural variational posterior.
+
+.. list-table:: How classical methods handle the posterior
+   :header-rows: 1
+   :widths: 18 25 30 27
+
+   * - Method
+     - Strategy
+     - Strength
+     - What Escapement adds
+   * - :ref:`PSMC <psmc_timepiece>`
+     - Discretize time; HMM forward-backward; EM
+     - Exact under the model; interpretable
+     - Continuous time; multi-sample; neural posterior
+   * - :ref:`ARGweaver <argweaver_timepiece>`
+     - MCMC sampling of full ARG
+     - Asymptotically exact posterior
+     - Speed (gradient-based, not MCMC); scalability
+   * - :ref:`SINGER <singer_timepiece>`
+     - Gibbs sampling with GP prior on branch lengths
+     - Smooth posteriors; principled uncertainty
+     - Amortized encoder; parallel across windows
+   * - :ref:`tsinfer <tsinfer_timepiece>`
+     - Heuristic Li & Stephens matching
+     - Scales to millions of samples
+     - Posterior uncertainty; principled objective
+   * - :ref:`tsdate <tsdate_timepiece>`
+     - Hand-derived variational gamma updates (EP)
+     - Mathematically principled; fast
+     - Learned (not hand-derived) variational family; joint
+       topology-time inference
+   * - :ref:`Gamma-SMC <gamma_smc_timepiece>`
+     - Gamma posteriors via forward-backward on SMC
+     - Continuous time; analytical posteriors
+     - Multi-sample; learned encoder; ARG topology
+
+Escapement synthesizes ideas from all of these. The SMC factorization from
+:ref:`PSMC <psmc_timepiece>` makes the coalescent prior tractable. The gamma
+posteriors from :ref:`tsdate <tsdate_timepiece>` and
+:ref:`Gamma-SMC <gamma_smc_timepiece>` inspire the branch-length
+parameterization. The attention mechanism from
+:ref:`tsinfer <tsinfer_timepiece>` informs the encoder. The continuous
+:math:`N_e(t)` from :ref:`phlash <phlash_timepiece>` motivates the demographic
+module.
+
+But the architecture is *learned*, not hand-derived. And the loss is the
+coalescent likelihood, not a simulation-matching objective.
+
+
+Mainspring vs. Escapement
+===========================
+
+The two Complications are complementary, not competing. They represent two
+fundamentally different approaches to neural inference.
+
+.. list-table:: Mainspring vs. Escapement
+   :header-rows: 1
+   :widths: 22 39 39
+
+   * - Property
+     - :ref:`Mainspring <mainspring_complication>`
+     - Escapement
+   * - Training data
+     - Millions of msprime simulations
+     - The observed genotype matrix (no simulations)
+   * - Loss function
+     - Supervised: match predicted ARG to simulated truth
+     - Unsupervised: maximize ELBO on real data
+   * - What it learns
+     - Simulator :math:`\to` inference mapping (amortized)
+     - Per-dataset variational posterior (not amortized)
+   * - Speed at inference
+     - ~1 second (single forward pass)
+     - ~10 minutes (gradient-based optimization per dataset)
+   * - Generalization
+     - Generalizes across datasets but not across model classes
+     - No generalization needed (optimizes per-dataset)
+   * - Failure mode
+     - Silent failure when data deviates from training simulations
+     - ELBO provides a diagnostic (poor ELBO = poor fit)
+   * - Statistical guarantees
+     - None (black-box posterior)
+     - ELBO provides a lower bound on model evidence
+   * - When to prefer
+     - Rapid screening of many datasets; biobank-scale
+     - Careful inference on one dataset; model checking needed
+   * - Scales to
+     - 50--100 samples (limited by GPU memory)
+     - 20--50 samples (limited by ELBO optimization cost)
+   * - Demographic output
+     - :math:`N_e(t)` via normalizing flow
+     - :math:`N_e(t)` via learnable piecewise-constant or neural spline
+
+.. admonition:: When each approach wins
+
+   **Use Mainspring** when you need to process many datasets quickly and the
+   training simulations are a good match for your biological system. The
+   simulation fidelity gap is acceptable if you validate on a subset.
+
+   **Use Escapement** when you have one dataset that matters and you need
+   principled uncertainty quantification. The ELBO provides a built-in
+   diagnostic: if it is low, the model does not fit the data well.
+
+   **Use both** (the hybrid pipeline from :ref:`mainspring_comparison`): run
+   Mainspring for a fast initialization, then refine with Escapement for
+   calibrated posteriors. This is the recommended workflow for careful
+   demographic inference.
+
+
+Honest Limitations
+====================
+
+Escapement is not a silver bullet. It has five fundamental limitations that
+cannot be engineered away.
+
+**1. Model misspecification.** Escapement assumes the coalescent model is
+correct. The ELBO optimizes :math:`q(\tau)` to maximize
+:math:`P(\mathbf{D} \mid \tau, \mu) \cdot P(\tau \mid N_e)`. If the true
+data-generating process violates the neutral coalescent (selection, population
+structure, gene conversion), the inferred :math:`\tau` and :math:`N_e(t)` will
+be biased. Unlike simulation-based methods, Escapement cannot incorporate
+selection or population structure into its prior without re-deriving the
+likelihood.
+
+**2. Slower per-dataset.** Mainspring runs in seconds. Escapement requires
+hundreds to thousands of gradient steps per dataset (typically 10--30 minutes
+on a GPU). For screening thousands of genomic regions, Escapement is
+impractical as a standalone method.
+
+**3. Approximate posterior.** The variational posterior :math:`q(\tau)` is a
+factored approximation: topology, branch lengths, and breakpoints are
+approximately independent. The true posterior has strong correlations (e.g.,
+between adjacent tree topologies, between branch lengths and topology). The ELBO
+provides a lower bound, but the gap between the ELBO and the true log-evidence
+can be large.
+
+**4. Hard topology optimization.** Topology is discrete. Gumbel-softmax
+provides gradients through discrete choices, but the optimization landscape is
+rugged. The ELBO as a function of topology has many local optima, and
+gradient-based optimization may not find the global optimum. This is
+particularly problematic for deep internal nodes with uncertain ancestry.
+
+**5. Breakpoint detection.** Recombination breakpoints are modeled as Bernoulli
+variables at each position. For closely spaced breakpoints or gene conversion
+tracts, this local model may miss complex recombination events. The SMC
+factorization (inherited from :ref:`PSMC <psmc_timepiece>`) assumes breakpoints
+are well-separated -- an assumption that breaks down in regions of high
+recombination.
+
+
+The Road Ahead
+================
+
+The remaining chapters of this Complication build Escapement from first
+principles:
+
+1. :ref:`Variational Inference Without Simulations <escapement_variational>` --
+   Deriving the ELBO for tree sequences, understanding the three terms, and
+   explaining why this was not done before (the discrete topology barrier and
+   the intractable prior).
+
+2. :ref:`Architecture <escapement_architecture>` -- The four modules in detail:
+   genealogy encoder, variational tree posterior, differentiable likelihood, and
+   demographic inference. PyTorch pseudocode for each.
+
+3. :ref:`The Differentiable Likelihood <escapement_likelihood>` -- A deep dive
+   into Module 3: mutation log-likelihood, coalescent log-prior, and entropy
+   decomposition. The gradient flow from ELBO back through the reparameterization
+   trick.
+
+4. :ref:`Training on Real Data <escapement_training>` -- The training loop,
+   temperature annealing, warm-starting from Mainspring or tsinfer, and
+   practical considerations.
+
+5. :ref:`Comparison and Limitations <escapement_comparison>` -- Systematic
+   comparison against all methods, design principles borrowed from each
+   Timepiece, and the hybrid pipeline.
+
+Each chapter follows the book's rhythm: motivation, math, code, verification.
+The math here is the coalescent likelihood -- the same equations you derived in
+the Timepieces, now assembled into a single differentiable objective. The
+verification is not simulation-matching but ELBO convergence: does the
+variational posterior assign high probability to genealogies that explain the
+observed data?
+
+.. code-block:: python
+
+   import torch
+   from escapement import Escapement
+
+   model = Escapement(d_model=64, n_heads=4, n_layers=2, window=64,
+                      Ne=10_000, mu=1.25e-8, rho=1e-8, span=100.0)
+
+   D = torch.bernoulli(torch.full((1, 20, 500), 0.15))
+
+   optimizer = torch.optim.Adam(model.get_param_groups())
+   for step in range(1000):
+       temperature = max(0.1, 1.0 - step / 1000)
+       loss = model.loss(D, temperature=temperature)
+       optimizer.zero_grad()
+       loss.backward()
+       torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+       optimizer.step()
+
+   results = model.infer(D)
+   ne_trajectory = model.get_Ne()
+
+This is all there is. No simulations. No external training data. Just the
+observed genotype matrix, the coalescent likelihood, and gradient descent.

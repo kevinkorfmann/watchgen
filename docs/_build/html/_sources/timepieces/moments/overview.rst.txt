@@ -6,6 +6,18 @@ Overview of moments
 
    *Before assembling the watch, lay out every part and understand what it does.*
 
+.. figure:: /_static/figures/fig_mini_moments.png
+   :width: 100%
+   :align: center
+
+   **moments at a glance.** Panel A: The neutral site frequency spectrum for
+   different sample sizes, showing the classic :math:`\theta/k` pattern. Panel B:
+   SFS evolution under drift -- how the neutral spectrum deforms under population
+   expansion vs contraction. Panel C: Selection's effect on the SFS -- positive
+   selection shifts mass toward high frequencies, negative selection toward low
+   frequencies. Panel D: Tajima's D under expansion, constant size, and contraction,
+   illustrating how summary statistics capture demographic signals.
+
 What Does moments Do?
 ======================
 
@@ -241,14 +253,14 @@ Here's how the pieces connect for a typical inference:
 
 .. code-block:: text
 
-   1. Parse VCF → compute observed SFS
+   1. Parse VCF -> compute observed SFS
                 |
                 v
    2. Define demographic model
       (e.g., two-epoch, isolation-with-migration)
                 |
                 v
-   3. For candidate parameters θ:
+   3. For candidate parameters theta:
       +---> Start from equilibrium SFS
       |              |
       |              v
@@ -261,9 +273,9 @@ Here's how the pieces connect for a typical inference:
       |              |
       |              v
       |     Compute log-likelihood:
-      |     L = Σ [D_i log(M_i) - M_i]
+      |     L = sum [D_i log(M_i) - M_i]
       |              |
-      +----- Optimizer updates θ
+      +----- Optimizer updates theta
                      |
                      v
    4. Return best-fit parameters + uncertainty

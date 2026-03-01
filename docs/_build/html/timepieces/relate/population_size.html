@@ -1,0 +1,1003 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gear 4: Population Size Estimation &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Demo: Running Relate on Simulated Data" href="demo.html" />
+    <link rel="prev" title="Gear 3: Branch Length Estimation (MCMC)" href="branch_lengths.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece XVII: Relate</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece XVII: Relate</a></li>
+      <li class="breadcrumb-item active">Gear 4: Population Size Estimation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="branch_lengths.html" class="btn btn-neutral float-left" title="Gear 3: Branch Length Estimation (MCMC)" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo.html" class="btn btn-neutral float-right" title="Demo: Running Relate on Simulated Data" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gear-4-population-size-estimation">
+<span id="relate-population-size"></span><h1>Gear 4: Population Size Estimation<a class="headerlink" href="#gear-4-population-size-estimation" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>A watch tells you the time, but only if it’s been calibrated. The
+coalescent prior is only as good as the population size that feeds it.</em></p>
+</div></blockquote>
+<p>The coalescent prior in <a class="reference internal" href="branch_lengths.html#relate-branch-lengths"><span class="std std-ref">Gear 3</span></a> assumes a known
+effective population size <span class="math notranslate nohighlight">\(N_e\)</span>. In practice, <span class="math notranslate nohighlight">\(N_e\)</span> is unknown and
+may have changed over time (bottlenecks, expansions, population splits). Relate
+estimates a <strong>piecewise-constant</strong> population size history <span class="math notranslate nohighlight">\(N_e(t)\)</span> using
+an <strong>Expectation-Maximization (EM)</strong> algorithm that alternates between sampling
+branch lengths and updating population size estimates.</p>
+<p>This is the regulator of the movement: it adjusts the coalescent prior so that
+the inferred coalescence times are consistent with the population size that
+generated them. Without this feedback loop, a misspecified <span class="math notranslate nohighlight">\(N_e\)</span> would
+systematically bias all coalescence time estimates.</p>
+<div class="admonition-prerequisites admonition">
+<p class="admonition-title">Prerequisites</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="branch_lengths.html#relate-branch-lengths"><span class="std std-ref">Gear 3: Branch Length Estimation (MCMC)</span></a> (Gear 3): the MCMC sampler for branch
+lengths, the coalescent prior, and the Poisson likelihood</p></li>
+<li><p><a class="reference internal" href="../../prerequisites/coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> – how population size
+affects coalescence rates</p></li>
+</ul>
+</div>
+<section id="the-piecewise-constant-model">
+<h2>The Piecewise-Constant Model<a class="headerlink" href="#the-piecewise-constant-model" title="Link to this heading"></a></h2>
+<p>Relate models population size as constant within pre-defined time epochs:</p>
+<div class="math notranslate nohighlight">
+\[N_e(t) = N_j \quad \text{for } t \in [t_j, t_{j+1})\]</div>
+<p>where <span class="math notranslate nohighlight">\(t_0 = 0 &lt; t_1 &lt; \cdots &lt; t_M\)</span> are epoch boundaries and
+<span class="math notranslate nohighlight">\(N_0, N_1, \ldots, N_{M-1}\)</span> are the population sizes in each epoch.
+The epoch boundaries are fixed in advance (logarithmically spaced is common);
+only the <span class="math notranslate nohighlight">\(N_j\)</span> values are estimated.</p>
+<p>Within epoch <span class="math notranslate nohighlight">\(j\)</span>, the coalescence rate for <span class="math notranslate nohighlight">\(k\)</span> lineages is
+constant:</p>
+<div class="math notranslate nohighlight">
+\[\lambda_{k,j} = \frac{k(k-1)}{2 N_j}\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">make_epochs</span><span class="p">(</span><span class="n">max_time</span><span class="p">,</span> <span class="n">n_epochs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create logarithmically spaced epoch boundaries.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    max_time : float</span>
+<span class="sd">        Maximum time (most ancient epoch boundary).</span>
+<span class="sd">    n_epochs : int</span>
+<span class="sd">        Number of epochs.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    boundaries : ndarray of shape (n_epochs + 1,)</span>
+<span class="sd">        Epoch boundaries [0, t_1, t_2, ..., max_time].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Log-space between a small positive value and max_time</span>
+    <span class="n">boundaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_epochs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">max_time</span> <span class="o">/</span> <span class="n">n_epochs</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">max_time</span><span class="p">),</span>
+        <span class="n">n_epochs</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">boundaries</span>
+
+<span class="c1"># Example: 20 epochs up to 100,000 generations</span>
+<span class="n">boundaries</span> <span class="o">=</span> <span class="n">make_epochs</span><span class="p">(</span><span class="mi">100_000</span><span class="p">,</span> <span class="n">n_epochs</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Epoch boundaries (generations):&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Epoch </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: [</span><span class="si">{</span><span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">boundaries</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-coalescent-prior-with-variable-population-size">
+<h2>The Coalescent Prior with Variable Population Size<a class="headerlink" href="#the-coalescent-prior-with-variable-population-size" title="Link to this heading"></a></h2>
+<p>When population size varies over time, the coalescence rate is no longer
+constant. The probability that <span class="math notranslate nohighlight">\(k\)</span> lineages have not yet coalesced by
+time <span class="math notranslate nohighlight">\(t\)</span>, given they had <span class="math notranslate nohighlight">\(k\)</span> lineages at time <span class="math notranslate nohighlight">\(t_0\)</span>, is:</p>
+<div class="math notranslate nohighlight">
+\[S_k(t) = \exp\left(-\binom{k}{2} \int_{t_0}^{t} \frac{1}{N_e(s)} \, ds\right)\]</div>
+<p>For piecewise-constant <span class="math notranslate nohighlight">\(N_e\)</span>, the integral becomes a sum:</p>
+<div class="math notranslate nohighlight">
+\[\int_{t_0}^{t} \frac{1}{N_e(s)} \, ds = \sum_{j} \frac{\Delta t_j}{N_j}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Delta t_j\)</span> is the time spent in epoch <span class="math notranslate nohighlight">\(j\)</span> during the
+interval <span class="math notranslate nohighlight">\([t_0, t]\)</span>.</p>
+<p>The density of the coalescence time is:</p>
+<div class="math notranslate nohighlight">
+\[f_k(t) = \frac{k(k-1)}{2 N_e(t)} \cdot S_k(t)\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">integrated_rate</span><span class="p">(</span><span class="n">t_start</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">boundaries</span><span class="p">,</span> <span class="n">N_e_values</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the integrated inverse population size.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_start, t_end : float</span>
+<span class="sd">        Time interval [t_start, t_end).</span>
+<span class="sd">    boundaries : ndarray</span>
+<span class="sd">        Epoch boundaries.</span>
+<span class="sd">    N_e_values : ndarray</span>
+<span class="sd">        Population size in each epoch.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Integral of 1/N_e(t) from t_start to t_end.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">n_epochs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">N_e_values</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+        <span class="n">epoch_start</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">epoch_end</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Overlap of [t_start, t_end) with [epoch_start, epoch_end)</span>
+        <span class="n">overlap_start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t_start</span><span class="p">,</span> <span class="n">epoch_start</span><span class="p">)</span>
+        <span class="n">overlap_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t_end</span><span class="p">,</span> <span class="n">epoch_end</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">overlap_start</span> <span class="o">&lt;</span> <span class="n">overlap_end</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="p">(</span><span class="n">overlap_end</span> <span class="o">-</span> <span class="n">overlap_start</span><span class="p">)</span> <span class="o">/</span> <span class="n">N_e_values</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+    <span class="c1"># Handle time beyond the last epoch boundary</span>
+    <span class="k">if</span> <span class="n">t_end</span> <span class="o">&gt;</span> <span class="n">boundaries</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">overlap_start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t_start</span><span class="p">,</span> <span class="n">boundaries</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="p">(</span><span class="n">t_end</span> <span class="o">-</span> <span class="n">overlap_start</span><span class="p">)</span> <span class="o">/</span> <span class="n">N_e_values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span> <span class="nf">log_coalescent_prior_variable</span><span class="p">(</span><span class="n">coalescence_times</span><span class="p">,</span> <span class="n">boundaries</span><span class="p">,</span> <span class="n">N_e_values</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log coalescent prior with piecewise-constant population size.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coalescence_times : list of float</span>
+<span class="sd">        Coalescence times sorted youngest to oldest.</span>
+<span class="sd">    boundaries : ndarray</span>
+<span class="sd">        Epoch boundaries.</span>
+<span class="sd">    N_e_values : ndarray</span>
+<span class="sd">        Population size in each epoch.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Log prior probability.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_coal</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coalescence_times</span><span class="p">)</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">n_coal</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># number of leaves</span>
+
+    <span class="n">log_prior</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">prev_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coalescence_times</span><span class="p">):</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">N</span> <span class="o">-</span> <span class="n">idx</span>  <span class="c1"># number of lineages before this coalescence</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="n">coal_rate_k</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+        <span class="c1"># Find which epoch t falls in to get instantaneous N_e</span>
+        <span class="n">epoch_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">epoch_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">epoch_idx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">N_e_values</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">N_e_at_t</span> <span class="o">=</span> <span class="n">N_e_values</span><span class="p">[</span><span class="n">epoch_idx</span><span class="p">]</span>
+
+        <span class="c1"># Instantaneous rate</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">coal_rate_k</span> <span class="o">/</span> <span class="n">N_e_at_t</span>
+
+        <span class="c1"># Survival: integral of coal_rate_k / N_e(s) from prev_time to t</span>
+        <span class="n">integral</span> <span class="o">=</span> <span class="n">coal_rate_k</span> <span class="o">*</span> <span class="n">integrated_rate</span><span class="p">(</span>
+            <span class="n">prev_time</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">boundaries</span><span class="p">,</span> <span class="n">N_e_values</span><span class="p">)</span>
+
+        <span class="c1"># Log density: log(rate) - integral</span>
+        <span class="n">log_prior</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rate</span><span class="p">)</span> <span class="o">-</span> <span class="n">integral</span>
+        <span class="n">prev_time</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="k">return</span> <span class="n">log_prior</span>
+
+<span class="c1"># Example</span>
+<span class="n">N_e_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mf">10000.0</span><span class="p">)</span>  <span class="c1"># constant N_e for comparison</span>
+<span class="n">coal_times</span> <span class="o">=</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">500</span><span class="p">]</span>
+<span class="n">lp_variable</span> <span class="o">=</span> <span class="n">log_coalescent_prior_variable</span><span class="p">(</span><span class="n">coal_times</span><span class="p">,</span> <span class="n">boundaries</span><span class="p">,</span>
+                                             <span class="n">N_e_values</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log prior (variable model, constant N_e): </span><span class="si">{</span><span class="n">lp_variable</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-em-algorithm">
+<h2>The EM Algorithm<a class="headerlink" href="#the-em-algorithm" title="Link to this heading"></a></h2>
+<p>The EM algorithm alternates between two steps:</p>
+<p><strong>E-step</strong>: Given current population size estimates <span class="math notranslate nohighlight">\(\hat{N}_e(t)\)</span>,
+sample coalescence times from the posterior using the MCMC from Gear 3.
+Specifically, run <code class="docutils literal notranslate"><span class="pre">SampleBranchLengths</span></code> with the current <span class="math notranslate nohighlight">\(\hat{N}_e(t)\)</span>
+as the coalescent prior.</p>
+<p><strong>M-step</strong>: Given the sampled coalescence times, estimate new population
+sizes that maximize the coalescent likelihood. For each epoch <span class="math notranslate nohighlight">\(j\)</span>,
+count the total “lineage time” (sum of time intervals where <span class="math notranslate nohighlight">\(k\)</span>
+lineages were active) and the total number of coalescence events:</p>
+<div class="math notranslate nohighlight">
+\[\hat{N}_j = \frac{\sum_{\text{trees}} \sum_{\text{intervals in epoch } j}
+\binom{k}{2} \cdot \Delta t}
+{\sum_{\text{trees}} C_j}\]</div>
+<p>where <span class="math notranslate nohighlight">\(C_j\)</span> is the number of coalescence events in epoch <span class="math notranslate nohighlight">\(j\)</span>
+and the numerator sums <span class="math notranslate nohighlight">\(\binom{k}{2} \Delta t\)</span> over all time intervals
+within epoch <span class="math notranslate nohighlight">\(j\)</span> across all trees.</p>
+<div class="admonition-probability-aside-why-this-m-step-works admonition">
+<p class="admonition-title">Probability Aside – Why This M-step Works</p>
+<p>For a constant-rate Poisson process with rate <span class="math notranslate nohighlight">\(\lambda\)</span>, the
+maximum likelihood estimate of <span class="math notranslate nohighlight">\(\lambda\)</span> given <span class="math notranslate nohighlight">\(n\)</span> events
+in time <span class="math notranslate nohighlight">\(T\)</span> is <span class="math notranslate nohighlight">\(\hat{\lambda} = n / T\)</span>. The coalescent
+with <span class="math notranslate nohighlight">\(k\)</span> lineages and population size <span class="math notranslate nohighlight">\(N\)</span> is exactly such
+a process with rate <span class="math notranslate nohighlight">\(\binom{k}{2} / N\)</span>. Rearranging:</p>
+<div class="math notranslate nohighlight">
+\[\hat{N}_j = \frac{\text{total exposure (lineage-time)}}
+{\text{number of coalescences}}\]</div>
+<p>This is the moment estimator for the population size: the ratio of
+total time “at risk” of coalescence to the number of events observed.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">m_step</span><span class="p">(</span><span class="n">coalescence_times_per_tree</span><span class="p">,</span> <span class="n">num_leaves_per_tree</span><span class="p">,</span>
+           <span class="n">boundaries</span><span class="p">,</span> <span class="n">span_per_tree</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;M-step: estimate population sizes from coalescence times.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coalescence_times_per_tree : list of list of float</span>
+<span class="sd">        For each tree, the sorted coalescence times.</span>
+<span class="sd">    num_leaves_per_tree : list of int</span>
+<span class="sd">        Number of leaves in each tree.</span>
+<span class="sd">    boundaries : ndarray</span>
+<span class="sd">        Epoch boundaries.</span>
+<span class="sd">    span_per_tree : list of float</span>
+<span class="sd">        Genomic span of each tree (for weighting).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    N_e_estimates : ndarray</span>
+<span class="sd">        Estimated N_e for each epoch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_epochs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">total_exposure</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">)</span>  <span class="c1"># lineage-time at risk</span>
+    <span class="n">total_events</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">)</span>    <span class="c1"># coalescence events</span>
+
+    <span class="k">for</span> <span class="n">tree_idx</span><span class="p">,</span> <span class="n">coal_times</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coalescence_times_per_tree</span><span class="p">):</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">num_leaves_per_tree</span><span class="p">[</span><span class="n">tree_idx</span><span class="p">]</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">span_per_tree</span><span class="p">[</span><span class="n">tree_idx</span><span class="p">]</span>
+        <span class="n">prev_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coal_times</span><span class="p">):</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">N</span> <span class="o">-</span> <span class="n">idx</span>  <span class="c1"># lineages before this coalescence</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="c1"># Distribute exposure across epochs</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+                <span class="n">ep_start</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">ep_end</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+                <span class="n">overlap_start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">prev_time</span><span class="p">,</span> <span class="n">ep_start</span><span class="p">)</span>
+                <span class="n">overlap_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">ep_end</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">overlap_start</span> <span class="o">&lt;</span> <span class="n">overlap_end</span><span class="p">:</span>
+                    <span class="n">dt</span> <span class="o">=</span> <span class="n">overlap_end</span> <span class="o">-</span> <span class="n">overlap_start</span>
+                    <span class="n">exposure</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">weight</span>
+                    <span class="n">total_exposure</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">exposure</span>
+
+            <span class="c1"># Record the coalescence event in the appropriate epoch</span>
+            <span class="n">event_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">t</span><span class="p">)</span>
+            <span class="n">event_epoch</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">event_epoch</span><span class="p">,</span> <span class="n">n_epochs</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">total_events</span><span class="p">[</span><span class="n">event_epoch</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight</span>
+
+            <span class="n">prev_time</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="c1"># Estimate N_e: exposure / events (avoid division by zero)</span>
+    <span class="n">N_e_estimates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">total_events</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">N_e_estimates</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_exposure</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_events</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No coalescence events in this epoch -- use neighbor</span>
+            <span class="n">N_e_estimates</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="c1"># Fill NaN epochs by interpolation</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">N_e_estimates</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">valid</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">epoch_mids</span> <span class="o">=</span> <span class="p">(</span><span class="n">boundaries</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">N_e_estimates</span><span class="p">[</span><span class="o">~</span><span class="n">valid</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
+            <span class="n">epoch_mids</span><span class="p">[</span><span class="o">~</span><span class="n">valid</span><span class="p">],</span> <span class="n">epoch_mids</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">N_e_estimates</span><span class="p">[</span><span class="n">valid</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">N_e_estimates</span>
+
+
+<span class="c1"># Example: constant population size recovery</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">true_N_e</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">n_trees</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">n_leaves</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1"># Simulate coalescence times under constant N_e</span>
+<span class="n">coal_times_all</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_trees</span><span class="p">):</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">prev_t</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_leaves</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">true_N_e</span><span class="p">)</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+        <span class="n">prev_t</span> <span class="o">+=</span> <span class="n">dt</span>
+        <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prev_t</span><span class="p">)</span>
+    <span class="n">coal_times_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+<span class="n">boundaries_em</span> <span class="o">=</span> <span class="n">make_epochs</span><span class="p">(</span><span class="mi">50_000</span><span class="p">,</span> <span class="n">n_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">spans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_trees</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">)</span>
+
+<span class="n">N_e_est</span> <span class="o">=</span> <span class="n">m_step</span><span class="p">(</span><span class="n">coal_times_all</span><span class="p">,</span> <span class="p">[</span><span class="n">n_leaves</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_trees</span><span class="p">,</span>
+                   <span class="n">boundaries_em</span><span class="p">,</span> <span class="n">spans</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Population size estimates:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">N_e_est</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Epoch </span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">boundaries_em</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">boundaries_em</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">): &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;N_e = </span><span class="si">{</span><span class="n">N_e_est</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">True N_e: </span><span class="si">{</span><span class="n">true_N_e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean estimated N_e: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">N_e_est</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-complete-em-loop">
+<h2>The Complete EM Loop<a class="headerlink" href="#the-complete-em-loop" title="Link to this heading"></a></h2>
+<p>The full EM algorithm iterates between sampling branch lengths (E-step)
+and updating population sizes (M-step):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">em_population_size</span><span class="p">(</span><span class="n">trees</span><span class="p">,</span> <span class="n">haplotypes</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">initial_N_e</span><span class="p">,</span>
+                        <span class="n">boundaries</span><span class="p">,</span> <span class="n">n_em_iterations</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                        <span class="n">n_mcmc_samples</span><span class="o">=</span><span class="mi">200</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate population size history via EM.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trees : list of dict</span>
+<span class="sd">        Local trees with topologies.</span>
+<span class="sd">    haplotypes : ndarray</span>
+<span class="sd">        Haplotype matrix.</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Mutation rate.</span>
+<span class="sd">    initial_N_e : float</span>
+<span class="sd">        Initial (constant) population size guess.</span>
+<span class="sd">    boundaries : ndarray</span>
+<span class="sd">        Epoch boundaries.</span>
+<span class="sd">    n_em_iterations : int</span>
+<span class="sd">        Number of EM iterations.</span>
+<span class="sd">    n_mcmc_samples : int</span>
+<span class="sd">        MCMC samples per tree per E-step.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    N_e_history : list of ndarray</span>
+<span class="sd">        Population size estimates at each EM iteration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_epochs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">N_e_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">,</span> <span class="n">initial_N_e</span><span class="p">)</span>
+    <span class="n">N_e_history</span> <span class="o">=</span> <span class="p">[</span><span class="n">N_e_values</span><span class="o">.</span><span class="n">copy</span><span class="p">()]</span>
+
+    <span class="k">for</span> <span class="n">em_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_em_iterations</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;EM iteration </span><span class="si">{</span><span class="n">em_iter</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_em_iterations</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># E-step: sample branch lengths using current N_e</span>
+        <span class="n">all_coal_times</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_n_leaves</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_spans</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">tree_info</span> <span class="ow">in</span> <span class="n">trees</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">tree_info</span><span class="p">[</span><span class="s1">&#39;root&#39;</span><span class="p">]</span>
+            <span class="n">span</span> <span class="o">=</span> <span class="n">tree_info</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">tree_info</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+            <span class="n">site_indices</span> <span class="o">=</span> <span class="n">tree_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;site_indices&#39;</span><span class="p">,</span> <span class="p">[])</span>
+
+            <span class="c1"># Map mutations</span>
+            <span class="n">branch_muts</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">map_mutations</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">haplotypes</span><span class="p">,</span> <span class="n">site_indices</span><span class="p">)</span>
+
+            <span class="c1"># Run MCMC with current population size</span>
+            <span class="c1"># (simplified: using constant N_e equal to the mean)</span>
+            <span class="n">mean_N_e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">N_e_values</span><span class="p">)</span>
+            <span class="n">samples</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mcmc_branch_lengths</span><span class="p">(</span>
+                <span class="n">root</span><span class="p">,</span> <span class="n">branch_muts</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">span</span><span class="p">,</span> <span class="n">mean_N_e</span><span class="p">,</span>
+                <span class="n">n_samples</span><span class="o">=</span><span class="n">n_mcmc_samples</span><span class="p">,</span> <span class="n">burn_in</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+            <span class="c1"># Extract coalescence times from the last sample</span>
+            <span class="k">if</span> <span class="n">samples</span><span class="p">:</span>
+                <span class="n">last_sample</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># Get internal node times, sorted</span>
+                <span class="n">internal_times</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span>
+                    <span class="n">t</span> <span class="k">for</span> <span class="n">nid</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">last_sample</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span>  <span class="c1"># exclude leaves</span>
+                <span class="p">])</span>
+                <span class="n">all_coal_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">internal_times</span><span class="p">)</span>
+                <span class="n">n_leaves</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">last_sample</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">all_n_leaves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n_leaves</span><span class="p">)</span>
+                <span class="n">all_spans</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">span</span><span class="p">)</span>
+
+        <span class="c1"># M-step: update population sizes</span>
+        <span class="n">N_e_values</span> <span class="o">=</span> <span class="n">m_step</span><span class="p">(</span><span class="n">all_coal_times</span><span class="p">,</span> <span class="n">all_n_leaves</span><span class="p">,</span>
+                             <span class="n">boundaries</span><span class="p">,</span> <span class="n">all_spans</span><span class="p">)</span>
+        <span class="n">N_e_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">N_e_values</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean N_e: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">N_e_values</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">N_e_history</span>
+</pre></div>
+</div>
+</section>
+<section id="interpreting-the-results">
+<h2>Interpreting the Results<a class="headerlink" href="#interpreting-the-results" title="Link to this heading"></a></h2>
+<p>The EM algorithm produces a piecewise-constant population size trajectory
+<span class="math notranslate nohighlight">\(\hat{N}_e(t)\)</span>. This can reveal:</p>
+<ul class="simple">
+<li><p><strong>Population bottlenecks</strong>: Epochs with small <span class="math notranslate nohighlight">\(\hat{N}_e\)</span></p></li>
+<li><p><strong>Population expansions</strong>: Epochs with increasing <span class="math notranslate nohighlight">\(\hat{N}_e\)</span></p></li>
+<li><p><strong>Recent growth</strong>: Very large <span class="math notranslate nohighlight">\(\hat{N}_e\)</span> in the most recent epoch</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_population_size</span><span class="p">(</span><span class="n">boundaries</span><span class="p">,</span> <span class="n">N_e_values</span><span class="p">,</span> <span class="n">true_N_e</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the estimated population size history.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    boundaries : ndarray</span>
+<span class="sd">        Epoch boundaries.</span>
+<span class="sd">    N_e_values : ndarray</span>
+<span class="sd">        Estimated N_e per epoch.</span>
+<span class="sd">    true_N_e : callable or None</span>
+<span class="sd">        True N_e(t) function for comparison.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+    <span class="c1"># Step plot for piecewise-constant N_e</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">N_e_values</span><span class="p">)):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">boundaries</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">boundaries</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]],</span>
+                <span class="p">[</span><span class="n">N_e_values</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">N_e_values</span><span class="p">[</span><span class="n">j</span><span class="p">]],</span>
+                <span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Estimated&#39;</span> <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">true_N_e</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">t_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">boundaries</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">boundaries</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">500</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_grid</span><span class="p">,</span> <span class="p">[</span><span class="n">true_N_e</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">t_grid</span><span class="p">],</span>
+                <span class="s1">&#39;r--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;True&#39;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time (generations ago)&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Effective population size&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Population Size History&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="verification">
+<h2>Verification<a class="headerlink" href="#verification" title="Link to this heading"></a></h2>
+<p>We verify the EM on a scenario with known population size history:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">verify_em</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify the M-step recovers a known constant population size.&quot;&quot;&quot;</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+    <span class="n">true_N_e</span> <span class="o">=</span> <span class="mi">10000</span>
+    <span class="n">n_trees</span> <span class="o">=</span> <span class="mi">200</span>
+    <span class="n">n_leaves</span> <span class="o">=</span> <span class="mi">8</span>
+
+    <span class="c1"># Simulate coalescence times under constant N_e</span>
+    <span class="n">coal_times_all</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_trees</span><span class="p">):</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">prev_t</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_leaves</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">true_N_e</span><span class="p">)</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span><span class="p">)</span>
+            <span class="n">prev_t</span> <span class="o">+=</span> <span class="n">dt</span>
+            <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prev_t</span><span class="p">)</span>
+        <span class="n">coal_times_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+    <span class="c1"># Estimate using M-step</span>
+    <span class="n">boundaries</span> <span class="o">=</span> <span class="n">make_epochs</span><span class="p">(</span><span class="mi">100_000</span><span class="p">,</span> <span class="n">n_epochs</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">spans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_trees</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">)</span>
+    <span class="n">N_e_est</span> <span class="o">=</span> <span class="n">m_step</span><span class="p">(</span><span class="n">coal_times_all</span><span class="p">,</span> <span class="p">[</span><span class="n">n_leaves</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_trees</span><span class="p">,</span>
+                      <span class="n">boundaries</span><span class="p">,</span> <span class="n">spans</span><span class="p">)</span>
+
+    <span class="c1"># Check: mean estimated N_e should be close to true</span>
+    <span class="n">mean_est</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">N_e_est</span><span class="p">)</span>
+    <span class="n">rel_error</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean_est</span> <span class="o">-</span> <span class="n">true_N_e</span><span class="p">)</span> <span class="o">/</span> <span class="n">true_N_e</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;EM verification (constant N_e):&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  True N_e:     </span><span class="si">{</span><span class="n">true_N_e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean est N_e: </span><span class="si">{</span><span class="n">mean_est</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Relative error: </span><span class="si">{</span><span class="n">rel_error</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [</span><span class="si">{</span><span class="s1">&#39;ok&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">rel_error</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.2</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;FAIL&#39;</span><span class="si">}</span><span class="s2">] &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;Mean within 20% of true value&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Per-epoch estimates</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Per-epoch estimates:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">N_e_est</span><span class="p">)):</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;ok&quot;</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">N_e_est</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">true_N_e</span><span class="p">)</span> <span class="o">/</span> <span class="n">true_N_e</span> <span class="o">&lt;</span> <span class="mf">0.5</span> \
+                 <span class="k">else</span> <span class="s2">&quot;imprecise&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Epoch </span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">: N_e = </span><span class="si">{</span><span class="n">N_e_est</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+
+<span class="n">verify_em</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>The complete Relate pipeline, from haplotype data to dated genealogies with
+population size estimates:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1. PAINTING (Gear 1)
+   Modified Li &amp; Stephens forward-backward
+   -&gt; Asymmetric distance matrices
+           |
+           v
+2. TREE BUILDING (Gear 2)
+   Agglomerative clustering on asymmetric distances
+   -&gt; Local tree topologies
+           |
+           v
+3. MUTATION MAPPING
+   Infinite-sites: each derived allele -&gt; one branch
+           |
+           v
+4. BRANCH LENGTHS (Gear 3)
+   MCMC: Poisson likelihood + coalescent prior
+   -&gt; Posterior samples of coalescence times
+           |
+           v
+5. POPULATION SIZE (Gear 4)
+   EM: E-step = sample branch lengths
+       M-step = update N_e(t)
+   -&gt; Piecewise-constant N_e(t)
+           |
+           v
+Iterate steps 4-5 until convergence
+</pre></div>
+</div>
+<p>The key equations:</p>
+<div class="math notranslate nohighlight">
+\[d(i,j) = -\log p_{ij}(s) \quad \text{(asymmetric distance)}\]</div>
+<div class="math notranslate nohighlight">
+\[m_b \sim \text{Poisson}(\mu \cdot \ell_b \cdot \Delta t_b) \quad \text{(mutation likelihood)}\]</div>
+<div class="math notranslate nohighlight">
+\[P(\mathbf{t} \mid \mathbf{m}) \propto \prod_b \text{Poisson}(m_b \mid \mu \ell_b \Delta t_b) \cdot \prod_k \lambda_k e^{-\lambda_k \Delta t_k} \quad \text{(posterior)}\]</div>
+<div class="math notranslate nohighlight">
+\[\hat{N}_j = \frac{\sum \binom{k}{2} \Delta t_j}{\sum C_j} \quad \text{(M-step)}\]</div>
+<p>By building all four gears, you now have a complete understanding of Relate’s
+mechanism – from raw haplotype data to dated genealogies with uncertainty
+quantification and population size estimation. Like a well-calibrated automatic
+watch, every gear meshes with the others to produce a self-consistent picture
+of the population’s evolutionary history.</p>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<div class="admonition-exercise-1-bottleneck-recovery admonition">
+<p class="admonition-title">Exercise 1: Bottleneck recovery</p>
+<p>Simulate coalescence times under a bottleneck model: <span class="math notranslate nohighlight">\(N_e = 10{,}000\)</span>
+for <span class="math notranslate nohighlight">\(t &lt; 1{,}000\)</span>, <span class="math notranslate nohighlight">\(N_e = 500\)</span> for <span class="math notranslate nohighlight">\(1{,}000 \leq t &lt;
+2{,}000\)</span>, <span class="math notranslate nohighlight">\(N_e = 10{,}000\)</span> for <span class="math notranslate nohighlight">\(t \geq 2{,}000\)</span>. Run the
+M-step and check whether the bottleneck is recovered. How does the number
+of trees affect accuracy?</p>
+</div>
+<div class="admonition-exercise-2-em-convergence admonition">
+<p class="admonition-title">Exercise 2: EM convergence</p>
+<p>Run the full EM for 20 iterations, starting from a deliberately wrong
+initial <span class="math notranslate nohighlight">\(N_e\)</span>. Plot <span class="math notranslate nohighlight">\(\hat{N}_e\)</span> at each iteration. How many
+iterations are needed for convergence? Does the starting value matter?</p>
+</div>
+<div class="admonition-exercise-3-epoch-boundary-sensitivity admonition">
+<p class="admonition-title">Exercise 3: Epoch boundary sensitivity</p>
+<p>Run the M-step with different numbers of epochs (5, 10, 20, 50). How does
+the resolution of the inferred population size history change? What
+happens when there are too many epochs (overfitting)?</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="branch_lengths.html" class="btn btn-neutral float-left" title="Gear 3: Branch Length Estimation (MCMC)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo.html" class="btn btn-neutral float-right" title="Demo: Running Relate on Simulated Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

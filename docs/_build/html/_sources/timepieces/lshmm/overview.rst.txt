@@ -6,6 +6,16 @@ Overview of the Li & Stephens HMM
 
    *Before assembling the watch, lay out every part and understand what it does.*
 
+.. figure:: /_static/figures/fig_mini_lshmm.png
+   :width: 100%
+   :align: center
+
+   **Li & Stephens HMM at a glance.** The haplotype copying model in action:
+   forward and backward probabilities along a sequence of variant sites,
+   Viterbi path recovery identifying which reference haplotype is being copied,
+   the emission and transition structure of the copying HMM, and posterior
+   decoding revealing copying state uncertainty at each position.
+
 The Li & Stephens Hidden Markov Model is a versatile gear that appears in many
 movements across population genetics. Just as a single escapement mechanism can
 drive a simple desk clock or a grand complication, the LS-HMM underlies tools

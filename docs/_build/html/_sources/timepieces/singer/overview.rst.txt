@@ -6,6 +6,17 @@ Overview of SINGER
 
    *Before assembling the watch, lay out every part and understand what it does.*
 
+.. figure:: /_static/figures/fig_mini_singer.png
+   :width: 100%
+   :align: center
+
+   **SINGER at a glance.** The four key gears of the SINGER algorithm: branch
+   joining probabilities governing how lineages merge in the ARG, PSMC transition
+   densities reused from Timepiece I for the pairwise coalescence kernel,
+   SPR (subtree prune and regraft) tree rearrangement showing how MCMC proposals
+   modify the genealogy, and ARG rescaling factors that adjust branch lengths
+   to match the data.
+
 In traditional watchmaking, a "grand complication" is the most ambitious kind of
 timepiece -- one that combines many independent complications (calendar, chronograph,
 minute repeater, tourbillon) into a single unified mechanism. Every gear must mesh

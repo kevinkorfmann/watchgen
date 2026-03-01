@@ -13,6 +13,25 @@ Tensor Machinery
 
    -- Kamm, Terhorst, Song, and Durbin (2017)
 
+.. admonition:: Biology Aside -- From populations to tensors
+
+   Imagine you have sequenced individuals from three human populations --
+   say, Yoruba, Han Chinese, and French. At each polymorphic site in the
+   genome, you can count how many derived alleles appear in each sample:
+   perhaps 3 out of 20 Yoruba chromosomes, 7 out of 20 Han Chinese
+   chromosomes, and 5 out of 20 French chromosomes. The three-dimensional
+   table that tallies all such combinations across the genome is the
+   **joint site frequency spectrum** (joint SFS). It is the multi-population
+   generalization of the SFS introduced in the moments timepiece.
+
+   The likelihood tensor is ``momi2``'s internal representation for computing
+   the *expected* joint SFS under a demographic model. Each axis of the
+   tensor corresponds to one population's allele count. The tensor
+   machinery described in this chapter shows how to build this expected
+   SFS piece by piece, by walking backward through the evolutionary history
+   of the populations -- from present-day samples back to the common
+   ancestral population.
+
 Step 1: What Is a Likelihood Tensor?
 ======================================
 
@@ -68,6 +87,18 @@ transition matrix :math:`P(t)`:
 
 This accounts for all possible drift and coalescence events during the epoch.
 
+.. admonition:: Plain-language summary -- Matrix multiplication on tensors
+
+   Think of the tensor as a multi-dimensional spreadsheet where each cell
+   holds the probability of a particular allele configuration. When time
+   passes in one population (while the others are frozen), allele frequencies
+   in that population change due to drift. The matrix multiplication
+   "smears" the probabilities along that population's axis, reflecting the
+   fact that a configuration with 5 derived alleles might evolve into one
+   with 4, 5, or 6 alleles. The Moran transition matrix (from the previous
+   chapter) tells us exactly how much probability flows between each pair of
+   counts.
+
 .. code-block:: python
 
    def apply_moran_transition(tensor, axis, t, n):
@@ -87,19 +118,54 @@ likelihood tensors from the two children are combined by **convolution**: the
 number of derived alleles in the ancestor is the sum of derived alleles from
 each child.
 
-For child populations with :math:`n_1` and :math:`n_2` lineages:
+.. admonition:: Biology Aside -- Population splits as merges
+
+   In demographic models, we describe events forward in time: an ancestral
+   population **splits** into two daughter populations that then evolve
+   independently (for example, the human-Neanderthal divergence). But
+   ``momi2`` computes the SFS by tracing lineages **backward** in time --
+   from present-day samples toward the ancestral population. Viewed backward,
+   a population split becomes a **merge**: the lineages from the two daughter
+   populations enter the same ancestral gene pool. The convolution operation
+   reflects this -- if 3 derived alleles came from population A and 4 from
+   population B, the ancestor had 7 derived alleles. All possible
+   combinations must be summed over, weighted by their probabilities.
+
+For child populations with :math:`n_1` and :math:`n_2` lineages, the naive
+convolution sums over all ways to partition :math:`i` derived alleles between
+the two children:
 
 .. math::
 
    L^{\text{anc}}_{i} = \sum_{j+k=i} L^{(1)}_{j} \cdot L^{(2)}_{k}
 
-In practice, ``momi2`` first multiplies each tensor by binomial coefficients,
-convolves via polynomial multiplication, then divides out the binomial
-coefficients:
+However, this simple sum does not account for the **combinatorics of sampling**.
+The probability that the ancestor has :math:`i` derived alleles out of
+:math:`n_1 + n_2` total, given that child 1 contributes :math:`j` out of
+:math:`n_1` and child 2 contributes :math:`k` out of :math:`n_2`, involves
+the hypergeometric distribution. The correct formula weights each partition
+by the number of ways to arrange the alleles:
 
 .. math::
 
    L^{\text{anc}}_{i} = \frac{1}{\binom{n_1+n_2}{i}} \sum_{j+k=i} \binom{n_1}{j} L^{(1)}_j \cdot \binom{n_2}{k} L^{(2)}_k
+
+**Where do the binomial coefficients come from?** The term :math:`\binom{n_1}{j}`
+counts how many ways :math:`j` of the :math:`n_1` lineages from child 1 can
+carry the derived allele, and :math:`\binom{n_2}{k}` does the same for child 2.
+Their product :math:`\binom{n_1}{j}\binom{n_2}{k}` is the number of ways to
+assign derived alleles across both children such that :math:`j + k = i`. Dividing
+by :math:`\binom{n_1+n_2}{i}` -- the total number of ways to choose :math:`i`
+derived out of :math:`n_1 + n_2` -- normalizes the result. This is exactly the
+hypergeometric probability:
+
+.. math::
+
+   P(j \text{ from child 1} \mid i \text{ total}) = \frac{\binom{n_1}{j}\binom{n_2}{i-j}}{\binom{n_1+n_2}{i}}
+
+In practice, ``momi2`` first multiplies each tensor by binomial coefficients,
+convolves via polynomial multiplication, then divides out the ancestral binomial
+coefficients -- which is algebraically equivalent but computationally efficient.
 
 .. code-block:: python
 
@@ -161,6 +227,18 @@ A demographic model is a tree (or DAG, when admixture is present) of events.
 ``momi2`` processes this tree using a **post-order traversal** (leaves to root),
 which corresponds to moving backward in time from the present to the ancestral
 population.
+
+.. admonition:: Biology Aside -- The demographic event tree mirrors evolutionary history
+
+   The event tree is a direct representation of the evolutionary relationships
+   among populations. The leaves are today's populations (sampled individuals
+   from, say, Europe, Africa, and East Asia). Internal nodes correspond to
+   historical events: population splits (divergence), size changes
+   (bottlenecks, expansions), and admixture pulses (gene flow). The root
+   represents the ancestral population from which all sampled populations
+   ultimately descend. By processing this tree from leaves to root, ``momi2``
+   incrementally builds up the expected SFS, accumulating the contribution of
+   mutations that fell on branches at each stage of the history.
 
 .. code-block:: text
 
@@ -242,6 +320,19 @@ Admixture is the most complex operation. When a fraction :math:`f` of population
 independently "jumps" to :math:`B` with probability :math:`f` (viewed backward
 in time).
 
+.. admonition:: Biology Aside -- What admixture looks like in genomes
+
+   Admixture is the mixing of previously separated populations -- for example,
+   gene flow between Neanderthals and modern humans approximately 50,000
+   years ago left ~2% of Neanderthal DNA in non-African genomes today.
+   Viewed backward in time, this means that for each chromosomal segment
+   in a modern non-African individual, there is roughly a 2% chance that
+   its lineage "jumps" from the modern human gene pool into the Neanderthal
+   one at the time of admixture. The binomial 3-tensor below encodes exactly
+   this stochastic assignment: given :math:`n` lineages, each independently
+   chooses one of two ancestral populations with probability :math:`f` or
+   :math:`1 - f`.
+
 If population :math:`A` has :math:`n` lineages, the number that move to
 :math:`B` follows a binomial distribution. This is encoded as a **3-tensor**
 :math:`T` of shape :math:`(n+1) \times (n+1) \times (n+1)`:
@@ -303,6 +394,19 @@ decrease (due to coalescence). After a merge event, the ancestral population has
 quasi-inverse**: a matrix that projects from :math:`N` lineages down to
 :math:`n < N` lineages in a way that preserves the expected SFS. This is the
 reverse of the projection (downsampling) operation used in SFS analysis.
+
+.. admonition:: Plain-language summary -- Reducing lineage counts
+
+   After two populations merge, the ancestral population suddenly has
+   :math:`n_1 + n_2` lineages -- which may be more than needed and would
+   make subsequent computations expensive. The hypergeometric quasi-inverse
+   is a principled way to "thin" the lineages down to a manageable number
+   without distorting the expected SFS. Think of it as subsampling the
+   ancestral chromosomes in a way that preserves the statistical properties
+   we care about. The hypergeometric distribution appears here because it
+   describes sampling without replacement from a finite pool -- the same
+   distribution that governs how allele counts change when you subsample a
+   dataset.
 
 .. code-block:: python
 
@@ -458,5 +562,215 @@ Exercises
    :math:`k` populations using (a) a :math:`k`-dimensional grid (dadi-style)
    and (b) the tensor-tree approach (momi2-style). For what values of :math:`k`
    and :math:`n` does the tensor approach become advantageous?
+
+Solutions
+=========
+
+.. admonition:: Solution 1: Manual tensor computation
+
+   We trace through a two-population divergence with :math:`n_A = n_B = 3`,
+   computing the SFS for a single configuration (e.g., :math:`b_A = 1, b_B = 2`).
+
+   .. code-block:: python
+
+      import numpy as np
+
+      n_A, n_B = 3, 3
+      b_A, b_B = 1, 2
+
+      # Step 1: Initialize indicator vectors at the leaves
+      L_A = np.zeros(n_A + 1)
+      L_A[b_A] = 1.0  # L_A = [0, 1, 0, 0]
+
+      L_B = np.zeros(n_B + 1)
+      L_B[b_B] = 1.0  # L_B = [0, 0, 1, 0]
+
+      print(f"Leaf A: {L_A}")
+      print(f"Leaf B: {L_B}")
+
+      # Step 2: Apply Moran transitions for the recent epoch (time T)
+      T, N_A, N_B, N_anc = 500, 1000, 1000, 2000
+      t_A = 2.0 * T / N_A
+      t_B = 2.0 * T / N_B
+
+      P_A = moran_transition(t_A, n_A)
+      P_B = moran_transition(t_B, n_B)
+
+      L_A_after = L_A @ P_A  # transform through recent epoch
+      L_B_after = L_B @ P_B
+      print(f"After Moran (A): {L_A_after}")
+      print(f"After Moran (B): {L_B_after}")
+
+      # Step 3: Convolve at the merge point
+      from scipy.special import comb
+
+      L_anc = convolve_populations(L_A_after, L_B_after, n_A, n_B)
+      n_anc = n_A + n_B
+      print(f"After merge (n_anc={n_anc}): {L_anc}")
+
+      # Step 4: Apply Moran transition for ancestral epoch (t -> infinity)
+      t_anc = 100.0  # large value approximating infinity
+      P_anc = moran_transition(t_anc, n_anc)
+      L_final = L_anc @ P_anc
+      print(f"After ancestral epoch: {L_final}")
+
+   The key insight is that each operation transforms the likelihood vector
+   step by step: initialization sets the observed configuration, the Moran
+   transition "smears" probabilities backward through drift, and the
+   convolution combines lineages from both populations. At the end,
+   :math:`L_{\text{final}}` gives the probability of the observed
+   configuration under the model.
+
+.. admonition:: Solution 2: Convolution verification
+
+   When both child populations have all derived alleles (:math:`L_1 = [0, \ldots, 0, 1]`
+   and :math:`L_2 = [0, \ldots, 0, 1]`), the ancestor must also have all derived
+   alleles: :math:`L_{\text{anc}} = [0, \ldots, 0, 1]`.
+
+   .. code-block:: python
+
+      import numpy as np
+      from scipy.special import comb
+
+      for n1, n2 in [(3, 3), (5, 5), (3, 7), (10, 10)]:
+          L1 = np.zeros(n1 + 1)
+          L1[n1] = 1.0  # all derived
+
+          L2 = np.zeros(n2 + 1)
+          L2[n2] = 1.0  # all derived
+
+          L_anc = convolve_populations(L1, L2, n1, n2)
+          n_anc = n1 + n2
+
+          # Expected: L_anc should be [0, 0, ..., 0, 1]
+          expected = np.zeros(n_anc + 1)
+          expected[n_anc] = 1.0
+
+          assert np.allclose(L_anc, expected, atol=1e-10), \
+              f"Failed for n1={n1}, n2={n2}: {L_anc}"
+          print(f"n1={n1}, n2={n2}: L_anc = {L_anc} (correct)")
+
+   This works because the convolution formula sums over all ways to partition
+   :math:`i` derived alleles between the two children. When :math:`L_1` has mass
+   only at :math:`n_1` and :math:`L_2` has mass only at :math:`n_2`, the only
+   nonzero term in the sum is :math:`j = n_1, k = n_2`, giving
+   :math:`i = n_1 + n_2 = n_{\text{anc}}`.
+
+   Similarly, one can verify the case where both populations have zero derived
+   alleles:
+
+   .. code-block:: python
+
+      L1 = np.zeros(n1 + 1)
+      L1[0] = 1.0
+      L2 = np.zeros(n2 + 1)
+      L2[0] = 1.0
+      L_anc = convolve_populations(L1, L2, n1, n2)
+      assert np.allclose(L_anc[0], 1.0) and np.allclose(L_anc[1:], 0.0)
+
+.. admonition:: Solution 3: Admixture effects
+
+   For :math:`f = 0.5` and :math:`n = 4`, each lineage independently moves to
+   the source with probability 0.5.
+
+   .. code-block:: python
+
+      import numpy as np
+      from scipy.special import comb as binom
+
+      n = 4
+      f = 0.5
+      T = admixture_tensor(n, f)
+
+      print(f"Admixture tensor shape: {T.shape}")
+      print(f"T[i, j, k] = Pr(i stay, j move | k original)")
+      print()
+
+      # Verify: for each k, the tensor should be a valid probability distribution
+      for k in range(n + 1):
+          total = 0.0
+          for j in range(k + 1):
+              i = k - j
+              total += T[i, j, k]
+              if T[i, j, k] > 1e-10:
+                  print(f"  k={k}: i={i}, j={j}, T={T[i, j, k]:.4f}")
+          assert abs(total - 1.0) < 1e-10, f"k={k}: total = {total}"
+          print(f"  k={k}: total = {total:.6f}")
+          print()
+
+      # Expected number of lineages moving to source, starting from k lineages
+      for k in range(n + 1):
+          E_j = sum(j * T[k - j, j, k] for j in range(k + 1))
+          print(f"  k={k}: E[j] = {E_j:.4f}, expected = {k * f:.4f}")
+          assert abs(E_j - k * f) < 1e-10
+
+   For :math:`k = n = 4` lineages, the expected number moving to the source is
+   :math:`n \cdot f = 4 \times 0.5 = 2`. The distribution of :math:`j` (number
+   moving) is :math:`\text{Binomial}(k, f)`:
+
+   .. math::
+
+      E[j \mid k] = k \cdot f = 4 \times 0.5 = 2
+
+      \text{Var}(j \mid k) = k \cdot f(1-f) = 4 \times 0.25 = 1
+
+   So with :math:`f = 0.5`, we get maximum variance in the splitting -- any
+   outcome from 0 to 4 lineages moving is possible, with the binomial
+   :math:`\binom{4}{j} (0.5)^4` giving probabilities 1/16, 4/16, 6/16, 4/16,
+   1/16.
+
+.. admonition:: Solution 4: Scaling with populations
+
+   **Grid-based (dadi-style):** The SFS is represented on a :math:`k`-dimensional
+   grid of size :math:`M^k` where :math:`M \approx n` is the grid resolution per
+   dimension. The PDE solver must update all grid points at each time step.
+
+   .. math::
+
+      \text{Cost}_{\text{grid}} = O(M^k \times T_{\text{steps}})
+
+   **Tensor-tree (momi2-style):** The computation visits each event in the tree
+   once. At each event, the cost depends on the number of *active* populations
+   (typically 1--3 at any point in the tree).
+
+   .. math::
+
+      \text{Cost}_{\text{tensor}} = O\!\left(\sum_{\text{events}} \prod_{\text{active pops } p} (n_p + 1)\right)
+
+   .. code-block:: python
+
+      import numpy as np
+
+      print("Comparison of computational cost:")
+      print(f"{'k':>3} {'n':>4} {'Grid (n^k)':>15} {'Tensor (tree)':>15} {'Ratio':>10}")
+      print("-" * 52)
+
+      for k in [2, 3, 4, 5, 6]:
+          for n in [10, 20, 50]:
+              # Grid: n^k entries, each updated ~100 times
+              grid_cost = (n + 1) ** k * 100
+
+              # Tensor-tree: for a balanced binary tree of k leaves,
+              # there are 2k-1 nodes. At each internal node, at most 2
+              # populations are active. Merge cost ~ n^2, Moran cost ~ n^2.
+              # After each merge, the lineage count is at most 2n, but
+              # the quasi-inverse reduces it back to n.
+              tree_nodes = 2 * k - 1
+              tensor_cost = tree_nodes * (2 * n + 1) ** 2
+
+              ratio = grid_cost / tensor_cost
+              print(f"{k:>3} {n:>4} {grid_cost:>15,} {tensor_cost:>15,} {ratio:>10.1f}")
+
+   For :math:`k = 2, n = 10`, the costs are similar (grid may even be faster
+   due to simpler operations). But for :math:`k \geq 4`, the tensor approach
+   becomes dramatically better: the grid cost grows as :math:`n^k` while the
+   tensor cost grows as :math:`k \cdot n^2`. At :math:`k = 6, n = 50`, the
+   grid requires :math:`\sim 10^{12}` operations versus :math:`\sim 10^{5}` for
+   the tensor tree -- a factor of :math:`10^7`.
+
+   The crossover point is approximately :math:`k = 3`: for two populations,
+   grid methods are competitive; for three or more, the tensor approach is
+   strongly preferred. This is why ``momi2`` was designed specifically for
+   multi-population analyses.
 
 Next: :ref:`momi2_inference`

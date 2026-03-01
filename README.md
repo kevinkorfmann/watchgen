@@ -1,35 +1,80 @@
 # watchgen
 
-**The Watchmaker's Guide to Population Genetics** — a build-it-yourself book that teaches the algorithms behind modern population genetics from first principles. Every concept is derived, every method implemented from scratch in Python. No black boxes.
+[![Unit tests](https://img.shields.io/badge/tests-2672%20passed-brightgreen)](https://github.com/kevinkorfmann/watchgen/actions) [![CI](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml/badge.svg)](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml) [![Read the Docs](https://img.shields.io/readthedocs/watchgen)](https://watchgen.readthedocs.io) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-## Philosophy
+**The Watchmaker's Guide to Population Genetics** — a build-it-yourself book on the algorithms behind modern population genetics. Every concept is derived from first principles, every method reimplemented from scratch in Python. No black boxes.
 
-Like a watchmaker who understands every gear: you don't just *run* the tools, you learn how to *build* them. Math, code, and verification in one place.
+**Read online:** https://watchgen.readthedocs.io &nbsp;|&nbsp; **Download PDF:** https://watchgen.readthedocs.io/_/downloads/en/latest/pdf/
 
-## Building the book
+> **Note:** A citable version number will be assigned in the coming days. Until then, please cite by URL and access date.
 
-**HTML (recommended for reading):**
+---
 
-```bash
-cd docs
-pip install -r requirements.txt
-make html
-# open _build/html/index.html
+## What this is
+
+Population genetics has powerful algorithms — but inaccessible ones. Most live inside papers and codebases that assume years of specialised training. This book is an attempt to change that: explicit derivations, step-by-step implementations, and unit tests for every algorithm covered.
+
+The companion Python package `watchgen` provides 19 minimal, self-contained reimplementations — small enough to read in one sitting, complete enough to run on toy examples, tested enough to trust. Think of them as movements built on the workbench: not for production, but for understanding.
+
+---
+
+## Contents
+
+**Prerequisites (8 chapters)**
+
+Coalescent theory, ARGs, HMMs, SMC, diffusion approximation, ODEs, MCMC, probabilistic inference — everything you need before tackling a Timepiece.
+
+**Timepieces (18 algorithms)**
+
+| Category | Algorithms |
+|---|---|
+| Simulators | msprime, SLiM, discoal |
+| Demographic inference | PSMC, SMC++, Gamma-SMC, PHLASH |
+| SFS-based inference | moments, dadi, momi2 |
+| Genealogy & ARG inference | Li & Stephens HMM, ARGweaver, tsinfer, SINGER, Threads, Relate |
+| Dating & selection | tsdate, CLUES |
+
+---
+
+## The `watchgen` package
+
+```python
+pip install watchgen  # or: git clone + pip install -e .
 ```
 
-**PDF:**
-
-```bash
-python -m venv .venv && .venv/bin/pip install -r docs/requirements.txt
-.venv/bin/python scripts/build_pdf.py
+```python
+from watchgen import mini_psmc, mini_msprime, mini_tsinfer  # etc.
 ```
 
-Requires a LaTeX distribution (e.g. MacTeX, TeX Live). Output: `docs/_build/latex/watchmakers-guide.pdf`.
+19 modules, ~17,500 lines of code, 2,672 unit tests. Each module depends only on NumPy and SciPy.
 
-## Structure
+---
 
-- **Philosophy** — why we build from scratch
-- **The Workbench** — prerequisites (coalescent theory, HMMs, SMC, …)
-- **Timepieces** — full algorithms (ARGweaver, PSMC, msprime, tsinfer, tsdate, momi2, moments, threads, lshmm, singer) with math and code
+## Building the book locally
 
-See [docs/index.rst](docs/index.rst) for the full table of contents.
+**HTML:**
+
+```bash
+pip install sphinx sphinx-rtd-theme sphinx-copybutton sphinx-design sphinxcontrib-bibtex
+python -m sphinx docs docs/_build/html -b html
+open docs/_build/html/index.html
+```
+
+**PDF** (requires XeLaTeX / MacTeX / TeX Live):
+
+```bash
+python -m sphinx docs docs/_build/latex -b latex
+cd docs/_build/latex && xelatex watchmakers-guide.tex
+```
+
+---
+
+## Contributing
+
+This is version 0.1 — an unverified draft. No chapter has been reviewed by a domain expert yet. Contributions that cross-check derivations, correct mistakes, improve explanations, or add chapters are very welcome. Substantial contributors will be invited as co-authors.
+
+Open an issue or pull request on [GitHub](https://github.com/kevinkorfmann/watchgen).
+
+---
+
+*If you find this useful, consider [supporting with PayPal](https://www.paypal.com/donate/?hosted_button_id=VTASTXN2KAFJQ).*

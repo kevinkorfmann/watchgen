@@ -1,0 +1,900 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Gamma Approximation &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="The Flow Field" href="flow_field.html" />
+    <link rel="prev" title="Overview of Gamma-SMC" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece XIII: Gamma-SMC</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece XIII: Gamma-SMC</a></li>
+      <li class="breadcrumb-item active">The Gamma Approximation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of Gamma-SMC" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="flow_field.html" class="btn btn-neutral float-right" title="The Flow Field" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-gamma-approximation">
+<span id="gamma-smc-gamma-approximation"></span><h1>The Gamma Approximation<a class="headerlink" href="#the-gamma-approximation" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The escapement: the mathematical tick that makes the whole mechanism possible.</em></p>
+</div></blockquote>
+<p>This chapter derives the two update rules at the heart of Gamma-SMC: the
+<strong>emission step</strong> (exact, via Poisson-gamma conjugacy) and the <strong>transition
+step</strong> (approximate, via gamma projection). Together, they allow the posterior
+TMRCA distribution to be tracked as a gamma distribution throughout the entire
+forward pass.</p>
+<div class="admonition-biology-aside-what-tmrca-tells-us-about-population-history admonition">
+<p class="admonition-title">Biology Aside – What TMRCA tells us about population history</p>
+<p>The <strong>time to most recent common ancestor</strong> (TMRCA) at a genomic position
+is the number of generations since the two haplotypes last shared a common
+ancestor at that site. It is a direct window into population size history:
+in a small population, lineages coalesce quickly, so TMRCAs are short; in
+a large population, coalescence is slow and TMRCAs are long. A population
+bottleneck produces a characteristic signature – a band of similar TMRCAs
+across many positions – because the small population forced most lineages
+to coalesce during that period. By estimating the TMRCA distribution at
+each position along the genome, Gamma-SMC effectively reads the history
+of population size changes encoded in the pattern of genetic variation
+between two chromosomes.</p>
+</div>
+<p>In a mechanical watch, the escapement is the component that converts the
+continuous energy of the mainspring into discrete, regular ticks. In Gamma-SMC,
+the gamma approximation plays an analogous role: it converts the continuous
+Bayesian updating process into a sequence of simple parameter updates –
+<span class="math notranslate nohighlight">\((\alpha, \beta) \to (\alpha', \beta')\)</span> – that can be evaluated in
+constant time.</p>
+<section id="the-emission-step-exact-conjugacy">
+<h2>The Emission Step: Exact Conjugacy<a class="headerlink" href="#the-emission-step-exact-conjugacy" title="Link to this heading"></a></h2>
+<p>Suppose the forward density at position <span class="math notranslate nohighlight">\(i\)</span> is approximated as:</p>
+<div class="math notranslate nohighlight">
+\[X_i \mid Y_{1:i-1} \sim \text{Gamma}(\alpha, \beta)\]</div>
+<p>We observe <span class="math notranslate nohighlight">\(Y_i\)</span> at position <span class="math notranslate nohighlight">\(i\)</span>. Using Bayes’ rule and the
+Markov property:</p>
+<div class="math notranslate nohighlight">
+\[P(X_i = t \mid Y_{1:i}) &amp;\propto P(Y_i \mid X_i = t) \cdot P(X_i = t \mid Y_{1:i-1})\]</div>
+<p>The emission model is Poisson with rate <span class="math notranslate nohighlight">\(\theta t\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[P(Y_i = y \mid X_i = t) = \frac{(\theta t)^y \cdot e^{-\theta t}}{y!}\]</div>
+<div class="admonition-biology-aside-why-poisson-emissions admonition">
+<p class="admonition-title">Biology Aside – Why Poisson emissions?</p>
+<p>At each genomic position, we observe either a heterozygous site
+(<span class="math notranslate nohighlight">\(Y_i = 1\)</span>, meaning the two haplotypes differ) or a homozygous site
+(<span class="math notranslate nohighlight">\(Y_i = 0\)</span>, meaning they are identical). Mutations accumulate on the
+two lineages at a constant rate <span class="math notranslate nohighlight">\(\mu\)</span> per base per generation, so
+the number of differences between the two haplotypes at a given position
+is approximately Poisson-distributed with a rate proportional to the
+TMRCA. Intuitively: <em>the longer two lineages have been separated, the
+more mutations have accumulated between them, and the more likely they
+are to differ at any given site.</em> This is the molecular clock principle
+applied at the single-nucleotide level.</p>
+</div>
+<p>The prior is <span class="math notranslate nohighlight">\(\text{Gamma}(\alpha, \beta)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[P(X_i = t \mid Y_{1:i-1}) = \frac{\beta^\alpha}{\Gamma(\alpha)} t^{\alpha - 1} e^{-\beta t}\]</div>
+<p>Multiplying these together:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}P(X_i = t \mid Y_{1:i}) &amp;\propto (\theta t)^y \cdot e^{-\theta t} \cdot t^{\alpha - 1} \cdot e^{-\beta t} \\
+&amp;\propto t^{\alpha + y - 1} \cdot e^{-(\beta + \theta) t}\end{split}\]</div>
+<p>This is the kernel of a <span class="math notranslate nohighlight">\(\text{Gamma}(\alpha + y, \beta + \theta)\)</span>
+distribution. Since the posterior must normalize to a proper density:</p>
+<div class="math notranslate nohighlight">
+\[X_i \mid Y_{1:i} \sim \text{Gamma}(\alpha + Y_i, \; \beta + \theta)\]</div>
+<p>This gives us the three cases:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 35.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Observation</p></th>
+<th class="head"><p>Posterior</p></th>
+<th class="head"><p>Interpretation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(Y_i = 0\)</span> (hom)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\text{Gamma}(\alpha, \beta + \theta)\)</span></p></td>
+<td><p>Rate increases (TMRCA shifts shorter). Seeing no
+mutation is evidence of a more recent ancestor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(Y_i = 1\)</span> (het)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\text{Gamma}(\alpha + 1, \beta + \theta)\)</span></p></td>
+<td><p>Shape and rate both increase. Seeing a mutation is
+evidence of a more distant ancestor (shape goes up)
+while also incorporating the observation (rate goes up).</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(Y_i = -1\)</span> (missing)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\text{Gamma}(\alpha, \beta)\)</span></p></td>
+<td><p>No change. Missing data carries no information.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">digamma</span><span class="p">,</span> <span class="n">gammaln</span>
+
+<span class="k">def</span> <span class="nf">gamma_emission_update</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply the Poisson-gamma conjugate emission update.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Current shape parameter.</span>
+<span class="sd">    beta : float</span>
+<span class="sd">        Current rate parameter.</span>
+<span class="sd">    y : int</span>
+<span class="sd">        Observation: 1 (het), 0 (hom), or -1 (missing).</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Scaled mutation rate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha_new, beta_new : float</span>
+<span class="sd">        Updated gamma parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">y</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c1"># missing</span>
+        <span class="k">return</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span>
+    <span class="k">return</span> <span class="n">alpha</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">beta</span> <span class="o">+</span> <span class="n">theta</span>
+
+<span class="c1"># Verify: starting from the prior Gamma(1, 1)</span>
+<span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="mf">0.001</span>
+
+<span class="c1"># After a heterozygous observation</span>
+<span class="n">a_het</span><span class="p">,</span> <span class="n">b_het</span> <span class="o">=</span> <span class="n">gamma_emission_update</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;After het: Gamma(</span><span class="si">{</span><span class="n">a_het</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b_het</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean TMRCA = </span><span class="si">{</span><span class="n">a_het</span><span class="o">/</span><span class="n">b_het</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;(shifted up -- mutation is evidence of deeper coalescence)&quot;</span><span class="p">)</span>
+
+<span class="c1"># After a homozygous observation</span>
+<span class="n">a_hom</span><span class="p">,</span> <span class="n">b_hom</span> <span class="o">=</span> <span class="n">gamma_emission_update</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;After hom: Gamma(</span><span class="si">{</span><span class="n">a_hom</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b_hom</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean TMRCA = </span><span class="si">{</span><span class="n">a_hom</span><span class="o">/</span><span class="n">b_hom</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;(shifted down -- no mutation favours recent coalescence)&quot;</span><span class="p">)</span>
+
+<span class="c1"># After 100 hom and 1 het</span>
+<span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">gamma_emission_update</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span>
+<span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">gamma_emission_update</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">After 100 hom + 1 het: Gamma(</span><span class="si">{</span><span class="n">a</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">), &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;mean = </span><span class="si">{</span><span class="n">a</span><span class="o">/</span><span class="n">b</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition-why-is-this-called-conjugacy admonition">
+<p class="admonition-title">Why is this called “conjugacy”?</p>
+<p>A prior distribution is <strong>conjugate</strong> to a likelihood if the posterior has
+the same functional form as the prior. Here, the gamma prior is conjugate
+to the Poisson likelihood: regardless of the observation, the posterior is
+always gamma. This means we never need to leave the gamma family during the
+emission step – the posterior is always characterized by just two numbers
+<span class="math notranslate nohighlight">\((\alpha, \beta)\)</span>.</p>
+<p>Conjugacy is one of the most powerful tools in Bayesian statistics. It
+turns Bayesian updating from an integration problem (which is generally
+intractable) into a parameter update (which is <span class="math notranslate nohighlight">\(O(1)\)</span>). The
+Poisson-gamma pair is one of the classical conjugate families, alongside
+normal-normal, beta-binomial, and Dirichlet-multinomial.</p>
+</div>
+<div class="admonition-intuition-what-do-math-alpha-and-math-beta-track admonition">
+<p class="admonition-title">Intuition: what do <span class="math notranslate nohighlight">\(\alpha\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span> track?</p>
+<p>Think of <span class="math notranslate nohighlight">\(\alpha\)</span> as a “mutation count” and <span class="math notranslate nohighlight">\(\beta\)</span> as a
+“rate accumulator.” At the start (the exponential prior
+<span class="math notranslate nohighlight">\(\text{Exp}(1) = \text{Gamma}(1, 1)\)</span>), we have seen zero mutations
+and accumulated one unit of rate. Each homozygous site adds <span class="math notranslate nohighlight">\(\theta\)</span>
+to the rate (more evidence of short TMRCA) without adding to the count.
+Each heterozygous site adds <span class="math notranslate nohighlight">\(\theta\)</span> to the rate <em>and</em> 1 to the
+count (evidence of a mutation, hence longer TMRCA). The posterior mean
+<span class="math notranslate nohighlight">\(\alpha / \beta\)</span> is literally “mutation count divided by rate” –
+an estimate of the TMRCA.</p>
+</div>
+</section>
+<section id="the-transition-step-gamma-projection">
+<h2>The Transition Step: Gamma Projection<a class="headerlink" href="#the-transition-step-gamma-projection" title="Link to this heading"></a></h2>
+<p>The emission step is exact. The transition step is where approximation enters.</p>
+<p>After incorporating the observation at position <span class="math notranslate nohighlight">\(i\)</span>, we have
+<span class="math notranslate nohighlight">\(X_i \mid Y_{1:i} \sim \text{Gamma}(\alpha, \beta)\)</span>. To advance to
+position <span class="math notranslate nohighlight">\(i + 1\)</span>, we must compute:</p>
+<div class="math notranslate nohighlight">
+\[p_{\alpha,\beta}(t) := \int_0^\infty p(t \mid s) \cdot f_{\alpha,\beta}(s) \, ds\]</div>
+<p>where <span class="math notranslate nohighlight">\(p(t \mid s)\)</span> is the SMC’ transition density (including the
+no-recombination case). This compound distribution <span class="math notranslate nohighlight">\(p_{\alpha,\beta}(t)\)</span>
+is the predictive distribution of the TMRCA at the next position, given our
+current gamma belief.</p>
+<div class="admonition-biology-aside-what-recombination-does-to-tmrca admonition">
+<p class="admonition-title">Biology Aside – What recombination does to TMRCA</p>
+<p>Recombination breaks chromosomes and re-joins segments from different
+parental chromosomes. As a result, the genealogy of two haplotypes
+changes from position to position along the genome: at one site they may
+share an ancestor 10,000 generations ago, but after a recombination event
+a few bases away, they may share a different ancestor 50,000 generations
+ago. The transition step models this: it asks “given our current belief
+about the TMRCA, what is the distribution of the <em>new</em> TMRCA at the next
+position, accounting for the possibility of recombination?” The more
+recombination there is (higher <span class="math notranslate nohighlight">\(\rho\)</span>), the more the TMRCA can
+change between adjacent positions.</p>
+</div>
+<p><strong>The problem:</strong> <span class="math notranslate nohighlight">\(p_{\alpha,\beta}(t)\)</span> is <em>not</em> exactly a gamma
+distribution. The integral mixes over the transition kernel, which introduces
+skewness and other deviations from the gamma family.</p>
+<p><strong>The solution:</strong> Empirically, <span class="math notranslate nohighlight">\(p_{\alpha,\beta}(t)\)</span> is <em>very close</em>
+to a gamma distribution (Schweiger &amp; Durbin verify this with simulation
+studies; see Appendix A of the supplement). So we approximate it by projecting
+back onto the gamma family:</p>
+<div class="math notranslate nohighlight">
+\[p_{\alpha,\beta}(t) \approx f_{\alpha',\beta'}(t) = \text{Gamma}(\alpha', \beta')\]</div>
+<p>The question becomes: how do we find the best <span class="math notranslate nohighlight">\((\alpha', \beta')\)</span>?</p>
+<section id="the-pde-approach">
+<h3>The PDE Approach<a class="headerlink" href="#the-pde-approach" title="Link to this heading"></a></h3>
+<p>For small recombination rate <span class="math notranslate nohighlight">\(\rho\)</span>, the post-transition distribution
+<span class="math notranslate nohighlight">\(p_{\alpha,\beta}\)</span> is a small perturbation of the prior
+<span class="math notranslate nohighlight">\(f_{\alpha,\beta}\)</span>. We can write:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\alpha' &amp;= \alpha + u \cdot \rho \\
+\beta' &amp;= \beta + v \cdot \rho\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(u\)</span> and <span class="math notranslate nohighlight">\(v\)</span> are the “flow” – the direction and magnitude
+of the gamma parameter change caused by one recombination step.</p>
+<p>To find <span class="math notranslate nohighlight">\(u\)</span> and <span class="math notranslate nohighlight">\(v\)</span>, we express the perturbation
+<span class="math notranslate nohighlight">\((p_{\alpha,\beta} - f_{\alpha,\beta}) / \rho\)</span> as a linear combination
+of the partial derivatives of <span class="math notranslate nohighlight">\(f_{\alpha,\beta}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\frac{p_{\alpha,\beta}(x) - f_{\alpha,\beta}(x)}{\rho} \approx
+u \cdot \frac{\partial f_{\alpha,\beta}(x)}{\partial \alpha}
++ v \cdot \frac{\partial f_{\alpha,\beta}(x)}{\partial \beta}\]</div>
+<p>The partial derivatives of the gamma PDF are derived by differentiating
+<span class="math notranslate nohighlight">\(f_{\alpha,\beta}(x) = \frac{\beta^\alpha}{\Gamma(\alpha)} x^{\alpha-1} e^{-\beta x}\)</span>.
+It is easiest to work with the logarithm first:</p>
+<div class="math notranslate nohighlight">
+\[\log f_{\alpha,\beta}(x) = \alpha \log\beta - \log\Gamma(\alpha)
++ (\alpha - 1)\log x - \beta x\]</div>
+<p><strong>Derivative with respect to</strong> <span class="math notranslate nohighlight">\(\alpha\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial}{\partial \alpha} \log f = \log\beta - \psi(\alpha) + \log x\]</div>
+<p>where <span class="math notranslate nohighlight">\(\psi(\alpha) = \frac{d}{d\alpha} \ln \Gamma(\alpha)\)</span> is the
+<strong>digamma function</strong> – the logarithmic derivative of the gamma function.
+Since <span class="math notranslate nohighlight">\(\frac{\partial f}{\partial \alpha} = f \cdot \frac{\partial \log f}{\partial \alpha}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial f_{\alpha,\beta}(x)}{\partial \alpha}
+= f_{\alpha,\beta}(x) \cdot \left(\log\beta - \psi(\alpha) + \log x\right)\]</div>
+<p><strong>Derivative with respect to</strong> <span class="math notranslate nohighlight">\(\beta\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial}{\partial \beta} \log f = \frac{\alpha}{\beta} - x\]</div>
+<p>since <span class="math notranslate nohighlight">\(\frac{\partial}{\partial \beta}(\alpha\log\beta) = \alpha/\beta\)</span>
+and <span class="math notranslate nohighlight">\(\frac{\partial}{\partial \beta}(-\beta x) = -x\)</span>. Therefore:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial f_{\alpha,\beta}(x)}{\partial \beta}
+= f_{\alpha,\beta}(x) \cdot \left(\frac{\alpha}{\beta} - x\right)\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">digamma</span><span class="p">,</span> <span class="n">gammaln</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">gamma_pdf_partials</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute partial derivatives of the gamma PDF analytically.</span>
+
+<span class="sd">    Returns df/dalpha and df/dbeta at each x.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">log_f</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">-</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+             <span class="o">+</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_f</span><span class="p">)</span>
+    <span class="n">df_dalpha</span> <span class="o">=</span> <span class="n">f</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">-</span> <span class="n">digamma</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">df_dbeta</span> <span class="o">=</span> <span class="n">f</span> <span class="o">*</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">/</span> <span class="n">beta</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df_dalpha</span><span class="p">,</span> <span class="n">df_dbeta</span>
+
+<span class="c1"># Verify against numerical finite differences</span>
+<span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">2.0</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-7</span>
+
+<span class="n">df_da_analytic</span><span class="p">,</span> <span class="n">df_db_analytic</span> <span class="o">=</span> <span class="n">gamma_pdf_partials</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+
+<span class="c1"># Numerical d/dalpha</span>
+<span class="n">f_plus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">alpha</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">-</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+                <span class="o">+</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="n">eps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+<span class="n">f_minus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">alpha</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">-</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span>
+                 <span class="o">+</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="n">eps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+<span class="n">df_da_numerical</span> <span class="o">=</span> <span class="p">(</span><span class="n">f_plus</span> <span class="o">-</span> <span class="n">f_minus</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">eps</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max error in df/dalpha: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">df_da_analytic</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">df_da_numerical</span><span class="p">))</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We solve for <span class="math notranslate nohighlight">\(u, v\)</span> by least squares over a grid of 2,000 values of
+<span class="math notranslate nohighlight">\(x\)</span> covering the main support of <span class="math notranslate nohighlight">\(f_{\alpha,\beta}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\arg\min_{u,v} \sum_{i=1}^{2000}
+\left(
+u \cdot \frac{\partial f_{\alpha,\beta}(x_i)}{\partial \alpha}
++ v \cdot \frac{\partial f_{\alpha,\beta}(x_i)}{\partial \beta}
+- \frac{p_{\alpha,\beta}(x_i) - f_{\alpha,\beta}(x_i)}{\rho}
+\right)^2\]</div>
+<div class="admonition-why-least-squares-and-not-moment-matching admonition">
+<p class="admonition-title">Why least squares and not moment matching?</p>
+<p>Moment matching (equating the mean and variance of <span class="math notranslate nohighlight">\(p_{\alpha,\beta}\)</span>
+to those of <span class="math notranslate nohighlight">\(\text{Gamma}(\alpha', \beta')\)</span>) is another natural
+approach. The PDE/least-squares method is preferred because it minimizes
+the <span class="math notranslate nohighlight">\(L^2\)</span> distance between the true perturbation and its
+gamma approximation over the entire support of the distribution. This
+gives a better fit in the tails, which matters because the tails of the
+TMRCA distribution carry information about extreme coalescence times.</p>
+</div>
+</section>
+<section id="the-closed-form-perturbation">
+<h3>The Closed-Form Perturbation<a class="headerlink" href="#the-closed-form-perturbation" title="Link to this heading"></a></h3>
+<p>The key quantity <span class="math notranslate nohighlight">\((p_{\alpha,\beta}(t) - f_{\alpha,\beta}(t))/\rho\)</span>
+can be evaluated analytically. Starting from the SMC’ transition density and
+integrating against the gamma prior, one obtains (see the full derivation in
+Appendix E of the supplement):</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\frac{p_{\alpha,\beta}(t) - f_{\alpha,\beta}(t)}{\rho} \approx \;
+&amp; e^{-t} \cdot \frac{(\beta t)^\alpha}{\Gamma(\alpha + 1)}
+\left[ M(\alpha, \alpha+1, (\beta - 1)t) - M(\alpha, \alpha+1, -(\beta+1)t) \right] \\
+&amp; + \frac{2t + e^{-2t} - 1}{2} \cdot f_{\alpha,\beta}(t) \\
+&amp; + (1 - e^{-2t}) \cdot \frac{\Gamma(\alpha, \beta t)}{\Gamma(\alpha)} \\
+&amp; - 2t \cdot f_{\alpha,\beta}(t)\end{split}\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(M(a, b, z) = {}_1F_1(a, b, z)\)</span> is <strong>Kummer’s confluent
+hypergeometric function</strong>, a special function that generalizes the
+exponential. It is evaluated using the Arb arbitrary-precision library
+(Johansson, 2017).</p></li>
+<li><p><span class="math notranslate nohighlight">\(\Gamma(\alpha, x) = \int_x^\infty t^{\alpha-1} e^{-t} dt\)</span> is the
+<strong>upper incomplete gamma function</strong>.</p></li>
+</ul>
+<p>The four terms arise from integrating the SMC’ transition density against the
+gamma prior, splitting the integral into three regions (<span class="math notranslate nohighlight">\(s &lt; t\)</span>,
+<span class="math notranslate nohighlight">\(s = t\)</span>, and <span class="math notranslate nohighlight">\(s &gt; t\)</span>):</p>
+<ol class="arabic simple">
+<li><p>The first term covers recombination at <span class="math notranslate nohighlight">\(s &lt; t\)</span> (the detached lineage
+coalesces at a <em>later</em> time).</p></li>
+<li><p>The second term covers the self-coalescence (the lineage re-coalesces onto
+the same branch at <span class="math notranslate nohighlight">\(t = s\)</span>).</p></li>
+<li><p>The third term covers recombination at <span class="math notranslate nohighlight">\(s &gt; t\)</span> (the detached lineage
+coalesces at an <em>earlier</em> time).</p></li>
+<li><p>The fourth term subtracts the no-recombination contribution (which is
+already counted in <span class="math notranslate nohighlight">\(f_{\alpha,\beta}\)</span>).</p></li>
+</ol>
+<div class="admonition-a-critical-property-parameter-independence admonition">
+<p class="admonition-title">A critical property: parameter independence</p>
+<p>The flow <span class="math notranslate nohighlight">\((u, v)\)</span> at each grid point <span class="math notranslate nohighlight">\((\alpha, \beta)\)</span> depends
+only on <span class="math notranslate nohighlight">\(\alpha\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span> – not on <span class="math notranslate nohighlight">\(\theta\)</span>,
+<span class="math notranslate nohighlight">\(\rho\)</span>, or <span class="math notranslate nohighlight">\(N_e\)</span>. This is because the perturbation is
+normalized by <span class="math notranslate nohighlight">\(\rho\)</span>, and the remaining expression involves only the
+gamma distribution parameters and the SMC’ transition kernel (which, for
+constant population size, has no free parameters beyond the time units).</p>
+<p>This parameter independence is what makes Gamma-SMC’s precomputation
+strategy possible: the flow field is computed <strong>once</strong> and reused for any
+dataset with any <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\rho\)</span>.</p>
+</div>
+</section>
+<section id="log-coordinates">
+<h3>Log-Coordinates<a class="headerlink" href="#log-coordinates" title="Link to this heading"></a></h3>
+<p>Working directly with <span class="math notranslate nohighlight">\((\alpha, \beta)\)</span> is numerically inconvenient
+because these parameters span several orders of magnitude. Instead, Gamma-SMC
+uses <strong>log-coordinates</strong> based on the mean and coefficient of variation:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}l_\mu &amp;= \log_{10}\!\left(\frac{\alpha}{\beta}\right) \quad \text{(log-mean)} \\
+l_C &amp;= \log_{10}\!\left(\frac{1}{\sqrt{\alpha}}\right) \quad \text{(log-CV)}\end{split}\]</div>
+<p>The flow field is evaluated over a grid of these coordinates:</p>
+<ul class="simple">
+<li><p>51 values of <span class="math notranslate nohighlight">\(l_\mu\)</span> equally spaced between <span class="math notranslate nohighlight">\(-5\)</span> and <span class="math notranslate nohighlight">\(2\)</span>
+(i.e., log-spaced means from <span class="math notranslate nohighlight">\(10^{-5}\)</span> to <span class="math notranslate nohighlight">\(10^2\)</span> coalescent
+time units)</p></li>
+<li><p>50 values of <span class="math notranslate nohighlight">\(l_C\)</span> equally spaced between <span class="math notranslate nohighlight">\(-2\)</span> and <span class="math notranslate nohighlight">\(0\)</span>
+(CVs from <span class="math notranslate nohighlight">\(10^{-2}\)</span> to <span class="math notranslate nohighlight">\(1\)</span>)</p></li>
+</ul>
+<p>Values with <span class="math notranslate nohighlight">\(C_V &gt; 1\)</span> (<span class="math notranslate nohighlight">\(\alpha &lt; 1\)</span>) are excluded because this
+would give an infinite gamma density at <span class="math notranslate nohighlight">\(x = 0\)</span>, which is unphysical
+for a TMRCA.</p>
+<div class="admonition-why-log-coordinates admonition">
+<p class="admonition-title">Why log-coordinates?</p>
+<p>Log-coordinates serve two purposes. First, they allow the grid to cover
+many orders of magnitude uniformly – a TMRCA could be <span class="math notranslate nohighlight">\(10^{-3}\)</span>
+coalescent units (very recent) or <span class="math notranslate nohighlight">\(10^1\)</span> (very ancient), and
+log-spacing gives equal resolution at all scales. Second, the Taylor
+expansion used for the PDE approach is performed in
+<span class="math notranslate nohighlight">\((\log_{10} \alpha, \log_{10} \beta)\)</span> coordinates, not in
+<span class="math notranslate nohighlight">\((l_\mu, l_C)\)</span> directly. The conversion uses the chain rule:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\Delta l_\mu &amp;= \Delta \log_{10}(\alpha) - \Delta \log_{10}(\beta) \\
+\Delta l_C &amp;= -0.5 \cdot \Delta \log_{10}(\alpha)\end{split}\]</div>
+<p>This avoids issues with the Taylor expansion that would arise from
+working in the <span class="math notranslate nohighlight">\((l_\mu, l_C)\)</span> coordinate system directly.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">to_log_coords</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert (alpha, beta) to log-mean / log-CV coordinates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Shape parameter (must be &gt; 0).</span>
+<span class="sd">    beta : float</span>
+<span class="sd">        Rate parameter (must be &gt; 0).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    l_mu : float</span>
+<span class="sd">        log10(alpha/beta), the log-mean TMRCA.</span>
+<span class="sd">    l_C : float</span>
+<span class="sd">        log10(1/sqrt(alpha)), the log coefficient of variation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">l_mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">alpha</span> <span class="o">/</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="n">l_C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">l_mu</span><span class="p">,</span> <span class="n">l_C</span>
+
+<span class="k">def</span> <span class="nf">from_log_coords</span><span class="p">(</span><span class="n">l_mu</span><span class="p">,</span> <span class="n">l_C</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert log-coordinates back to (alpha, beta).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    l_mu : float</span>
+<span class="sd">        Log-mean coordinate.</span>
+<span class="sd">    l_C : float</span>
+<span class="sd">        Log-CV coordinate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha, beta : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">l_C</span><span class="p">)</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="mf">10.0</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">l_mu</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span>
+
+<span class="c1"># Verify round-trip conversion</span>
+<span class="k">for</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span> <span class="ow">in</span> <span class="p">[(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">)]:</span>
+    <span class="n">l_mu</span><span class="p">,</span> <span class="n">l_C</span> <span class="o">=</span> <span class="n">to_log_coords</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="n">a_back</span><span class="p">,</span> <span class="n">b_back</span> <span class="o">=</span> <span class="n">from_log_coords</span><span class="p">(</span><span class="n">l_mu</span><span class="p">,</span> <span class="n">l_C</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gamma(</span><span class="si">{</span><span class="n">alpha</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">beta</span><span class="si">}</span><span class="s2">) -&gt; (l_mu=</span><span class="si">{</span><span class="n">l_mu</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, l_C=</span><span class="si">{</span><span class="n">l_C</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">) &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;-&gt; Gamma(</span><span class="si">{</span><span class="n">a_back</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">b_back</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="c1"># The prior Gamma(1, 1) maps to (0, 0) in log-coordinates</span>
+<span class="n">l_mu_prior</span><span class="p">,</span> <span class="n">l_C_prior</span> <span class="o">=</span> <span class="n">to_log_coords</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Prior Gamma(1,1): (l_mu, l_C) = (</span><span class="si">{</span><span class="n">l_mu_prior</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">l_C_prior</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="c1"># The grid covers:</span>
+<span class="n">l_mu_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">51</span><span class="p">)</span>
+<span class="n">l_C_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grid: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">l_mu_grid</span><span class="p">)</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">l_C_grid</span><span class="p">)</span><span class="si">}</span><span class="s2"> = &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">l_mu_grid</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">l_C_grid</span><span class="p">)</span><span class="si">}</span><span class="s2"> points&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>The gamma approximation rests on two pillars:</p>
+<ol class="arabic simple">
+<li><p><strong>Emission step</strong> (exact): <span class="math notranslate nohighlight">\(\text{Gamma}(\alpha, \beta) + Y_i
+\to \text{Gamma}(\alpha + Y_i, \beta + \theta)\)</span>. This is Poisson-gamma
+conjugacy – a textbook result that requires no approximation.</p></li>
+<li><p><strong>Transition step</strong> (approximate): <span class="math notranslate nohighlight">\(\text{Gamma}(\alpha, \beta)
+\to \text{Gamma}(\alpha + u \cdot \rho, \beta + v \cdot \rho)\)</span>, where
+<span class="math notranslate nohighlight">\((u, v)\)</span> are determined by least-squares fitting to the true
+perturbation. This requires a one-time precomputation over a
+two-dimensional grid.</p></li>
+</ol>
+<p>Together, these two rules mean that the entire forward pass of the HMM
+reduces to a sequence of arithmetic operations on two numbers
+<span class="math notranslate nohighlight">\((\alpha, \beta)\)</span>. No matrix multiplications, no numerical integration
+during inference, no discretization of time. The cost of one step is
+<span class="math notranslate nohighlight">\(O(1)\)</span>, making the full forward pass <span class="math notranslate nohighlight">\(O(N)\)</span> in the sequence
+length.</p>
+<p>Next: <a class="reference internal" href="flow_field.html#gamma-smc-flow-field"><span class="std std-ref">The Flow Field</span></a> – precomputing the transition machinery
+into a reusable vector field.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of Gamma-SMC" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="flow_field.html" class="btn btn-neutral float-right" title="The Flow Field" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

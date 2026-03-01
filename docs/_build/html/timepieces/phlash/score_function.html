@@ -1,0 +1,790 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Score Function Algorithm &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Stein Variational Gradient Descent (SVGD)" href="svgd_inference.html" />
+    <link rel="prev" title="Random Time Discretization" href="random_discretization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece XIV: PHLASH</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece XIV: PHLASH</a></li>
+      <li class="breadcrumb-item active">The Score Function Algorithm</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="random_discretization.html" class="btn btn-neutral float-left" title="Random Time Discretization" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="svgd_inference.html" class="btn btn-neutral float-right" title="Stein Variational Gradient Descent (SVGD)" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-score-function-algorithm">
+<span id="phlash-score-function"></span><h1>The Score Function Algorithm<a class="headerlink" href="#the-score-function-algorithm" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The gear train: transmitting energy from the mainspring to the hands with minimal loss.</em></p>
+</div></blockquote>
+<p>In a mechanical watch, the <strong>gear train</strong> connects the mainspring (which
+stores energy) to the hands (which display the time). Every tooth must mesh
+precisely: too much friction and the watch runs slow; too loose and the hands
+jump. The gear train does not generate energy or display time – it
+<em>transmits</em> one to the other with maximum efficiency.</p>
+<p>PHLASH’s score function algorithm plays exactly this role. The composite
+likelihood (the mainspring) stores the information in the data. SVGD (the
+hands) needs gradients to update the demographic history. The score function
+algorithm transmits the likelihood’s information to SVGD by computing the
+gradient <span class="math notranslate nohighlight">\(\nabla_\eta \ell(\eta)\)</span> in <span class="math notranslate nohighlight">\(O(LM^2)\)</span> time – 30 to 90
+times faster than the naive approach of running reverse-mode automatic
+differentiation (autodiff) through the forward algorithm.</p>
+<div class="admonition-biology-aside-why-efficient-computation-matters-for-population-genomics admonition">
+<p class="admonition-title">Biology Aside – Why efficient computation matters for population genomics</p>
+<p>Whole-genome sequencing datasets now routinely contain thousands of
+individuals, each with billions of base pairs. The coalescent HMM must
+process this data to extract information about population size history.
+With naive gradient computation, fitting a model to even a handful of
+genomes could take days. The score function algorithm makes this practical
+by computing gradients at essentially the same cost as evaluating the
+likelihood itself. This is what enables PHLASH to jointly use data from
+multiple individuals – extracting more information about demographic
+history than single-genome methods like PSMC.</p>
+</div>
+<section id="why-gradients-matter">
+<h2>Why Gradients Matter<a class="headerlink" href="#why-gradients-matter" title="Link to this heading"></a></h2>
+<p>SVGD updates each particle (candidate demographic history) using the gradient
+of the log-posterior:</p>
+<div class="math notranslate nohighlight">
+\[\nabla_{\boldsymbol{h}} \log p(\boldsymbol{h} \mid \text{data})
+= \nabla_{\boldsymbol{h}} \ell_{\text{comp}}(\boldsymbol{h})
++ \nabla_{\boldsymbol{h}} \log p(\boldsymbol{h})\]</div>
+<p>The prior gradient is cheap (it is a linear function of
+<span class="math notranslate nohighlight">\(\boldsymbol{h}\)</span> for the Gaussian smoothness prior). The expensive part
+is the <strong>likelihood gradient</strong> <span class="math notranslate nohighlight">\(\nabla_{\boldsymbol{h}}
+\ell_{\text{comp}}\)</span>. And the dominant cost within the likelihood gradient is
+the coalescent HMM component, because the forward algorithm processes
+<span class="math notranslate nohighlight">\(L\)</span> genomic positions with an <span class="math notranslate nohighlight">\(M \times M\)</span> transition matrix.</p>
+</section>
+<section id="the-cost-of-naive-autodiff">
+<h2>The Cost of Naive Autodiff<a class="headerlink" href="#the-cost-of-naive-autodiff" title="Link to this heading"></a></h2>
+<p>The forward algorithm for a single HMM with <span class="math notranslate nohighlight">\(L\)</span> observations and
+<span class="math notranslate nohighlight">\(M\)</span> hidden states costs <span class="math notranslate nohighlight">\(O(LM^2)\)</span> in the forward pass (matrix-
+vector multiplication at each position). Reverse-mode automatic
+differentiation (backpropagation) through this computation has the same
+asymptotic complexity, <span class="math notranslate nohighlight">\(O(LM^2)\)</span>, but with a much larger constant
+factor:</p>
+<ul class="simple">
+<li><p><strong>Memory</strong>: autodiff must store all <span class="math notranslate nohighlight">\(L\)</span> intermediate forward vectors
+(or recompute them via checkpointing), requiring <span class="math notranslate nohighlight">\(O(LM)\)</span> memory.</p></li>
+<li><p><strong>Overhead</strong>: each operation in the forward algorithm (multiply, add, log,
+exp) is wrapped in a tape-recording layer that tracks the computation graph.
+This overhead factor is typically 5–20x.</p></li>
+<li><p><strong>Vectorization</strong>: autodiff engines like JAX can JIT-compile the backward
+pass, but the backward pass through a sequential scan (the forward algorithm
+is inherently sequential along the genome) is difficult to parallelize.</p></li>
+</ul>
+<p>In practice, computing the gradient via autodiff takes 30–90x longer than
+computing the likelihood alone. For SVGD, which needs gradients at every
+iteration for every particle, this overhead is the bottleneck.</p>
+</section>
+<section id="the-score-function-idea">
+<h2>The Score Function Idea<a class="headerlink" href="#the-score-function-idea" title="Link to this heading"></a></h2>
+<p>The <strong>score function</strong> of a statistical model is the gradient of the
+log-likelihood with respect to the parameters:</p>
+<div class="math notranslate nohighlight">
+\[s(\eta) = \nabla_\eta \log p(\text{data} \mid \eta)\]</div>
+<p>PHLASH exploits the structure of the HMM to compute this gradient
+<em>analytically</em> within the forward-backward framework, rather than relying on
+generic autodiff. The key insight is that the log-likelihood of an HMM can
+be differentiated in closed form using the <strong>posterior marginals</strong> – the
+same quantities that the forward-backward algorithm already computes.</p>
+</section>
+<section id="deriving-the-score-for-the-coalescent-hmm">
+<h2>Deriving the Score for the Coalescent HMM<a class="headerlink" href="#deriving-the-score-for-the-coalescent-hmm" title="Link to this heading"></a></h2>
+<p>The coalescent HMM log-likelihood for a single pair is:</p>
+<div class="math notranslate nohighlight">
+\[\ell(\eta) = \log p(\mathbf{x} \mid \eta)
+= \log \sum_{\mathbf{z}} p(\mathbf{x}, \mathbf{z} \mid \eta)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbf{x} = (x_1, \ldots, x_L)\)</span> is the observation sequence
+and <span class="math notranslate nohighlight">\(\mathbf{z} = (z_1, \ldots, z_L)\)</span> is the hidden state sequence.</p>
+<p>The gradient with respect to the parameters <span class="math notranslate nohighlight">\(\eta\)</span> can be written using
+the <strong>Fisher identity</strong> (also known as the score function identity):</p>
+<div class="math notranslate nohighlight">
+\[\nabla_\eta \ell(\eta)
+= \sum_{\mathbf{z}} p(\mathbf{z} \mid \mathbf{x}, \eta) \,
+\nabla_\eta \log p(\mathbf{x}, \mathbf{z} \mid \eta)\]</div>
+<p>This says: the gradient of the log-likelihood equals the <strong>posterior
+expectation</strong> of the gradient of the complete-data log-likelihood. The
+complete-data log-likelihood decomposes into a sum over positions:</p>
+<div class="math notranslate nohighlight">
+\[\log p(\mathbf{x}, \mathbf{z} \mid \eta)
+= \log a_0(z_1)
++ \sum_{\ell=2}^{L} \log p_{z_{\ell-1}, z_\ell}
++ \sum_{\ell=1}^{L} \log e_{z_\ell}(x_\ell)\]</div>
+<p>Taking the gradient and the posterior expectation gives:</p>
+<div class="math notranslate nohighlight">
+\[\nabla_\eta \ell(\eta)
+= \sum_k \gamma_1(k) \, \nabla_\eta \log a_0(k)
++ \sum_{\ell=2}^{L} \sum_{k,l} \xi_\ell(k,l) \,
+\nabla_\eta \log p_{kl}
++ \sum_{\ell=1}^{L} \sum_k \gamma_\ell(k) \,
+\nabla_\eta \log e_k(x_\ell)\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\gamma_\ell(k) = p(z_\ell = k \mid \mathbf{x}, \eta)\)</span> is the
+<strong>posterior marginal</strong> at position <span class="math notranslate nohighlight">\(\ell\)</span> – the probability of being
+in state <span class="math notranslate nohighlight">\(k\)</span> at position <span class="math notranslate nohighlight">\(\ell\)</span>, given the data.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\xi_\ell(k,l) = p(z_{\ell-1} = k, z_\ell = l \mid \mathbf{x}, \eta)\)</span>
+is the <strong>posterior pairwise marginal</strong> – the probability of transitioning
+from state <span class="math notranslate nohighlight">\(k\)</span> to state <span class="math notranslate nohighlight">\(l\)</span> between positions <span class="math notranslate nohighlight">\(\ell-1\)</span>
+and <span class="math notranslate nohighlight">\(\ell\)</span>.</p></li>
+</ul>
+<div class="admonition-plain-language-summary-what-math-gamma-and-math-xi-tell-us admonition">
+<p class="admonition-title">Plain-language summary – What <span class="math notranslate nohighlight">\(\gamma\)</span> and <span class="math notranslate nohighlight">\(\xi\)</span> tell us</p>
+<p><span class="math notranslate nohighlight">\(\gamma_\ell(k)\)</span> answers the question: <em>at genomic position</em>
+<span class="math notranslate nohighlight">\(\ell\)</span>, <em>what is the probability that the TMRCA falls in time
+interval</em> <span class="math notranslate nohighlight">\(k\)</span>? This is the same posterior decoding used in PSMC.
+<span class="math notranslate nohighlight">\(\xi_\ell(k, l)\)</span> goes further: it tells us the probability that the
+TMRCA changed from interval <span class="math notranslate nohighlight">\(k\)</span> to interval <span class="math notranslate nohighlight">\(l\)</span> between two
+adjacent positions – i.e., the probability that recombination shifted the
+genealogy. Together, these two quantities summarize everything the data
+says about the hidden genealogy at each position. The score function
+algorithm shows that these are the only quantities needed to compute the
+gradient – no additional backward passes through the computation graph
+are required.</p>
+</div>
+<p>Both <span class="math notranslate nohighlight">\(\gamma\)</span> and <span class="math notranslate nohighlight">\(\xi\)</span> are computed by the standard forward-
+backward algorithm, which PHLASH already runs to evaluate the likelihood.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">hmm_score_function</span><span class="p">(</span><span class="n">observations</span><span class="p">,</span> <span class="n">transition</span><span class="p">,</span> <span class="n">emission</span><span class="p">,</span> <span class="n">initial</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the HMM log-likelihood gradient via the Fisher identity.</span>
+
+<span class="sd">    This implements the score function algorithm: run forward-backward</span>
+<span class="sd">    to get posterior marginals, then use them to weight the parameter</span>
+<span class="sd">    derivatives of the complete-data log-likelihood.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    observations : ndarray, shape (L,)</span>
+<span class="sd">        Integer observation sequence.</span>
+<span class="sd">    transition : ndarray, shape (M, M)</span>
+<span class="sd">        Transition probability matrix p_{kl}.</span>
+<span class="sd">    emission : ndarray, shape (M, n_obs)</span>
+<span class="sd">        Emission probabilities e_k(x).</span>
+<span class="sd">    initial : ndarray, shape (M,)</span>
+<span class="sd">        Initial state distribution.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    log_likelihood : float</span>
+<span class="sd">        The log-likelihood of the observations.</span>
+<span class="sd">    gamma : ndarray, shape (L, M)</span>
+<span class="sd">        Posterior state marginals at each position.</span>
+<span class="sd">    xi_sum : ndarray, shape (M, M)</span>
+<span class="sd">        Summed posterior pairwise marginals (transition counts).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observations</span><span class="p">)</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial</span><span class="p">)</span>
+
+    <span class="c1"># Forward pass (scaled)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">M</span><span class="p">))</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+    <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">initial</span> <span class="o">*</span> <span class="n">emission</span><span class="p">[:,</span> <span class="n">observations</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/=</span> <span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">@</span> <span class="n">transition</span><span class="p">)</span> <span class="o">*</span> <span class="n">emission</span><span class="p">[:,</span> <span class="n">observations</span><span class="p">[</span><span class="n">t</span><span class="p">]]</span>
+        <span class="n">scale</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">/=</span> <span class="n">scale</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+
+    <span class="n">log_likelihood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">scale</span><span class="p">))</span>
+
+    <span class="c1"># Backward pass (scaled)</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">L</span><span class="p">,</span> <span class="n">M</span><span class="p">))</span>
+    <span class="n">beta</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">beta</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">transition</span> <span class="o">@</span> <span class="p">(</span><span class="n">emission</span><span class="p">[:,</span> <span class="n">observations</span><span class="p">[</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">]]</span> <span class="o">*</span> <span class="n">beta</span><span class="p">[</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">beta</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">/=</span> <span class="n">scale</span><span class="p">[</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Posterior marginals gamma_t(k) = alpha_t(k) * beta_t(k)</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">beta</span>
+    <span class="n">gamma</span> <span class="o">/=</span> <span class="n">gamma</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Summed pairwise marginals: xi_sum(k, l) = sum_t xi_t(k, l)</span>
+    <span class="n">xi_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="n">M</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">L</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">xi_t</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">transition</span>
+                <span class="o">*</span> <span class="n">emission</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="n">observations</span><span class="p">[</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">]]</span> <span class="o">*</span> <span class="n">beta</span><span class="p">[</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">xi_t</span> <span class="o">/=</span> <span class="n">xi_t</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">xi_sum</span> <span class="o">+=</span> <span class="n">xi_t</span>
+
+    <span class="k">return</span> <span class="n">log_likelihood</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">xi_sum</span>
+
+<span class="c1"># Demonstrate with a small HMM (2 states, binary observations)</span>
+<span class="n">M</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">transition</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.99</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">],</span>
+                        <span class="p">[</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">]])</span>
+<span class="n">emission</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.999</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">],</span>   <span class="c1"># state 0: mostly hom</span>
+                      <span class="p">[</span><span class="mf">0.95</span><span class="p">,</span>  <span class="mf">0.05</span><span class="p">]])</span>   <span class="c1"># state 1: some hets</span>
+<span class="n">initial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+
+<span class="c1"># Synthetic observation sequence</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">obs</span><span class="p">[</span><span class="mi">50</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="mi">120</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="mi">180</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># three het sites</span>
+
+<span class="n">ll</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">xi_sum</span> <span class="o">=</span> <span class="n">hmm_score_function</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">transition</span><span class="p">,</span> <span class="n">emission</span><span class="p">,</span> <span class="n">initial</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log-likelihood: </span><span class="si">{</span><span class="n">ll</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Posterior at het site (pos 50): &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;state 0 = </span><span class="si">{</span><span class="n">gamma</span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, state 1 = </span><span class="si">{</span><span class="n">gamma</span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Transition counts (sum of xi):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  0-&gt;0: </span><span class="si">{</span><span class="n">xi_sum</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, 0-&gt;1: </span><span class="si">{</span><span class="n">xi_sum</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  1-&gt;0: </span><span class="si">{</span><span class="n">xi_sum</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, 1-&gt;1: </span><span class="si">{</span><span class="n">xi_sum</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="complexity">
+<h2>Complexity<a class="headerlink" href="#complexity" title="Link to this heading"></a></h2>
+<p>The score function algorithm has three stages:</p>
+<ol class="arabic simple">
+<li><p><strong>Forward pass</strong> (<span class="math notranslate nohighlight">\(O(LM^2)\)</span>): compute forward probabilities and the
+log-likelihood.</p></li>
+<li><p><strong>Backward pass</strong> (<span class="math notranslate nohighlight">\(O(LM^2)\)</span>): compute backward probabilities and
+the posterior marginals <span class="math notranslate nohighlight">\(\gamma_\ell(k)\)</span> and <span class="math notranslate nohighlight">\(\xi_\ell(k,l)\)</span>.</p></li>
+<li><p><strong>Gradient accumulation</strong> (<span class="math notranslate nohighlight">\(O(LM^2 + M^2 R)\)</span>): multiply the
+posterior statistics by the parameter derivatives of the transition matrix
+and emission probabilities, and sum over positions. Here <span class="math notranslate nohighlight">\(R\)</span> is the
+number of parameters (the <span class="math notranslate nohighlight">\(M\)</span> population size values
+<span class="math notranslate nohighlight">\(\eta_k\)</span>).</p></li>
+</ol>
+<p>The total cost is <span class="math notranslate nohighlight">\(O(LM^2)\)</span> – the same asymptotic complexity as the
+forward algorithm itself. The constant factor overhead is small: essentially
+one forward pass plus one backward pass plus a matrix-vector product for each
+parameter. In practice, this is <strong>30–90x faster</strong> than reverse-mode autodiff
+through the forward algorithm, because:</p>
+<ul class="simple">
+<li><p>No computation graph is recorded.</p></li>
+<li><p>No memory is needed beyond the forward and backward vectors.</p></li>
+<li><p>The backward pass is just another matrix-vector scan (the same shape as the
+forward pass), not a generic reverse-mode traversal.</p></li>
+</ul>
+<div class="admonition-comparison-to-em admonition">
+<p class="admonition-title">Comparison to EM</p>
+<p>If you have read <a class="reference internal" href="../psmc/hmm_inference.html#psmc-hmm"><span class="std std-ref">The PSMC HMM and EM Algorithm</span></a>, you may notice that the posterior
+statistics <span class="math notranslate nohighlight">\(\gamma\)</span> and <span class="math notranslate nohighlight">\(\xi\)</span> are exactly the quantities
+computed in the E-step of the EM algorithm. In PSMC, these statistics are
+used to form a Q-function that is maximized in closed form (the M-step).
+In PHLASH, the same statistics are used to compute the gradient directly,
+which is then fed to SVGD. The E-step is shared; the difference is what
+happens next. EM maximizes; SVGD explores.</p>
+</div>
+</section>
+<section id="the-sfs-gradient">
+<h2>The SFS Gradient<a class="headerlink" href="#the-sfs-gradient" title="Link to this heading"></a></h2>
+<p>The gradient of the SFS log-likelihood is simpler. Each expected SFS entry
+<span class="math notranslate nohighlight">\(\xi_k(\eta)\)</span> is a known function of the demographic parameters
+(involving expected coalescent branch lengths, which have closed-form
+derivatives for piecewise-constant <span class="math notranslate nohighlight">\(\eta\)</span>). The SFS gradient is:</p>
+<div class="math notranslate nohighlight">
+\[\nabla_\eta \ell_{\text{SFS}}(\eta)
+= \sum_{k=1}^{n-1} \left(
+\frac{D_k}{\xi_k(\eta)} - 1
+\right) \nabla_\eta \xi_k(\eta)\]</div>
+<p>The cost is <span class="math notranslate nohighlight">\(O(n \cdot M)\)</span> where <span class="math notranslate nohighlight">\(n\)</span> is the sample size (number
+of haploid chromosomes) and <span class="math notranslate nohighlight">\(M\)</span> is the number of time intervals. This
+is negligible compared to the HMM gradient.</p>
+</section>
+<section id="total-gradient">
+<h2>Total Gradient<a class="headerlink" href="#total-gradient" title="Link to this heading"></a></h2>
+<p>The complete gradient of the composite log-posterior is:</p>
+<div class="math notranslate nohighlight">
+\[\nabla_{\boldsymbol{h}} \log p(\boldsymbol{h} \mid \text{data})
+= \nabla_{\boldsymbol{h}} \ell_{\text{SFS}}
++ \sum_{p=1}^{P} \nabla_{\boldsymbol{h}} \ell_{\text{HMM}}^{(p)}
++ \nabla_{\boldsymbol{h}} \log p(\boldsymbol{h})\]</div>
+<p>Each HMM gradient is computed independently (the pairs are independent given
+<span class="math notranslate nohighlight">\(\eta\)</span>), making the computation embarrassingly parallel across pairs.
+On a GPU, all pairs can be processed simultaneously.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">total_gradient</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">observed_sfs</span><span class="p">,</span> <span class="n">expected_sfs</span><span class="p">,</span> <span class="n">hmm_scores</span><span class="p">,</span>
+                   <span class="n">sigma_prior</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the total gradient of the log-posterior.</span>
+
+<span class="sd">    Combines the SFS gradient, summed HMM score functions, and the</span>
+<span class="sd">    smoothness prior gradient.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h : ndarray, shape (M,)</span>
+<span class="sd">        Log population sizes.</span>
+<span class="sd">    observed_sfs : ndarray</span>
+<span class="sd">        Observed SFS.</span>
+<span class="sd">    expected_sfs : ndarray</span>
+<span class="sd">        Expected SFS under current h.</span>
+<span class="sd">    hmm_scores : list of ndarray, each shape (M,)</span>
+<span class="sd">        Score function (gradient) from each pairwise HMM.</span>
+<span class="sd">    sigma_prior : float</span>
+<span class="sd">        Smoothness prior scale.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grad : ndarray, shape (M,)</span>
+<span class="sd">        Gradient of the composite log-posterior.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+    <span class="c1"># SFS gradient: sum_k (D_k / xi_k - 1) * d(xi_k)/d(h)</span>
+    <span class="c1"># Simplified: for constant-size model, d(xi_k)/d(h) ~ xi_k</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">expected_sfs</span><span class="p">,</span> <span class="mf">1e-300</span><span class="p">)</span>
+    <span class="n">grad_sfs_weights</span> <span class="o">=</span> <span class="n">observed_sfs</span> <span class="o">/</span> <span class="n">xi</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># per-frequency weights</span>
+    <span class="c1"># In practice, d(xi_k)/d(h_j) depends on the branch length derivatives</span>
+    <span class="n">grad_sfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>  <span class="c1"># placeholder for full implementation</span>
+
+    <span class="c1"># HMM gradient: sum over pairs</span>
+    <span class="n">grad_hmm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hmm_scores</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Prior gradient: d/dh [-0.5 * sum((h_j - h_{j-1})^2) / sigma^2]</span>
+    <span class="n">grad_prior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+        <span class="n">grad_prior</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">h</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">/</span> <span class="n">sigma_prior</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">grad_prior</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">h</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">sigma_prior</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="k">return</span> <span class="n">grad_sfs</span> <span class="o">+</span> <span class="n">grad_hmm</span> <span class="o">+</span> <span class="n">grad_prior</span>
+
+<span class="c1"># Demonstrate</span>
+<span class="n">M</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<span class="n">h</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span>  <span class="c1"># mild bottleneck</span>
+<span class="c1"># Simulate HMM score functions from 5 pairs</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">hmm_scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">M</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+<span class="n">xi_expected</span> <span class="o">=</span> <span class="n">expected_sfs_constant</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">)</span>
+<span class="n">grad</span> <span class="o">=</span> <span class="n">total_gradient</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">D_observed</span><span class="p">,</span> <span class="n">xi_expected</span><span class="p">,</span> <span class="n">hmm_scores</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gradient norm: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">grad</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gradient at bottleneck (interval 15): </span><span class="si">{</span><span class="n">grad</span><span class="p">[</span><span class="mi">15</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gradient at constant (interval 5):    </span><span class="si">{</span><span class="n">grad</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="what-comes-next">
+<h2>What Comes Next<a class="headerlink" href="#what-comes-next" title="Link to this heading"></a></h2>
+<p>With the gradient in hand, we have everything needed for posterior sampling.
+The <a class="reference internal" href="svgd_inference.html#phlash-svgd"><span class="std std-ref">next chapter</span></a> introduces Stein Variational Gradient
+Descent – the algorithm that uses these gradients to push a set of particles
+toward the posterior distribution over demographic histories. SVGD is the
+winding mechanism: it converts gradient energy into the organized motion of
+particles converging on the posterior.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="random_discretization.html" class="btn btn-neutral float-left" title="Random Time Discretization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="svgd_inference.html" class="btn btn-neutral float-right" title="Stein Variational Gradient Descent (SVGD)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

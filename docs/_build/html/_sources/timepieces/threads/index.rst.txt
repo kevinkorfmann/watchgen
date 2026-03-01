@@ -23,6 +23,10 @@ the single most likely threading path for each haplotype using a three-step
 pipeline: pre-filter candidate matches, run a memory-efficient Viterbi
 algorithm, and date the resulting segments.
 
+.. admonition:: Primary Reference
+
+   :cite:`threads`
+
 The three gears of Threads:
 
 1. **PBWT Haplotype Matching** (the pre-filter) -- Uses the positional
@@ -112,3 +116,4 @@ Chapters
    pbwt_matching
    viterbi
    dating
+   demo

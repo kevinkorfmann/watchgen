@@ -13,7 +13,7 @@ get numbers, and publish papers -- but ask them to explain what happens inside t
 black box, and you'll get a shrug or a hand-wave toward a 40-page supplement.
 
 This isn't anyone's fault. The methods *are* complex. The math *is* deep. The
-implementations *are* thousands of lines of optimized C++. It's rational to treat
+implementations *are* thousands of lines of optimized code. It's rational to treat
 them as black boxes.
 
 But it's also dangerous.
@@ -217,8 +217,8 @@ It won't be easy. But neither is watchmaking. The reward, in both cases, is the
 same: the profound satisfaction of understanding a complex mechanism so completely
 that you could build it again from memory.
 
-When you're done, you'll own the knowledge completely. No black boxes. No hand-waving.
-No mystery. Just gears you built yourself, ticking reliably, because you understand
-every one.
+When you're done, you'll own the knowledge completely -- no black boxes, no
+hand-waving, no mystery, just gears you built yourself, ticking reliably,
+because you understand every one.
 
 *Let's open the case and get to work.*

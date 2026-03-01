@@ -1,0 +1,1342 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Diffusion Approximation &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ordinary Differential Equations" href="odes.html" />
+    <link rel="prev" title="The Sequentially Markov Coalescent" href="smc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The Workbench (Prerequisites)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../timepieces/index.html">Timepieces</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../timepieces/index.html#verification-status">Verification Status</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/slim/index.html">Timepiece XVI: SLiM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/slim/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/slim/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../timepieces/discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../timepieces/discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The Workbench (Prerequisites)</a></li>
+      <li class="breadcrumb-item active">The Diffusion Approximation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="smc.html" class="btn btn-neutral float-left" title="The Sequentially Markov Coalescent" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="odes.html" class="btn btn-neutral float-right" title="Ordinary Differential Equations" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-diffusion-approximation">
+<span id="diffusion-approximation"></span><h1>The Diffusion Approximation<a class="headerlink" href="#the-diffusion-approximation" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>“When the gear teeth are fine enough, the ticking becomes a smooth sweep.”</em></p>
+</div></blockquote>
+<section id="the-big-idea">
+<h2>The Big Idea<a class="headerlink" href="#the-big-idea" title="Link to this heading"></a></h2>
+<p>In the <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter, we built the Wright-Fisher model: a
+discrete population of <span class="math notranslate nohighlight">\(2N\)</span> gene copies, evolving in discrete generations,
+where allele frequencies jump around in integer multiples of <span class="math notranslate nohighlight">\(1/(2N)\)</span>. This
+model is exact, but when <span class="math notranslate nohighlight">\(N\)</span> is large, the jumps are tiny, the generations
+are many, and keeping track of individual ticks becomes both unnecessary and
+computationally expensive.</p>
+<p>The <strong>diffusion approximation</strong> replaces this discrete gear train with a smooth
+sweep. Instead of tracking allele frequencies that hop in discrete steps of
+<span class="math notranslate nohighlight">\(1/(2N)\)</span>, we model frequency as a <strong>continuous</strong> variable <span class="math notranslate nohighlight">\(x \in [0,1]\)</span>
+that drifts and fluctuates according to a <strong>stochastic differential equation</strong> (SDE).
+Instead of counting individual generations, we let time flow continuously. The
+result is a mathematical framework – partial differential equations, stationary
+distributions, numerical grids – that is both more elegant and more powerful than
+the discrete model it replaces.</p>
+<p>Think of a mechanical watch. A quartz watch ticks 32,768 times per second – far
+too fast for the eye to resolve. The second hand appears to sweep smoothly, even
+though the underlying mechanism is discrete. The diffusion approximation does the
+same thing for population genetics: when <span class="math notranslate nohighlight">\(N\)</span> is in the thousands or millions,
+the discrete ticks of the Wright-Fisher model blur into a continuous flow, and we
+gain access to the entire toolkit of calculus – derivatives, integrals, partial
+differential equations – to describe what happens.</p>
+<p>This chapter builds the diffusion machinery from the ground up. We start with the
+Wright-Fisher model you already know, derive the continuous limit, and arrive at
+the <strong>Fokker-Planck equation</strong> – the PDE at the heart of tools like
+<a class="reference internal" href="../timepieces/dadi/index.html#dadi-timepiece"><span class="std std-ref">dadi</span></a>. We then solve it numerically, connect it to the site
+frequency spectrum, and preview how <a class="reference internal" href="../timepieces/moments/index.html#moments-timepiece"><span class="std std-ref">moments</span></a> sidesteps
+the PDE entirely.</p>
+</section>
+<section id="from-wright-fisher-to-continuous-frequency">
+<h2>From Wright-Fisher to Continuous Frequency<a class="headerlink" href="#from-wright-fisher-to-continuous-frequency" title="Link to this heading"></a></h2>
+<p>Let us begin where the <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter left off: the Wright-Fisher
+model. Consider a single biallelic locus in a diploid population of size <span class="math notranslate nohighlight">\(N\)</span>.
+There are <span class="math notranslate nohighlight">\(2N\)</span> gene copies, and the allele frequency <span class="math notranslate nohighlight">\(X\)</span> is the fraction
+of copies that carry the derived allele. In one generation, the number of derived
+copies in the next generation is drawn from a binomial distribution:</p>
+<div class="math notranslate nohighlight">
+\[X' \sim \frac{1}{2N}\text{Binom}(2N, x)\]</div>
+<p>where <span class="math notranslate nohighlight">\(x\)</span> is the current allele frequency. The change in frequency is
+<span class="math notranslate nohighlight">\(\Delta x = X' - x\)</span>.</p>
+<section id="mean-and-variance-of-delta-x">
+<h3>Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span><a class="headerlink" href="#mean-and-variance-of-delta-x" title="Link to this heading"></a></h3>
+<p>Under neutrality (no selection, no mutation, no migration), the mean change in
+allele frequency is zero:</p>
+<div class="math notranslate nohighlight">
+\[\mathbb{E}[\Delta x] = 0\]</div>
+<p>This follows because <span class="math notranslate nohighlight">\(\mathbb{E}[X'] = x\)</span> for a binomial with success
+probability <span class="math notranslate nohighlight">\(x\)</span>. Allele frequency has no preferred direction – it is a
+<strong>martingale</strong>.</p>
+<p>The variance of the change is:</p>
+<div class="math notranslate nohighlight">
+\[\text{Var}(\Delta x) = \frac{x(1-x)}{2N}\]</div>
+<p>This comes from the binomial variance: <span class="math notranslate nohighlight">\(\text{Var}(\text{Binom}(2N,x)) =
+2N \cdot x(1-x)\)</span>, and dividing by <span class="math notranslate nohighlight">\((2N)^2\)</span> to convert from counts to
+frequencies. Notice that the variance is largest when <span class="math notranslate nohighlight">\(x = 1/2\)</span> (maximum
+uncertainty) and vanishes at <span class="math notranslate nohighlight">\(x = 0\)</span> or <span class="math notranslate nohighlight">\(x = 1\)</span> (fixed alleles
+cannot drift).</p>
+<div class="admonition-probability-aside-binomial-variance admonition">
+<p class="admonition-title">Probability Aside – Binomial variance</p>
+<p>If <span class="math notranslate nohighlight">\(Y \sim \text{Binom}(n, p)\)</span>, then <span class="math notranslate nohighlight">\(\text{Var}(Y) = np(1-p)\)</span>.
+The frequency <span class="math notranslate nohighlight">\(X' = Y/(2N)\)</span> therefore has variance
+<span class="math notranslate nohighlight">\(\text{Var}(X') = \text{Var}(Y)/(2N)^2 = p(1-p)/(2N)\)</span>. Since
+<span class="math notranslate nohighlight">\(\Delta x = X' - x\)</span> and <span class="math notranslate nohighlight">\(x\)</span> is a constant (conditioning on the
+current generation), <span class="math notranslate nohighlight">\(\text{Var}(\Delta x) = \text{Var}(X') = x(1-x)/(2N)\)</span>.</p>
+</div>
+</section>
+<section id="the-diffusion-timescale">
+<h3>The diffusion timescale<a class="headerlink" href="#the-diffusion-timescale" title="Link to this heading"></a></h3>
+<p>The variance <span class="math notranslate nohighlight">\(x(1-x)/(2N)\)</span> is tiny when <span class="math notranslate nohighlight">\(N\)</span> is large: meaningful
+changes in allele frequency accumulate only over many generations. To obtain a
+useful continuous-time limit, we rescale time by defining:</p>
+<div class="math notranslate nohighlight">
+\[\tau = \frac{t}{2N}\]</div>
+<p>where <span class="math notranslate nohighlight">\(t\)</span> counts discrete generations and <span class="math notranslate nohighlight">\(\tau\)</span> is <strong>diffusion time</strong>
+(the same coalescent time units from the <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a> chapter). In one
+unit of diffusion time, <span class="math notranslate nohighlight">\(2N\)</span> generations pass, and the variance of the
+accumulated frequency change is:</p>
+<div class="math notranslate nohighlight">
+\[\text{Var}\left(\sum_{i=1}^{2N} \Delta x_i\right) \approx 2N \cdot \frac{x(1-x)}{2N} = x(1-x)\]</div>
+<p>The factor of <span class="math notranslate nohighlight">\(2N\)</span> from summing independent increments cancels the
+<span class="math notranslate nohighlight">\(1/(2N)\)</span> in each increment’s variance, leaving a variance of order 1 in
+diffusion time – exactly what we need for a nontrivial continuous limit.</p>
+</section>
+<section id="code-wf-trajectories-converging-to-sde-paths">
+<h3>Code: WF trajectories converging to SDE paths<a class="headerlink" href="#code-wf-trajectories-converging-to-sde-paths" title="Link to this heading"></a></h3>
+<p>Let us see this convergence in action. As <span class="math notranslate nohighlight">\(N\)</span> grows, discrete Wright-Fisher
+trajectories increasingly resemble continuous diffusion paths.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">wright_fisher_trajectory</span><span class="p">(</span><span class="n">two_N</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">n_generations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate a Wright-Fisher allele frequency trajectory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    two_N : int</span>
+<span class="sd">        Total number of gene copies (2N).</span>
+<span class="sd">    x0 : float</span>
+<span class="sd">        Initial allele frequency.</span>
+<span class="sd">    n_generations : int</span>
+<span class="sd">        Number of generations to simulate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    freqs : ndarray of shape (n_generations + 1,)</span>
+<span class="sd">        Allele frequency at each generation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_generations</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">x0</span>
+    <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_generations</span><span class="p">):</span>
+        <span class="c1"># np.random.binomial(n, p) draws one sample from Binom(n, p).</span>
+        <span class="c1"># We divide by two_N to convert counts to frequency.</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">two_N</span><span class="p">,</span> <span class="n">freqs</span><span class="p">[</span><span class="n">g</span><span class="p">])</span>
+        <span class="n">freqs</span><span class="p">[</span><span class="n">g</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span> <span class="o">/</span> <span class="n">two_N</span>
+    <span class="k">return</span> <span class="n">freqs</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="c1"># Simulate for different population sizes, all for 1 diffusion time unit</span>
+<span class="n">x0</span> <span class="o">=</span> <span class="mf">0.3</span>
+<span class="k">for</span> <span class="n">two_N</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">2000</span><span class="p">]:</span>
+    <span class="n">n_gen</span> <span class="o">=</span> <span class="n">two_N</span>  <span class="c1"># 1 unit of diffusion time = 2N generations</span>
+    <span class="n">traj</span> <span class="o">=</span> <span class="n">wright_fisher_trajectory</span><span class="p">(</span><span class="n">two_N</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">n_gen</span><span class="p">)</span>
+    <span class="c1"># Convert generations to diffusion time</span>
+    <span class="n">diffusion_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_gen</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">two_N</span>
+    <span class="n">final_freq</span> <span class="o">=</span> <span class="n">traj</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">step_size</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">two_N</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;2N=</span><span class="si">{</span><span class="n">two_N</span><span class="si">:</span><span class="s2">5d</span><span class="si">}</span><span class="s2">: final freq=</span><span class="si">{</span><span class="n">final_freq</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;step size=</span><span class="si">{</span><span class="n">step_size</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, &quot;</span>
+          <span class="sa">f</span><span class="s2">&quot;num steps=</span><span class="si">{</span><span class="n">n_gen</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Verification: variance of frequency change per diffusion time unit</span>
+<span class="c1"># should approach x(1-x)</span>
+<span class="n">two_N</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">n_replicates</span> <span class="o">=</span> <span class="mi">20000</span>
+<span class="n">changes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_replicates</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">rep</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_replicates</span><span class="p">):</span>
+    <span class="n">traj</span> <span class="o">=</span> <span class="n">wright_fisher_trajectory</span><span class="p">(</span><span class="n">two_N</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">two_N</span><span class="p">)</span>
+    <span class="n">changes</span><span class="p">[</span><span class="n">rep</span><span class="p">]</span> <span class="o">=</span> <span class="n">traj</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">traj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Variance of Delta x over 1 diffusion time unit:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Simulated: </span><span class="si">{</span><span class="n">changes</span><span class="o">.</span><span class="n">var</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Theory x(1-x) = </span><span class="si">{</span><span class="n">x0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x0</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="stochastic-differential-equations">
+<h2>Stochastic Differential Equations<a class="headerlink" href="#stochastic-differential-equations" title="Link to this heading"></a></h2>
+<p>The continuous-time limit of the Wright-Fisher model is a <strong>stochastic
+differential equation</strong> (SDE). In the simplest neutral case:</p>
+<div class="math notranslate nohighlight">
+\[dx = \sqrt{x(1-x)} \, dW\]</div>
+<p>where <span class="math notranslate nohighlight">\(dW\)</span> is the increment of a <strong>Wiener process</strong> (Brownian motion). This
+is the <strong>Wright-Fisher diffusion</strong>. The square root term <span class="math notranslate nohighlight">\(\sqrt{x(1-x)}\)</span>
+ensures that drift vanishes at the boundaries <span class="math notranslate nohighlight">\(x = 0\)</span> and <span class="math notranslate nohighlight">\(x = 1\)</span>,
+just as in the discrete model.</p>
+<div class="admonition-probability-aside-what-is-a-wiener-process admonition">
+<p class="admonition-title">Probability Aside – What is a Wiener process?</p>
+<p>A <strong>Wiener process</strong> (also called <strong>Brownian motion</strong>) <span class="math notranslate nohighlight">\(W(t)\)</span> is the
+most fundamental continuous-time random process. Its key properties are:</p>
+<ol class="arabic simple">
+<li><p><span class="math notranslate nohighlight">\(W(0) = 0\)</span></p></li>
+<li><p>Increments <span class="math notranslate nohighlight">\(W(t+s) - W(t) \sim \text{Normal}(0, s)\)</span> – the change
+over an interval of length <span class="math notranslate nohighlight">\(s\)</span> is normally distributed with mean 0
+and variance <span class="math notranslate nohighlight">\(s\)</span></p></li>
+<li><p>Increments over non-overlapping intervals are independent</p></li>
+<li><p>Paths are continuous (no jumps)</p></li>
+</ol>
+<p>The Wiener process is the continuous analogue of a random walk: at each
+infinitesimal instant, it takes a tiny random step. The cumulative effect of
+infinitely many infinitesimal steps produces a continuous but extremely
+jagged path – differentiable nowhere, yet continuous everywhere.</p>
+<p>In our SDE, <span class="math notranslate nohighlight">\(dW\)</span> represents an infinitesimal “kick” of size
+<span class="math notranslate nohighlight">\(\sqrt{dt}\)</span>. Multiplying by <span class="math notranslate nohighlight">\(\sqrt{x(1-x)}\)</span> scales this kick
+by the local volatility of allele frequency.</p>
+</div>
+<p>More generally, with selection, mutation, and migration, the SDE takes the form:</p>
+<div class="math notranslate nohighlight">
+\[dx = \underbrace{\mu(x)}_{\text{drift}} \, dt + \underbrace{\sigma(x)}_{\text{diffusion}} \, dW\]</div>
+<p>where the <strong>drift coefficient</strong> <span class="math notranslate nohighlight">\(\mu(x)\)</span> and <strong>diffusion coefficient</strong>
+<span class="math notranslate nohighlight">\(\sigma(x)\)</span> encode the different evolutionary forces:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mu(x) &amp;= \underbrace{\frac{s}{2} x(1-x)}_{\text{selection}} +
+           \underbrace{\theta_1(1-x) - \theta_2 x}_{\text{mutation}} +
+           \underbrace{m(x_{\text{source}} - x)}_{\text{migration}} \\
+\sigma(x) &amp;= \sqrt{x(1-x)}\end{split}\]</div>
+<p>Here <span class="math notranslate nohighlight">\(s\)</span> is the selection coefficient (positive favors the derived allele),
+<span class="math notranslate nohighlight">\(\theta_1\)</span> and <span class="math notranslate nohighlight">\(\theta_2\)</span> are forward and backward mutation rates
+scaled by <span class="math notranslate nohighlight">\(2N\)</span>, <span class="math notranslate nohighlight">\(m\)</span> is the migration rate, and <span class="math notranslate nohighlight">\(x_{\text{source}}\)</span>
+is the frequency in the source population. The diffusion coefficient
+<span class="math notranslate nohighlight">\(\sigma^2(x) = x(1-x)\)</span> captures <strong>genetic drift</strong> and is always the same
+regardless of selection or mutation.</p>
+<section id="euler-maruyama-simulation">
+<h3>Euler-Maruyama simulation<a class="headerlink" href="#euler-maruyama-simulation" title="Link to this heading"></a></h3>
+<p>The <strong>Euler-Maruyama method</strong> is the simplest way to simulate an SDE. It replaces
+the continuous increments with discrete steps of size <span class="math notranslate nohighlight">\(\Delta t\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[x_{n+1} = x_n + \mu(x_n)\Delta t + \sigma(x_n) \sqrt{\Delta t} \, Z_n\]</div>
+<p>where <span class="math notranslate nohighlight">\(Z_n \sim \text{Normal}(0, 1)\)</span> are independent standard normal random
+variables.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">euler_maruyama</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">mu_func</span><span class="p">,</span> <span class="n">sigma_func</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate an SDE using the Euler-Maruyama method.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x0 : float</span>
+<span class="sd">        Initial condition.</span>
+<span class="sd">    mu_func : callable</span>
+<span class="sd">        Drift coefficient mu(x).</span>
+<span class="sd">    sigma_func : callable</span>
+<span class="sd">        Diffusion coefficient sigma(x).</span>
+<span class="sd">    T : float</span>
+<span class="sd">        Total time to simulate (in diffusion time units).</span>
+<span class="sd">    n_steps : int</span>
+<span class="sd">        Number of discrete time steps.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    times : ndarray of shape (n_steps + 1,)</span>
+<span class="sd">        Time points.</span>
+<span class="sd">    x : ndarray of shape (n_steps + 1,)</span>
+<span class="sd">        Simulated trajectory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">T</span> <span class="o">/</span> <span class="n">n_steps</span>
+    <span class="n">sqrt_dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">n_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">x0</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+        <span class="c1"># np.random.randn() draws one sample from Normal(0, 1)</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">mu_func</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">+</span> <span class="n">sigma_func</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="o">*</span> <span class="n">sqrt_dt</span> <span class="o">*</span> <span class="n">Z</span>
+        <span class="c1"># Reflect at boundaries to keep x in [0, 1]</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">times</span><span class="p">,</span> <span class="n">x</span>
+
+<span class="c1"># Neutral diffusion: mu(x) = 0, sigma(x) = sqrt(x(1-x))</span>
+<span class="n">mu_neutral</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.0</span>
+<span class="n">sigma_drift</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">))</span>
+
+<span class="c1"># Selection: mu(x) = (s/2)*x*(1-x), sigma(x) = sqrt(x(1-x))</span>
+<span class="n">s_coeff</span> <span class="o">=</span> <span class="mf">5.0</span>  <span class="c1"># strong positive selection (scaled by 2N)</span>
+<span class="n">mu_selection</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">s_coeff</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="c1"># Compare neutral vs selected trajectories</span>
+<span class="n">T</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="n">n_steps</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">x_neutral</span> <span class="o">=</span> <span class="n">euler_maruyama</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">mu_neutral</span><span class="p">,</span> <span class="n">sigma_drift</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">)</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">x_selected</span> <span class="o">=</span> <span class="n">euler_maruyama</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">mu_selection</span><span class="p">,</span> <span class="n">sigma_drift</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Neutral:  start=</span><span class="si">{</span><span class="mf">0.1</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, end=</span><span class="si">{</span><span class="n">x_neutral</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selected: start=</span><span class="si">{</span><span class="mf">0.1</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, end=</span><span class="si">{</span><span class="n">x_selected</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(Selection pushes frequency upward)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="from-sdes-to-pdes-the-fokker-planck-equation">
+<h2>From SDEs to PDEs: The Fokker-Planck Equation<a class="headerlink" href="#from-sdes-to-pdes-the-fokker-planck-equation" title="Link to this heading"></a></h2>
+<p>The SDE describes a single trajectory – one realization of the random process.
+But in population genetics, we rarely care about a single trajectory. We want to
+know the <strong>distribution</strong> of allele frequencies across many independent loci or
+many replicate populations. This distribution is described by a density function
+<span class="math notranslate nohighlight">\(\phi(x, t)\)</span>, where <span class="math notranslate nohighlight">\(\phi(x, t) dx\)</span> is the probability of finding an
+allele at frequency between <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(x + dx\)</span> at time <span class="math notranslate nohighlight">\(t\)</span>.</p>
+<p>The equation governing <span class="math notranslate nohighlight">\(\phi(x, t)\)</span> is the <strong>Fokker-Planck equation</strong> (also
+called the <strong>Kolmogorov forward equation</strong>):</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial \phi}{\partial t} =
+\frac{1}{2}\frac{\partial^2}{\partial x^2}\left[\sigma^2(x)\phi\right]
+- \frac{\partial}{\partial x}\left[\mu(x)\phi\right]\]</div>
+<p>This is a <strong>partial differential equation</strong> (PDE) – and it is the mathematical
+heart of the diffusion approximation.</p>
+<div class="admonition-calculus-aside-what-is-a-partial-differential-equation admonition">
+<p class="admonition-title">Calculus Aside – What is a partial differential equation?</p>
+<p>An <strong>ordinary differential equation</strong> (ODE) involves a function of a single
+variable and its derivatives. For example, <span class="math notranslate nohighlight">\(dy/dt = -ky\)</span> describes
+exponential decay, where <span class="math notranslate nohighlight">\(y\)</span> depends only on <span class="math notranslate nohighlight">\(t\)</span>.</p>
+<p>A <strong>partial differential equation</strong> (PDE) involves a function of <strong>multiple</strong>
+variables and its partial derivatives. Here, <span class="math notranslate nohighlight">\(\phi(x, t)\)</span> depends on
+two variables: the allele frequency <span class="math notranslate nohighlight">\(x\)</span> and time <span class="math notranslate nohighlight">\(t\)</span>. The symbol
+<span class="math notranslate nohighlight">\(\partial \phi / \partial t\)</span> means “the rate of change of <span class="math notranslate nohighlight">\(\phi\)</span>
+with respect to time, holding <span class="math notranslate nohighlight">\(x\)</span> fixed.” Similarly,
+<span class="math notranslate nohighlight">\(\partial \phi / \partial x\)</span> means “the rate of change with respect to
+frequency, holding <span class="math notranslate nohighlight">\(t\)</span> fixed.”</p>
+<p>PDEs are harder than ODEs because the solution is a surface (a function of
+two variables) rather than a curve (a function of one variable). But they
+arise naturally whenever a quantity depends on both space and time – as allele
+frequency density <span class="math notranslate nohighlight">\(\phi(x, t)\)</span> does.</p>
+</div>
+<section id="the-two-terms-diffusion-and-advection">
+<h3>The two terms: diffusion and advection<a class="headerlink" href="#the-two-terms-diffusion-and-advection" title="Link to this heading"></a></h3>
+<p>The Fokker-Planck equation has two terms, each with a clear biological meaning:</p>
+<ol class="arabic">
+<li><p><strong>The diffusion term</strong> (second-order derivative):</p>
+<div class="math notranslate nohighlight">
+\[\frac{1}{2}\frac{\partial^2}{\partial x^2}\left[\sigma^2(x)\phi\right]\]</div>
+<p>This term captures <strong>genetic drift</strong> – the random fluctuations in allele
+frequency due to finite population size. The second derivative acts as a
+“spreading” operator: it takes a concentration of probability at one frequency
+and spreads it out to neighboring frequencies. The coefficient
+<span class="math notranslate nohighlight">\(\sigma^2(x) = x(1-x)\)</span> ensures that drift is strongest at intermediate
+frequencies and vanishes at the boundaries.</p>
+</li>
+<li><p><strong>The advection term</strong> (first-order derivative):</p>
+<div class="math notranslate nohighlight">
+\[-\frac{\partial}{\partial x}\left[\mu(x)\phi\right]\]</div>
+<p>This term captures <strong>directional forces</strong> – selection, mutation, migration.
+The first derivative acts as a “transport” operator: it moves probability
+density in the direction specified by <span class="math notranslate nohighlight">\(\mu(x)\)</span>. Under positive selection
+(<span class="math notranslate nohighlight">\(\mu(x) &gt; 0\)</span> for <span class="math notranslate nohighlight">\(x \in (0,1)\)</span>), probability mass is transported
+toward higher frequencies. Under mutation pressure, mass flows from the
+boundaries toward the interior.</p>
+</li>
+</ol>
+<div class="admonition-calculus-aside-why-second-order-for-drift-and-first-order-for-selection admonition">
+<p class="admonition-title">Calculus Aside – Why second-order for drift and first-order for selection?</p>
+<p>This asymmetry reflects a fundamental difference in the nature of the two
+forces:</p>
+<p><strong>Drift is symmetric</strong>: at any frequency <span class="math notranslate nohighlight">\(x\)</span>, genetic drift is equally
+likely to push the frequency up or down. Symmetric random perturbations spread
+out a distribution – they increase its variance without changing its mean.
+Mathematically, spreading is captured by the second derivative. (Think of the
+heat equation <span class="math notranslate nohighlight">\(\partial u/\partial t = D \, \partial^2 u / \partial x^2\)</span>,
+which describes how heat diffuses from hot regions to cold regions.)</p>
+<p><strong>Selection is directional</strong>: selection pushes allele frequency systematically
+in one direction (toward fixation for beneficial alleles, toward loss for
+deleterious ones). Directional transport of a density is captured by the first
+derivative. (Think of the transport equation
+<span class="math notranslate nohighlight">\(\partial u/\partial t + v \, \partial u / \partial x = 0\)</span>, which
+describes how a quantity is carried along by a flow with velocity <span class="math notranslate nohighlight">\(v\)</span>.)</p>
+<p>The Fokker-Planck equation combines both effects: drift spreads the
+distribution (second-order term) while selection shifts it (first-order term).</p>
+</div>
+<p>For the neutral Wright-Fisher diffusion with <span class="math notranslate nohighlight">\(\mu(x) = 0\)</span> and
+<span class="math notranslate nohighlight">\(\sigma^2(x) = x(1-x)\)</span>, the Fokker-Planck equation simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial \phi}{\partial t} =
+\frac{1}{2}\frac{\partial^2}{\partial x^2}\left[x(1-x)\phi\right]\]</div>
+<p>With selection (<span class="math notranslate nohighlight">\(\mu(x) = \frac{s}{2}x(1-x)\)</span>) and reversible mutation
+(<span class="math notranslate nohighlight">\(\mu(x) = \frac{\theta_1}{2}(1-x) - \frac{\theta_2}{2}x + \frac{s}{2}x(1-x)\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial \phi}{\partial t} =
+\frac{1}{2}\frac{\partial^2}{\partial x^2}\left[x(1-x)\phi\right]
+- \frac{\partial}{\partial x}\left[\left(\frac{\theta_1}{2}(1-x)
+- \frac{\theta_2}{2}x + \frac{s}{2}x(1-x)\right)\phi\right]\]</div>
+<p>Each evolutionary force is a separate, additive term in the PDE. This modularity
+is one of the great strengths of the diffusion framework: to add a new force,
+simply add the corresponding term to <span class="math notranslate nohighlight">\(\mu(x)\)</span>.</p>
+</section>
+</section>
+<section id="boundary-conditions">
+<h2>Boundary Conditions<a class="headerlink" href="#boundary-conditions" title="Link to this heading"></a></h2>
+<p>The Fokker-Planck equation describes how the density <span class="math notranslate nohighlight">\(\phi(x, t)\)</span> evolves
+in the interior <span class="math notranslate nohighlight">\(x \in (0, 1)\)</span>. But what happens at the boundaries
+<span class="math notranslate nohighlight">\(x = 0\)</span> and <span class="math notranslate nohighlight">\(x = 1\)</span>?</p>
+<section id="absorbing-boundaries">
+<h3>Absorbing boundaries<a class="headerlink" href="#absorbing-boundaries" title="Link to this heading"></a></h3>
+<p>At <span class="math notranslate nohighlight">\(x = 0\)</span>, the derived allele is <strong>lost</strong> – all copies have been replaced
+by the ancestral allele. At <span class="math notranslate nohighlight">\(x = 1\)</span>, the derived allele is <strong>fixed</strong> – it
+has replaced all ancestral copies. In the standard Wright-Fisher model (without
+mutation), both boundaries are <strong>absorbing</strong>: once frequency reaches 0 or 1, it
+stays there forever.</p>
+<p>Mathematically, absorbing boundaries mean:</p>
+<div class="math notranslate nohighlight">
+\[\phi(0, t) = 0 \quad \text{and} \quad \phi(1, t) = 0\]</div>
+<p>No probability density sits at the boundaries – any probability that reaches
+a boundary is permanently removed from the interior. Over time, all probability
+mass eventually reaches one boundary or the other: the allele is either lost or
+fixed.</p>
+</section>
+<section id="why-x-1-x-vanishes-at-boundaries">
+<h3>Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries<a class="headerlink" href="#why-x-1-x-vanishes-at-boundaries" title="Link to this heading"></a></h3>
+<p>The diffusion coefficient <span class="math notranslate nohighlight">\(\sigma^2(x) = x(1-x)\)</span> naturally enforces the
+boundary behavior. At <span class="math notranslate nohighlight">\(x = 0\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\sigma^2(0) = 0 \cdot (1 - 0) = 0\]</div>
+<p>and at <span class="math notranslate nohighlight">\(x = 1\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\sigma^2(1) = 1 \cdot (1 - 1) = 0\]</div>
+<p>When the diffusion coefficient vanishes, the random component of the dynamics
+disappears. An allele that has been lost (<span class="math notranslate nohighlight">\(x = 0\)</span>) or fixed (<span class="math notranslate nohighlight">\(x = 1\)</span>)
+experiences no further drift. This is a natural consequence of the Wright-Fisher
+model: you cannot have random fluctuations when one allele has zero copies.</p>
+</section>
+<section id="the-flux-condition">
+<h3>The flux condition<a class="headerlink" href="#the-flux-condition" title="Link to this heading"></a></h3>
+<p>The <strong>probability flux</strong> at a boundary measures the rate at which probability
+density flows out of the interval. For the Fokker-Planck equation, the flux at
+<span class="math notranslate nohighlight">\(x = 0\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[J(0, t) = \mu(0)\phi(0, t) - \frac{1}{2}\frac{\partial}{\partial x}\left[\sigma^2(x)\phi\right]\bigg|_{x=0}\]</div>
+<p>Under the absorbing boundary condition, probability that hits the boundary is
+removed from the system. The total probability in the interior
+<span class="math notranslate nohighlight">\(\int_0^1 \phi(x,t)dx\)</span> decreases over time as alleles are lost or fixed.</p>
+</section>
+<section id="reflecting-boundaries-and-mutation">
+<h3>Reflecting boundaries and mutation<a class="headerlink" href="#reflecting-boundaries-and-mutation" title="Link to this heading"></a></h3>
+<p>With mutation (<span class="math notranslate nohighlight">\(\theta_1, \theta_2 &gt; 0\)</span>), the boundaries become
+<strong>reflecting</strong> rather than absorbing. Mutation at rate <span class="math notranslate nohighlight">\(\theta_1\)</span> creates new
+derived copies even when <span class="math notranslate nohighlight">\(x = 0\)</span>, and back-mutation at rate <span class="math notranslate nohighlight">\(\theta_2\)</span>
+creates ancestral copies even when <span class="math notranslate nohighlight">\(x = 1\)</span>. Probability flux is returned to
+the interior, and the density reaches a nondegenerate stationary distribution.</p>
+<p>In the <strong>infinite-sites model</strong> – the standard framework for tools like
+<a class="reference internal" href="../timepieces/dadi/index.html#dadi-timepiece"><span class="std std-ref">dadi</span></a> and <a class="reference internal" href="../timepieces/moments/index.html#moments-timepiece"><span class="std std-ref">moments</span></a> – each new
+mutation arises at a previously monomorphic site. The density <span class="math notranslate nohighlight">\(\phi(x, t)\)</span>
+represents the density of <em>segregating</em> sites at frequency <span class="math notranslate nohighlight">\(x\)</span>. New
+mutations enter at <span class="math notranslate nohighlight">\(x = 1/(2N) \approx 0\)</span> at a rate proportional to
+<span class="math notranslate nohighlight">\(\theta\)</span>, and sites are removed when they reach fixation (<span class="math notranslate nohighlight">\(x = 1\)</span>)
+or loss (<span class="math notranslate nohighlight">\(x = 0\)</span>).</p>
+</section>
+</section>
+<section id="stationary-distributions">
+<h2>Stationary Distributions<a class="headerlink" href="#stationary-distributions" title="Link to this heading"></a></h2>
+<p>When the density <span class="math notranslate nohighlight">\(\phi(x, t)\)</span> stops changing – when
+<span class="math notranslate nohighlight">\(\partial \phi / \partial t = 0\)</span> – we have a <strong>stationary distribution</strong>.
+Setting the left-hand side of the Fokker-Planck equation to zero converts the
+PDE into an ODE (because the <span class="math notranslate nohighlight">\(t\)</span> dependence disappears):</p>
+<div class="math notranslate nohighlight">
+\[0 = \frac{1}{2}\frac{d^2}{dx^2}\left[\sigma^2(x)\phi\right]
+- \frac{d}{dx}\left[\mu(x)\phi\right]\]</div>
+<p>This is a second-order ODE in <span class="math notranslate nohighlight">\(x\)</span> alone, which is much easier to solve than
+the full PDE.</p>
+<section id="the-neutral-case">
+<h3>The neutral case<a class="headerlink" href="#the-neutral-case" title="Link to this heading"></a></h3>
+<p>With no selection and no mutation (<span class="math notranslate nohighlight">\(\mu(x) = 0\)</span>), the ODE becomes:</p>
+<div class="math notranslate nohighlight">
+\[\frac{d^2}{dx^2}\left[x(1-x)\phi(x)\right] = 0\]</div>
+<p>Integrating twice gives <span class="math notranslate nohighlight">\(x(1-x)\phi(x) = C_1 x + C_0\)</span>, so:</p>
+<div class="math notranslate nohighlight">
+\[\phi(x) = \frac{C_1 x + C_0}{x(1-x)}\]</div>
+<p>For the infinite-sites model, where new mutations enter near <span class="math notranslate nohighlight">\(x = 0\)</span> and
+we consider the density of segregating sites, the stationary solution is:</p>
+<div class="math notranslate nohighlight">
+\[\phi(x) \propto \frac{1}{x(1-x)}\]</div>
+<p>This density is <strong>not normalizable</strong> – it blows up at both boundaries, reflecting
+the fact that under pure drift, sites are constantly being lost and fixed, and
+the steady-state density of segregating sites is concentrated near the boundaries.</p>
+<div class="admonition-probability-aside-the-neutral-sfs-connection admonition">
+<p class="admonition-title">Probability Aside – The neutral SFS connection</p>
+<p>The neutral site frequency spectrum (SFS) for a sample of <span class="math notranslate nohighlight">\(n\)</span> haploids
+has the well-known form <span class="math notranslate nohighlight">\(\mathbb{E}[\xi_j] = \theta / j\)</span> for
+<span class="math notranslate nohighlight">\(j = 1, 2, \ldots, n-1\)</span>, where <span class="math notranslate nohighlight">\(\xi_j\)</span> is the number of sites
+with <span class="math notranslate nohighlight">\(j\)</span> derived alleles. The <span class="math notranslate nohighlight">\(1/j\)</span> pattern is a direct
+consequence of the <span class="math notranslate nohighlight">\(1/(x(1-x))\)</span> stationary density: when you sample
+<span class="math notranslate nohighlight">\(n\)</span> individuals from a population with allele frequency density
+<span class="math notranslate nohighlight">\(\propto 1/x\)</span>, the probability of seeing <span class="math notranslate nohighlight">\(j\)</span> derived alleles
+in a sample of <span class="math notranslate nohighlight">\(n\)</span> is proportional to <span class="math notranslate nohighlight">\(\int_0^1 \binom{n}{j}
+x^j(1-x)^{n-j} \cdot \frac{1}{x} dx\)</span>, which evaluates to <span class="math notranslate nohighlight">\(1/j\)</span>.
+We make this connection precise in the section on the site frequency
+spectrum below.</p>
+</div>
+</section>
+<section id="with-mutation-the-beta-distribution">
+<h3>With mutation: the Beta distribution<a class="headerlink" href="#with-mutation-the-beta-distribution" title="Link to this heading"></a></h3>
+<p>Adding symmetric mutation with forward rate <span class="math notranslate nohighlight">\(\theta_1\)</span> and backward rate
+<span class="math notranslate nohighlight">\(\theta_2\)</span>, the drift coefficient becomes
+<span class="math notranslate nohighlight">\(\mu(x) = \frac{\theta_1}{2}(1-x) - \frac{\theta_2}{2}x\)</span>. The stationary
+distribution is:</p>
+<div class="math notranslate nohighlight">
+\[\phi(x) \propto x^{\theta_1 - 1}(1-x)^{\theta_2 - 1}\]</div>
+<p>This is the density of a <strong>Beta distribution</strong> with parameters <span class="math notranslate nohighlight">\(\theta_1\)</span>
+and <span class="math notranslate nohighlight">\(\theta_2\)</span>. When <span class="math notranslate nohighlight">\(\theta_1 = \theta_2 &lt; 1\)</span>, the density is
+U-shaped (alleles cluster near fixation or loss). When <span class="math notranslate nohighlight">\(\theta_1 = \theta_2 &gt; 1\)</span>,
+it is bell-shaped. When <span class="math notranslate nohighlight">\(\theta_1 = \theta_2 = 1\)</span>, it is uniform – mutation
+perfectly balances drift.</p>
+</section>
+<section id="with-selection-exponential-tilting">
+<h3>With selection: exponential tilting<a class="headerlink" href="#with-selection-exponential-tilting" title="Link to this heading"></a></h3>
+<p>Adding genic selection <span class="math notranslate nohighlight">\(\mu(x) = \frac{s}{2}x(1-x) + \frac{\theta_1}{2}(1-x)
+- \frac{\theta_2}{2}x\)</span>, the stationary distribution becomes:</p>
+<div class="math notranslate nohighlight">
+\[\phi(x) \propto x^{\theta_1 - 1}(1-x)^{\theta_2 - 1} e^{sx}\]</div>
+<p>The exponential factor <span class="math notranslate nohighlight">\(e^{sx}\)</span> <strong>tilts</strong> the neutral distribution: positive
+selection (<span class="math notranslate nohighlight">\(s &gt; 0\)</span>) upweights high frequencies, shifting probability mass
+toward fixation. Negative selection (<span class="math notranslate nohighlight">\(s &lt; 0\)</span>) upweights low frequencies,
+keeping deleterious alleles rare.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">stationary_density</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">theta1</span><span class="p">,</span> <span class="n">theta2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the stationary density of the diffusion (unnormalized).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : float or ndarray</span>
+<span class="sd">        Allele frequency in (0, 1).</span>
+<span class="sd">    theta1 : float</span>
+<span class="sd">        Forward mutation rate (scaled by 2N).</span>
+<span class="sd">    theta2 : float</span>
+<span class="sd">        Backward mutation rate (scaled by 2N).</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Selection coefficient (scaled by 2N). Positive favors derived.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    density : float or ndarray</span>
+<span class="sd">        Unnormalized stationary density at each x.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="c1"># Beta distribution kernel times exponential tilting for selection</span>
+    <span class="n">log_density</span> <span class="o">=</span> <span class="p">(</span><span class="n">theta1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">theta2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">s</span> <span class="o">*</span> <span class="n">x</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_density</span><span class="p">)</span>
+
+<span class="c1"># Evaluate and normalize over a grid</span>
+<span class="n">x_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+
+<span class="c1"># Case 1: Neutral with symmetric mutation</span>
+<span class="n">phi_neutral</span> <span class="o">=</span> <span class="n">stationary_density</span><span class="p">(</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">theta1</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">theta2</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">phi_neutral</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">phi_neutral</span><span class="p">,</span> <span class="n">x_grid</span><span class="p">)</span>  <span class="c1"># normalize</span>
+
+<span class="c1"># Case 2: With positive selection</span>
+<span class="n">phi_selected</span> <span class="o">=</span> <span class="n">stationary_density</span><span class="p">(</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">theta1</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">theta2</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+<span class="n">phi_selected</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">phi_selected</span><span class="p">,</span> <span class="n">x_grid</span><span class="p">)</span>
+
+<span class="c1"># Verification: the density should integrate to 1</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Integral (neutral):  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">phi_neutral</span><span class="p">,</span><span class="w"> </span><span class="n">x_grid</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Integral (selected): </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">phi_selected</span><span class="p">,</span><span class="w"> </span><span class="n">x_grid</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Verification: mean frequency should be higher under positive selection</span>
+<span class="n">mean_neutral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x_grid</span> <span class="o">*</span> <span class="n">phi_neutral</span><span class="p">,</span> <span class="n">x_grid</span><span class="p">)</span>
+<span class="n">mean_selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x_grid</span> <span class="o">*</span> <span class="n">phi_selected</span><span class="p">,</span> <span class="n">x_grid</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean frequency (neutral):  </span><span class="si">{</span><span class="n">mean_neutral</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean frequency (selected): </span><span class="si">{</span><span class="n">mean_selected</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selection shifts mean upward: </span><span class="si">{</span><span class="n">mean_selected</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">mean_neutral</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="numerical-solutions-finite-differences-for-pdes">
+<h2>Numerical Solutions: Finite Differences for PDEs<a class="headerlink" href="#numerical-solutions-finite-differences-for-pdes" title="Link to this heading"></a></h2>
+<p>Exact solutions to the Fokker-Planck equation exist only in special cases
+(stationary distributions, constant coefficients). For realistic demographic
+models – bottlenecks, exponential growth, population splits – we must solve
+the PDE numerically. This is the heart of <a class="reference internal" href="../timepieces/dadi/index.html#dadi-timepiece"><span class="std std-ref">dadi</span></a>.</p>
+<section id="discretizing-x-on-a-grid">
+<h3>Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid<a class="headerlink" href="#discretizing-x-on-a-grid" title="Link to this heading"></a></h3>
+<p>The first step is to replace the continuous frequency variable <span class="math notranslate nohighlight">\(x \in [0,1]\)</span>
+with a discrete grid of <span class="math notranslate nohighlight">\(P\)</span> points:</p>
+<div class="math notranslate nohighlight">
+\[x_0 = 0, \quad x_1 = \Delta x, \quad x_2 = 2\Delta x, \quad \ldots, \quad x_{P-1} = 1\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Delta x = 1/(P-1)\)</span>. The density <span class="math notranslate nohighlight">\(\phi(x, t)\)</span> is approximated
+by its values at these grid points: <span class="math notranslate nohighlight">\(\phi_i(t) \approx \phi(x_i, t)\)</span>.</p>
+</section>
+<section id="finite-difference-approximations">
+<h3>Finite-difference approximations<a class="headerlink" href="#finite-difference-approximations" title="Link to this heading"></a></h3>
+<p>We approximate the derivatives in the Fokker-Planck equation using
+<strong>finite differences</strong>:</p>
+<ul>
+<li><p><strong>First derivative</strong> (central difference):</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial f}{\partial x}\bigg|_{x_i} \approx \frac{f_{i+1} - f_{i-1}}{2\Delta x}\]</div>
+</li>
+<li><p><strong>Second derivative</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial^2 f}{\partial x^2}\bigg|_{x_i} \approx \frac{f_{i+1} - 2f_i + f_{i-1}}{(\Delta x)^2}\]</div>
+</li>
+</ul>
+<p>These formulas replace derivatives with algebraic operations on neighboring grid
+values. The error in each approximation is <span class="math notranslate nohighlight">\(O((\Delta x)^2)\)</span> – as the grid
+gets finer, the approximation improves quadratically.</p>
+</section>
+<section id="the-method-of-lines">
+<h3>The method of lines<a class="headerlink" href="#the-method-of-lines" title="Link to this heading"></a></h3>
+<p>Substituting the finite-difference approximations into the Fokker-Planck equation
+converts the PDE into a <strong>system of ODEs</strong> – one ODE per grid point:</p>
+<div class="math notranslate nohighlight">
+\[\frac{d\phi_i}{dt} = F_i(\phi_0, \phi_1, \ldots, \phi_{P-1})\]</div>
+<p>where <span class="math notranslate nohighlight">\(F_i\)</span> involves <span class="math notranslate nohighlight">\(\phi_{i-1}\)</span>, <span class="math notranslate nohighlight">\(\phi_i\)</span>, and
+<span class="math notranslate nohighlight">\(\phi_{i+1}\)</span> (the values at neighboring grid points). This approach is
+called the <strong>method of lines</strong>: we discretize in space (the <span class="math notranslate nohighlight">\(x\)</span> direction)
+but leave time continuous, converting a PDE into a system of coupled ODEs that
+can be solved with standard ODE integrators.</p>
+</section>
+<section id="crank-nicolson-time-stepping">
+<h3>Crank-Nicolson time stepping<a class="headerlink" href="#crank-nicolson-time-stepping" title="Link to this heading"></a></h3>
+<p>For time integration, <a class="reference internal" href="../timepieces/dadi/index.html#dadi-timepiece"><span class="std std-ref">dadi</span></a> uses the <strong>Crank-Nicolson</strong>
+scheme, which averages the explicit (forward Euler) and implicit (backward Euler)
+methods:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\phi^{n+1}_i - \phi^n_i}{\Delta t} =
+\frac{1}{2}\left[F_i(\phi^n) + F_i(\phi^{n+1})\right]\]</div>
+<p>This scheme is <strong>unconditionally stable</strong> (no restriction on the time step
+<span class="math notranslate nohighlight">\(\Delta t\)</span> relative to <span class="math notranslate nohighlight">\(\Delta x\)</span>) and <strong>second-order accurate</strong> in
+both space and time. The price is that each time step requires solving a linear
+system, but the system is <strong>tridiagonal</strong> (each equation involves only three
+unknowns), so it can be solved in <span class="math notranslate nohighlight">\(O(P)\)</span> time using the Thomas algorithm.</p>
+</section>
+<section id="the-curse-of-dimensionality">
+<h3>The curse of dimensionality<a class="headerlink" href="#the-curse-of-dimensionality" title="Link to this heading"></a></h3>
+<p>For a single population, the grid has <span class="math notranslate nohighlight">\(P\)</span> points and everything is fast.
+But for <span class="math notranslate nohighlight">\(d\)</span> populations, we need a grid in <span class="math notranslate nohighlight">\(d\)</span>-dimensional frequency
+space, with <span class="math notranslate nohighlight">\(P^d\)</span> grid points. This is the <strong>curse of dimensionality</strong>:</p>
+<ul class="simple">
+<li><p>1 population: <span class="math notranslate nohighlight">\(P\)</span> grid points (manageable)</p></li>
+<li><p>2 populations: <span class="math notranslate nohighlight">\(P^2\)</span> grid points (feasible for moderate <span class="math notranslate nohighlight">\(P\)</span>)</p></li>
+<li><p>3 populations: <span class="math notranslate nohighlight">\(P^3\)</span> grid points (expensive but possible)</p></li>
+<li><p>4+ populations: <span class="math notranslate nohighlight">\(P^4\)</span> or more (often prohibitive)</p></li>
+</ul>
+<p>This scaling is why <a class="reference internal" href="../timepieces/dadi/index.html#dadi-timepiece"><span class="std std-ref">dadi</span></a> becomes expensive for more than
+2-3 populations, and why <a class="reference internal" href="../timepieces/moments/index.html#moments-timepiece"><span class="std std-ref">moments</span></a> was developed as an
+alternative that avoids the frequency grid entirely.</p>
+</section>
+<section id="code-1d-diffusion-solver">
+<h3>Code: 1D diffusion solver<a class="headerlink" href="#code-1d-diffusion-solver" title="Link to this heading"></a></h3>
+<p>Let us implement a simple 1D diffusion solver using the method of lines with
+Crank-Nicolson time stepping. We will evolve a neutral population through a
+bottleneck and extract the SFS.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solve_diffusion_1d</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">n_time_steps</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">N_func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solve the 1D Wright-Fisher diffusion equation numerically.</span>
+
+<span class="sd">    Uses the method of lines with Crank-Nicolson time stepping.</span>
+<span class="sd">    The PDE is:</span>
+<span class="sd">        dphi/dt = (1/(2*N(t))) * (1/2) d^2/dx^2 [x(1-x)*phi]</span>
+<span class="sd">                  - d/dx [mu(x)*phi]</span>
+<span class="sd">    where the population size N(t) can change over time.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    P : int</span>
+<span class="sd">        Number of grid points (including boundaries).</span>
+<span class="sd">    T : float</span>
+<span class="sd">        Total time to integrate (in units of 2*N_ref generations).</span>
+<span class="sd">    n_time_steps : int</span>
+<span class="sd">        Number of Crank-Nicolson steps.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Population-scaled mutation rate 4*N_ref*mu.</span>
+<span class="sd">    s : float</span>
+<span class="sd">        Population-scaled selection coefficient 2*N_ref*s.</span>
+<span class="sd">    N_func : callable or None</span>
+<span class="sd">        N_func(t) returns N(t)/N_ref at time t. If None, constant size 1.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_grid : ndarray of shape (P,)</span>
+<span class="sd">        Frequency grid points.</span>
+<span class="sd">    phi : ndarray of shape (P,)</span>
+<span class="sd">        Final density at each grid point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">N_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">N_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">1.0</span>
+
+    <span class="n">dx</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">P</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">T</span> <span class="o">/</span> <span class="n">n_time_steps</span>
+    <span class="n">x_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+
+    <span class="c1"># Initialize with the neutral stationary distribution (1/x scaled)</span>
+    <span class="c1"># Avoid boundary singularities by starting just inside</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">phi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">))</span>
+
+    <span class="c1"># Normalize so total mass = theta * L (number of segregating sites)</span>
+    <span class="c1"># For simplicity, normalize to unit mass</span>
+    <span class="n">phi</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">x_grid</span><span class="p">)</span>
+
+    <span class="c1"># Time-stepping loop</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_time_steps</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">step</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="n">N_rel</span> <span class="o">=</span> <span class="n">N_func</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># Build the tridiagonal matrix for Crank-Nicolson</span>
+        <span class="c1"># We use a simplified version: explicit half-step + implicit half-step</span>
+
+        <span class="c1"># Compute the right-hand side F(phi) at interior points</span>
+        <span class="k">def</span> <span class="nf">rhs</span><span class="p">(</span><span class="n">phi_in</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Compute the spatial operator F(phi) at interior points.&quot;&quot;&quot;</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+                <span class="c1"># Diffusion term: (1/2) d^2/dx^2 [x(1-x)*phi]</span>
+                <span class="c1"># We compute g(x) = x(1-x)*phi first, then differentiate</span>
+                <span class="n">g_im1</span> <span class="o">=</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">phi_in</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">g_i</span>   <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">phi_in</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">g_ip1</span> <span class="o">=</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">phi_in</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">diffusion</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">g_ip1</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">g_i</span> <span class="o">+</span> <span class="n">g_im1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+                <span class="c1"># Advection term: -d/dx[mu(x)*phi]</span>
+                <span class="c1"># mu(x) = (s/2)*x*(1-x)  (selection only for simplicity)</span>
+                <span class="n">mu_im1</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">mu_ip1</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x_grid</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">h_im1</span> <span class="o">=</span> <span class="n">mu_im1</span> <span class="o">*</span> <span class="n">phi_in</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">h_ip1</span> <span class="o">=</span> <span class="n">mu_ip1</span> <span class="o">*</span> <span class="n">phi_in</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">advection</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">h_ip1</span> <span class="o">-</span> <span class="n">h_im1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+
+                <span class="c1"># Scale by 1/N_rel (drift is inversely proportional to N)</span>
+                <span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">diffusion</span> <span class="o">/</span> <span class="n">N_rel</span> <span class="o">+</span> <span class="n">advection</span>
+            <span class="k">return</span> <span class="n">F</span>
+
+        <span class="c1"># Crank-Nicolson: phi^{n+1} = phi^n + dt/2 * [F(phi^n) + F(phi^{n+1})]</span>
+        <span class="c1"># Approximate with two half-steps (predictor-corrector)</span>
+        <span class="n">F_n</span> <span class="o">=</span> <span class="n">rhs</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+        <span class="n">phi_pred</span> <span class="o">=</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">F_n</span>         <span class="c1"># explicit predictor</span>
+        <span class="n">phi_pred</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>                  <span class="c1"># absorbing boundary</span>
+        <span class="n">phi_pred</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">phi_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">phi_pred</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># enforce non-negativity</span>
+
+        <span class="n">F_pred</span> <span class="o">=</span> <span class="n">rhs</span><span class="p">(</span><span class="n">phi_pred</span><span class="p">)</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="n">F_n</span> <span class="o">+</span> <span class="n">F_pred</span><span class="p">)</span>  <span class="c1"># corrector</span>
+        <span class="n">phi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">phi</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">x_grid</span><span class="p">,</span> <span class="n">phi</span>
+
+<span class="c1"># Solve for a constant-size population</span>
+<span class="n">P</span> <span class="o">=</span> <span class="mi">201</span>            <span class="c1"># 201 grid points</span>
+<span class="n">T</span> <span class="o">=</span> <span class="mf">0.5</span>            <span class="c1"># integrate for 0.5 diffusion time units</span>
+<span class="n">n_steps_t</span> <span class="o">=</span> <span class="mi">2000</span>   <span class="c1"># 2000 time steps</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="mf">1.0</span>        <span class="c1"># mutation rate</span>
+
+<span class="n">x_grid</span><span class="p">,</span> <span class="n">phi_const</span> <span class="o">=</span> <span class="n">solve_diffusion_1d</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">n_steps_t</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span>
+
+<span class="c1"># Solve through a bottleneck: N drops to 0.1 for the middle period</span>
+<span class="k">def</span> <span class="nf">bottleneck</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Population size function: bottleneck from t=0.1 to t=0.3.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="mf">0.1</span> <span class="o">&lt;=</span> <span class="n">t</span> <span class="o">&lt;=</span> <span class="mf">0.3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.1</span>  <span class="c1"># 10x reduction</span>
+    <span class="k">return</span> <span class="mf">1.0</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="n">phi_bottle</span> <span class="o">=</span> <span class="n">solve_diffusion_1d</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">n_steps_t</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">N_func</span><span class="o">=</span><span class="n">bottleneck</span><span class="p">)</span>
+
+<span class="c1"># Verification: total probability should be positive</span>
+<span class="n">mass_const</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">phi_const</span><span class="p">,</span> <span class="n">x_grid</span><span class="p">)</span>
+<span class="n">mass_bottle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">phi_bottle</span><span class="p">,</span> <span class="n">x_grid</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total mass (constant N): </span><span class="si">{</span><span class="n">mass_const</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total mass (bottleneck): </span><span class="si">{</span><span class="n">mass_bottle</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bottleneck reduces diversity: </span><span class="si">{</span><span class="n">mass_bottle</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">mass_const</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="connection-to-the-site-frequency-spectrum">
+<h2>Connection to the Site Frequency Spectrum<a class="headerlink" href="#connection-to-the-site-frequency-spectrum" title="Link to this heading"></a></h2>
+<p>The diffusion density <span class="math notranslate nohighlight">\(\phi(x, t)\)</span> describes the continuous allele frequency
+distribution. But what we observe in practice is a <strong>sample</strong> of <span class="math notranslate nohighlight">\(n\)</span>
+individuals, which gives us integer allele counts. The connection between the
+continuous density and the discrete <strong>site frequency spectrum</strong> (SFS) is the
+<strong>binomial sampling formula</strong>.</p>
+<section id="the-binomial-bridge">
+<h3>The binomial bridge<a class="headerlink" href="#the-binomial-bridge" title="Link to this heading"></a></h3>
+<p>The expected number of segregating sites where <span class="math notranslate nohighlight">\(j\)</span> out of <span class="math notranslate nohighlight">\(n\)</span>
+sampled chromosomes carry the derived allele is:</p>
+<div class="math notranslate nohighlight">
+\[\phi_j = \theta L \int_0^1 \binom{n}{j} x^j (1-x)^{n-j} \phi(x, t) \, dx\]</div>
+<p>where <span class="math notranslate nohighlight">\(L\)</span> is the number of independent loci, <span class="math notranslate nohighlight">\(\theta\)</span> is the
+per-site mutation rate, and <span class="math notranslate nohighlight">\(\binom{n}{j} x^j (1-x)^{n-j}\)</span> is the
+binomial probability of sampling <span class="math notranslate nohighlight">\(j\)</span> derived alleles from a population
+with allele frequency <span class="math notranslate nohighlight">\(x\)</span>.</p>
+<div class="admonition-probability-aside-why-binomial-sampling admonition">
+<p class="admonition-title">Probability Aside – Why binomial sampling?</p>
+<p>If the true allele frequency in the population is <span class="math notranslate nohighlight">\(x\)</span>, and you sample
+<span class="math notranslate nohighlight">\(n\)</span> chromosomes independently, the number of derived alleles in your
+sample follows <span class="math notranslate nohighlight">\(\text{Binom}(n, x)\)</span>. This is because each chromosome
+independently carries the derived allele with probability <span class="math notranslate nohighlight">\(x\)</span>. The
+integral over <span class="math notranslate nohighlight">\(x\)</span> averages this binomial probability over all possible
+population frequencies, weighted by the diffusion density
+<span class="math notranslate nohighlight">\(\phi(x, t)\)</span>.</p>
+</div>
+<p>This formula is the link between the continuous world of the diffusion and the
+discrete world of observed data. It is used by <a class="reference internal" href="../timepieces/dadi/index.html#dadi-timepiece"><span class="std std-ref">dadi</span></a> to
+convert its numerically computed <span class="math notranslate nohighlight">\(\phi(x, t)\)</span> into a predicted SFS that
+can be compared to the observed SFS.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">comb</span>
+
+<span class="k">def</span> <span class="nf">density_to_sfs</span><span class="p">(</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a diffusion density to a site frequency spectrum.</span>
+
+<span class="sd">    Applies the binomial sampling formula:</span>
+<span class="sd">        sfs[j] = integral of Binom(n, j, x) * phi(x) dx</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x_grid : ndarray of shape (P,)</span>
+<span class="sd">        Frequency grid points.</span>
+<span class="sd">    phi : ndarray of shape (P,)</span>
+<span class="sd">        Density values at each grid point.</span>
+<span class="sd">    n_samples : int</span>
+<span class="sd">        Number of sampled chromosomes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sfs : ndarray of shape (n_samples - 1,)</span>
+<span class="sd">        Expected SFS entries for j = 1, ..., n_samples - 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+        <span class="c1"># Binomial probability at each grid point</span>
+        <span class="c1"># comb(n, j) computes the binomial coefficient &quot;n choose j&quot;</span>
+        <span class="n">binom_probs</span> <span class="o">=</span> <span class="n">comb</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_grid</span><span class="o">**</span><span class="n">j</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x_grid</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="n">j</span><span class="p">)</span>
+        <span class="c1"># Integrate phi(x) * Binom(n, j, x) over x using the trapezoidal rule</span>
+        <span class="n">sfs</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">binom_probs</span> <span class="o">*</span> <span class="n">phi</span><span class="p">,</span> <span class="n">x_grid</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sfs</span>
+
+<span class="c1"># Extract SFS from our solved densities</span>
+<span class="n">n_samples</span> <span class="o">=</span> <span class="mi">20</span>  <span class="c1"># sample 20 chromosomes</span>
+
+<span class="n">sfs_const</span> <span class="o">=</span> <span class="n">density_to_sfs</span><span class="p">(</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">phi_const</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span>
+<span class="n">sfs_bottle</span> <span class="o">=</span> <span class="n">density_to_sfs</span><span class="p">(</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">phi_bottle</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span>
+
+<span class="c1"># Verification: neutral SFS should follow the 1/j pattern</span>
+<span class="n">expected_neutral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">j</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)])</span>
+<span class="c1"># Normalize both to compare shapes</span>
+<span class="n">sfs_const_norm</span> <span class="o">=</span> <span class="n">sfs_const</span> <span class="o">/</span> <span class="n">sfs_const</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="n">expected_norm</span> <span class="o">=</span> <span class="n">expected_neutral</span> <span class="o">/</span> <span class="n">expected_neutral</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SFS comparison (constant N vs 1/j theory):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="s1">&#39;j&#39;</span><span class="si">:</span><span class="s2">&gt;3s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">&#39;Simulated&#39;</span><span class="si">:</span><span class="s2">&gt;10s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">&#39;Theory 1/j&#39;</span><span class="si">:</span><span class="s2">&gt;10s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">&#39;Ratio&#39;</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)):</span>
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">sfs_const_norm</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">expected_norm</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">if</span> <span class="n">expected_norm</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="si">:</span><span class="s2">3d</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">sfs_const_norm</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">10.4f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">expected_norm</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">10.4f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">ratio</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># The bottleneck SFS should show excess rare and common variants</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Bottleneck effect on singletons (j=1):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Constant N: </span><span class="si">{</span><span class="n">sfs_const</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Bottleneck: </span><span class="si">{</span><span class="n">sfs_bottle</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="how-dadi-and-moments-differ">
+<h3>How dadi and moments differ<a class="headerlink" href="#how-dadi-and-moments-differ" title="Link to this heading"></a></h3>
+<p>The diffusion-to-SFS conversion above is precisely what <a class="reference internal" href="../timepieces/dadi/index.html#dadi-timepiece"><span class="std std-ref">dadi</span></a>
+does: it solves the PDE for <span class="math notranslate nohighlight">\(\phi(x, t)\)</span>, then integrates against binomial
+weights to extract the expected SFS.</p>
+<p><a class="reference internal" href="../timepieces/moments/index.html#moments-timepiece"><span class="std std-ref">moments</span></a> takes a fundamentally different approach. Instead
+of solving for the full density <span class="math notranslate nohighlight">\(\phi(x, t)\)</span> and then sampling it, <code class="docutils literal notranslate"><span class="pre">moments</span></code>
+derives ODEs that govern the SFS entries <span class="math notranslate nohighlight">\(\phi_j\)</span> <strong>directly</strong>. These ODEs
+are obtained by applying the binomial sampling formula to both sides of the
+Fokker-Planck equation and integrating. The result is a system of ODEs – one per
+SFS entry – that skips the frequency grid entirely.</p>
+<p>The trade-off:</p>
+<ul class="simple">
+<li><p><strong>dadi</strong>: Solves the PDE on a grid, then extracts the SFS. The grid introduces
+discretization artifacts, but gives access to the full frequency density
+<span class="math notranslate nohighlight">\(\phi(x,t)\)</span> – useful for computing quantities beyond the SFS (e.g.,
+fixation probabilities, frequency densities under selection). Multi-population
+models require <span class="math notranslate nohighlight">\(O(P^d)\)</span> grid points.</p></li>
+<li><p><strong>moments</strong>: Solves ODEs directly for the SFS entries. No grid artifacts, but
+no access to the full frequency density. Multi-population models require
+<span class="math notranslate nohighlight">\(O(\prod n_i)\)</span> SFS entries, which can be more efficient than
+<span class="math notranslate nohighlight">\(O(P^d)\)</span> for large <span class="math notranslate nohighlight">\(P\)</span>.</p></li>
+</ul>
+<p>Both approaches are built on the same diffusion approximation – they differ only
+in how they extract the SFS from it.</p>
+</section>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 45.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Concept</p></th>
+<th class="head"><p>Key Formula / Idea</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>WF frequency change</p></td>
+<td><p><span class="math notranslate nohighlight">\(\mathbb{E}[\Delta x] = \mu(x)/(2N)\)</span>, <span class="math notranslate nohighlight">\(\text{Var}(\Delta x) = x(1-x)/(2N)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Diffusion timescale</p></td>
+<td><p><span class="math notranslate nohighlight">\(\tau = t/(2N)\)</span> (same as coalescent time units)</p></td>
+</tr>
+<tr class="row-even"><td><p>SDE (Wright-Fisher diffusion)</p></td>
+<td><p><span class="math notranslate nohighlight">\(dx = \mu(x)dt + \sqrt{x(1-x)}\,dW\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>Fokker-Planck / Kolmogorov forward</p></td>
+<td><p><span class="math notranslate nohighlight">\(\partial\phi/\partial t = \tfrac{1}{2}\partial^2_{xx}[\sigma^2\phi] - \partial_x[\mu\phi]\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Neutral stationary density</p></td>
+<td><p><span class="math notranslate nohighlight">\(\phi(x) \propto 1/[x(1-x)]\)</span>, gives <span class="math notranslate nohighlight">\(\xi_j \propto 1/j\)</span> SFS</p></td>
+</tr>
+<tr class="row-odd"><td><p>With mutation</p></td>
+<td><p><span class="math notranslate nohighlight">\(\phi(x) \propto x^{\theta_1-1}(1-x)^{\theta_2-1}\)</span> (Beta distribution)</p></td>
+</tr>
+<tr class="row-even"><td><p>With selection</p></td>
+<td><p><span class="math notranslate nohighlight">\(\phi(x) \propto x^{\theta_1-1}(1-x)^{\theta_2-1}e^{sx}\)</span> (exponential tilting)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Finite-difference PDE solver</p></td>
+<td><p>Discretize <span class="math notranslate nohighlight">\(x\)</span> on <span class="math notranslate nohighlight">\(P\)</span> points, method of lines + Crank-Nicolson</p></td>
+</tr>
+<tr class="row-even"><td><p>Multi-population scaling</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(P^d)\)</span> grid points – the curse of dimensionality</p></td>
+</tr>
+<tr class="row-odd"><td><p>Diffusion density to SFS</p></td>
+<td><p><span class="math notranslate nohighlight">\(\phi_j = \theta L \int \binom{n}{j}x^j(1-x)^{n-j}\phi(x)dx\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>These are the gears that connect the discrete ticking of the Wright-Fisher model
+to the smooth sweep of continuous frequency evolution. The diffusion approximation
+is the bridge between the coalescent theory you learned in <a class="reference internal" href="coalescent_theory.html#coalescent-theory"><span class="std std-ref">Coalescent Theory</span></a>
+and the SFS-based inference tools – <a class="reference internal" href="../timepieces/dadi/index.html#dadi-timepiece"><span class="std std-ref">dadi</span></a> and
+<a class="reference internal" href="../timepieces/moments/index.html#moments-timepiece"><span class="std std-ref">moments</span></a> – that use it to read demographic history
+from genetic variation.</p>
+<p>Next: <a class="reference internal" href="odes.html#odes"><span class="std std-ref">Ordinary Differential Equations</span></a> – the ordinary differential equations that <code class="docutils literal notranslate"><span class="pre">moments</span></code> uses to
+bypass the diffusion PDE entirely, computing the SFS without a frequency grid.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="smc.html" class="btn btn-neutral float-left" title="The Sequentially Markov Coalescent" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="odes.html" class="btn btn-neutral float-right" title="Ordinary Differential Equations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

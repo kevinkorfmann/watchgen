@@ -1,17 +1,10 @@
 .. _moments_timepiece:
 
-====================================
-Timepiece VIII: moments
-====================================
+=====================================
+Timepiece X: moments
+=====================================
 
    *Inferring demographic history from the frequency spectrum -- without solving a single PDE.*
-
-.. epigraph::
-
-   "The new method is based on the direct computation of the frequency spectrum
-   without solving the diffusion system."
-
-   -- Jouganous, Long, Ragsdale, and Gravel (2017)
 
 The Mechanism at a Glance
 ==========================
@@ -35,6 +28,10 @@ equation (the Wright-Fisher diffusion) on a frequency grid, ``moments`` bypasses
 this entirely. It derives **ordinary differential equations** that govern the SFS
 entries directly. No grid, no PDE, no numerical diffusion artifacts. Just a clean
 system of ODEs that you can solve with standard numerical methods.
+
+.. admonition:: Primary Reference
+
+   :cite:`moments`
 
 The four gears of ``moments``:
 
@@ -116,3 +113,4 @@ Chapters
    moment_equations
    demographic_inference
    linkage_disequilibrium
+   demo

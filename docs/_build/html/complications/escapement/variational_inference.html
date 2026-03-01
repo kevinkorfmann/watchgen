@@ -1,0 +1,936 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Variational Inference Without Simulations &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Architecture" href="architecture.html" />
+    <link rel="prev" title="Overview of Escapement" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../timepieces/index.html">Timepieces</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/psmc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/overview.html">Overview of PSMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/continuous_model.html">The Continuous-Time PSMC Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/discretization.html">Discretizing Time</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/hmm_inference.html">The PSMC HMM and EM Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/psmc/decoding.html">Decoding the Clock</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/smcpp/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/overview.html">Overview of SMC++</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/distinguished_lineage.html">The Distinguished Lineage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/ode_system.html">The ODE System</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/continuous_hmm.html">The Continuous HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/smcpp/population_splits.html">Population Splits</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/lshmm/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/lshmm/overview.html">Overview of the Li &amp; Stephens HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/lshmm/copying_model.html">The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/lshmm/haploid_algorithms.html">Haploid LS HMM Algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/lshmm/diploid.html">The Diploid Extension</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/msprime/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/overview.html">Overview of msprime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/coalescent.html">The Coalescent Process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/segments_and_fenwick.html">Segments &amp; the Fenwick Tree</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/hudson_algorithm.html">Hudson’s Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/demographics.html">Demographics &amp; Population</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/msprime/mutations.html">Mutations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/argweaver/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/overview.html">Overview of ARGweaver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/time_discretization.html">Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/transition_probabilities.html">Transition Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/argweaver/mcmc_sampling.html">MCMC Sampling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsinfer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/overview.html">Overview of tsinfer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/ancestor_generation.html">Gear 1: Ancestor Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/copying_model.html">Gear 2: The Copying Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/ancestor_matching.html">Gear 3: Ancestor Matching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsinfer/sample_matching.html">Gear 4: Sample Matching &amp; Post-Processing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/singer/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/overview.html">Overview of SINGER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/branch_sampling.html">Branch Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/time_sampling.html">Time Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/arg_rescaling.html">ARG Rescaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/singer/sgpr.html">Sub-Graph Pruning and Re-grafting (SGPR)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/threads/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/threads/overview.html">Overview of Threads</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/threads/pbwt_matching.html">Haplotype Matching with the PBWT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/threads/viterbi.html">Memory-Efficient Viterbi Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/threads/dating.html">Dating Path Segments</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/tsdate/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/overview.html">Overview of tsdate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/coalescent_prior.html">The Coalescent Prior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/mutation_likelihood.html">The Mutation Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/inside_outside.html">Inside-Outside Belief Propagation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/variational_gamma.html">Variational Gamma (Expectation Propagation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/tsdate/rescaling.html">Rescaling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/moments/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/overview.html">Overview of moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/the_frequency_spectrum.html">The Site Frequency Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/moment_equations.html">The Moment Equations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/demographic_inference.html">Demographic Inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/moments/linkage_disequilibrium.html">Linkage Disequilibrium</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/dadi/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/dadi/overview.html">Overview of dadi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/dadi/diffusion_equation.html">The Diffusion Equation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/dadi/numerical_integration.html">Numerical Integration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/dadi/demographic_inference.html">Demographic Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/momi2/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/overview.html">Overview of momi2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/coalescent_sfs.html">The Coalescent SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/moran_model.html">The Moran Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/tensor_machinery.html">Tensor Machinery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/momi2/inference.html">Automatic Differentiation &amp; Inference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/gamma_smc/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/overview.html">Overview of Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/gamma_approximation.html">The Gamma Approximation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/flow_field.html">The Flow Field</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/forward_backward.html">The Forward-Backward CS-HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/gamma_smc/segmentation_and_caching.html">Segmentation and Caching</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/phlash/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/overview.html">Overview of PHLASH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/composite_likelihood.html">The Composite Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/random_discretization.html">Random Time Discretization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/score_function.html">The Score Function Algorithm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/phlash/svgd_inference.html">Stein Variational Gradient Descent (SVGD)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../timepieces/clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../timepieces/clues/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/clues/overview.html">Overview: Detecting Selection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/clues/wright_fisher_hmm.html">The Wright-Fisher HMM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/clues/emission_probabilities.html">Emission Probabilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../timepieces/clues/inference.html">Inference: From Gene Trees to Selection</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Complications</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Complications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../mainspring/index.html">Complication I: Mainspring</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../mainspring/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../mainspring/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/overview.html">Overview of Mainspring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/design_principles.html">Design Principles – One Per Timepiece</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/architecture.html">Architecture</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/training.html">Training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mainspring/comparison.html">Comparison and Limitations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Complication II: Escapement</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html#chapters">Chapters</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="overview.html">Overview of Escapement</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Variational Inference Without Simulations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l4"><a class="reference internal" href="differentiable_likelihood.html">The Differentiable Likelihood</a></li>
+<li class="toctree-l4"><a class="reference internal" href="training.html">Training on Real Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="comparison.html">Comparison and Limitations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../balance_wheel/index.html">Complication III: Balance Wheel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../balance_wheel/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../balance_wheel/index.html#chapters">Chapters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../balance_wheel/overview.html">Overview of Balance Wheel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../balance_wheel/what_dadi_moments_compute.html">What dadi and moments Actually Compute</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../balance_wheel/architecture.html">Architecture</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../balance_wheel/teacher_student_training.html">Teacher-Student Training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../balance_wheel/posterior_inference.html">Posterior Inference via HMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../balance_wheel/multi_population.html">Handling Multiple Populations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../balance_wheel/comparison.html">Comparison and Limitations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Complications</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Complication II: Escapement</a></li>
+      <li class="breadcrumb-item active">Variational Inference Without Simulations</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of Escapement" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="architecture.html" class="btn btn-neutral float-right" title="Architecture" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="variational-inference-without-simulations">
+<span id="escapement-variational"></span><h1>Variational Inference Without Simulations<a class="headerlink" href="#variational-inference-without-simulations" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The watchmaker who understands the physics of the escapement can regulate
+the watch without a reference clock. The equations themselves are the
+standard.</em></p>
+</div></blockquote>
+<p>The core innovation of Escapement is not a new neural architecture – it is a
+new <strong>objective function</strong>. Instead of matching simulated data (supervised
+learning), Escapement maximizes a lower bound on the probability of the observed
+data under the coalescent model (variational inference). This chapter derives
+that bound, explains each term, and addresses the two technical barriers that
+prevented this approach until now.</p>
+<section id="the-evidence-lower-bound-for-tree-sequences">
+<h2>The Evidence Lower Bound for Tree Sequences<a class="headerlink" href="#the-evidence-lower-bound-for-tree-sequences" title="Link to this heading"></a></h2>
+<p>Let <span class="math notranslate nohighlight">\(\mathbf{D} \in \{0,1\}^{n \times L}\)</span> be the observed genotype
+matrix, <span class="math notranslate nohighlight">\(\tau\)</span> a tree sequence (topology, coalescence times, and
+breakpoints), and <span class="math notranslate nohighlight">\(\theta = (N_e(t), \mu, \rho)\)</span> the population-genetic
+parameters. The <strong>marginal likelihood</strong> (evidence) of the data is:</p>
+<div class="math notranslate nohighlight">
+\[P(\mathbf{D} \mid \theta) = \int P(\mathbf{D} \mid \tau, \mu) \cdot
+P(\tau \mid N_e, \rho) \; d\tau\]</div>
+<p>This integral is over all possible tree sequences consistent with <span class="math notranslate nohighlight">\(n\)</span>
+samples at <span class="math notranslate nohighlight">\(L\)</span> sites – a space of staggering dimension. The topologies
+alone are combinatorial (the number of labeled rooted binary trees on <span class="math notranslate nohighlight">\(n\)</span>
+leaves is <span class="math notranslate nohighlight">\((2n-3)!! = 1 \times 3 \times 5 \times \cdots \times (2n-3)\)</span>),
+and for each topology the coalescence times are continuous. No method can
+evaluate this integral exactly.</p>
+<p>Variational inference replaces the intractable posterior
+<span class="math notranslate nohighlight">\(P(\tau \mid \mathbf{D}, \theta)\)</span> with a tractable approximation
+<span class="math notranslate nohighlight">\(q(\tau \mid \mathbf{D}, \phi)\)</span>, parameterized by <span class="math notranslate nohighlight">\(\phi\)</span>. The
+quality of the approximation is measured by the KL divergence:</p>
+<div class="math notranslate nohighlight">
+\[\text{KL}\!\left[q(\tau \mid \mathbf{D}, \phi) \;\|\;
+P(\tau \mid \mathbf{D}, \theta)\right] =
+\mathbb{E}_q\!\left[\log \frac{q(\tau \mid \mathbf{D}, \phi)}
+{P(\tau \mid \mathbf{D}, \theta)}\right] \geq 0\]</div>
+<p>Expanding the posterior using Bayes’ rule and rearranging:</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\log P(\mathbf{D} \mid \theta) &amp;= \text{KL}\!\left[q \| P(\tau \mid
+\mathbf{D}, \theta)\right] +
+\mathbb{E}_q\!\left[\log P(\mathbf{D} \mid \tau, \mu) +
+\log P(\tau \mid N_e, \rho) - \log q(\tau \mid \mathbf{D}, \phi)\right]\\&amp;\geq \underbrace{\mathbb{E}_q\!\left[\log P(\mathbf{D} \mid \tau, \mu)
+\right]}_{\text{mutation likelihood}} +
+\underbrace{\mathbb{E}_q\!\left[\log P(\tau \mid N_e, \rho)
+\right]}_{\text{coalescent prior}} +
+\underbrace{H[q]}_{\text{entropy}}\end{aligned}\end{align} \]</div>
+<p>The last line is the <strong>Evidence Lower Bound</strong> (ELBO). Since the KL divergence
+is non-negative, the ELBO is always less than or equal to the log-evidence.
+Maximizing the ELBO with respect to <span class="math notranslate nohighlight">\(\phi\)</span> simultaneously (1) tightens
+the bound and (2) pushes <span class="math notranslate nohighlight">\(q\)</span> toward the true posterior.</p>
+<div class="admonition-the-elbo-as-a-loss-function admonition">
+<p class="admonition-title">The ELBO as a loss function</p>
+<p>The ELBO is the negative loss that Escapement minimizes:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}(\phi, \theta) = -\text{ELBO} = -\mathbb{E}_q\!\left[
+\log P(\mathbf{D} \mid \tau, \mu) + \log P(\tau \mid N_e, \rho)
+\right] - H[q]\]</div>
+<p>This loss requires only three things: (1) the ability to sample
+<span class="math notranslate nohighlight">\(\tau \sim q\)</span>, (2) the ability to evaluate the mutation likelihood
+and coalescent prior analytically, and (3) the ability to compute the
+entropy of <span class="math notranslate nohighlight">\(q\)</span>. No simulations appear anywhere.</p>
+</div>
+</section>
+<section id="the-three-elbo-terms">
+<h2>The Three ELBO Terms<a class="headerlink" href="#the-three-elbo-terms" title="Link to this heading"></a></h2>
+<p>Each term in the ELBO has a clear population-genetic interpretation and a
+clear source in the Timepieces.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">The three ELBO terms</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 16.0%" />
+<col style="width: 28.0%" />
+<col style="width: 28.0%" />
+<col style="width: 28.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Term</p></th>
+<th class="head"><p>Mathematical form</p></th>
+<th class="head"><p>Population-genetic meaning</p></th>
+<th class="head"><p>Source Timepiece(s)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Mutation likelihood</p></td>
+<td><p><span class="math notranslate nohighlight">\(\mathbb{E}_q[\log P(\mathbf{D} \mid \tau, \mu)]\)</span></p></td>
+<td><p>Does the proposed genealogy explain the observed mutations?</p></td>
+<td><p><a class="reference internal" href="../../timepieces/tsdate/index.html#tsdate-timepiece"><span class="std std-ref">tsdate</span></a> (mutation model),
+<a class="reference internal" href="../../timepieces/argweaver/index.html#argweaver-timepiece"><span class="std std-ref">ARGweaver</span></a> (Poisson on edges)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Coalescent prior</p></td>
+<td><p><span class="math notranslate nohighlight">\(\mathbb{E}_q[\log P(\tau \mid N_e, \rho)]\)</span></p></td>
+<td><p>Is the proposed genealogy plausible under the coalescent?</p></td>
+<td><p><a class="reference internal" href="../../timepieces/msprime/index.html#msprime-timepiece"><span class="std std-ref">msprime</span></a> (Kingman coalescent),
+<a class="reference internal" href="../../timepieces/psmc/index.html#psmc-timepiece"><span class="std std-ref">PSMC</span></a> (SMC factorization)</p></td>
+</tr>
+<tr class="row-even"><td><p>Entropy</p></td>
+<td><p><span class="math notranslate nohighlight">\(H[q] = -\mathbb{E}_q[\log q(\tau)]\)</span></p></td>
+<td><p>How uncertain is the variational posterior? (regularizer)</p></td>
+<td><p><a class="reference internal" href="../../timepieces/tsdate/index.html#tsdate-timepiece"><span class="std std-ref">tsdate</span></a> (gamma entropy),
+<a class="reference internal" href="../../timepieces/gamma_smc/index.html#gamma-smc-timepiece"><span class="std std-ref">Gamma-SMC</span></a> (continuous posteriors)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Term 1: Mutation likelihood.</strong> Given a genealogy <span class="math notranslate nohighlight">\(\tau\)</span>, each edge
+<span class="math notranslate nohighlight">\(e\)</span> with time span <span class="math notranslate nohighlight">\(t_e\)</span> and genomic span <span class="math notranslate nohighlight">\(s_e\)</span> accumulates
+mutations at rate <span class="math notranslate nohighlight">\(\mu\)</span>. Under the infinite-sites model, the number of
+mutations on edge <span class="math notranslate nohighlight">\(e\)</span> is Poisson(<span class="math notranslate nohighlight">\(\mu \cdot t_e \cdot s_e\)</span>). The
+mutation likelihood asks: given the proposed tree, are the observed mutations in
+the right places?</p>
+<p><strong>Term 2: Coalescent prior.</strong> The Kingman coalescent specifies the distribution
+of coalescence times given <span class="math notranslate nohighlight">\(N_e(t)\)</span>. For <span class="math notranslate nohighlight">\(k\)</span> lineages at time
+<span class="math notranslate nohighlight">\(t\)</span>, the rate of coalescence is <span class="math notranslate nohighlight">\(\binom{k}{2}/N_e(t)\)</span>. The
+coalescent prior asks: are the proposed coalescence times consistent with the
+proposed demography?</p>
+<p><strong>Term 3: Entropy.</strong> The entropy of the variational posterior regularizes the
+optimization. Without the entropy term, the optimizer would collapse <span class="math notranslate nohighlight">\(q\)</span>
+to a delta function at the maximum a posteriori (MAP) genealogy, losing all
+uncertainty information. The entropy term encourages <span class="math notranslate nohighlight">\(q\)</span> to remain
+appropriately diffuse.</p>
+</section>
+<section id="why-no-simulations-appear">
+<h2>Why No Simulations Appear<a class="headerlink" href="#why-no-simulations-appear" title="Link to this heading"></a></h2>
+<p>It is worth pausing to understand precisely why simulations are absent from the
+ELBO. The training loop is:</p>
+<ol class="arabic simple">
+<li><p>Receive observed data <span class="math notranslate nohighlight">\(\mathbf{D}\)</span> (a real genotype matrix).</p></li>
+<li><p>Run <span class="math notranslate nohighlight">\(\mathbf{D}\)</span> through the encoder to produce latent vectors.</p></li>
+<li><p>Sample a genealogy <span class="math notranslate nohighlight">\(\tau \sim q(\tau \mid \mathbf{D}, \phi)\)</span> from the
+variational posterior.</p></li>
+<li><p>Evaluate <span class="math notranslate nohighlight">\(\log P(\mathbf{D} \mid \tau, \mu)\)</span> using the analytical
+Poisson mutation model.</p></li>
+<li><p>Evaluate <span class="math notranslate nohighlight">\(\log P(\tau \mid N_e, \rho)\)</span> using the analytical Kingman
+coalescent.</p></li>
+<li><p>Compute <span class="math notranslate nohighlight">\(H[q]\)</span> from the parameters of <span class="math notranslate nohighlight">\(q\)</span> (analytical for gamma,
+Bernoulli, categorical distributions).</p></li>
+<li><p>Sum the three terms to get the ELBO.</p></li>
+<li><p>Backpropagate and update <span class="math notranslate nohighlight">\(\phi\)</span> and <span class="math notranslate nohighlight">\(\theta\)</span>.</p></li>
+</ol>
+<p>Steps 4 and 5 use the <strong>same analytical formulas</strong> derived in the Timepieces.
+<a class="reference internal" href="../../timepieces/tsdate/index.html#tsdate-timepiece"><span class="std std-ref">tsdate</span></a> derives the Poisson mutation likelihood.
+<a class="reference internal" href="../../timepieces/msprime/index.html#msprime-timepiece"><span class="std std-ref">msprime</span></a> and <a class="reference internal" href="../../timepieces/psmc/index.html#psmc-timepiece"><span class="std std-ref">PSMC</span></a> derive the
+coalescent prior. These formulas take a proposed genealogy <span class="math notranslate nohighlight">\(\tau\)</span> and
+return a number. They do not simulate anything.</p>
+<p>The simulation-based approach (Mainspring) generates
+<span class="math notranslate nohighlight">\((\mathbf{D}, \tau^*)\)</span> pairs from msprime, where <span class="math notranslate nohighlight">\(\tau^*\)</span> is the
+true genealogy, and trains the network to predict <span class="math notranslate nohighlight">\(\tau^*\)</span> from
+<span class="math notranslate nohighlight">\(\mathbf{D}\)</span>. The likelihood-based approach (Escapement) takes only
+<span class="math notranslate nohighlight">\(\mathbf{D}\)</span>, proposes <span class="math notranslate nohighlight">\(\tau\)</span>, and asks whether <span class="math notranslate nohighlight">\(\tau\)</span>
+explains <span class="math notranslate nohighlight">\(\mathbf{D}\)</span> well under the coalescent model. The analytical
+formulas replace the need for ground truth.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_elbo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">genotypes</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Single ELBO evaluation on observed data. No simulations.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">)</span>
+
+    <span class="n">elbo</span> <span class="o">=</span> <span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s1">&#39;log_lik&#39;</span><span class="p">]</span>          <span class="c1"># E_q[log P(D | tau, mu)]</span>
+            <span class="o">+</span> <span class="n">out</span><span class="p">[</span><span class="s1">&#39;log_prior_coal&#39;</span><span class="p">]</span>  <span class="c1"># E_q[log P(tau | Ne, rho)]</span>
+            <span class="o">+</span> <span class="n">out</span><span class="p">[</span><span class="s1">&#39;log_prior_break&#39;</span><span class="p">]</span> <span class="c1"># E_q[log P(breaks | rho)]</span>
+            <span class="o">+</span> <span class="n">out</span><span class="p">[</span><span class="s1">&#39;entropy&#39;</span><span class="p">]</span>         <span class="c1"># H[q] (branch lengths + breakpoints)</span>
+            <span class="o">-</span> <span class="n">out</span><span class="p">[</span><span class="s1">&#39;log_q_topo&#39;</span><span class="p">])</span>     <span class="c1"># -E_q[log q(topology)]</span>
+
+    <span class="k">return</span> <span class="n">elbo</span>
+</pre></div>
+</div>
+</section>
+<section id="why-this-wasn-t-done-before">
+<h2>Why This Wasn’t Done Before<a class="headerlink" href="#why-this-wasn-t-done-before" title="Link to this heading"></a></h2>
+<p>If the ELBO requires only analytical formulas that have been known for decades,
+why wasn’t Escapement built earlier? Two technical barriers stood in the way.</p>
+<section id="barrier-1-discrete-topologies-are-not-differentiable">
+<h3>Barrier 1: Discrete Topologies Are Not Differentiable<a class="headerlink" href="#barrier-1-discrete-topologies-are-not-differentiable" title="Link to this heading"></a></h3>
+<p>The tree topology is a discrete object: each sample has a parent, chosen from a
+finite set of possible ancestors. The ELBO cannot be maximized by gradient
+descent if the objective is a function of discrete choices – the gradient is
+zero almost everywhere and undefined at the discontinuities.</p>
+<p>Classical variational inference for discrete latent variables uses
+<strong>coordinate ascent</strong> (updating one variable at a time, holding others fixed) or
+<strong>EM</strong> (computing posterior expectations analytically). These work for simple
+models but scale poorly to the exponentially large space of tree topologies.</p>
+<p>Escapement overcomes this barrier with the <strong>Gumbel-softmax trick</strong>
+(Jang et al. 2017; Maddison et al. 2017). Instead of sampling a hard parent
+assignment <span class="math notranslate nohighlight">\(\pi_i = j\)</span> (one-hot), it samples a soft assignment
+<span class="math notranslate nohighlight">\(\tilde{\pi}_i \in \Delta^{n-1}\)</span> from a continuous relaxation of the
+categorical distribution:</p>
+<div class="math notranslate nohighlight">
+\[\tilde{\pi}_{ij} = \frac{\exp\bigl((\log \alpha_{ij} + g_j) / \tau\bigr)}
+{\sum_{k \neq i} \exp\bigl((\log \alpha_{ik} + g_k) / \tau\bigr)}, \qquad
+g_j \sim \text{Gumbel}(0, 1)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha_{ij}\)</span> are the attention weights (unnormalized log-
+probabilities of <span class="math notranslate nohighlight">\(i\)</span> choosing <span class="math notranslate nohighlight">\(j\)</span> as parent), <span class="math notranslate nohighlight">\(g_j\)</span> are
+Gumbel noise samples, and <span class="math notranslate nohighlight">\(\tau &gt; 0\)</span> is a temperature parameter.</p>
+<p>As <span class="math notranslate nohighlight">\(\tau \to 0\)</span>, <span class="math notranslate nohighlight">\(\tilde{\pi}_i\)</span> approaches a one-hot vector
+(hard assignment). As <span class="math notranslate nohighlight">\(\tau \to \infty\)</span>, it approaches a uniform
+distribution. Crucially, the Gumbel-softmax is differentiable with respect
+to <span class="math notranslate nohighlight">\(\alpha_{ij}\)</span> for all <span class="math notranslate nohighlight">\(\tau &gt; 0\)</span>, enabling gradient-based
+optimization of the topology.</p>
+<div class="admonition-the-straight-through-estimator admonition">
+<p class="admonition-title">The straight-through estimator</p>
+<p>During the forward pass, Escapement uses the <strong>straight-through estimator</strong>:
+it takes the argmax of the Gumbel-softmax output (producing a hard one-hot
+vector) but uses the soft Gumbel-softmax for the backward pass. This gives
+the best of both worlds: discrete topology for the likelihood evaluation,
+continuous gradients for optimization.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">straight_through_gumbel</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">tau</span><span class="p">):</span>
+    <span class="n">soft</span> <span class="o">=</span> <span class="n">gumbel_softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">tau</span><span class="p">)</span>
+    <span class="n">hard</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">soft</span><span class="p">)</span><span class="o">.</span><span class="n">scatter_</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">soft</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hard</span> <span class="o">-</span> <span class="n">soft</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="o">+</span> <span class="n">soft</span>  <span class="c1"># hard forward, soft backward</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="barrier-2-the-coalescent-prior-over-full-args-is-intractable">
+<h3>Barrier 2: The Coalescent Prior Over Full ARGs Is Intractable<a class="headerlink" href="#barrier-2-the-coalescent-prior-over-full-args-is-intractable" title="Link to this heading"></a></h3>
+<p>The coalescent prior <span class="math notranslate nohighlight">\(P(\tau \mid N_e, \rho)\)</span> over a full ancestral
+recombination graph involves all local trees and their correlations induced by
+recombination. The joint prior over the full ARG is:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{ARG} \mid N_e, \rho) = \prod_{\ell=1}^{T}
+P(\mathcal{T}_\ell \mid \mathcal{T}_{\ell-1}, N_e, \rho)\]</div>
+<p>where <span class="math notranslate nohighlight">\(T\)</span> is the number of local trees and the transition probability
+<span class="math notranslate nohighlight">\(P(\mathcal{T}_\ell \mid \mathcal{T}_{\ell-1})\)</span> involves the full
+Sequentially Markov Coalescent (SMC) transition kernel. Evaluating this kernel
+exactly requires marginalizing over all possible recombination events between
+adjacent trees – an intractable computation for trees with more than a few
+leaves.</p>
+<p>Escapement’s solution is the <strong>SMC factorization</strong> from
+<a class="reference internal" href="../../timepieces/psmc/index.html#psmc-timepiece"><span class="std std-ref">PSMC</span></a>. Under the SMC approximation, the transition
+between adjacent trees depends only on the time at which recombination occurs
+and the lineage that recombines. For the purpose of the coalescent prior,
+Escapement further simplifies: it treats the coalescent prior as approximately
+factored across local trees, with the breakpoint prior providing the coupling:</p>
+<div class="math notranslate nohighlight">
+\[P(\tau \mid N_e, \rho) \approx \prod_{\ell=1}^{T}
+P(\mathcal{T}_\ell \mid N_e) \cdot \prod_{\ell=1}^{L-1}
+P(b_\ell \mid \rho)\]</div>
+<p>where <span class="math notranslate nohighlight">\(P(\mathcal{T}_\ell \mid N_e)\)</span> is the Kingman coalescent prior for
+local tree <span class="math notranslate nohighlight">\(\ell\)</span> and <span class="math notranslate nohighlight">\(P(b_\ell \mid \rho)\)</span> is the Bernoulli
+breakpoint prior at position <span class="math notranslate nohighlight">\(\ell\)</span>. This is an approximation – it
+ignores the correlation between adjacent tree topologies – but it makes the
+coalescent prior tractable and differentiable.</p>
+<div class="admonition-connection-to-psmc-s-smc-approximation admonition">
+<p class="admonition-title">Connection to PSMC’s SMC approximation</p>
+<p><a class="reference internal" href="../../timepieces/psmc/index.html#psmc-timepiece"><span class="std std-ref">PSMC</span></a> introduced the Sequential Markov Coalescent as
+a tractable approximation to the full coalescent with recombination. The key
+insight is that the genealogy at position <span class="math notranslate nohighlight">\(\ell+1\)</span> depends on the
+genealogy at position <span class="math notranslate nohighlight">\(\ell\)</span> only through a local modification: one
+lineage detaches and recoalesces. This Markov property makes HMM inference
+possible.</p>
+<p>Escapement uses the same Markov property but in a different way: instead of
+building a transition matrix (PSMC’s approach), it factors the prior into
+per-tree and per-breakpoint terms. The per-tree prior is the Kingman
+coalescent for a single tree. The per-breakpoint prior is a Bernoulli
+reflecting the SMC recombination probability. This is a coarser
+approximation than the full SMC, but it is fast, differentiable, and
+sufficient for the variational objective.</p>
+</div>
+</section>
+</section>
+<section id="connection-to-tsdate-s-variational-gamma-method">
+<h2>Connection to tsdate’s Variational Gamma Method<a class="headerlink" href="#connection-to-tsdate-s-variational-gamma-method" title="Link to this heading"></a></h2>
+<p>Escapement’s variational inference is most closely related to the variational
+gamma method in <a class="reference internal" href="../../timepieces/tsdate/index.html#tsdate-timepiece"><span class="std std-ref">tsdate</span></a>. Both methods:</p>
+<ol class="arabic simple">
+<li><p>Define a variational posterior over coalescence times.</p></li>
+<li><p>Use the Poisson mutation likelihood as one term of the ELBO.</p></li>
+<li><p>Use the coalescent prior as another term.</p></li>
+<li><p>Optimize by maximizing the ELBO.</p></li>
+</ol>
+<p>The key differences:</p>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">tsdate vs. Escapement variational inference</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 37.0%" />
+<col style="width: 38.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Aspect</p></th>
+<th class="head"><p><a class="reference internal" href="../../timepieces/tsdate/index.html#tsdate-timepiece"><span class="std std-ref">tsdate</span></a></p></th>
+<th class="head"><p>Escapement</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Variational family</p></td>
+<td><p>Gamma distributions (hand-chosen, analytical updates)</p></td>
+<td><p>Neural network (learned, flexible, but approximate)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Topology</p></td>
+<td><p>Fixed (from <a class="reference internal" href="../../timepieces/tsinfer/index.html#tsinfer-timepiece"><span class="std std-ref">tsinfer</span></a>)</p></td>
+<td><p>Jointly inferred (Gumbel-softmax)</p></td>
+</tr>
+<tr class="row-even"><td><p>Demography</p></td>
+<td><p>Not inferred (assumed known)</p></td>
+<td><p>Jointly inferred (learnable <span class="math notranslate nohighlight">\(N_e(t)\)</span>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Update rule</p></td>
+<td><p>Expectation Propagation (closed-form message passing)</p></td>
+<td><p>Gradient descent (backpropagation through the ELBO)</p></td>
+</tr>
+<tr class="row-even"><td><p>Scalability</p></td>
+<td><p>Millions of nodes (fast EP)</p></td>
+<td><p>Thousands of nodes (GPU-bound optimization)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Amortization</p></td>
+<td><p>None (per-dataset optimization)</p></td>
+<td><p>Partial (encoder shares parameters across windows)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="math notranslate nohighlight">
+\[\underbrace{\text{tsdate}}_{\text{fixed topology, analytical updates}}
+\;\xrightarrow{\text{add neural encoder, Gumbel-softmax topology}}\;
+\underbrace{\text{Escapement}}_{\text{joint topology + times, learned updates}}\]</div>
+<p>tsdate can be viewed as a special case of Escapement where the topology is
+fixed, the variational family is restricted to factored gamma distributions, and
+the updates are derived analytically rather than learned. Escapement trades
+tsdate’s elegance and scalability for flexibility and the ability to infer
+topology jointly with coalescence times.</p>
+<div class="admonition-why-not-just-use-tsdate admonition">
+<p class="admonition-title">Why not just use tsdate?</p>
+<p>tsdate is excellent for what it does: dating nodes on a fixed tree sequence.
+But it cannot infer topology (it requires tsinfer as a preprocessor), it
+cannot infer demography (it assumes known <span class="math notranslate nohighlight">\(N_e(t)\)</span>), and its factored
+gamma posterior cannot capture correlations between node times on different
+trees.</p>
+<p>Escapement addresses all three limitations – at the cost of requiring GPU
+optimization, producing an approximate (not exact) posterior, and scaling to
+fewer samples. The right choice depends on the scientific question and the
+available compute.</p>
+</div>
+</section>
+<section id="the-complete-variational-objective">
+<h2>The Complete Variational Objective<a class="headerlink" href="#the-complete-variational-objective" title="Link to this heading"></a></h2>
+<p>Combining all terms, Escapement’s ELBO for a single genotype matrix
+<span class="math notranslate nohighlight">\(\mathbf{D}\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[\text{ELBO}(\phi, \theta) =
+\underbrace{\sum_{\ell=1}^{L} \sum_{i=1}^{n}
+\log P(d_{i,\ell} \mid \tau_\ell, \mu)}_{\text{mutation log-likelihood}}
++ \underbrace{\sum_{\ell=1}^{T} \log P(\mathcal{T}_\ell \mid N_e)
++ \sum_{\ell=1}^{L-1} \log P(b_\ell \mid \rho)}_{\text{coalescent log-prior}}
++ \underbrace{H_{\text{topo}}[q] + H_{\text{branch}}[q]
++ H_{\text{break}}[q]}_{\text{variational entropy}}\]</div>
+<p>where the expectation over <span class="math notranslate nohighlight">\(q\)</span> is approximated by a single Monte Carlo
+sample <span class="math notranslate nohighlight">\(\tau \sim q(\tau \mid \mathbf{D}, \phi)\)</span> (the
+reparameterization trick makes this a low-variance estimator).</p>
+<p>The parameters being optimized are:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\phi\)</span>: all neural network weights (encoder + variational posterior
+heads)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\theta\)</span>: the demographic parameters (<span class="math notranslate nohighlight">\(N_e(t)\)</span> values on a
+piecewise-constant grid, or neural spline parameters)</p></li>
+</ul>
+<p>The mutation rate <span class="math notranslate nohighlight">\(\mu\)</span> and recombination rate <span class="math notranslate nohighlight">\(\rho\)</span> are treated
+as known constants (from independent estimates), though they could in principle
+be optimized jointly.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">training_step</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">genotypes</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">temperature</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One gradient step maximizing the ELBO on observed data.&quot;&quot;&quot;</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">)</span>  <span class="c1"># -ELBO</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">clip_grad_norm_</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The derivation is complete. Every term in the ELBO corresponds to an equation
+derived in a Timepiece. The neural network’s only role is to parameterize the
+variational posterior <span class="math notranslate nohighlight">\(q\)</span> – to propose genealogies that explain the
+observed data well under the coalescent model. The math is the same. The
+optimization is new.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of Escapement" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="architecture.html" class="btn btn-neutral float-right" title="Architecture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

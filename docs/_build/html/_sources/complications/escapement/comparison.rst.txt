@@ -1,0 +1,439 @@
+.. _escapement_comparison:
+
+=============================
+Comparison and Limitations
+=============================
+
+   *The master watchmaker tests every complication against the simplest
+   reference: a well-regulated pocket watch. If the complication cannot tell
+   time as accurately as the basic movement, it belongs on the shelf, not on
+   the wrist.*
+
+This chapter places Escapement in the landscape of population-genetic inference.
+We compare it systematically against every relevant method, trace the design
+principles borrowed from each Timepiece, enumerate five honest limitations, and
+describe the hybrid pipeline where Mainspring's speed meets Escapement's
+statistical rigor.
+
+
+Comparison Against All Methods
+================================
+
+.. list-table:: Escapement vs. all inference methods
+   :header-rows: 1
+   :widths: 14 12 12 12 12 12 14 12
+
+   * - Method
+     - Simulations needed?
+     - Full posterior?
+     - Scales to biobank?
+     - Continuous :math:`N_e`?
+     - Joint topology?
+     - Per-dataset time
+     - Statistical guarantee
+   * - :ref:`PSMC <psmc_timepiece>`
+     - No
+     - No (point est.)
+     - No (2 haplotypes)
+     - Piecewise-constant
+     - No (fixed HMM)
+     - Minutes
+     - MLE convergence
+   * - :ref:`ARGweaver <argweaver_timepiece>`
+     - No
+     - Yes (MCMC)
+     - No (~10 samples)
+     - Piecewise-constant
+     - Yes
+     - Hours--days
+     - Asymptotic exactness
+   * - :ref:`SINGER <singer_timepiece>`
+     - No
+     - Yes (Gibbs)
+     - No (~20 samples)
+     - GP prior
+     - Yes
+     - Hours
+     - Ergodicity
+   * - :ref:`tsinfer <tsinfer_timepiece>` + :ref:`tsdate <tsdate_timepiece>`
+     - No
+     - Partial (times only)
+     - Yes (millions)
+     - No (:math:`N_e` assumed)
+     - tsinfer: heuristic
+     - Minutes
+     - tsdate: ELBO bound
+   * - :ref:`Gamma-SMC <gamma_smc_timepiece>`
+     - No
+     - Yes (2 haplotypes)
+     - No (2 haplotypes)
+     - Piecewise-constant
+     - No
+     - Seconds
+     - Analytical posteriors
+   * - :ref:`phlash <phlash_timepiece>`
+     - No
+     - Yes (SVGD)
+     - Partial (pairs)
+     - Neural spline
+     - No
+     - Minutes--hours
+     - Score function est.
+   * - :ref:`Mainspring <mainspring_complication>`
+     - Yes (training)
+     - Approximate
+     - 50--100 samples
+     - Normalizing flow
+     - Yes
+     - Seconds
+     - None
+   * - **Escapement**
+     - **No**
+     - **Approximate (VI)**
+     - **20--50 samples**
+     - **Piecewise / spline / GP**
+     - **Yes (Gumbel-SM)**
+     - **10--30 min**
+     - **ELBO bound**
+
+.. admonition:: Reading the table
+
+   No method dominates all columns. PSMC is fast and needs no simulations but
+   sees only two haplotypes. ARGweaver gives the full posterior but takes days.
+   tsinfer scales to millions but surrenders posterior uncertainty. Escapement
+   occupies a specific niche: simulation-free, joint topology-time inference
+   with principled uncertainty, at the cost of per-dataset optimization time
+   and limited sample size.
+
+
+Design Principles Borrowed from Each Timepiece
+=================================================
+
+Escapement is not built in a vacuum. Every major design decision traces to a
+mathematical insight from a Timepiece.
+
+.. list-table:: Design principles and their Timepiece origins
+   :header-rows: 1
+   :widths: 22 22 56
+
+   * - Timepiece
+     - Principle borrowed
+     - How it appears in Escapement
+   * - :ref:`PSMC <psmc_timepiece>`
+     - SMC factorization
+     - The coalescent prior factors approximately across local trees
+       (Section 3 of :ref:`escapement_variational`). Without this, the prior
+       over full ARGs is intractable.
+   * - :ref:`tsdate <tsdate_timepiece>`
+     - Gamma/log-normal posteriors for coalescence times
+     - Branch lengths are parameterized as log-normal distributions, inspired
+       by tsdate's variational gamma posteriors. The entropy has a closed-form
+       expression.
+   * - :ref:`tsinfer <tsinfer_timepiece>`
+     - Attention as the Li & Stephens copying model
+     - The sample attention in the encoder mirrors tsinfer's copying
+       probabilities: high attention weight between samples :math:`i` and
+       :math:`j` indicates recent common ancestry.
+   * - :ref:`Gamma-SMC <gamma_smc_timepiece>`
+     - Continuous time, no grid
+     - Coalescence times are continuous (log-normal), not discretized into
+       intervals. This avoids the discretization artifacts of
+       :ref:`PSMC <psmc_timepiece>`.
+   * - :ref:`phlash <phlash_timepiece>`
+     - Continuous :math:`N_e(t)` with flexible parameterization
+     - :math:`N_e(t)` can be parameterized as a neural spline or GP, enabling
+       smooth demographic trajectories beyond piecewise-constant.
+   * - :ref:`ARGweaver <argweaver_timepiece>`
+     - Poisson mutation model on edges
+     - The mutation log-likelihood uses the same Poisson model as ARGweaver's
+       emission probabilities.
+   * - :ref:`SINGER <singer_timepiece>`
+     - GP prior on demographic parameters
+     - The optional GP parameterization of :math:`N_e(t)` is inspired by
+       SINGER's GP prior on branch lengths.
+   * - :ref:`msprime <msprime_timepiece>`
+     - Kingman coalescent prior
+     - The coalescent log-prior is the exponential (constant :math:`N_e`) or
+       piecewise-exponential (variable :math:`N_e`) distribution derived in
+       msprime's coalescent theory chapter.
+   * - :ref:`SMC++ <smcpp_timepiece>`
+     - Distinguished lineage structure for scaling
+     - While Escapement does not use a distinguished lineage, the insight that
+       a single lineage's coalescence history is informative motivates the
+       per-sample branch-length predictions.
+   * - :ref:`moments <moments_timepiece>` / :ref:`dadi <dadi_timepiece>`
+     - SFS as a consistency check
+     - The optional SFS auxiliary loss (inherited from
+       :ref:`Mainspring <mainspring_training>`) can be added to the ELBO as a
+       physics-informed regularizer.
+
+
+What Escapement Cannot Do
+===========================
+
+Five fundamental limitations, stated without euphemism.
+
+1. Model Misspecification
+---------------------------
+
+Escapement assumes the neutral coalescent with recombination. The ELBO is a
+lower bound on :math:`\log P(\mathbf{D} \mid \theta)` only under this model.
+If the true data-generating process includes:
+
+- **Natural selection** (sweeps, background selection, balancing selection)
+- **Population structure** (migration, admixture, isolation-by-distance)
+- **Gene conversion** (non-crossover recombination)
+- **Sequencing artifacts** (errors, missing data, batch effects)
+
+then the coalescent model is wrong, and the ELBO optimizes toward the
+*best genealogy under a wrong model*. The inferred :math:`N_e(t)` will absorb
+some of these effects (e.g., background selection appears as reduced
+:math:`N_e`), but others (e.g., population structure) may produce qualitatively
+misleading results.
+
+.. math::
+
+   P_{\text{true}}(\mathbf{D}) \neq \int P(\mathbf{D} \mid \tau, \mu)
+   \cdot P(\tau \mid N_e, \rho)\, d\tau
+
+**Mitigation.** Compare the inferred :math:`N_e(t)` against results from
+:ref:`PSMC <psmc_timepiece>` or :ref:`SMC++ <smcpp_timepiece>`. If they
+disagree qualitatively, model misspecification is likely. Run the inference on
+different genomic regions; selection produces region-specific patterns while
+neutral demography is genome-wide.
+
+2. Slower Per-Dataset
+-----------------------
+
+Escapement requires 1,000--10,000 gradient steps per dataset. At ~10 ms per
+step on a GPU, this is 10--100 seconds for simple cases and 10--30 minutes for
+complex demography. For a study requiring inference on 1,000 genomic windows,
+Escapement alone would take days.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 20 30
+
+   * - Method
+     - Per-dataset time
+     - 1000 datasets
+     - Bottleneck
+   * - :ref:`PSMC <psmc_timepiece>`
+     - ~5 minutes
+     - ~3 days
+     - EM convergence
+   * - :ref:`Mainspring <mainspring_complication>`
+     - ~1 second
+     - ~17 minutes
+     - Forward pass
+   * - **Escapement**
+     - ~15 minutes
+     - ~10 days
+     - ELBO optimization
+   * - Hybrid (Mainspring → Escapement)
+     - ~3 minutes
+     - ~2 days
+     - Warm-started ELBO
+
+**Mitigation.** Use the hybrid pipeline (Mainspring warm-start) to reduce
+per-dataset time from 15 minutes to 3 minutes. Parallelize across GPUs for
+multi-window analysis.
+
+3. Approximate Posterior
+--------------------------
+
+The variational posterior :math:`q(\tau)` is a mean-field approximation:
+topology, branch lengths, and breakpoints are approximately independent. The
+true posterior has strong correlations:
+
+- Adjacent trees share most of their topology (recombination modifies one
+  lineage, not the whole tree).
+- Branch lengths and topology are correlated (star-like trees have short
+  internal branches).
+- Breakpoints and topology changes are deterministically linked.
+
+The ELBO provides a lower bound on the log-evidence, but the gap can be
+significant. A structured variational family (e.g., autoregressive over
+positions) would reduce the gap at the cost of slower sampling.
+
+**Mitigation.** Use multiple random restarts and select the run with the
+highest ELBO. Compare the variational posterior against MCMC samples from
+:ref:`ARGweaver <argweaver_timepiece>` or :ref:`SINGER <singer_timepiece>` on
+a small subset to assess the quality of the approximation.
+
+4. Topology Inference Is Hard
+-------------------------------
+
+The space of tree topologies is discrete and exponentially large. For
+:math:`n = 20` samples, the number of labeled binary trees is
+:math:`(2 \cdot 20 - 3)!! = 37!! \approx 2 \times 10^{22}`. The
+Gumbel-softmax provides gradients through this discrete space, but the
+optimization landscape has many local optima.
+
+In practice, the topology is the last component to converge and the most
+sensitive to initialization. Errors in the topology propagate into errors in
+branch lengths and :math:`N_e(t)`.
+
+**Mitigation.** Warm-start from Mainspring or tsinfer. Use multiple restarts.
+Monitor the topology entropy during training -- if it remains high after
+annealing, the topology is uncertain and the results should be interpreted
+cautiously.
+
+5. Breakpoint Detection
+--------------------------
+
+Recombination breakpoints are modeled as independent Bernoulli variables at
+each position. This local model has two weaknesses:
+
+- **Closely spaced breakpoints** (e.g., gene conversion tracts, which are
+  typically 50--1000 bp) produce pairs of breakpoints that the Bernoulli model
+  treats independently, potentially missing the paired structure.
+- **The SMC approximation** assumes that breakpoints are well-separated and
+  that recombination modifies one lineage at a time. In regions of very high
+  recombination, this assumption breaks down.
+
+**Mitigation.** Post-process the inferred breakpoints by merging closely spaced
+events. Use a recombination map as a prior rather than assuming uniform
+:math:`\rho`.
+
+
+The Hybrid: Mainspring → Escapement Pipeline
+================================================
+
+The most powerful workflow combines both Complications:
+
+.. code-block:: text
+
+   ┌────────────────────────────┐
+   │  OBSERVED GENOTYPE MATRIX  │
+   │  D ∈ {0,1}^{n × L}        │
+   └─────────────┬──────────────┘
+                 │
+                 v
+   ┌────────────────────────────┐
+   │  STEP 1: MAINSPRING        │    ~1 second
+   │  Fast amortized inference  │
+   │  → initial ARG + N_e(t)    │
+   └─────────────┬──────────────┘
+                 │ warm-start
+                 v
+   ┌────────────────────────────┐
+   │  STEP 2: ESCAPEMENT        │    ~3 minutes (warm-started)
+   │  Likelihood-based refine   │
+   │  → calibrated posterior    │
+   │  → refined N_e(t)          │
+   │  → ELBO diagnostic         │
+   └─────────────┬──────────────┘
+                 │
+                 v
+   ┌────────────────────────────┐
+   │  OUTPUT                     │
+   │  Posterior over genealogies │
+   │  N_e(t) with uncertainty   │
+   │  ELBO as model fit metric  │
+   └────────────────────────────┘
+
+This pipeline is analogous to the classical
+:ref:`tsinfer <tsinfer_timepiece>` → :ref:`tsdate <tsdate_timepiece>` workflow,
+but fully neural:
+
+.. list-table:: Classical vs. neural two-stage pipelines
+   :header-rows: 1
+   :widths: 20 40 40
+
+   * - Stage
+     - Classical (tsinfer → tsdate)
+     - Neural (Mainspring → Escapement)
+   * - Stage 1
+     - tsinfer: Li & Stephens ancestor matching → topology
+     - Mainspring: neural encoder → full ARG
+   * - Stage 2
+     - tsdate: variational gamma EP → node times
+     - Escapement: neural variational posterior → ELBO optimization
+   * - Topology
+     - Fixed from tsinfer
+     - Refined by Escapement
+   * - Demography
+     - Assumed known
+     - Jointly inferred
+   * - Uncertainty
+     - Gamma posteriors on times
+     - Full variational posterior (topology + times + breaks)
+   * - Loss function
+     - EP messages (hand-derived)
+     - ELBO (auto-differentiated)
+
+The hybrid pipeline preserves each approach's strengths:
+
+- **From Mainspring**: fast initialization, learned representations,
+  topology structure.
+- **From Escapement**: principled objective (ELBO), no simulation dependency at
+  refinement time, joint topology-time-demography inference, built-in model
+  diagnostic.
+
+.. admonition:: The watchmaker's grande complication
+
+   In horology, a grande complication combines multiple complications into a
+   single movement: perpetual calendar, minute repeater, split-seconds
+   chronograph. Each complication reinforces the others -- the chronograph needs
+   the calendar to timestamp events; the repeater needs the chronograph to mark
+   elapsed time.
+
+   The Mainspring → Escapement pipeline is the grande complication of this book.
+   Mainspring provides the fast, broad inference. Escapement provides the
+   principled, per-dataset refinement. Together, they combine the amortized
+   economics of simulation-based training with the statistical rigor of
+   likelihood-based inference.
+
+   Neither is sufficient alone. Mainspring without Escapement has no guarantees.
+   Escapement without Mainspring starts from scratch and may never converge.
+   Together, they keep time that the watchmaker can trust.
+
+
+When to Use What
+==================
+
+A practical decision guide:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - Scenario
+     - Recommended approach
+   * - Screening 1,000 genomic windows for demographic events
+     - :ref:`Mainspring <mainspring_complication>` alone (speed is paramount)
+   * - Careful :math:`N_e(t)` inference from 30 samples
+     - Hybrid: Mainspring → Escapement
+   * - Single diploid genome, well-characterized species
+     - :ref:`PSMC <psmc_timepiece>` (interpretable, proven, fast enough)
+   * - Provably correct posterior samples from the ARG
+     - :ref:`ARGweaver <argweaver_timepiece>` (no shortcut to exactness)
+   * - Biobank-scale tree sequence (>10,000 samples)
+     - :ref:`tsinfer <tsinfer_timepiece>` + :ref:`tsdate <tsdate_timepiece>`
+       (only methods that scale)
+   * - Multi-population split times
+     - :ref:`SMC++ <smcpp_timepiece>` or :ref:`dadi <dadi_timepiece>`
+   * - Need ELBO diagnostic to check model fit
+     - Escapement (only neural method with a principled fit metric)
+   * - No GPU available
+     - :ref:`PSMC <psmc_timepiece>`, :ref:`tsinfer <tsinfer_timepiece>` +
+       :ref:`tsdate <tsdate_timepiece>`, or :ref:`moments <moments_timepiece>`
+   * - Teaching and understanding
+     - The Timepieces, always (the whole point of this book)
+
+.. admonition:: The honest summary
+
+   Escapement is most valuable when (1) you have a moderately sized dataset
+   (20--50 samples), (2) you care about posterior uncertainty, (3) you want to
+   infer demography jointly with the genealogy, and (4) you are willing to
+   spend 10--30 minutes per dataset on a GPU. For any single axis -- speed,
+   scalability, posterior quality, interpretability -- there is a classical
+   method that does better. Escapement's contribution is occupying a point in
+   the trade-off space that no classical method reaches: simulation-free,
+   neural, joint, principled, and fast enough.
+
+   The Timepieces are the foundation. Mainspring and Escapement are
+   complications. Use the simplest tool that answers your question. And always
+   check the results against a method you trust -- whether that is PSMC,
+   tsdate, or a simulation study you run yourself.

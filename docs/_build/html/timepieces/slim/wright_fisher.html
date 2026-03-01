@@ -1,0 +1,1043 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Wright-Fisher Generation Cycle &mdash; The Watchmaker&#39;s Guide to Population Genetics</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=649a27d8" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=2749f8ea" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script>window.MathJax = {"tex": {"macros": {"RR": "\\mathbb{R}", "NN": "\\mathbb{N}", "EE": "\\mathbb{E}", "PP": "\\mathbb{P}"}}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Recipes" href="recipes.html" />
+    <link rel="prev" title="Overview of SLiM" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Watchmaker's Guide to Population Genetics
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">The Workshop</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../philosophy.html">The Watchmaker’s Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#why-build-it-yourself">Why Build It Yourself?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-watchmaker-s-way">The Watchmaker’s Way</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#the-gears-of-understanding">The Gears of Understanding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-mathematical-rigor">On Mathematical Rigor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-teaching-probability-and-calculus">On Teaching Probability and Calculus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#on-python-implementations">On Python Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../philosophy.html#your-journey">Your Journey</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The Workbench (Prerequisites)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../prerequisites/index.html">The Workbench (Prerequisites)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html">Likelihood-Based Probabilistic Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-likelihood">Why Likelihood?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-likelihood-function">The Likelihood Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-toolkit-key-distributions">The Toolkit: Key Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-exponential-distribution-coalescence-waiting-times">The Exponential Distribution: Coalescence Waiting Times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-poisson-distribution-mutations-and-the-sfs">The Poisson Distribution: Mutations and the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gamma-distribution-ages-and-rates">The Gamma Distribution: Ages and Rates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-gaussian-distribution-smoothness-priors">The Gaussian Distribution: Smoothness Priors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#maximum-likelihood-estimation-mle">Maximum Likelihood Estimation (MLE)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-inferring-population-size-from-the-sfs">Worked Example: Inferring Population Size from the SFS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#fisher-information-and-confidence-intervals">Fisher Information and Confidence Intervals</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#bayesian-inference">Bayesian Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#conjugate-priors-when-bayesian-inference-has-closed-form-solutions">Conjugate Priors: When Bayesian Inference Has Closed-Form Solutions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#composite-and-approximate-likelihoods">Composite and Approximate Likelihoods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#worked-example-composite-likelihood-from-two-data-sources">Worked Example: Composite Likelihood from Two Data Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-other-paradigm-neural-networks-and-amortized-inference">The Other Paradigm: Neural Networks and Amortized Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#the-key-idea">The key idea</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-amortized-inference-does-well">What amortized inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#what-likelihood-based-inference-does-well">What likelihood-based inference does well</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#why-this-book-focuses-on-the-likelihood-approach">Why this book focuses on the likelihood approach</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/probabilistic_inference.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/coalescent_theory.html">Coalescent Theory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-wright-fisher-model-forward-in-time">The Wright-Fisher Model (Forward in Time)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#going-backwards-the-coalescent">Going Backwards: The Coalescent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-probability-that-two-specific-lineages-coalesce-in-a-given-generation">The probability that two specific lineages coalesce in a given generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#waiting-time-to-coalescence">Waiting time to coalescence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#the-coalescent-with-n-samples">The Coalescent with <span class="math notranslate nohighlight">\(n\)</span> Samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#expected-number-of-lineages-at-time-t">Expected Number of Lineages at Time <span class="math notranslate nohighlight">\(t\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#mutations-on-the-coalescent-tree">Mutations on the Coalescent Tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/coalescent_theory.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/args.html">Ancestral Recombination Graphs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-trees-aren-t-enough">Why Trees Aren’t Enough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#what-is-recombination">What Is Recombination?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/args.html#what-we-ve-established-so-far">What We’ve Established So Far</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#recombination-in-the-coalescent">Recombination in the Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-structure-of-an-arg-a-directed-acyclic-graph">The Structure of an ARG: A Directed Acyclic Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#marginal-trees">Marginal Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#the-tree-sequence-representation">The Tree Sequence Representation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#branch-lengths-and-the-arg">Branch Lengths and the ARG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#why-arg-inference-is-hard">Why ARG Inference Is Hard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/args.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/hmms.html">Hidden Markov Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#why-hmms-for-arg-inference">Why HMMs for ARG Inference?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#a-warm-up-example-weather-and-umbrellas">A Warm-Up Example: Weather and Umbrellas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-forward-algorithm">The Forward Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#scaling-for-numerical-stability">Scaling for Numerical Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#stochastic-traceback-sampling">Stochastic Traceback (Sampling)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-trick-linear-time-transitions">The Li-Stephens Trick: Linear-Time Transitions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-li-stephens-transition-structure">The Li-Stephens Transition Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/hmms.html#the-o-k-forward-step">The <span class="math notranslate nohighlight">\(O(K)\)</span> Forward Step</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/hmms.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/smc.html">The Sequentially Markov Coalescent</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-problem-with-the-full-coalescent">The Problem with the Full Coalescent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-does-markov-mean-and-why-does-it-matter">What Does “Markov” Mean, and Why Does It Matter?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#intuitive-explanation">Intuitive Explanation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#formal-definition">Formal Definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-markov-matters-for-computation">Why Markov Matters for Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#what-makes-cwr-non-markov">What Makes CwR Non-Markov?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#the-mechanism">The Mechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#what-are-ghost-lineages-a-concrete-example">What Are Ghost Lineages? A Concrete Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-approximation">The SMC Approximation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#why-does-this-restore-the-markov-property">Why Does This Restore the Markov Property?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#how-good-is-the-approximation">How Good Is the Approximation?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-smc-transition-probability">The SMC Transition Probability</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-r-i-the-recombination-probability">Deriving <span class="math notranslate nohighlight">\(r_i\)</span>: The Recombination Probability</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/smc.html#deriving-q-j-the-re-joining-weights">Deriving <span class="math notranslate nohighlight">\(q_j\)</span>: The Re-joining Weights</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#psmc-the-pairwise-case">PSMC: The Pairwise Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#the-cumulative-distribution-function">The Cumulative Distribution Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#why-smc-enables-hmm-inference">Why SMC Enables HMM Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/smc.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html">The Diffusion Approximation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-wright-fisher-to-continuous-frequency">From Wright-Fisher to Continuous Frequency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#mean-and-variance-of-delta-x">Mean and variance of <span class="math notranslate nohighlight">\(\Delta x\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-diffusion-timescale">The diffusion timescale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-wf-trajectories-converging-to-sde-paths">Code: WF trajectories converging to SDE paths</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stochastic-differential-equations">Stochastic Differential Equations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#euler-maruyama-simulation">Euler-Maruyama simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#from-sdes-to-pdes-the-fokker-planck-equation">From SDEs to PDEs: The Fokker-Planck Equation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-two-terms-diffusion-and-advection">The two terms: diffusion and advection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#boundary-conditions">Boundary Conditions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#absorbing-boundaries">Absorbing boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#why-x-1-x-vanishes-at-boundaries">Why <span class="math notranslate nohighlight">\(x(1-x)\)</span> vanishes at boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-flux-condition">The flux condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#reflecting-boundaries-and-mutation">Reflecting boundaries and mutation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#stationary-distributions">Stationary Distributions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-neutral-case">The neutral case</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-mutation-the-beta-distribution">With mutation: the Beta distribution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#with-selection-exponential-tilting">With selection: exponential tilting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#numerical-solutions-finite-differences-for-pdes">Numerical Solutions: Finite Differences for PDEs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#discretizing-x-on-a-grid">Discretizing <span class="math notranslate nohighlight">\(x\)</span> on a grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#finite-difference-approximations">Finite-difference approximations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-method-of-lines">The method of lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#crank-nicolson-time-stepping">Crank-Nicolson time stepping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#code-1d-diffusion-solver">Code: 1D diffusion solver</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#connection-to-the-site-frequency-spectrum">Connection to the Site Frequency Spectrum</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#the-binomial-bridge">The binomial bridge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#how-dadi-and-moments-differ">How dadi and moments differ</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/diffusion_approximation.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/odes.html">Ordinary Differential Equations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-big-idea">The Big Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#what-is-an-ode">What Is an ODE?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#euler-s-method">Euler’s Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-runge-kutta-family">The Runge-Kutta Family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk2-the-midpoint-method">RK2: The Midpoint Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk4-the-classic-method">RK4: The Classic Method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/odes.html#rk45-adaptive-step-size-dormand-prince">RK45: Adaptive Step Size (Dormand-Prince)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#systems-of-coupled-odes">Systems of Coupled ODEs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#stiffness-and-implicit-methods">Stiffness and Implicit Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#the-matrix-exponential">The Matrix Exponential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/odes.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../prerequisites/mcmc.html">Markov Chain Monte Carlo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-big-idea-why-sample">The Big Idea: Why Sample?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#bayesian-inference-in-60-seconds">Bayesian Inference in 60 Seconds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#markov-chains">Markov Chains</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#stationary-distribution">Stationary Distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#the-metropolis-hastings-algorithm">The Metropolis-Hastings Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#gibbs-sampling">Gibbs Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#convergence-diagnostics">Convergence Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#practical-considerations">Practical Considerations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#proposal-tuning">Proposal Tuning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#data-informed-proposals">Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#parallel-tempering">Parallel Tempering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#when-mcmc-is-not-enough">When MCMC Is Not Enough</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#mcmc-in-population-genetics-three-applications">MCMC in Population Genetics: Three Applications</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#argweaver-gibbs-sampling-over-args">ARGweaver: Gibbs Sampling over ARGs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#singer-mh-with-data-informed-proposals">SINGER: MH with Data-Informed Proposals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../prerequisites/mcmc.html#phlash-beyond-mcmc">PHLASH: Beyond MCMC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../prerequisites/mcmc.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Timepieces</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Timepieces</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#verification-status">Verification Status</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../psmc/index.html">Timepiece I: PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#why-just-two-sequences">Why Just Two Sequences?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../psmc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../smcpp/index.html">Timepiece II: SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../smcpp/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lshmm/index.html">Timepiece III: The Li &amp; Stephens HMM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lshmm/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../msprime/index.html">Timepiece IV: msprime</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../msprime/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../argweaver/index.html">Timepiece V: ARGweaver</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../argweaver/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsinfer/index.html">Timepiece VI: tsinfer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsinfer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../singer/index.html">Timepiece VII: SINGER</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../singer/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../threads/index.html">Timepiece VII: Threads</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../threads/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tsdate/index.html">Timepiece IX: tsdate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#where-tsinfer-ends-and-tsdate-begins">Where tsinfer Ends and tsdate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tsdate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../moments/index.html">Timepiece X: moments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../moments/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dadi/index.html">Timepiece XI: dadi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#dadi-vs-moments">dadi vs. moments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dadi/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../momi2/index.html">Timepiece XII: momi2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../momi2/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../gamma_smc/index.html">Timepiece XIII: Gamma-SMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#psmc-vs-gamma-smc">PSMC vs. Gamma-SMC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../gamma_smc/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../phlash/index.html">Timepiece XIV: PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../phlash/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../clues/index.html">Timepiece XV: CLUES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#why-detect-selection">Why Detect Selection?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../clues/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Timepiece XVI: SLiM</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../relate/index.html">Timepiece XVII: Relate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#where-tsinfer-and-singer-end-and-relate-begins">Where tsinfer and SINGER End and Relate Begins</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../relate/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../discoal/index.html">Timepiece XVIII: discoal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#the-mechanism-at-a-glance">The Mechanism at a Glance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../discoal/index.html#chapters">Chapters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Watchmaker's Guide to Population Genetics</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Timepieces</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Timepiece XVI: SLiM</a></li>
+      <li class="breadcrumb-item active">The Wright-Fisher Generation Cycle</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul><div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Sequential page navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of SLiM" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="recipes.html" class="btn btn-neutral float-right" title="Recipes" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+  </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-wright-fisher-generation-cycle">
+<span id="slim-wright-fisher"></span><h1>The Wright-Fisher Generation Cycle<a class="headerlink" href="#the-wright-fisher-generation-cycle" title="Link to this heading"></a></h1>
+<blockquote>
+<div><p><em>The escapement of the forge: one tick, one generation.</em></p>
+</div></blockquote>
+<p>The Wright-Fisher model is the oldest and simplest model of a finite
+population. Each generation, <span class="math notranslate nohighlight">\(N\)</span> offspring are produced by drawing
+parents at random (with replacement) from the current population. Add
+mutations, recombination, and fitness-proportional parent selection, and
+you have the engine that drives SLiM.</p>
+<p>In this chapter, we build a minimal Wright-Fisher simulator from scratch.
+It will not be fast – SLiM’s C++ implementation is heavily optimized with
+mutation runs, fitness caching, and template specialization – but it will
+be <em>correct</em>, and every line of code will correspond to a line of math.</p>
+<section id="step-1-the-population-and-its-genomes">
+<h2>Step 1: The Population and Its Genomes<a class="headerlink" href="#step-1-the-population-and-its-genomes" title="Link to this heading"></a></h2>
+<p>A diploid individual carries two <strong>haplosomes</strong> (chromosome copies). Each
+haplosome is a list of mutations, where each mutation has a position on the
+chromosome, a selection coefficient <span class="math notranslate nohighlight">\(s\)</span>, and a dominance coefficient
+<span class="math notranslate nohighlight">\(h\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Mutation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single mutation on a haplosome.</span>
+
+<span class="sd">    Each mutation has a genomic position, a selection coefficient s,</span>
+<span class="sd">    and a dominance coefficient h. The mutation also records when</span>
+<span class="sd">    (which generation) and where (which individual) it arose.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">position</span><span class="p">:</span> <span class="nb">int</span>         <span class="c1"># base-pair position on the chromosome</span>
+    <span class="n">s</span><span class="p">:</span> <span class="nb">float</span>              <span class="c1"># selection coefficient (&gt;0 beneficial, &lt;0 deleterious)</span>
+    <span class="n">h</span><span class="p">:</span> <span class="nb">float</span>              <span class="c1"># dominance coefficient (0.5 = codominant)</span>
+    <span class="n">origin_tick</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># generation when the mutation arose</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Individual</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A diploid individual carrying two haplosomes.</span>
+
+<span class="sd">    Each haplosome is a sorted list of Mutation objects. Fitness</span>
+<span class="sd">    is computed from the combined effects of all mutations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">haplosome_1</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">haplosome_2</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">fitness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+</pre></div>
+</div>
+<p>This is the data model. Now for the dynamics.</p>
+</section>
+<section id="step-2-fitness-calculation">
+<h2>Step 2: Fitness Calculation<a class="headerlink" href="#step-2-fitness-calculation" title="Link to this heading"></a></h2>
+<p>An individual’s fitness is the product of the effects of all its mutations.
+The key subtlety is <strong>dominance</strong>: a mutation’s effect depends on whether
+the individual carries it on one haplosome (heterozygous) or both
+(homozygous).</p>
+<p>For a mutation with selection coefficient <span class="math notranslate nohighlight">\(s\)</span> and dominance <span class="math notranslate nohighlight">\(h\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{fitness contribution} = \begin{cases}
+1 + s &amp; \text{if homozygous (mutation on both haplosomes)} \\
+1 + hs &amp; \text{if heterozygous (mutation on one haplosome)}
+\end{cases}\end{split}\]</div>
+<p>The individual’s total fitness is the product over all mutations:</p>
+<div class="math notranslate nohighlight">
+\[w = \prod_{m \in \text{mutations}} f(m)\]</div>
+<p>where <span class="math notranslate nohighlight">\(f(m)\)</span> is the fitness contribution of mutation <span class="math notranslate nohighlight">\(m\)</span>, taking
+into account its zygosity.</p>
+<div class="admonition-probability-aside-why-multiplicative-fitness admonition">
+<p class="admonition-title">Probability Aside – Why multiplicative fitness?</p>
+<p>Multiplicative fitness means that the effects of mutations are
+independent on a log scale: <span class="math notranslate nohighlight">\(\log w = \sum \log f(m)\)</span>. This is
+the standard model in population genetics (it is the simplest
+assumption, and SLiM uses it by default). Alternative models include
+additive fitness (<span class="math notranslate nohighlight">\(w = 1 + \sum s_m\)</span>) and epistatic fitness
+(where the effect of one mutation depends on which other mutations are
+present). Multiplicative fitness is a good approximation when
+<span class="math notranslate nohighlight">\(|s|\)</span> is small, since <span class="math notranslate nohighlight">\(\prod(1 + s_i) \approx 1 + \sum s_i\)</span>
+for small <span class="math notranslate nohighlight">\(s_i\)</span>.</p>
+</div>
+<div class="admonition-closing-a-confusion-gap-dominance admonition">
+<p class="admonition-title">Closing a confusion gap – Dominance</p>
+<p>Dominance coefficient <span class="math notranslate nohighlight">\(h\)</span> interpolates between recessive
+(<span class="math notranslate nohighlight">\(h = 0\)</span>) and dominant (<span class="math notranslate nohighlight">\(h = 1\)</span>):</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(h = 0\)</span>: The mutation has no effect in heterozygotes (fully
+recessive). Only homozygous carriers are affected.</p></li>
+<li><p><span class="math notranslate nohighlight">\(h = 0.5\)</span>: The heterozygote effect is half the homozygote
+effect (codominant/additive). This is the most common default.</p></li>
+<li><p><span class="math notranslate nohighlight">\(h = 1\)</span>: The heterozygote has the full effect (fully dominant).</p></li>
+</ul>
+<p>In SLiM’s source code, the cached fitness for a heterozygous mutation
+is <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">+</span> <span class="pre">h</span> <span class="pre">*</span> <span class="pre">s</span></code>, and for a homozygous mutation it is <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">+</span> <span class="pre">s</span></code>. The
+fitness value is clamped to a minimum of 0 (an individual cannot have
+negative fitness).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">calculate_fitness</span><span class="p">(</span><span class="n">individual</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute fitness as the product of all mutation effects.</span>
+
+<span class="sd">    For each mutation, we check whether the individual is homozygous</span>
+<span class="sd">    (mutation on both haplosomes) or heterozygous (mutation on one).</span>
+
+<span class="sd">    This mirrors SLiM&#39;s core fitness calculation in population.cpp.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="c1"># Collect positions of mutations on each haplosome</span>
+    <span class="n">positions_1</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="o">.</span><span class="n">position</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">individual</span><span class="o">.</span><span class="n">haplosome_1</span><span class="p">}</span>
+    <span class="n">positions_2</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="o">.</span><span class="n">position</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">individual</span><span class="o">.</span><span class="n">haplosome_2</span><span class="p">}</span>
+
+    <span class="c1"># Mutations on haplosome 1</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">individual</span><span class="o">.</span><span class="n">haplosome_1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">position</span> <span class="ow">in</span> <span class="n">positions_2</span><span class="p">:</span>
+            <span class="c1"># Homozygous: mutation present on both haplosomes</span>
+            <span class="n">w</span> <span class="o">*=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">m</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Heterozygous: mutation only on haplosome 1</span>
+            <span class="n">w</span> <span class="o">*=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">m</span><span class="o">.</span><span class="n">h</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+
+    <span class="c1"># Mutations on haplosome 2 that are NOT on haplosome 1</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">individual</span><span class="o">.</span><span class="n">haplosome_2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">position</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">positions_1</span><span class="p">:</span>
+            <span class="c1"># Heterozygous: mutation only on haplosome 2</span>
+            <span class="n">w</span> <span class="o">*=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">m</span><span class="o">.</span><span class="n">h</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+
+    <span class="c1"># Clamped to zero (SLiM also does this: fitness cannot be negative)</span>
+    <span class="n">individual</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">individual</span><span class="o">.</span><span class="n">fitness</span>
+
+<span class="c1"># Example: one beneficial heterozygous mutation</span>
+<span class="n">ind</span> <span class="o">=</span> <span class="n">Individual</span><span class="p">()</span>
+<span class="n">ind</span><span class="o">.</span><span class="n">haplosome_1</span> <span class="o">=</span> <span class="p">[</span><span class="n">Mutation</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fitness with one het beneficial (s=0.1, h=0.5): &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">calculate_fitness</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Expected: 1 + 0.5 * 0.1 = 1.05</span>
+
+<span class="c1"># Two deleterious mutations, one homozygous</span>
+<span class="n">ind2</span> <span class="o">=</span> <span class="n">Individual</span><span class="p">()</span>
+<span class="n">m1</span> <span class="o">=</span> <span class="n">Mutation</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">s</span><span class="o">=-</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">Mutation</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">s</span><span class="o">=-</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>  <span class="c1"># same position = homozygous</span>
+<span class="n">ind2</span><span class="o">.</span><span class="n">haplosome_1</span> <span class="o">=</span> <span class="p">[</span><span class="n">m1</span><span class="p">]</span>
+<span class="n">ind2</span><span class="o">.</span><span class="n">haplosome_2</span> <span class="o">=</span> <span class="p">[</span><span class="n">m2</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fitness with one hom deleterious (s=-0.05): &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">calculate_fitness</span><span class="p">(</span><span class="n">ind2</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Expected: 1 + (-0.05) = 0.95</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-parent-selection">
+<h2>Step 3: Parent Selection<a class="headerlink" href="#step-3-parent-selection" title="Link to this heading"></a></h2>
+<p>Parents are drawn with probability proportional to their fitness. This is
+the mechanism by which selection acts: fitter individuals are more likely
+to be chosen as parents, so their alleles are over-represented in the next
+generation.</p>
+<p>Formally, the probability that individual <span class="math notranslate nohighlight">\(i\)</span> is chosen as a parent
+is:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{parent} = i) = \frac{w_i}{\sum_{j=1}^{N} w_j}\]</div>
+<p>This is <strong>fitness-proportional selection</strong>, also called <strong>roulette wheel
+selection</strong> in the evolutionary computation literature.</p>
+<div class="admonition-probability-aside-selection-as-a-biased-coin admonition">
+<p class="admonition-title">Probability Aside – Selection as a biased coin</p>
+<p>Under neutrality (<span class="math notranslate nohighlight">\(s = 0\)</span> for all mutations), all individuals have
+fitness <span class="math notranslate nohighlight">\(w = 1\)</span>, and parent selection reduces to uniform random
+sampling – the standard Wright-Fisher model. Selection introduces a
+bias: if individual <span class="math notranslate nohighlight">\(i\)</span> has fitness <span class="math notranslate nohighlight">\(1 + s\)</span> and everyone
+else has fitness <span class="math notranslate nohighlight">\(1\)</span>, the probability of choosing <span class="math notranslate nohighlight">\(i\)</span> is
+<span class="math notranslate nohighlight">\((1 + s) / (N - 1 + 1 + s) \approx (1 + s) / N\)</span> for large
+<span class="math notranslate nohighlight">\(N\)</span>. The bias is small per generation but compounds over many
+generations – this is how evolution works.</p>
+</div>
+<p>In SLiM’s C++ implementation, fitness-proportional selection uses a GSL
+discrete lookup table for <span class="math notranslate nohighlight">\(O(1)\)</span> sampling after <span class="math notranslate nohighlight">\(O(N)\)</span> setup.
+Our Python version uses <code class="docutils literal notranslate"><span class="pre">numpy.random.choice</span></code> with weights:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">select_parents</span><span class="p">(</span><span class="n">population</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw two parents with probability proportional to fitness.</span>
+
+<span class="sd">    Returns indices into the population list. The two parents</span>
+<span class="sd">    may be the same individual (selfing is allowed in the basic</span>
+<span class="sd">    Wright-Fisher model).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fitnesses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ind</span><span class="o">.</span><span class="n">fitness</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">population</span><span class="p">])</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">fitnesses</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># All individuals have zero fitness -- population is dead.</span>
+        <span class="c1"># This can happen with very strong purifying selection.</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Population extinction: all fitnesses are zero&quot;</span><span class="p">)</span>
+
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">fitnesses</span> <span class="o">/</span> <span class="n">total</span>
+
+    <span class="c1"># Draw two parents independently (with replacement)</span>
+    <span class="n">parent_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parent_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">parent_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-recombination">
+<h2>Step 4: Recombination<a class="headerlink" href="#step-4-recombination" title="Link to this heading"></a></h2>
+<p>Each parent contributes one haplosome to the offspring. That haplosome is
+assembled by <strong>recombining</strong> the parent’s two haplosomes: crossover points
+are drawn, and the haplosome alternates between the two parental copies at
+each crossover.</p>
+<p>The number of crossovers along a chromosome of length <span class="math notranslate nohighlight">\(L\)</span> with
+per-bp recombination rate <span class="math notranslate nohighlight">\(r\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[n_{\text{crossovers}} \sim \text{Poisson}(r \cdot L)\]</div>
+<p>Each crossover point is placed uniformly at random along the chromosome.
+The offspring haplosome starts by copying from one randomly chosen parental
+haplosome, then switches to the other at each crossover point.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">recombine</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate one recombinant haplosome from a diploid parent.</span>
+
+<span class="sd">    This is the core of meiosis: start with one randomly chosen</span>
+<span class="sd">    parental haplosome, then switch at each crossover point.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parent : Individual</span>
+<span class="sd">        The diploid parent with two haplosomes.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Per-bp, per-generation recombination rate.</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Chromosome length in base pairs.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    child_haplosome : list of Mutation</span>
+<span class="sd">        The recombinant haplosome for the child.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Draw number of crossovers from Poisson distribution</span>
+    <span class="n">n_crossovers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n_crossovers</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># No recombination: child gets a complete copy of one haplosome</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">haplosome_1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">haplosome_2</span><span class="p">)</span>
+
+    <span class="c1"># Draw crossover positions (sorted)</span>
+    <span class="n">breakpoints</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_crossovers</span><span class="p">))</span>
+
+    <span class="c1"># Start with a randomly chosen haplosome</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+        <span class="n">sources</span> <span class="o">=</span> <span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">haplosome_1</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">haplosome_2</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sources</span> <span class="o">=</span> <span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">haplosome_2</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">haplosome_1</span><span class="p">]</span>
+
+    <span class="c1"># Build the recombinant haplosome by alternating between sources</span>
+    <span class="n">child_haplosome</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">current_source</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># index into sources list</span>
+
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sources</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="c1"># Determine which source this mutation falls in</span>
+        <span class="c1"># by counting how many breakpoints are to the left of it</span>
+        <span class="n">n_breaks_before</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">bp</span> <span class="ow">in</span> <span class="n">breakpoints</span> <span class="k">if</span> <span class="n">bp</span> <span class="o">&lt;=</span> <span class="n">m</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
+        <span class="n">source_idx</span> <span class="o">=</span> <span class="n">n_breaks_before</span> <span class="o">%</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">source_idx</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">child_haplosome</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">source_idx</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">child_haplosome</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+    <span class="c1"># Sort by position for consistency</span>
+    <span class="n">child_haplosome</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">child_haplosome</span>
+</pre></div>
+</div>
+<p>A cleaner (and faster) implementation that mirrors SLiM more closely:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">recombine_v2</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">L</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate one recombinant haplosome (cleaner version).</span>
+
+<span class="sd">    Walk along the chromosome, switching between parental haplosomes</span>
+<span class="sd">    at each breakpoint. Collect mutations from whichever haplosome</span>
+<span class="sd">    is currently active.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_crossovers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+    <span class="n">breakpoints</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_crossovers</span><span class="p">))</span> <span class="k">if</span> <span class="n">n_crossovers</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[]</span>
+    <span class="n">breakpoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">L</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># sentinel: end of chromosome</span>
+
+    <span class="c1"># Choose starting haplosome randomly</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+        <span class="n">hap_a</span><span class="p">,</span> <span class="n">hap_b</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">haplosome_1</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">haplosome_2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hap_a</span><span class="p">,</span> <span class="n">hap_b</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">haplosome_2</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">haplosome_1</span>
+
+    <span class="n">child</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">hap_a</span>
+    <span class="n">other</span> <span class="o">=</span> <span class="n">hap_b</span>
+    <span class="n">bp_idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Merge mutations from both haplosomes in position order</span>
+    <span class="n">all_muts_a</span> <span class="o">=</span> <span class="p">[(</span><span class="n">m</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">hap_a</span><span class="p">]</span>
+    <span class="n">all_muts_b</span> <span class="o">=</span> <span class="p">[(</span><span class="n">m</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">hap_b</span><span class="p">]</span>
+    <span class="n">all_events</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_muts_a</span> <span class="o">+</span> <span class="n">all_muts_b</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">using_a</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># start with hap_a</span>
+
+    <span class="k">for</span> <span class="n">pos</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">mut</span> <span class="ow">in</span> <span class="n">all_events</span><span class="p">:</span>
+        <span class="c1"># Advance through breakpoints</span>
+        <span class="k">while</span> <span class="n">bp_idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">breakpoints</span><span class="p">)</span> <span class="ow">and</span> <span class="n">breakpoints</span><span class="p">[</span><span class="n">bp_idx</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">pos</span><span class="p">:</span>
+            <span class="n">using_a</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">using_a</span>
+            <span class="n">bp_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Keep mutation if it comes from the currently active haplosome</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">using_a</span> <span class="ow">and</span> <span class="n">source</span> <span class="o">==</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">using_a</span> <span class="ow">and</span> <span class="n">source</span> <span class="o">==</span> <span class="s1">&#39;b&#39;</span><span class="p">):</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mut</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">child</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-adding-new-mutations">
+<h2>Step 5: Adding New Mutations<a class="headerlink" href="#step-5-adding-new-mutations" title="Link to this heading"></a></h2>
+<p>After recombination, new mutations are added to the offspring’s haplosomes.
+The number of new mutations on each haplosome is Poisson-distributed:</p>
+<div class="math notranslate nohighlight">
+\[n_{\text{mutations}} \sim \text{Poisson}(\mu \cdot L)\]</div>
+<p>Each mutation is placed at a uniformly random position along the chromosome.
+Its selection coefficient <span class="math notranslate nohighlight">\(s\)</span> is drawn from the <strong>distribution of
+fitness effects (DFE)</strong>, which defines the spectrum of possible fitness
+effects.</p>
+<div class="admonition-probability-aside-common-dfe-models admonition">
+<p class="admonition-title">Probability Aside – Common DFE models</p>
+<p>The DFE is the probability distribution of <span class="math notranslate nohighlight">\(s\)</span> for new mutations.
+Common choices:</p>
+<ul class="simple">
+<li><p><strong>Fixed</strong>: <span class="math notranslate nohighlight">\(s\)</span> is a constant (e.g., <span class="math notranslate nohighlight">\(s = 0\)</span> for neutral
+mutations, <span class="math notranslate nohighlight">\(s = -0.01\)</span> for weakly deleterious).</p></li>
+<li><p><strong>Exponential</strong>: <span class="math notranslate nohighlight">\(s \sim \text{Exp}(\beta)\)</span>. Used for beneficial
+mutations, where most have small effect and few have large effect.</p></li>
+<li><p><strong>Gamma</strong>: <span class="math notranslate nohighlight">\(|s| \sim \text{Gamma}(\alpha, \beta)\)</span>. The most
+commonly used DFE for deleterious mutations (Eyre-Walker &amp; Keightley,
+2007). The shape parameter <span class="math notranslate nohighlight">\(\alpha\)</span> controls how concentrated
+effects are: <span class="math notranslate nohighlight">\(\alpha &lt; 1\)</span> gives an L-shaped distribution (many
+nearly-neutral, few strongly deleterious); <span class="math notranslate nohighlight">\(\alpha &gt; 1\)</span> gives a
+bell-shaped distribution.</p></li>
+<li><p><strong>Normal</strong>: <span class="math notranslate nohighlight">\(s \sim \mathcal{N}(\mu_s, \sigma_s^2)\)</span>. Rarely
+used for purifying selection but sometimes for stabilizing selection
+models.</p></li>
+</ul>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add_mutations</span><span class="p">(</span><span class="n">haplosome</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">tick</span><span class="p">,</span> <span class="n">dfe</span><span class="o">=</span><span class="s1">&#39;neutral&#39;</span><span class="p">,</span> <span class="n">dfe_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add new mutations to a haplosome.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    haplosome : list of Mutation</span>
+<span class="sd">        The haplosome to mutate.</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Per-bp, per-generation mutation rate.</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Chromosome length.</span>
+<span class="sd">    tick : int</span>
+<span class="sd">        Current generation (for recording origin time).</span>
+<span class="sd">    dfe : str</span>
+<span class="sd">        Distribution of fitness effects: &#39;neutral&#39;, &#39;fixed&#39;,</span>
+<span class="sd">        &#39;exponential&#39;, or &#39;gamma&#39;.</span>
+<span class="sd">    dfe_params : dict</span>
+<span class="sd">        Parameters for the DFE (e.g., {&#39;s&#39;: -0.01} for fixed,</span>
+<span class="sd">        {&#39;mean&#39;: 0.01} for exponential,</span>
+<span class="sd">        {&#39;shape&#39;: 0.3, &#39;scale&#39;: 0.05} for gamma).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    haplosome : list of Mutation</span>
+<span class="sd">        The haplosome with new mutations added.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Number of new mutations: Poisson(mu * L)</span>
+    <span class="n">n_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">mu</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dfe_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dfe_params</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_new</span><span class="p">):</span>
+        <span class="c1"># Random position along the chromosome</span>
+        <span class="n">position</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+
+        <span class="c1"># Draw selection coefficient from the DFE</span>
+        <span class="k">if</span> <span class="n">dfe</span> <span class="o">==</span> <span class="s1">&#39;neutral&#39;</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">elif</span> <span class="n">dfe</span> <span class="o">==</span> <span class="s1">&#39;fixed&#39;</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">dfe_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">dfe</span> <span class="o">==</span> <span class="s1">&#39;exponential&#39;</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">dfe_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">dfe</span> <span class="o">==</span> <span class="s1">&#39;gamma&#39;</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">gamma</span><span class="p">(</span>
+                <span class="n">dfe_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;shape&#39;</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
+                <span class="n">dfe_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+            <span class="p">)</span>  <span class="c1"># negative because deleterious</span>
+
+        <span class="n">h</span> <span class="o">=</span> <span class="n">dfe_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>  <span class="c1"># default: codominant</span>
+        <span class="n">haplosome</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Mutation</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="n">position</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">s</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">,</span>
+                                  <span class="n">origin_tick</span><span class="o">=</span><span class="n">tick</span><span class="p">))</span>
+
+    <span class="c1"># Keep sorted by position</span>
+    <span class="n">haplosome</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">haplosome</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-the-complete-generation-cycle">
+<h2>Step 6: The Complete Generation Cycle<a class="headerlink" href="#step-6-the-complete-generation-cycle" title="Link to this heading"></a></h2>
+<p>Now we assemble the parts into a complete Wright-Fisher generation. This
+is the heart of SLiM – the function that ticks once per generation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">wright_fisher_generation</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">tick</span><span class="p">,</span>
+                              <span class="n">dfe</span><span class="o">=</span><span class="s1">&#39;neutral&#39;</span><span class="p">,</span> <span class="n">dfe_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run one Wright-Fisher generation.</span>
+
+<span class="sd">    This is the complete cycle:</span>
+<span class="sd">    1. Calculate fitness for all individuals</span>
+<span class="sd">    2. Generate N offspring by:</span>
+<span class="sd">       a. Selecting parents proportional to fitness</span>
+<span class="sd">       b. Recombining parental haplosomes</span>
+<span class="sd">       c. Adding new mutations</span>
+<span class="sd">    3. Replace the old population with the new one</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    population : list of Individual</span>
+<span class="sd">        Current generation (N diploid individuals).</span>
+<span class="sd">    N : int</span>
+<span class="sd">        Population size (constant).</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Chromosome length.</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Per-bp, per-generation mutation rate.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Per-bp, per-generation recombination rate.</span>
+<span class="sd">    tick : int</span>
+<span class="sd">        Current generation number.</span>
+<span class="sd">    dfe : str</span>
+<span class="sd">        Distribution of fitness effects.</span>
+<span class="sd">    dfe_params : dict</span>
+<span class="sd">        DFE parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_population : list of Individual</span>
+<span class="sd">        The next generation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Recalculate fitness for all individuals</span>
+    <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">calculate_fitness</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Generate N offspring</span>
+    <span class="n">new_population</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+        <span class="c1"># Select two parents (fitness-proportional)</span>
+        <span class="n">p1_idx</span><span class="p">,</span> <span class="n">p2_idx</span> <span class="o">=</span> <span class="n">select_parents</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
+        <span class="n">parent1</span> <span class="o">=</span> <span class="n">population</span><span class="p">[</span><span class="n">p1_idx</span><span class="p">]</span>
+        <span class="n">parent2</span> <span class="o">=</span> <span class="n">population</span><span class="p">[</span><span class="n">p2_idx</span><span class="p">]</span>
+
+        <span class="c1"># Recombine: each parent contributes one haplosome</span>
+        <span class="n">child_hap1</span> <span class="o">=</span> <span class="n">recombine_v2</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+        <span class="n">child_hap2</span> <span class="o">=</span> <span class="n">recombine_v2</span><span class="p">(</span><span class="n">parent2</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+
+        <span class="c1"># Add new mutations</span>
+        <span class="n">child_hap1</span> <span class="o">=</span> <span class="n">add_mutations</span><span class="p">(</span><span class="n">child_hap1</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">tick</span><span class="p">,</span> <span class="n">dfe</span><span class="p">,</span> <span class="n">dfe_params</span><span class="p">)</span>
+        <span class="n">child_hap2</span> <span class="o">=</span> <span class="n">add_mutations</span><span class="p">(</span><span class="n">child_hap2</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">tick</span><span class="p">,</span> <span class="n">dfe</span><span class="p">,</span> <span class="n">dfe_params</span><span class="p">)</span>
+
+        <span class="n">new_population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Individual</span><span class="p">(</span>
+            <span class="n">haplosome_1</span><span class="o">=</span><span class="n">child_hap1</span><span class="p">,</span>
+            <span class="n">haplosome_2</span><span class="o">=</span><span class="n">child_hap2</span>
+        <span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">new_population</span>
+</pre></div>
+</div>
+</section>
+<section id="step-7-the-full-simulation">
+<h2>Step 7: The Full Simulation<a class="headerlink" href="#step-7-the-full-simulation" title="Link to this heading"></a></h2>
+<p>Now we can run a complete forward simulation. We initialize a population,
+run for <span class="math notranslate nohighlight">\(T\)</span> generations, and track statistics along the way.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dfe</span><span class="o">=</span><span class="s1">&#39;neutral&#39;</span><span class="p">,</span> <span class="n">dfe_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">track_every</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a complete Wright-Fisher forward simulation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    N : int</span>
+<span class="sd">        Diploid population size.</span>
+<span class="sd">    L : int</span>
+<span class="sd">        Chromosome length (bp).</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Per-bp, per-generation mutation rate.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Per-bp, per-generation recombination rate.</span>
+<span class="sd">    T : int</span>
+<span class="sd">        Number of generations to simulate.</span>
+<span class="sd">    dfe : str</span>
+<span class="sd">        Distribution of fitness effects.</span>
+<span class="sd">    dfe_params : dict</span>
+<span class="sd">        DFE parameters.</span>
+<span class="sd">    track_every : int</span>
+<span class="sd">        Record statistics every this many generations.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    population : list of Individual</span>
+<span class="sd">        Final population.</span>
+<span class="sd">    stats : dict</span>
+<span class="sd">        Time series of population statistics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize: N individuals with empty haplosomes</span>
+    <span class="n">population</span> <span class="o">=</span> <span class="p">[</span><span class="n">Individual</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)]</span>
+
+    <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;generation&#39;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s1">&#39;mean_fitness&#39;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s1">&#39;num_segregating&#39;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s1">&#39;mean_mutations_per_individual&#39;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">tick</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+        <span class="n">population</span> <span class="o">=</span> <span class="n">wright_fisher_generation</span><span class="p">(</span>
+            <span class="n">population</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">tick</span><span class="p">,</span> <span class="n">dfe</span><span class="p">,</span> <span class="n">dfe_params</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Track statistics periodically</span>
+        <span class="k">if</span> <span class="n">tick</span> <span class="o">%</span> <span class="n">track_every</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">tick</span> <span class="o">==</span> <span class="n">T</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">fitnesses</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">fitness</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">population</span><span class="p">]</span>
+            <span class="n">n_muts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">haplosome_1</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">haplosome_2</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">population</span><span class="p">]</span>
+
+            <span class="c1"># Count segregating mutations (present in at least one</span>
+            <span class="c1"># but not all individuals)</span>
+            <span class="n">all_positions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ind</span><span class="o">.</span><span class="n">haplosome_1</span> <span class="o">+</span> <span class="n">ind</span><span class="o">.</span><span class="n">haplosome_2</span><span class="p">:</span>
+                    <span class="n">all_positions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
+
+            <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;generation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tick</span><span class="p">)</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;mean_fitness&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">fitnesses</span><span class="p">))</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;num_segregating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_positions</span><span class="p">))</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;mean_mutations_per_individual&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">n_muts</span><span class="p">))</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gen </span><span class="si">{</span><span class="n">tick</span><span class="si">:</span><span class="s2">&gt;6d</span><span class="si">}</span><span class="s2">: mean_w=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">fitnesses</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot;seg_sites=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">all_positions</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;5d</span><span class="si">}</span><span class="s2">, &quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot;muts/ind=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">n_muts</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">population</span><span class="p">,</span> <span class="n">stats</span>
+
+<span class="c1"># Example: small neutral simulation</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">pop</span><span class="p">,</span> <span class="n">stats</span> <span class="o">=</span> <span class="n">simulate</span><span class="p">(</span>
+    <span class="n">N</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>        <span class="c1"># small population for speed</span>
+    <span class="n">L</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>      <span class="c1"># 10 kb chromosome</span>
+    <span class="n">mu</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>      <span class="c1"># elevated rate (for tractability)</span>
+    <span class="n">r</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>       <span class="c1"># same as mutation rate</span>
+    <span class="n">T</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>        <span class="c1"># 500 generations</span>
+    <span class="n">dfe</span><span class="o">=</span><span class="s1">&#39;neutral&#39;</span><span class="p">,</span>
+    <span class="n">track_every</span><span class="o">=</span><span class="mi">100</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-8-verifying-against-theory">
+<h2>Step 8: Verifying Against Theory<a class="headerlink" href="#step-8-verifying-against-theory" title="Link to this heading"></a></h2>
+<p>Under neutrality (no selection), we can verify our simulator against known
+results from coalescent theory.</p>
+<p><strong>Expected number of segregating sites.</strong> For a diploid population of size
+<span class="math notranslate nohighlight">\(N\)</span>, the expected number of segregating sites at mutation-drift
+equilibrium is:</p>
+<div class="math notranslate nohighlight">
+\[E[S] = 4 N \mu L \cdot \sum_{k=1}^{2N-1} \frac{1}{k}
+\approx 4 N \mu L \cdot (\ln(2N) + \gamma)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\gamma \approx 0.577\)</span> is the Euler-Mascheroni constant and
+we sum to <span class="math notranslate nohighlight">\(2N - 1\)</span> because there are <span class="math notranslate nohighlight">\(2N\)</span> haploid genomes
+in a diploid population of size <span class="math notranslate nohighlight">\(N\)</span>.</p>
+<p><strong>Expected heterozygosity.</strong> The expected heterozygosity (probability that
+two randomly chosen haplosomes differ at a site) is:</p>
+<div class="math notranslate nohighlight">
+\[\pi = \frac{4 N \mu}{1 + 4 N \mu} \approx 4 N \mu\]</div>
+<p>for small <span class="math notranslate nohighlight">\(\mu\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">verify_neutrality</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that our neutral simulation matches coalescent predictions.</span>
+
+<span class="sd">    Compares the number of segregating sites and heterozygosity to</span>
+<span class="sd">    the theoretical expectations from coalescent theory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">N</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">L</span>  <span class="c1"># population-scaled mutation rate</span>
+
+    <span class="c1"># Count segregating sites</span>
+    <span class="n">all_positions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">pop</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ind</span><span class="o">.</span><span class="n">haplosome_1</span> <span class="o">+</span> <span class="n">ind</span><span class="o">.</span><span class="n">haplosome_2</span><span class="p">:</span>
+            <span class="n">all_positions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
+    <span class="n">S_observed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_positions</span><span class="p">)</span>
+
+    <span class="c1"># Harmonic number for 2N - 1</span>
+    <span class="n">harmonic</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">N</span><span class="p">))</span>
+    <span class="n">S_expected</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">harmonic</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Segregating sites:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Observed:  </span><span class="si">{</span><span class="n">S_observed</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Expected:  </span><span class="si">{</span><span class="n">S_expected</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Theta:     </span><span class="si">{</span><span class="n">theta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># After a long burn-in, the observed S should be close to expected</span>
+<span class="c1"># (The short simulation above won&#39;t have reached equilibrium;</span>
+<span class="c1">#  a proper test would run for ~10*N generations)</span>
+</pre></div>
+</div>
+<p>The Wright-Fisher cycle is complete. You have built the escapement. In the
+next chapter, we put it to work with three recipes that demonstrate the
+power of forward simulation: phenomena that the coalescent cannot easily
+model.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview of SLiM" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="recipes.html" class="btn btn-neutral float-right" title="Recipes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, The Watchmaker&#39;s Guide Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

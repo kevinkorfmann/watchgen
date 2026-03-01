@@ -668,4 +668,325 @@ Exercises
    rescaling procedure with the rate map correctly handles this, while the
    constant-rate version does not.
 
+Solutions
+=========
+
+.. admonition:: Solution 1: Rescaling on a known tree
+
+   We simulate a coalescent tree under a bottleneck model, apply rescaling,
+   and compare rescaled times to the truth. The key insight is that a bottleneck
+   compresses coalescence events into a narrow time window, which the rescaling
+   should detect and correct.
+
+   .. code-block:: python
+
+      import msprime
+      import numpy as np
+
+      # Simulate under a bottleneck model
+      # Population shrinks from 10000 to 1000 at time 500 generations,
+      # then recovers at time 600 generations.
+      demography = msprime.Demography()
+      demography.add_population(initial_size=10000)
+      demography.add_population_parameters_change(
+          time=500, initial_size=1000)
+      demography.add_population_parameters_change(
+          time=600, initial_size=10000)
+
+      ts = msprime.sim_ancestry(
+          samples=20,
+          demography=demography,
+          sequence_length=1e6,
+          recombination_rate=1e-8,
+          random_seed=42
+      )
+      ts = msprime.sim_mutations(ts, rate=1e-8, random_seed=42)
+
+      print(f"Trees: {ts.num_trees}, Mutations: {ts.num_mutations}")
+
+      # Extract branches: (span, lower_time, upper_time)
+      branches = []
+      for tree in ts.trees():
+          span = tree.span
+          for node in tree.nodes():
+              if tree.parent(node) != -1:
+                  lo = tree.time(node)
+                  hi = tree.time(tree.parent(node))
+                  branches.append((span, lo, hi))
+
+      # Extract mutations: (branch_lower, branch_upper)
+      mutations = []
+      for mut in ts.mutations():
+          node = mut.node
+          tree = ts.at(mut.position)
+          lo = tree.time(node)
+          hi = tree.time(tree.parent(node))
+          mutations.append((lo, hi))
+
+      def compute_arg_length_in_window(branches, wlo, whi):
+          total = 0.0
+          for span, lo, hi in branches:
+              olo = max(lo, wlo)
+              ohi = min(hi, whi)
+              if ohi > olo:
+                  total += span * (ohi - olo)
+          return total
+
+      def partition_time_axis(branches, J=20):
+          t_max = max(hi for _, _, hi in branches)
+          total = compute_arg_length_in_window(branches, 0, t_max)
+          target = total / J
+          # Simplified: use quantiles of branch midpoints
+          times = sorted(set([0.0, t_max] +
+                             [lo for _, lo, _ in branches] +
+                             [hi for _, _, hi in branches]))
+          boundaries = [0.0]
+          cum = 0.0
+          for k in range(len(times) - 1):
+              seg = compute_arg_length_in_window(branches, times[k], times[k+1])
+              cum += seg
+              while cum >= target and len(boundaries) < J:
+                  boundaries.append(times[k+1])
+                  cum -= target
+          boundaries.append(t_max)
+          return np.array(boundaries[:J+1])
+
+      def count_mutations_per_window(mutations, boundaries):
+          J = len(boundaries) - 1
+          counts = np.zeros(J)
+          for blo, bhi in mutations:
+              bl = bhi - blo
+              if bl == 0:
+                  continue
+              for i in range(J):
+                  olo = max(blo, boundaries[i])
+                  ohi = min(bhi, boundaries[i+1])
+                  if ohi > olo:
+                      counts[i] += (ohi - olo) / bl
+          return counts
+
+      # Run rescaling
+      J = 20
+      boundaries = partition_time_axis(branches, J)
+      counts = count_mutations_per_window(mutations, boundaries)
+      total_length = sum(s * (h - l) for s, l, h in branches)
+      theta = 4 * 10000 * 1e-8  # 4 * Ne * mu
+
+      expected_per_window = theta * total_length / (2 * J)
+      scaling = counts / max(expected_per_window, 1e-15)
+
+      print("\nScaling factors per window:")
+      for i in range(min(J, len(scaling))):
+          if i < len(boundaries) - 1:
+              print(f"  [{boundaries[i]:.1f}, {boundaries[min(i+1, len(boundaries)-1)]:.1f}): "
+                    f"c = {scaling[i]:.3f}")
+
+      # The bottleneck window (around time 500-600) should show scaling
+      # factors that differ from 1.0, reflecting the mismatch between
+      # the constant-population assumption and the true demography.
+
+.. admonition:: Solution 2: Window sensitivity
+
+   We test different values of :math:`J` and measure how the variance and
+   accuracy of scaling factors change. Small :math:`J` gives stable but coarse
+   estimates; large :math:`J` gives fine resolution but noisy estimates.
+
+   The bias-variance tradeoff is governed by the expected number of mutations
+   per window: :math:`E[m_i] = \theta L(\mathcal{G}) / (2J)`. When :math:`J`
+   is large, each window has few expected mutations, so the Poisson noise
+   dominates.
+
+   .. math::
+
+      \text{CV}(c_i) = \frac{\text{std}(c_i)}{\text{mean}(c_i)}
+      \approx \frac{1}{\sqrt{E[m_i]}} = \sqrt{\frac{2J}{\theta \cdot L(\mathcal{G})}}
+
+   .. code-block:: python
+
+      import msprime
+      import numpy as np
+
+      # Simulate a simple constant-size population (no bottleneck)
+      # so the true scaling factors should all be ~1.0
+      ts = msprime.sim_ancestry(
+          samples=20, sequence_length=1e6,
+          recombination_rate=1e-8, random_seed=42)
+      ts = msprime.sim_mutations(ts, rate=1e-8, random_seed=42)
+
+      branches = []
+      for tree in ts.trees():
+          for node in tree.nodes():
+              if tree.parent(node) != -1:
+                  branches.append((tree.span, tree.time(node),
+                                   tree.time(tree.parent(node))))
+
+      mutations = []
+      for mut in ts.mutations():
+          tree = ts.at(mut.position)
+          node = mut.node
+          mutations.append((tree.time(node), tree.time(tree.parent(node))))
+
+      def compute_arg_length_in_window(branches, wlo, whi):
+          total = 0.0
+          for span, lo, hi in branches:
+              olo, ohi = max(lo, wlo), min(hi, whi)
+              if ohi > olo:
+                  total += span * (ohi - olo)
+          return total
+
+      total_length = sum(s * (h - l) for s, l, h in branches)
+      theta = 4 * 10000 * 1e-8
+
+      for J in [10, 50, 100, 500]:
+          # Simple equal-time partition for this comparison
+          t_max = max(hi for _, _, hi in branches)
+          boundaries = np.linspace(0, t_max, J + 1)
+
+          counts = np.zeros(J)
+          for blo, bhi in mutations:
+              bl = bhi - blo
+              if bl == 0:
+                  continue
+              for i in range(J):
+                  olo = max(blo, boundaries[i])
+                  ohi = min(bhi, boundaries[i+1])
+                  if ohi > olo:
+                      counts[i] += (ohi - olo) / bl
+
+          expected = theta * total_length / (2 * J)
+          scaling = counts / max(expected, 1e-15)
+
+          # For constant-size population, true scaling should be ~1.0
+          mean_c = np.mean(scaling)
+          std_c = np.std(scaling)
+          cv = std_c / max(mean_c, 1e-15)
+          n_zero = np.sum(scaling == 0)
+
+          print(f"J={J:>4d}: mean(c)={mean_c:.3f}, std(c)={std_c:.3f}, "
+                f"CV={cv:.3f}, empty_windows={n_zero}")
+
+      # Expected pattern:
+      # J=10:  mean~1.0, low CV, all windows have mutations
+      # J=50:  mean~1.0, moderate CV
+      # J=100: mean~1.0, higher CV, some windows may be empty
+      # J=500: mean~1.0, very high CV, many empty windows
+      #
+      # Rule of thumb: choose J so each window has >= 10 expected mutations.
+
+.. admonition:: Solution 3: Mutation rate heterogeneity
+
+   We create a synthetic mutation rate map with a 10x hotspot and verify that
+   the rate-aware rescaling handles it correctly while the constant-rate
+   version does not.
+
+   The key insight: without rate correction, a mutation hotspot looks like
+   deeper coalescence times (more mutations = longer branches), biasing the
+   rescaled times upward in that region.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      # Define a mutation rate map: baseline rate with a 10x hotspot
+      # in the region [40000, 60000)
+      def mutation_rate_map(x):
+          """Position-dependent mutation rate."""
+          base_rate = 1e-8
+          if 40000 <= x < 60000:
+              return 10 * base_rate  # 10x hotspot
+          return base_rate
+
+      # Simulate branches and mutations
+      # (simplified: uniform tree across 100kb)
+      np.random.seed(42)
+      L = 100000
+      n_branches = 50
+      branches_with_pos = []
+      mutations_with_pos = []
+
+      for _ in range(n_branches):
+          lo_time = np.random.exponential(0.5)
+          hi_time = lo_time + np.random.exponential(0.3)
+          start_pos = 0
+          end_pos = L
+
+          branches_with_pos.append((start_pos, end_pos, lo_time, hi_time))
+
+          # Generate mutations according to the rate map
+          branch_length = hi_time - lo_time
+          for pos in range(L):
+              rate = mutation_rate_map(pos)
+              if np.random.random() < rate * branch_length:
+                  mutations_with_pos.append((pos, lo_time, hi_time))
+
+      print(f"Total mutations: {len(mutations_with_pos)}")
+
+      # Count mutations in the hotspot vs outside
+      hotspot_muts = sum(1 for p, _, _ in mutations_with_pos
+                         if 40000 <= p < 60000)
+      other_muts = len(mutations_with_pos) - hotspot_muts
+      print(f"Hotspot mutations: {hotspot_muts} "
+            f"(in {20000/L*100:.0f}% of genome)")
+      print(f"Other mutations: {other_muts}")
+
+      # Rescaling with constant rate (WRONG)
+      # The hotspot region will appear to have ~10x more mutations,
+      # so the scaling factor will be ~10x too high, stretching
+      # coalescence times in that region.
+      J = 5
+      t_max = max(hi for _, _, _, hi in branches_with_pos)
+      boundaries = np.linspace(0, t_max, J + 1)
+
+      # Simple mutation count per window (ignoring rate variation)
+      simple_branches = [(L, lo, hi) for _, _, lo, hi in branches_with_pos]
+      simple_muts = [(lo, hi) for _, lo, hi in mutations_with_pos]
+
+      counts = np.zeros(J)
+      for blo, bhi in simple_muts:
+          bl = bhi - blo
+          if bl == 0:
+              continue
+          for i in range(J):
+              olo = max(blo, boundaries[i])
+              ohi = min(bhi, boundaries[i+1])
+              if ohi > olo:
+                  counts[i] += (ohi - olo) / bl
+
+      total_length = sum(L * (hi - lo) for _, _, lo, hi in branches_with_pos)
+      theta = 4 * 10000 * 1e-8
+      expected_const = theta * total_length / (2 * J)
+      scaling_const = counts / max(expected_const, 1e-15)
+
+      print("\nConstant-rate scaling (biased by hotspot):")
+      for i in range(J):
+          print(f"  Window [{boundaries[i]:.2f}, {boundaries[i+1]:.2f}): "
+                f"c = {scaling_const[i]:.3f}")
+
+      # Rescaling with rate map (CORRECT)
+      # The expected mutation count accounts for the higher rate in the
+      # hotspot, so the scaling factors should be ~1.0 everywhere.
+      expected_with_map = np.zeros(J)
+      for start, end, lo, hi in branches_with_pos:
+          mu_avg = np.mean([mutation_rate_map(x)
+                            for x in range(start, end, max(1, (end-start)//100))])
+          span = end - start
+          for i in range(J):
+              olo = max(lo, boundaries[i])
+              ohi = min(hi, boundaries[i+1])
+              if ohi > olo:
+                  expected_with_map[i] += mu_avg * span * (ohi - olo)
+
+      scaling_map = np.where(expected_with_map > 0,
+                              counts / expected_with_map, 1.0)
+
+      print("\nRate-aware scaling (corrected):")
+      for i in range(J):
+          print(f"  Window [{boundaries[i]:.2f}, {boundaries[i+1]:.2f}): "
+                f"c = {scaling_map[i]:.3f}")
+
+      # The constant-rate version will show inflated scaling factors
+      # (because it interprets the hotspot mutations as deeper coalescence),
+      # while the rate-aware version correctly accounts for the higher rate
+      # and produces scaling factors closer to 1.0.
+
 Next: :ref:`sgpr` -- the MCMC engine that lets us explore the space of ARGs.

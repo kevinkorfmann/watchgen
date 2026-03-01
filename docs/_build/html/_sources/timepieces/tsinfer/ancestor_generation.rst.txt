@@ -710,3 +710,290 @@ Exercises
    accuracy for long ancestors?
 
 Next: :ref:`tsinfer_copying_model` -- the Li & Stephens engine that powers the matching phases.
+
+
+Solutions
+==========
+
+.. admonition:: Solution 1: Frequency vs. age under the coalescent
+
+   We simulate 100 independent tree sequences with ``msprime``, extract
+   each mutation's true age and its derived allele frequency, then scatter-plot
+   frequency against age and overlay the linear prediction
+   :math:`\mathbb{E}[f] = \tau / (4N_e)`.
+
+   .. code-block:: python
+
+      import msprime
+      import numpy as np
+      import matplotlib.pyplot as plt
+
+      Ne = 10_000
+      n = 50
+      ages = []
+      freqs = []
+
+      for _ in range(100):
+          ts = msprime.simulate(
+              sample_size=n, Ne=Ne, length=1e5,
+              mutation_rate=1e-8, recombination_rate=1e-8,
+              random_seed=None)
+          for tree in ts.trees():
+              for mut in tree.mutations():
+                  # True age of the mutation (in generations)
+                  age = ts.node(mut.node).time
+                  # Derived allele frequency = number of samples below the
+                  # mutation node divided by the total sample count
+                  freq = tree.num_samples(mut.node) / n
+                  ages.append(age)
+                  freqs.append(freq)
+
+      ages = np.array(ages)
+      freqs = np.array(freqs)
+
+      plt.figure(figsize=(7, 5))
+      plt.scatter(ages, freqs, alpha=0.1, s=4, label="Simulated mutations")
+      tau_grid = np.linspace(0, ages.max(), 200)
+      plt.plot(tau_grid, tau_grid / (4 * Ne), 'r-', lw=2,
+               label=r"$\mathbb{E}[f] = \tau / 4N_e$")
+      plt.xlabel("True mutation age (generations)")
+      plt.ylabel("Derived allele frequency")
+      plt.title("Frequency vs. Age under the Coalescent")
+      plt.legend()
+      plt.tight_layout()
+      plt.show()
+
+   **Key observations:**
+
+   - For young mutations (:math:`\tau \ll 4N_e`), the linear relationship
+     holds reasonably well on average, though individual mutations show
+     enormous variance.
+   - The approximation breaks down for :math:`\tau \gtrsim 2N_e` where
+     frequencies saturate below 1.0 (conditioning on the allele not being
+     fixed). Very old mutations cluster near intermediate frequencies rather
+     than continuing to increase linearly.
+   - Survivorship bias also matters: we only observe mutations that have
+     *not* been lost. Conditioning on survival inflates the mean frequency
+     for young mutations relative to the unconditional expectation.
+
+   Despite these limitations, the *rank ordering* of frequency is a good proxy
+   for the rank ordering of age -- which is all tsinfer needs.
+
+.. admonition:: Solution 2: Ancestor accuracy
+
+   We simulate a tree sequence, generate ancestors with the algorithm from
+   this chapter, and compare each inferred ancestor haplotype against the
+   true ancestral haplotype extracted from the simulated genealogy.
+
+   .. code-block:: python
+
+      import msprime
+      import numpy as np
+
+      # Simulate
+      ts = msprime.simulate(
+          sample_size=50, Ne=10_000, length=1e5,
+          mutation_rate=1e-8, recombination_rate=1e-8,
+          random_seed=42)
+
+      # Build the variant matrix
+      G = ts.genotype_matrix()  # shape (num_sites, num_samples)
+      D = G.T  # shape (n, m): rows = samples, cols = sites
+      n, m = D.shape
+      ancestral_known = np.ones(m, dtype=bool)
+
+      # Generate ancestors using our algorithm
+      ancestors, inference_sites = generate_ancestors(D, ancestral_known)
+      ancestors = add_ultimate_ancestor(ancestors, len(inference_sites))
+      times = compute_ancestor_times(D, inference_sites)
+
+      # For each ancestor (except the ultimate), find the true ancestral
+      # haplotype. The "true" ancestor at focal site j is the node on
+      # whose branch the mutation at site j sits.
+      site_list = list(ts.sites())
+      accuracies = []
+      ancestor_times_list = []
+
+      for anc in ancestors:
+          if anc['focal'] < 0:
+              continue  # Skip the ultimate ancestor
+
+          focal_site_pos = inference_sites[anc['focal']]
+          site_obj = site_list[focal_site_pos]
+
+          # The true mutation is at this site
+          if len(site_obj.mutations) == 0:
+              continue
+          mut = site_obj.mutations[0]
+          true_node = mut.node
+          true_time = ts.node(true_node).time
+
+          # Extract the true haplotype of that node at the inference sites
+          # within the ancestor's span.  The true allele at site j is 1
+          # if the true node is ancestral to all carriers, i.e. if the
+          # mutation at site j is on or below the true node's branch.
+          correct = 0
+          total = 0
+          for k_idx in range(anc['start'], anc['end']):
+              site_k_pos = inference_sites[k_idx]
+              site_k = site_list[site_k_pos]
+              if len(site_k.mutations) == 0:
+                  continue
+              mut_k = site_k.mutations[0]
+              # Find the tree at this site's position
+              tree = ts.at(site_k.position)
+              # The true ancestral allele at this site for our ancestor
+              # is 1 if our true_node is a descendant of (or equal to)
+              # the mutation node at site k
+              true_allele = 1 if tree.is_descendant(true_node, mut_k.node) else 0
+              inferred_allele = anc['haplotype'][k_idx - anc['start']]
+              if true_allele == inferred_allele:
+                  correct += 1
+              total += 1
+
+          if total > 0:
+              acc = correct / total
+              accuracies.append(acc)
+              ancestor_times_list.append(anc['time'])
+
+      accuracies = np.array(accuracies)
+      ancestor_times_list = np.array(ancestor_times_list)
+
+      print(f"Mean ancestor accuracy: {accuracies.mean():.3f}")
+      print(f"Median ancestor accuracy: {np.median(accuracies):.3f}")
+
+      # Accuracy vs. time
+      for t_lo, t_hi in [(0, 0.2), (0.2, 0.5), (0.5, 1.0)]:
+          mask = (ancestor_times_list >= t_lo) & (ancestor_times_list < t_hi)
+          if mask.sum() > 0:
+              print(f"  Time [{t_lo:.1f}, {t_hi:.1f}): "
+                    f"mean accuracy = {accuracies[mask].mean():.3f} "
+                    f"(n={mask.sum()})")
+
+   **Key observations:**
+
+   - Overall accuracy is high (typically 85--95%), confirming that consensus
+     voting among focal samples recovers the ancestral haplotype well.
+   - Accuracy tends to be *higher* for older (high-frequency) ancestors
+     because they have more focal samples contributing to the consensus
+     vote, reducing noise.
+   - Young ancestors (low frequency) have fewer focal samples and shorter
+     genomic extent, so individual allele calls are noisier.
+
+.. admonition:: Solution 3: Extension with sample dropout
+
+   We modify ``build_ancestor`` so that any focal sample disagreeing with
+   the consensus at site :math:`k` is removed from future votes. This
+   "dropout" variant produces tighter, potentially more accurate ancestors.
+
+   .. code-block:: python
+
+      import numpy as np
+
+      def build_ancestor_with_dropout(D, inference_sites, times,
+                                       focal_site_idx):
+          """Build an ancestor with focal-sample dropout on disagreement.
+
+          When a focal sample disagrees with the consensus at a site, it is
+          removed from the voting pool for all subsequent sites (in that
+          extension direction).
+          """
+          n_inf = len(inference_sites)
+          focal_j = inference_sites[focal_site_idx]
+          focal_time = times[focal_site_idx]
+          focal_samples = list(get_focal_samples(D, focal_j))
+
+          haplotype = np.full(n_inf, -1, dtype=int)
+          haplotype[focal_site_idx] = 1
+
+          # --- Extend leftward with dropout ---
+          start = focal_site_idx
+          active_samples = list(focal_samples)  # Copy for leftward extension
+          for k in range(focal_site_idx - 1, -1, -1):
+              site_k = inference_sites[k]
+
+              if times[k] > focal_time:
+                  haplotype[k] = 0
+                  start = k
+                  break
+
+              if len(active_samples) == 0:
+                  start = k + 1
+                  break
+
+              alleles = D[active_samples, site_k]
+              ones = np.sum(alleles == 1)
+              zeros = np.sum(alleles == 0)
+              consensus = 1 if ones >= zeros else 0
+              haplotype[k] = consensus
+              start = k
+
+              # Drop samples that disagree with the consensus
+              active_samples = [s for s, a in zip(active_samples, alleles)
+                                if a == consensus]
+
+          # --- Extend rightward with dropout ---
+          end = focal_site_idx + 1
+          active_samples = list(focal_samples)  # Fresh copy for rightward
+          for k in range(focal_site_idx + 1, n_inf):
+              site_k = inference_sites[k]
+
+              if times[k] > focal_time:
+                  haplotype[k] = 0
+                  end = k + 1
+                  break
+
+              if len(active_samples) == 0:
+                  end = k
+                  break
+
+              alleles = D[active_samples, site_k]
+              ones = np.sum(alleles == 1)
+              zeros = np.sum(alleles == 0)
+              consensus = 1 if ones >= zeros else 0
+              haplotype[k] = consensus
+              end = k + 1
+
+              active_samples = [s for s, a in zip(active_samples, alleles)
+                                if a == consensus]
+
+          return {
+              'haplotype': haplotype[start:end],
+              'start': start,
+              'end': end,
+              'focal': focal_site_idx,
+              'time': focal_time,
+          }
+
+      # --- Compare with and without dropout ---
+      np.random.seed(42)
+      n, m = 50, 30
+      D = np.random.binomial(1, 0.3, size=(n, m))
+      ancestral_known = np.ones(m, dtype=bool)
+      inference_sites, _ = select_inference_sites(D, ancestral_known)
+      times = compute_ancestor_times(D, inference_sites)
+
+      for idx in range(min(5, len(inference_sites))):
+          anc_std = build_ancestor(D, inference_sites, times, idx)
+          anc_drop = build_ancestor_with_dropout(D, inference_sites,
+                                                  times, idx)
+          diff = np.sum(anc_std['haplotype'] != anc_drop['haplotype'][:len(anc_std['haplotype'])])
+          print(f"Ancestor {idx}: standard len={len(anc_std['haplotype'])}, "
+                f"dropout len={len(anc_drop['haplotype'])}, "
+                f"allele differences={diff}")
+
+   **Key observations:**
+
+   - With dropout, the voting pool shrinks as the extension moves away
+     from the focal site. This makes the consensus more *specific* to the
+     haplotype that truly shares the focal allele, rather than averaging
+     over all carriers (some of whom may have recombined away from the
+     ancestral segment).
+   - For *long* ancestors (high-frequency, many sites), dropout tends to
+     improve accuracy at the flanks of the ancestor, where recombination
+     has broken up the original haplotype block.
+   - For *short* or *low-frequency* ancestors, the effect is minimal because
+     the extension is already short and few samples disagree.
+   - The trade-off: aggressive dropout can make the voting pool too small
+     at distant sites, increasing variance. A threshold (e.g., stop when
+     fewer than 3 samples remain) can mitigate this.

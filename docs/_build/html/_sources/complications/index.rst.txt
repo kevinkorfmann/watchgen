@@ -1,0 +1,92 @@
+.. _complications:
+
+=============
+Complications
+=============
+
+   *In horology, a complication is any function beyond simple timekeeping.
+   The more complications a watch has, the more it can tell you -- but only
+   if the basic movement is sound.*
+
+Every Timepiece in this book builds one inference mechanism from first principles.
+Each is a self-contained watch -- precise, interpretable, and honest about its
+assumptions. But each also makes a fundamental trade-off: mathematical tractability
+against biological realism. PSMC sees only two haplotypes. tsinfer surrenders
+posterior inference. ARGweaver is exact but glacially slow. Each Timepiece sits at
+a different point on the Pareto frontier between accuracy and compute.
+
+**Complications** explore a different paradigm: neural networks that respect the
+mathematical structure of the Timepieces. These are not black-box replacements.
+They are architectures where every design choice encodes a structural insight from
+the gear train we spent hundreds of pages building. The sliding-window attention is
+the sequential Markov property. The cross-attention is the Li & Stephens copying
+model. The graph neural network is the inside-outside algorithm on trees. The gamma
+output heads are the coalescent-time posteriors. Nothing is arbitrary.
+
+The three Complications operate at different levels of the data hierarchy, and each
+takes a fundamentally different approach to learning:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 25 65
+
+   * - #
+     - Complication
+     - What it does
+   * - I
+     - :ref:`Mainspring <mainspring_complication>`
+     - Amortized ARG inference via structured neural posterior estimation. Trains
+       on millions of msprime simulations, distilling one architectural insight
+       from each Timepiece into a single neural inference engine. The fastest
+       approach -- a single forward pass replaces hours of MCMC.
+   * - II
+     - :ref:`Escapement <escapement_complication>`
+     - Simulation-free deep coalescent inference via variational genealogies.
+       Uses the coalescent likelihood itself -- the same equations derived in
+       every Timepiece -- as a differentiable loss function. No simulations
+       needed. Trains directly on the observed data.
+   * - III
+     - :ref:`Balance Wheel <balance_wheel_complication>`
+     - Neural SFS inference via differentiable diffusion. Replaces the PDE/ODE
+       solvers of dadi and moments with a learned function approximator, enabling
+       100--1000x faster likelihood evaluation and full Bayesian posterior
+       inference via HMC.
+
+Each Complication operates at a different level of resolution:
+
+- **Mainspring**: sequence :math:`\to` ARG :math:`\to` demography (most detailed, needs simulations)
+- **Escapement**: sequence :math:`\to` coalescent times :math:`\to` demography (no simulations, per-dataset)
+- **Balance Wheel**: SFS :math:`\to` demography (fastest, most practical for demographic inference)
+
+Together they form a **grande complication** -- the watchmaker's ultimate achievement:
+a single instrument that combines many complications into one mechanism, each component
+reinforcing the others.
+
+.. admonition:: How Complications relate to Timepieces
+
+   The Complications are *not* replacements for the Timepieces. They are built
+   *from* them. Every architectural choice in a Complication can be traced back to a
+   specific mathematical insight from a specific Timepiece. If you have not worked
+   through the Timepieces, the Complications will seem like magic. If you have, they
+   will seem inevitable.
+
+   We recommend reading at least PSMC, tsinfer, tsdate, and the SMC prerequisite
+   before starting the Complications. The more Timepieces you've built, the more
+   you'll see in the neural architectures.
+
+.. admonition:: What you need (beyond the Timepieces)
+
+   - **PyTorch** (or JAX) -- we use PyTorch for all implementations
+   - **Familiarity with neural networks** -- backpropagation, gradient descent,
+     attention mechanisms. We explain the key ideas as they arise, but assume you
+     know what a loss function is and how training works.
+   - **A GPU** -- Mainspring and Escapement train large models. Balance Wheel runs
+     on CPU but benefits from GPU acceleration for HMC sampling.
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+
+   mainspring/index
+   escapement/index
+   balance_wheel/index
