@@ -11,9 +11,24 @@ The Watchmaker's Guide to Population Genetics
    .. image:: https://img.shields.io/badge/philosophy-build%20it%20yourself-blue
       :alt: Build It Yourself
 
-   **Download:** `Read as PDF <https://watchgen.readthedocs.io/_/downloads/en/latest/pdf/>`_
+   .. grid:: 2
+      :gutter: 2
 
-   *Enjoying the book?* `Support with PayPal <https://www.paypal.com/donate/?hosted_button_id=VTASTXN2KAFJQ>`_
+      .. grid-item::
+
+         .. button-link:: https://github.com/kevinkorfmann/watchgen/raw/main/docs/_build/latex/watchmakers-guide.pdf
+            :color: primary
+            :expand:
+
+            Download PDF
+
+      .. grid-item::
+
+         .. button-link:: https://www.paypal.com/donate/?hosted_button_id=VTASTXN2KAFJQ
+            :color: success
+            :expand:
+
+            Support with PayPal
 
    .. note::
 
