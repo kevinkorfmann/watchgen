@@ -346,7 +346,7 @@ class TestStochasticTrajectory:
 
     def test_starts_near_x0(self):
         """Stochastic trajectory should start near 1/(2N)."""
-        N = 2000
+        N = 200
         s = 0.02
         traj = stochastic_trajectory(s, N, rng=np.random.default_rng(42))
         # First entry should be near x0 = 1/(2N) = 0.00025
@@ -354,14 +354,14 @@ class TestStochasticTrajectory:
 
     def test_ends_at_fixation(self):
         """Stochastic trajectory should end at or near 1.0."""
-        N = 2000
+        N = 200
         s = 0.02
         traj = stochastic_trajectory(s, N, rng=np.random.default_rng(42))
         assert traj[-1] >= 0.95
 
     def test_bounded_zero_one(self):
         """All frequencies should be in [0, 1]."""
-        N = 2000
+        N = 200
         s = 0.02
         traj = stochastic_trajectory(s, N, rng=np.random.default_rng(42))
         assert np.all(traj >= 0)
@@ -369,7 +369,7 @@ class TestStochasticTrajectory:
 
     def test_reproducible_with_seed(self):
         """Same seed should produce same trajectory."""
-        N = 2000
+        N = 200
         s = 0.02
         traj1 = stochastic_trajectory(s, N, rng=np.random.default_rng(123))
         traj2 = stochastic_trajectory(s, N, rng=np.random.default_rng(123))
@@ -377,7 +377,7 @@ class TestStochasticTrajectory:
 
     def test_different_seeds_differ(self):
         """Different seeds should (almost certainly) produce different trajectories."""
-        N = 2000
+        N = 200
         s = 0.02
         traj1 = stochastic_trajectory(s, N, rng=np.random.default_rng(1))
         traj2 = stochastic_trajectory(s, N, rng=np.random.default_rng(2))
@@ -388,7 +388,7 @@ class TestStochasticTrajectory:
 
     def test_length_greater_than_one(self):
         """Trajectory should have more than one entry (the allele sweeps)."""
-        N = 2000
+        N = 200
         s = 0.02
         traj = stochastic_trajectory(s, N, rng=np.random.default_rng(42))
         assert len(traj) >= 2

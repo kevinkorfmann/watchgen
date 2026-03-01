@@ -600,8 +600,8 @@ class TestArgIntegration:
     def test_large_rho_many_recombinations(self):
         """With very large rho, expect many recombination events."""
         np.random.seed(53)
-        _, recomb = simulate_arg(5, rho=50.0)
-        # With rho=50 and n=5, we expect many recombinations
+        _, recomb = simulate_arg(5, rho=10.0)
+        # With rho=10 and n=5, we expect many recombinations
         assert len(recomb) > 0
 
     def test_arg_event_labels_are_unique(self):

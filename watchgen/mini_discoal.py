@@ -148,9 +148,10 @@ def stochastic_trajectory(s, N, x0=None, rng=None):
         if k <= 0:
             break
 
-        # Going backward from count k, the probability that the
-        # previous count was k-1 (meaning it went up to k going forward):
+        # Going backward: probability the previous count was k-1
+        # (forward transition k-1 -> k), weighted by h at destination
         p_was_lower = k * (two_N - k) * h[min(k + 1, two_N)]
+        # Previous count was k+1 (forward transition k+1 -> k)
         p_was_higher = (
             (k + 1) * (two_N - k - 1) * h[k] if k < two_N - 1 else 0
         )
@@ -286,7 +287,8 @@ def migration_rates(n_B, n_b, r, x):
     return m_B_to_b, m_b_to_B
 
 
-def structured_coalescent_sweep(trajectory, n_sample, r_site, N, rng=None):
+def structured_coalescent_sweep(trajectory, n_sample, r_site, N, rng=None,
+                                n_B_init=None, n_b_init=None):
     """Simulate the structured coalescent through a selective sweep.
 
     Runs backward through the trajectory, simulating coalescence and
@@ -306,6 +308,11 @@ def structured_coalescent_sweep(trajectory, n_sample, r_site, N, rng=None):
         Diploid effective population size.
     rng : np.random.Generator, optional
         Random number generator.
+    n_B_init : int, optional
+        Initial number of lineages in background B. If None, all lineages
+        start in B (appropriate for complete sweeps).
+    n_b_init : int, optional
+        Initial number of lineages in background b.
 
     Returns
     -------
@@ -321,9 +328,14 @@ def structured_coalescent_sweep(trajectory, n_sample, r_site, N, rng=None):
 
     two_N = 2 * N
 
-    # All lineages start in B (the sweep just fixed)
-    n_B = n_sample
-    n_b = 0
+    # Initial lineage assignment
+    if n_B_init is not None and n_b_init is not None:
+        n_B = n_B_init
+        n_b = n_b_init
+    else:
+        # All lineages start in B (the sweep just fixed)
+        n_B = n_sample
+        n_b = 0
 
     coal_times = []
     residual = rng.exponential(1.0)  # time until next event (in rate-units)
@@ -719,7 +731,8 @@ def partial_sweep_genealogy(n_sample, N, s, c, r_site, rng=None):
 
     # Run structured coalescent backward through this partial trajectory
     coal_times_sweep, n_B_final, n_b_final = structured_coalescent_sweep(
-        traj, n_B + n_b, r_site, N, rng=rng
+        traj, n_B + n_b, r_site, N, rng=rng,
+        n_B_init=n_B, n_b_init=n_b
     )
 
     # Remaining lineages coalesce neutrally
@@ -790,8 +803,8 @@ def compare_sweep_types(N, s, n_sample=50, n_reps=200, seed=42):
         while n_temp > 1:
             rate = n_temp * (n_temp - 1) / (2.0 * 2 * N)
             wait = rng.exponential(1.0 / rate)
+            total += n_temp * wait
             t += wait
-            total += t
             n_temp -= 1
         neutral_lengths.append(total)
 

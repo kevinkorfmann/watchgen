@@ -124,17 +124,16 @@ def emission_unphased(genotype, t, theta):
     float
         P(genotype | T = t).
     """
-    # Probability that the distinguished lineage carries the derived allele
-    # is approximately proportional to coalescence time (under infinite-sites
-    # model, each lineage mutates with rate theta/2 per unit time).
-    p_derived = 1 - np.exp(-theta * t)
+    # Each haplotype independently accumulates mutations with probability
+    # p = 1 - exp(-theta * t).  The diploid genotype follows a binomial.
+    p = 1 - np.exp(-theta * t)
 
     if genotype == 0:
-        return (1 - p_derived) ** 2
+        return (1 - p) ** 2          # No mutation on either branch
     elif genotype == 1:
-        return 2 * p_derived * (1 - p_derived)
+        return 2 * p * (1 - p)       # Mutation on exactly one branch
     else:  # genotype == 2
-        return p_derived ** 2
+        return p ** 2                 # Mutations on both branches
 
 
 def compute_h(t, p_j, lam):
@@ -341,12 +340,8 @@ def emission_probability(genotype, t, theta, allele_count, n_undist):
     """
     p_mut = 1 - np.exp(-theta * t)
 
-    # For the distinguished haplotype:
-    # If genotype = 0: both alleles ancestral -> (1 - p_mut)
-    # If genotype = 1: one derived, one ancestral -> p_mut (approximately)
-    # If genotype = 2: both derived -> p_mut (rare case)
-
-    # Simplified emission (full model integrates over allele assignments)
+    # Distinguished lineage emission: binary mutation model
+    # P(g=0 | t) = exp(-theta*t), P(g=1 | t) = 1 - exp(-theta*t)
     if genotype == 0:
         return np.exp(-theta * t)
     elif genotype == 1:
@@ -408,15 +403,21 @@ def compute_transition_matrix(time_breaks, lambdas, rho, n_undist):
         # No recombination: stay in same state
         P[k, k] += 1 - r_k
 
-        # With recombination: transition to new state via h(t)
+        # With recombination: the breakpoint is uniform on [0, t_mid].
+        # New coalescence occurs from the breakpoint onward.
+        # For source state k, recombination at u ~ Uniform(0, t_mid),
+        # then re-coalescence from time u with rate h(t).
         for l in range(K):
             dt_l = time_breaks[l + 1] - time_breaks[l]
-            # Approximate: probability of landing in interval l
-            # proportional to h * exp(-integral of h) * interval width
-            q_kl = h[l] * np.exp(-sum(
+            # Cumulative hazard up to interval l
+            cum_h = sum(
                 h[m] * (time_breaks[m + 1] - time_breaks[m])
                 for m in range(l)
-            )) * dt_l
+            )
+            # Conditional on recombination at some point before t_mid,
+            # the re-coalescence density at interval l depends on source state k.
+            # The survival from 0 to interval l is exp(-cum_h).
+            q_kl = h[l] * np.exp(-cum_h) * dt_l
             P[k, l] += r_k * q_kl
 
     # Normalize rows
@@ -599,30 +600,28 @@ def solve_split_ode(n_A, n_B, time_breaks, lambdas_A, lambdas_B,
 
         else:
             # Post-split: combined ancestral population
-            # Merge lineage counts at the split
-            if t_lo < t_split:
-                # This interval spans the split -- handle the boundary
-                pass  # Simplified: assume breaks align with t_split
-
-            # After merging, use combined rate matrix
             n_anc = n_A + n_B
-            Q_anc = build_rate_matrix(n_anc)
-
-            # Combine the lineage count distributions
-            # (convolution of A and B distributions)
-            # For simplicity, use the expected counts
             lam_anc = lambdas_anc[k - len(lambdas_A)]
 
-            p_anc = np.zeros(n_anc)
-            # Initial condition for ancestral: convolution of p_A and p_B
-            for ja in range(n_A):
-                for jb in range(n_B):
-                    j_total = (ja + 1) + (jb + 1)  # 1-indexed counts
-                    if j_total <= n_anc:
-                        p_anc[j_total - 1] += p_A[ja] * p_B[jb]
+            # Initialize p_anc only at the split boundary (first post-split interval)
+            if t_lo <= t_split or not hasattr(solve_split_ode, '_p_anc'):
+                Q_anc = build_rate_matrix(n_anc)
+                p_anc = np.zeros(n_anc)
+                # Initial condition: convolution of p_A and p_B
+                for ja in range(n_A):
+                    for jb in range(n_B):
+                        j_total = (ja + 1) + (jb + 1)  # 1-indexed counts
+                        if j_total <= n_anc:
+                            p_anc[j_total - 1] += p_A[ja] * p_B[jb]
+            else:
+                Q_anc = build_rate_matrix(n_anc)
+                p_anc = solve_split_ode._p_anc
 
             M_anc = expm(dt / lam_anc * Q_anc)
             p_anc = M_anc @ p_anc
+
+            # Store for next iteration
+            solve_split_ode._p_anc = p_anc.copy()
 
             j_anc_vals = np.arange(1, n_anc + 1)
             h_val = np.dot(j_anc_vals, p_anc) / lam_anc

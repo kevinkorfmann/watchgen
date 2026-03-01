@@ -144,7 +144,7 @@ def solve_diffusion_1d(P, T, n_time_steps, theta, s=0.0, N_func=None):
         x = x_grid[i]
         phi[i] = theta / (x * (1 - x))
 
-    phi /= np.trapz(phi, x_grid)
+    phi /= np.trapezoid(phi, x_grid)
 
     for step in range(n_time_steps):
         t = step * dt
@@ -207,7 +207,7 @@ def density_to_sfs(x_grid, phi, n_samples):
     sfs = np.zeros(n_samples - 1)
     for j in range(1, n_samples):
         binom_probs = comb(n_samples, j) * x_grid**j * (1 - x_grid)**(n_samples - j)
-        sfs[j - 1] = np.trapz(binom_probs * phi, x_grid)
+        sfs[j - 1] = np.trapezoid(binom_probs * phi, x_grid)
     return sfs
 
 
@@ -456,24 +456,24 @@ class TestStationaryDensity:
         x_grid = np.linspace(0.001, 0.999, 1000)
 
         phi_neutral = stationary_density(x_grid, theta1=0.5, theta2=0.5)
-        phi_neutral /= np.trapz(phi_neutral, x_grid)
-        assert np.trapz(phi_neutral, x_grid) == pytest.approx(1.0, abs=1e-6)
+        phi_neutral /= np.trapezoid(phi_neutral, x_grid)
+        assert np.trapezoid(phi_neutral, x_grid) == pytest.approx(1.0, abs=1e-6)
 
         phi_selected = stationary_density(x_grid, theta1=0.5, theta2=0.5, s=10.0)
-        phi_selected /= np.trapz(phi_selected, x_grid)
-        assert np.trapz(phi_selected, x_grid) == pytest.approx(1.0, abs=1e-6)
+        phi_selected /= np.trapezoid(phi_selected, x_grid)
+        assert np.trapezoid(phi_selected, x_grid) == pytest.approx(1.0, abs=1e-6)
 
     def test_selection_shifts_mean_upward(self):
         """Positive selection (s > 0) should increase the mean allele frequency."""
         x_grid = np.linspace(0.001, 0.999, 1000)
 
         phi_neutral = stationary_density(x_grid, theta1=0.5, theta2=0.5)
-        phi_neutral /= np.trapz(phi_neutral, x_grid)
-        mean_neutral = np.trapz(x_grid * phi_neutral, x_grid)
+        phi_neutral /= np.trapezoid(phi_neutral, x_grid)
+        mean_neutral = np.trapezoid(x_grid * phi_neutral, x_grid)
 
         phi_selected = stationary_density(x_grid, theta1=0.5, theta2=0.5, s=10.0)
-        phi_selected /= np.trapz(phi_selected, x_grid)
-        mean_selected = np.trapz(x_grid * phi_selected, x_grid)
+        phi_selected /= np.trapezoid(phi_selected, x_grid)
+        mean_selected = np.trapezoid(x_grid * phi_selected, x_grid)
 
         assert mean_selected > mean_neutral
 
@@ -483,12 +483,12 @@ class TestStationaryDensity:
         x_grid = np.linspace(0.001, 0.999, 1000)
 
         phi_neutral = stationary_density(x_grid, theta1=0.5, theta2=0.5)
-        phi_neutral /= np.trapz(phi_neutral, x_grid)
-        mean_neutral = np.trapz(x_grid * phi_neutral, x_grid)
+        phi_neutral /= np.trapezoid(phi_neutral, x_grid)
+        mean_neutral = np.trapezoid(x_grid * phi_neutral, x_grid)
 
         phi_neg = stationary_density(x_grid, theta1=0.5, theta2=0.5, s=-10.0)
-        phi_neg /= np.trapz(phi_neg, x_grid)
-        mean_neg = np.trapz(x_grid * phi_neg, x_grid)
+        phi_neg /= np.trapezoid(phi_neg, x_grid)
+        mean_neg = np.trapezoid(x_grid * phi_neg, x_grid)
 
         assert mean_neg < mean_neutral
 
@@ -500,7 +500,7 @@ class TestStationaryDensity:
         theta1, theta2 = 2.0, 3.0
 
         phi = stationary_density(x_grid, theta1=theta1, theta2=theta2, s=0.0)
-        phi /= np.trapz(phi, x_grid)
+        phi /= np.trapezoid(phi, x_grid)
 
         beta_pdf = beta_dist.pdf(x_grid, theta1, theta2)
 
@@ -590,7 +590,7 @@ class TestSolveDiffusion1D:
         x_grid, phi = solve_diffusion_1d(
             P=51, T=0.5, n_time_steps=5000, theta=1.0
         )
-        mass = np.trapz(phi, x_grid)
+        mass = np.trapezoid(phi, x_grid)
         assert np.isfinite(mass)
         assert mass > 0.0
 
@@ -611,8 +611,8 @@ class TestSolveDiffusion1D:
 
         _, phi_bottle = solve_diffusion_1d(P, T, n_steps_t, theta, N_func=bottleneck)
 
-        mass_const = np.trapz(phi_const, x_grid)
-        mass_bottle = np.trapz(phi_bottle, x_grid)
+        mass_const = np.trapezoid(phi_const, x_grid)
+        mass_bottle = np.trapezoid(phi_bottle, x_grid)
         assert np.isfinite(mass_const)
         assert np.isfinite(mass_bottle)
         assert mass_bottle < mass_const
@@ -642,8 +642,8 @@ class TestSolveDiffusion1D:
         _, phi_shrink = solve_diffusion_1d(P, T, n_t, theta, N_func=lambda t: 0.5)
         x_grid = np.linspace(0, 1, P)
 
-        mass_expand = np.trapz(phi_expand, x_grid)
-        mass_shrink = np.trapz(phi_shrink, x_grid)
+        mass_expand = np.trapezoid(phi_expand, x_grid)
+        mass_shrink = np.trapezoid(phi_shrink, x_grid)
         assert np.isfinite(mass_expand)
         assert np.isfinite(mass_shrink)
         assert mass_expand > mass_shrink
@@ -847,19 +847,19 @@ class TestRSTCodeBlockOutputs:
 
         # Case 1: Neutral with symmetric mutation
         phi_neutral = stationary_density(x_grid, theta1=0.5, theta2=0.5)
-        phi_neutral /= np.trapz(phi_neutral, x_grid)
+        phi_neutral /= np.trapezoid(phi_neutral, x_grid)
 
         # Case 2: With positive selection
         phi_selected = stationary_density(x_grid, theta1=0.5, theta2=0.5, s=10.0)
-        phi_selected /= np.trapz(phi_selected, x_grid)
+        phi_selected /= np.trapezoid(phi_selected, x_grid)
 
         # Verify normalization
-        assert np.trapz(phi_neutral, x_grid) == pytest.approx(1.0, abs=1e-6)
-        assert np.trapz(phi_selected, x_grid) == pytest.approx(1.0, abs=1e-6)
+        assert np.trapezoid(phi_neutral, x_grid) == pytest.approx(1.0, abs=1e-6)
+        assert np.trapezoid(phi_selected, x_grid) == pytest.approx(1.0, abs=1e-6)
 
         # Verify mean frequency shift
-        mean_neutral = np.trapz(x_grid * phi_neutral, x_grid)
-        mean_selected = np.trapz(x_grid * phi_selected, x_grid)
+        mean_neutral = np.trapezoid(x_grid * phi_neutral, x_grid)
+        mean_selected = np.trapezoid(x_grid * phi_selected, x_grid)
         assert mean_selected > mean_neutral
 
     def test_solve_diffusion_1d_code_block(self):
@@ -880,8 +880,8 @@ class TestRSTCodeBlockOutputs:
 
         _, phi_bottle = solve_diffusion_1d(P, T, n_steps_t, theta, N_func=bottleneck)
 
-        mass_const = np.trapz(phi_const, x_grid)
-        mass_bottle = np.trapz(phi_bottle, x_grid)
+        mass_const = np.trapezoid(phi_const, x_grid)
+        mass_bottle = np.trapezoid(phi_bottle, x_grid)
 
         # Total mass should be positive and finite
         assert np.isfinite(mass_const)

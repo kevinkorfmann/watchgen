@@ -243,9 +243,9 @@ def drift_operator(phi, n):
     """
     dphi = np.zeros(n + 1)
     for j in range(1, n):
-        term_down = j * (j - 1) * phi[j - 1] if j >= 1 else 0.0
+        term_down = (j - 1) * (n - j + 1) * phi[j - 1] if j >= 1 else 0.0
         term_stay = -2 * j * (n - j) * phi[j]
-        term_up = (n - j) * (n - j - 1) * phi[j + 1] if j < n else 0.0
+        term_up = (j + 1) * (n - j - 1) * phi[j + 1] if j < n else 0.0
         dphi[j] = (term_down + term_stay + term_up) / (2.0 * n)
     return dphi
 
@@ -294,11 +294,11 @@ def selection_operator(phi, n, gamma, h=0.5):
     dphi = np.zeros(n + 1)
     for j in range(1, n):
         if j > 0 and j < n:
-            term1 = gamma * h * ((j - 1) * (n - j + 1) * phi[j - 1] -
-                                  j * (n - j) * phi[j]) / n
+            term1 = gamma * h * (j * (n - j + 1) * phi[j - 1] -
+                                  (j + 1) * (n - j) * phi[j]) / n
             term2 = gamma * (1 - 2 * h) * (
-                (j - 1) * (j - 2) * phi[j - 1] / (n * (n - 1)) * (n - j + 1)
-                - j * (j - 1) * phi[j] / (n * (n - 1)) * (n - j)
+                j * (j - 1) * phi[j - 1] / (n * (n - 1)) * (n - j + 1)
+                - (j + 1) * j * phi[j] / (n * (n - 1)) * (n - j)
             ) if n > 1 else 0
             dphi[j] = term1 + term2
     return dphi
@@ -325,11 +325,18 @@ def migration_operator_2pop(phi_2d, n1, n2, M12, M21):
     dphi = np.zeros((n1 + 1, n2 + 1))
     for j1 in range(1, n1):
         for j2 in range(1, n2):
+            # Migration from pop 2 into pop 1 (rate M12):
+            # A derived allele moves from pop 2 to pop 1: gain from (j1-1, j2+1)
             if j1 > 0 and j2 < n2:
                 dphi[j1, j2] += M12 * (j2 + 1) / n2 * phi_2d[j1 - 1, j2 + 1]
+            # Loss: a derived allele in pop 1 could migrate out
             dphi[j1, j2] -= M12 * j1 / n1 * phi_2d[j1, j2]
+
+            # Migration from pop 1 into pop 2 (rate M21):
+            # A derived allele moves from pop 1 to pop 2: gain from (j1+1, j2-1)
             if j2 > 0 and j1 < n1:
                 dphi[j1, j2] += M21 * (j1 + 1) / n1 * phi_2d[j1 + 1, j2 - 1]
+            # Loss: a derived allele in pop 2 could migrate out
             dphi[j1, j2] -= M21 * j2 / n2 * phi_2d[j1, j2]
     return dphi
 

@@ -352,14 +352,14 @@ class TestDriftOperator:
             )
 
     def test_drift_pushes_mass_toward_boundaries(self):
-        """For a flat SFS, drift should push mass toward the boundaries."""
+        """For a peaked SFS, drift should spread mass toward the tails."""
         n = 20
         phi = np.zeros(n + 1)
-        for j in range(1, n):
-            phi[j] = 1.0
+        phi[n // 2] = 1.0  # all mass at midpoint
         dphi = drift_operator(phi, n)
         assert dphi[n // 2] < 0, "Drift should decrease the mid-frequency bin"
-        assert dphi[1] > 0, "Drift should increase the singleton bin"
+        assert dphi[n // 2 - 1] > 0, "Drift should increase bins adjacent to peak"
+        assert dphi[n // 2 + 1] > 0, "Drift should increase bins adjacent to peak"
 
     def test_drift_scales_linearly(self):
         """Drift operator is linear: drift(c * phi) = c * drift(phi)."""
