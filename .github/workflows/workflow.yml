@@ -33,6 +33,39 @@ jobs:
           name: html-docs
           path: docs/_build/html/
 
+  build-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements.txt
+
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-xetex texlive-fonts-recommended \
+            texlive-fonts-extra texlive-latex-extra latexmk
+
+      - name: Build LaTeX sources
+        run: python -m sphinx docs docs/_build/latex -b latex
+
+      - name: Compile PDF
+        run: make -C docs/_build/latex all-pdf LATEXMKOPTS="-xelatex"
+
+      - name: Upload PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: watchmakers-guide-pdf
+          path: docs/_build/latex/watchmakers-guide.pdf
+
   publish:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
