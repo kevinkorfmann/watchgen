@@ -206,9 +206,9 @@ of the gamma posterior exceeds the entropy of the prior. This is unphysical
    pulled back to the edge of the valid region. The mean TMRCA estimate is
    preserved (we don't change our best guess), but the excess uncertainty
    is trimmed away. If the entropy
-were allowed to exceed the prior entropy, the combination of forward and
-backward passes could produce invalid gamma parameters (specifically,
-:math:`b + b' - 1 < 0`, which is not a valid rate parameter).
+   were allowed to exceed the prior entropy, the combination of forward and
+   backward passes could produce invalid gamma parameters (specifically,
+   :math:`b + b' - 1 < 0`, which is not a valid rate parameter).
 
 **The entropy bound.** The differential entropy of
 :math:`\text{Gamma}(\alpha, \beta)` is:
