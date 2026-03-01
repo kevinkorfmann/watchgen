@@ -44,23 +44,24 @@ hand-wave. We don't say "it can be shown that..." and move on.
 
 Here's what we promise:
 
-.. rst-class:: tight-table
+.. list-table::
+   :widths: 50 50
+   :header-rows: 1
 
-+----------------------------+----------------------------------------+
-| We WILL                    | We will NOT                            |
-+============================+========================================+
-| Derive every equation      | Skip "obvious" steps                   |
-+----------------------------+----------------------------------------+
-| Implement every algorithm  | Use library functions as black boxes    |
-+----------------------------+----------------------------------------+
-| Explain every assumption   | Hide behind "standard results"         |
-+----------------------------+----------------------------------------+
-| Test every implementation  | Trust code without verification         |
-+----------------------------+----------------------------------------+
-| Build intuition first      | Start with the most general case       |
-+----------------------------+----------------------------------------+
-| Teach the math as we go    | Assume you already know everything     |
-+----------------------------+----------------------------------------+
+   * - We WILL
+     - We will NOT
+   * - Derive every equation
+     - Skip "obvious" steps
+   * - Implement every algorithm
+     - Use library functions as black boxes
+   * - Explain every assumption
+     - Hide behind "standard results"
+   * - Test every implementation
+     - Trust code without verification
+   * - Build intuition first
+     - Start with the most general case
+   * - Teach the math as we go
+     - Assume you already know everything
 
 The Gears of Understanding
 ==========================

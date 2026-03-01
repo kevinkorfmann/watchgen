@@ -178,9 +178,9 @@ frequency.
    (shallower than :math:`1/x`) indicates a bottleneck or population
    contraction. These are exactly the signatures that ``dadi`` uses to infer
    demographic history. In ``dadi``, this equilibrium is computed by
-``PhiManip.phi_1D(xx, nu=1.0, theta0=1.0)``, which evaluates
-:math:`\nu \cdot \theta_0 / x` at each grid point (using the convention that
-the density near :math:`x = 0` dominates).
+   ``PhiManip.phi_1D(xx, nu=1.0, theta0=1.0)``, which evaluates
+   :math:`\nu \cdot \theta_0 / x` at each grid point (using the convention that
+   the density near :math:`x = 0` dominates).
 
 With genic selection (:math:`h = 0.5`, :math:`\gamma \neq 0`), the
 equilibrium density can be derived from the stationary Fokker-Planck equation.

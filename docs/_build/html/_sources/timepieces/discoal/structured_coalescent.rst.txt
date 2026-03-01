@@ -1,8 +1,8 @@
 .. _discoal_structured_coalescent:
 
-=======================================
+=============================================
 The Structured Coalescent Under Selection
-=======================================
+=============================================
 
    *The escapement of the mechanism: how lineages coalesce and migrate between two backgrounds.*
 

@@ -102,6 +102,14 @@ The Watchmaker's Guide to Population Genetics
 
    .. raw:: html
 
+      <p style="font-size:0.85em; color:#555; margin-top:0.5em;">
+      &copy; 2026 Kevin Korfmann.
+      Prose and documentation: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> (non-commercial, share-alike).
+      Source code: MIT License.
+      </p>
+
+   .. raw:: html
+
       <hr>
 
 Welcome to *The Watchmaker's Guide to Population Genetics*.

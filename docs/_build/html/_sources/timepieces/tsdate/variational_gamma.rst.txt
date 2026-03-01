@@ -1,8 +1,8 @@
 .. _tsdate_variational_gamma:
 
-=====================================
+=============================================
 Variational Gamma (Expectation Propagation)
-=====================================
+=============================================
 
    *The master gear: approximate every node's age as a gamma distribution, then
    refine by passing messages until the whole mechanism converges.*

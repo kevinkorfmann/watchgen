@@ -2,7 +2,7 @@ import os
 import sys
 
 project = "The Watchmaker's Guide to Population Genetics"
-copyright = '2024, The Watchmaker\'s Guide Contributors'
+copyright = '2026, Kevin Korfmann'
 author = "The Watchmaker's Guide Contributors"
 release = '0.1.0'
 
@@ -132,7 +132,13 @@ latex_elements = {
 
 This book was written with the assistance of Anthropic's Claude Opus 4.6, largely
 within the one-million-token context window of Claude Code. That disclosure made,
-let me explain what this project actually is and why it exists.
+let me explain what this project actually is and why it exists. It is also,
+frankly, an experiment in agentic coding --- an attempt to see how far a single
+researcher can push the boundaries of technical writing and software development
+when working in close collaboration with an AI agent. The chapters, derivations,
+implementations, and tests were produced through an iterative dialogue between
+human intent and machine capability, and the result is as much a proof of concept
+for that workflow as it is a textbook.
 
 Population genetics is blessed with powerful algorithms --- but cursed with
 inaccessible ones. Many of the field's most important methods live inside papers
@@ -192,11 +198,11 @@ and contributors who substantially improve the content --- whether by correcting
 proofs, rewriting sections, or adding new chapters --- will be invited as co-authors.
 Science is a collective enterprise; this book should be too.
 
-\bigskip\nopagebreak
+\vfill
 \noindent Kevin Korfmann\\
 Philadelphia, 2026
 
-\vspace{1.5em}
+\vspace{1em}\nopagebreak
 \noindent\small\textcopyright\ 2026 Kevin Korfmann.
 Prose and documentation licensed under
 \href{https://creativecommons.org/licenses/by-nc-sa/4.0/}{CC BY-NC-SA 4.0}

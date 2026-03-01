@@ -41,7 +41,13 @@ The Watchmaker's Guide to Population Genetics
 
    This book was written with the assistance of Anthropic's Claude Opus 4.6, largely
    within the one-million-token context window of Claude Code. That disclosure made,
-   let me explain what this project actually is and why it exists.
+   let me explain what this project actually is and why it exists. It is also,
+   frankly, an experiment in agentic coding -- an attempt to see how far a single
+   researcher can push the boundaries of technical writing and software development
+   when working in close collaboration with an AI agent. The chapters, derivations,
+   implementations, and tests were produced through an iterative dialogue between
+   human intent and machine capability, and the result is as much a proof of concept
+   for that workflow as it is a textbook.
 
    Population genetics is blessed with powerful algorithms -- but cursed with
    inaccessible ones. Many of the field's most important methods live inside papers

@@ -1,8 +1,8 @@
 .. _threads_timepiece:
 
-====================================
-Timepiece VII: Threads
-====================================
+======================================
+Timepiece VIII: Threads
+======================================
 
    *Threading Instructions for Ancestral Recombination Graphs*
 
