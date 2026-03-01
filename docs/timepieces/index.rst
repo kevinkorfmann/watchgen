@@ -11,88 +11,173 @@ rebuilt from scratch. Like a watchmaker laying out parts on the bench, we examin
 every gear before assembling the whole mechanism. Nothing is taken on faith. Nothing
 is hidden behind "see supplementary materials."
 
-The Timepieces are ordered roughly by complexity, though each is self-contained. We
-recommend starting with PSMC (the simplest complete inference machine) and msprime
-(the simulator that generates the ground truth), then working through the others as
-your interests guide you.
+
+Verification Status
+====================
+
+.. admonition:: Disclaimer
+
+   The code examples in each Timepiece are verified by automated unit tests that
+   re-implement the documented functions and check their mathematical properties.
+   **No Timepiece has been independently verified by a domain expert.** If you find
+   an error -- mathematical, pedagogical, or computational -- please open an issue.
+   The table below shows the current verification status.
+
+The Timepieces are grouped by what they do, with verification status for each.
+
+**Simulators** -- tools that generate ground truth
 
 .. list-table::
    :header-rows: 1
-   :widths: 10 25 65
+   :widths: 5 20 10 10 55
 
    * - #
      - Timepiece
+     - Tests
+     - Verified
+     - What it does
+   * - IV
+     - :ref:`msprime <msprime_timepiece>`
+     - 95
+     - --
+     - Neutral coalescent with recombination. The clockwork that generates ground truth.
+   * - XVI
+     - :ref:`SLiM <slim_timepiece>`
+     - 29
+     - --
+     - Forward-time simulation with natural selection. The forge that builds what the
+       coalescent cannot.
+   * - XVIII
+     - :ref:`discoal <discoal_timepiece>`
+     - 66
+     - --
+     - Coalescent simulation with selective sweeps via trajectory + structured coalescent.
+
+**Demographic inference** -- estimating population size history
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 20 10 10 55
+
+   * - #
+     - Timepiece
+     - Tests
+     - Verified
      - What it does
    * - I
      - :ref:`PSMC <psmc_timepiece>`
-     - Infers population size history from a single diploid genome. The simplest
-       complete inference Timepiece -- a two-hand watch.
+     - 93
+     - --
+     - Population size history from a single diploid genome. The simplest inference
+       Timepiece.
    * - II
      - :ref:`SMC++ <smcpp_timepiece>`
-     - Extends PSMC to multiple unphased diploid genomes using a distinguished
-       lineage approach. A chronograph that sharpens recent demographic resolution.
-   * - III
-     - :ref:`Li & Stephens HMM <lshmm_timepiece>`
-     - The copying model that describes a haplotype as a mosaic of reference
-       haplotypes. A versatile gear that appears inside many other Timepieces.
-   * - IV
-     - :ref:`msprime <msprime_timepiece>`
-     - Simulates ancestral histories under the coalescent with recombination. The
-       clockwork that generates ground truth.
-   * - V
-     - :ref:`ARGweaver <argweaver_timepiece>`
-     - Bayesian ARG sampling with discretized time. SINGER's predecessor -- a
-       single-HMM approach with exact forward-backward computation.
-   * - VI
-     - :ref:`tsinfer <tsinfer_timepiece>`
-     - Deterministic tree sequence inference that scales to biobank-sized data.
-       Speed over statistical optimality.
-   * - VII
-     - :ref:`SINGER <singer_timepiece>`
-     - Bayesian ARG sampling with continuous time and two-HMM architecture.
-       The most complex Timepiece in the collection.
-   * - VIII
-     - :ref:`Threads <threads_timepiece>`
-     - Deterministic ARG inference at biobank scale. PBWT pre-filtering,
-       memory-efficient Viterbi, and segment dating.
-   * - IX
-     - :ref:`tsdate <tsdate_timepiece>`
-     - Dates the nodes in a tree sequence using the molecular clock. Turns
-       tsinfer's skeleton into a fully calibrated genealogy.
-   * - X
-     - :ref:`moments <moments_timepiece>`
-     - Demographic inference from the site frequency spectrum using moment
-       equations. A different lens on the same evolutionary history.
-   * - XI
-     - :ref:`dadi <dadi_timepiece>`
-     - Demographic inference from the SFS by solving the Wright-Fisher
-       diffusion PDE on a frequency grid. The predecessor to moments --
-       same problem, different mechanism.
-   * - XII
-     - :ref:`momi2 <momi2_timepiece>`
-     - Demographic inference from the SFS via the coalescent, using tensor
-       algebra and automatic differentiation. The backward-time counterpart
-       to moments.
+     - 56
+     - --
+     - Extends PSMC to multiple unphased genomes with a distinguished lineage approach.
    * - XIII
      - :ref:`Gamma-SMC <gamma_smc_timepiece>`
-     - Ultrafast pairwise TMRCA inference using a continuous-state HMM with
-       gamma-distributed posteriors. The same problem as PSMC, without
-       discretizing time.
+     - 52
+     - --
+     - Ultrafast pairwise TMRCA inference with gamma-distributed posteriors.
    * - XIV
      - :ref:`PHLASH <phlash_timepiece>`
-     - Bayesian inference of population size history from whole-genome data.
-       A GPU-accelerated successor to PSMC that combines SFS and HMM
-       likelihoods with posterior sampling via SVGD.
+     - 65
+     - --
+     - GPU-accelerated Bayesian inference of population size history via SVGD.
+
+**SFS-based demographic inference** -- using the site frequency spectrum
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 20 10 10 55
+
+   * - #
+     - Timepiece
+     - Tests
+     - Verified
+     - What it does
+   * - X
+     - :ref:`moments <moments_timepiece>`
+     - 50
+     - --
+     - Demographic inference from the SFS using moment equations.
+   * - XI
+     - :ref:`dadi <dadi_timepiece>`
+     - 42
+     - --
+     - Demographic inference from the SFS by solving the Wright-Fisher diffusion PDE.
+   * - XII
+     - :ref:`momi2 <momi2_timepiece>`
+     - 70
+     - --
+     - Demographic inference from the SFS via coalescent tensor algebra.
+
+**Genealogy and ARG inference** -- reconstructing ancestral histories
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 20 10 10 55
+
+   * - #
+     - Timepiece
+     - Tests
+     - Verified
+     - What it does
+   * - III
+     - :ref:`Li & Stephens HMM <lshmm_timepiece>`
+     - 76
+     - --
+     - The copying model: a haplotype as a mosaic of references. A gear inside many
+       Timepieces.
+   * - V
+     - :ref:`ARGweaver <argweaver_timepiece>`
+     - 52
+     - --
+     - Bayesian ARG sampling with discretized time. SINGER's predecessor.
+   * - VI
+     - :ref:`tsinfer <tsinfer_timepiece>`
+     - 71
+     - --
+     - Deterministic tree sequence inference at biobank scale.
+   * - VII
+     - :ref:`SINGER <singer_timepiece>`
+     - 44
+     - --
+     - Bayesian ARG sampling with continuous time and two-HMM architecture.
+   * - VIII
+     - :ref:`Threads <threads_timepiece>`
+     - 28
+     - --
+     - Deterministic ARG inference at biobank scale with PBWT pre-filtering.
+   * - XVII
+     - :ref:`Relate <relate_timepiece>`
+     - 33
+     - --
+     - Genome-wide genealogy estimation via asymmetric painting + MCMC branch lengths.
+
+**Dating and selection** -- calibrating genealogies and detecting selection
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 20 10 10 55
+
+   * - #
+     - Timepiece
+     - Tests
+     - Verified
+     - What it does
+   * - IX
+     - :ref:`tsdate <tsdate_timepiece>`
+     - 47
+     - --
+     - Dates tree sequence nodes using the molecular clock.
    * - XV
      - :ref:`CLUES <clues_timepiece>`
-     - Full-likelihood estimation of selection coefficients and allele
-       frequency trajectories from gene trees and ancient DNA. Detects
-       the invisible hand of natural selection.
-   * - XVI
-     - :ref:`SLiM <slim_timepiece>`
-     - Forward-time population genetics simulation with natural selection.
-       The forge that builds what the coalescent cannot: selective sweeps,
-       background selection, and complex fitness landscapes.
+     - 42
+     - --
+     - Full-likelihood estimation of selection coefficients from gene trees and ancient
+       DNA.
 
 .. toctree::
    :maxdepth: 2
@@ -114,3 +199,5 @@ your interests guide you.
    phlash/index
    clues/index
    slim/index
+   relate/index
+   discoal/index
