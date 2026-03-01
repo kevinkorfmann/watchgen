@@ -196,6 +196,14 @@ Science is a collective enterprise; this book should be too.
 \noindent Kevin Korfmann\\
 Philadelphia, 2026
 
+\vspace{1.5em}
+\noindent\small\textcopyright\ 2026 Kevin Korfmann.
+Prose and documentation licensed under
+\href{https://creativecommons.org/licenses/by-nc-sa/4.0/}{CC BY-NC-SA 4.0}
+(non-commercial, share-alike).
+Source code licensed under the MIT License.
+\normalsize
+
 \clearpage
 \if@openright\cleardoublepage\else\clearpage\fi
 \sphinxrestorepageanchorsetting
