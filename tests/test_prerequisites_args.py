@@ -155,7 +155,7 @@ class TestSimulateArg:
         for _ in range(n_reps):
             _, recomb_low = simulate_arg(5, rho=1.0)
             low_rho_recomb.append(len(recomb_low))
-            _, recomb_high = simulate_arg(5, rho=20.0)
+            _, recomb_high = simulate_arg(5, rho=5.0)
             high_rho_recomb.append(len(recomb_high))
         assert np.mean(high_rho_recomb) > np.mean(low_rho_recomb)
 
