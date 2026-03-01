@@ -826,13 +826,13 @@ Substitute the Li-Stephens form of :math:`A_{ij}`:
 
 .. math::
 
-   \alpha_j(\ell) &= e_j(X_\ell) \sum_i \alpha_i(\ell-1) \left[(1 - r_i)\delta_{ij} + r_i \frac{q_j}{\sum_k q_k}\right]
+   \alpha_j(\ell) = e_j(X_\ell) \sum_i \alpha_i(\ell-1) \left[(1 - r_i)\delta_{ij} + r_i \frac{q_j}{\sum_k q_k}\right]
 
 Now distribute the sum over the two terms inside the brackets:
 
 .. math::
 
-   \alpha_j(\ell) &= e_j(X_\ell) \left[\sum_i \alpha_i(\ell-1)(1 - r_i)\delta_{ij} + \sum_i \alpha_i(\ell-1) r_i \frac{q_j}{\sum_k q_k}\right]
+   \alpha_j(\ell) = e_j(X_\ell) \left[\sum_i \alpha_i(\ell-1)(1 - r_i)\delta_{ij} + \sum_i \alpha_i(\ell-1) r_i \frac{q_j}{\sum_k q_k}\right]
 
 **Simplify the first sum.** The Kronecker delta :math:`\delta_{ij}` kills every
 term except :math:`i = j`:
