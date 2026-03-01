@@ -194,7 +194,7 @@ Science is a collective enterprise; this book should be too.
 
 \bigskip\nopagebreak
 \noindent Kevin Korfmann\\
-Philadelphia, 2025
+Philadelphia, 2026
 
 \clearpage
 \if@openright\cleardoublepage\else\clearpage\fi

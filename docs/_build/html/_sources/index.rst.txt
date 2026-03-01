@@ -100,7 +100,7 @@ The Watchmaker's Guide to Population Genetics
    Science is a collective enterprise; this book should be too.
 
    | Kevin Korfmann
-   | Philadelphia, 2025
+   | Philadelphia, 2026
 
    .. raw:: html
 
