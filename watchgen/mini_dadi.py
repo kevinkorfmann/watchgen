@@ -207,7 +207,6 @@ def crank_nicolson_1d(phi, xx, T, nu=1.0, theta=0.0, n_steps=100):
         Evolved frequency density.
     """
     phi = phi.copy()
-    dt = T / n_steps
     n = len(xx)
 
     # Precompute tridiagonal coefficients of spatial operator L
@@ -242,6 +241,14 @@ def crank_nicolson_1d(phi, xx, T, nu=1.0, theta=0.0, n_steps=100):
 
         # Zeroth-order term: V''(x) * phi = -1/nu * phi
         b[i] += -1.0 / nu
+
+    # Auto-adjust n_steps to avoid Crank-Nicolson oscillations.
+    # Require 1 + 0.5*dt*min(b) > 0, i.e. dt < 2/|min(b)|.
+    b_min = np.min(b[1:-1])
+    if b_min < 0:
+        min_steps = int(np.ceil(T * abs(b_min) / 2.0)) + 1
+        n_steps = max(n_steps, min_steps)
+    dt = T / n_steps
 
     # Precompute LHS tridiagonal bands: (I - 0.5*dt*L)
     lhs_lower = np.zeros(n)
