@@ -71,8 +71,7 @@ cd docs/_build/latex && xelatex watchmakers-guide.tex
 
 ## Contributing
 
-This is version 0.1 — an unverified draft. No chapter has been reviewed by a domain expert yet. Contributions that cross-check derivations, correct mistakes, improve explanations, or add chapters are very welcome. Substantial contributors will be invited as co-authors.
-
+This is version 0.1 — an unverified draft. No chapter has been reviewed by a domain expert yet. Contributions that cross-check derivations, correct mistakes, improve explanations, or add chapters are very welcome.
 Open an issue or pull request on [GitHub](https://github.com/kevinkorfmann/watchgen).
 
 ---
