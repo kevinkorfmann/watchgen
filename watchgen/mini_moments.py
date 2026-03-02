@@ -292,15 +292,32 @@ def selection_operator(phi, n, gamma, h=0.5):
     dphi : ndarray of shape (n+1,)
     """
     dphi = np.zeros(n + 1)
+
+    # First-order Jackknife: approximate Phi_{n+1}(i) from Phi_n by
+    # frequency-matched linear interpolation (Jouganous et al. 2017 App. D).
+    def _jk13(i):
+        a = phi[i] if 0 < i < n else 0.0
+        b = phi[i - 1] if 0 < (i - 1) < n else 0.0
+        return ((n + 1 - i) * a + i * b) / (n + 1)
+
     for j in range(1, n):
-        if j > 0 and j < n:
-            term1 = gamma * h * (j * (n - j + 1) * phi[j - 1] -
-                                  (j + 1) * (n - j) * phi[j]) / n
-            term2 = gamma * (1 - 2 * h) * (
-                j * (j - 1) * phi[j - 1] / (n * (n - 1)) * (n - j + 1)
-                - (j + 1) * j * phi[j] / (n * (n - 1)) * (n - j)
-            ) if n > 1 else 0
-            dphi[j] = term1 + term2
+        # Additive selection (Jouganous et al. 2017 Eq. A3)
+        term1 = gamma * h / (n + 1) * (
+            j * (n + 1 - j) * _jk13(j)
+            - (j + 1) * (n - j) * _jk13(j + 1)
+        )
+        # Dominance deviation (Phi_{n+2} via identity Jackknife;
+        # vanishes for additive selection h=0.5)
+        if (1 - 2 * h) != 0 and n > 1:
+            phi_jp1 = phi[j + 1] if j + 1 < n else 0.0
+            phi_jp2 = phi[j + 2] if j + 2 < n else 0.0
+            term2 = gamma * (1 - 2 * h) * (j + 1) / ((n + 1) * (n + 2)) * (
+                j * (n + 1 - j) * phi_jp1
+                - (j + 2) * (n - j) * phi_jp2
+            )
+        else:
+            term2 = 0.0
+        dphi[j] = term1 + term2
     return dphi
 
 
@@ -395,7 +412,8 @@ def integrate_sfs(phi_init, n, T, nu_func, theta, gamma=0, h=0.5):
         dphi = d_drift + d_mutation + d_selection
         return dphi[1:n]
 
-    sol = solve_ivp(rhs, [0, T], y0, method='RK45',
+    method = 'Radau' if gamma != 0 else 'RK45'
+    sol = solve_ivp(rhs, [0, T], y0, method=method,
                      rtol=1e-10, atol=1e-12,
                      dense_output=True)
     phi_final = np.zeros(n + 1)
