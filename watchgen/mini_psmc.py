@@ -559,20 +559,30 @@ def compute_expected_counts(hmm, seq):
     xi_sum = np.zeros((N, N))
     for pos in range(L - 1):
         obs_next = seq[pos + 1]
+        # Compute raw xi values and per-position normalization factor.
+        # With independently-scaled forward/backward, each position has
+        # a different implicit scale, so we must normalize per-position
+        # before accumulating (global normalization would mix scales).
+        pos_total = 0.0
         for k in range(N):
             for l in range(N):
                 if obs_next >= 2:
                     e = 1.0
                 else:
                     e = hmm.emissions[obs_next, l]
-                xi_sum[k, l] += (alpha_hat[pos, k]
-                                 * hmm.transitions[k, l]
-                                 * e * beta_hat[pos + 1, l])
-
-    total_xi = xi_sum.sum()
-    if total_xi > 0:
-        xi_sum /= total_xi
-        xi_sum *= (L - 1)
+                pos_total += (alpha_hat[pos, k]
+                              * hmm.transitions[k, l]
+                              * e * beta_hat[pos + 1, l])
+        if pos_total > 0:
+            for k in range(N):
+                for l in range(N):
+                    if obs_next >= 2:
+                        e = 1.0
+                    else:
+                        e = hmm.emissions[obs_next, l]
+                    xi_sum[k, l] += (alpha_hat[pos, k]
+                                     * hmm.transitions[k, l]
+                                     * e * beta_hat[pos + 1, l]) / pos_total
 
     return gamma_sum, xi_sum, emission_counts, ll
 
