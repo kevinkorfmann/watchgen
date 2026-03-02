@@ -69,8 +69,12 @@ fn main() -> Result<()> {
     let n_samples = data.len();
     eprintln!("Loaded {n_samples} observation sequences");
 
+    // Log-spaced time breaks: t_k = alpha * (exp(beta*k) - 1)
+    // This gives finer resolution at recent times where most coalescence occurs
+    let alpha = 0.1;
+    let beta = (1.0 + cli.t_max / alpha).ln() / cli.n_intervals as f64;
     let time_breaks: Vec<f64> = (0..=cli.n_intervals)
-        .map(|i| i as f64 * cli.t_max / cli.n_intervals as f64)
+        .map(|i| alpha * ((beta * i as f64).exp() - 1.0))
         .collect();
 
     let initial_ll = composite_log_likelihood(
