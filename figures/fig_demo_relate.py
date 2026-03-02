@@ -47,18 +47,15 @@ D_mat = compute_distance_matrix(G.T, positions, recomb_rate=rho, mu=mu,
 # Build tree from distance matrix
 tree_result = build_tree(D_mat, n_haps)
 
-# ── True pairwise divergence ────────────────────────────────────
+# ── True pairwise TMRCA at focal SNP ──────────────────────────
+focal_pos = positions[focal_snp]
+focal_tree = ts.at(focal_pos)
 true_div = np.zeros((n, n))
-for tree_obj in ts.trees():
-    span = tree_obj.interval[1] - tree_obj.interval[0]
-    for i in range(n):
-        for j in range(i + 1, n):
-            mrca = tree_obj.mrca(i, j)
-            if mrca != -1:
-                t = tree_obj.time(mrca)
-                true_div[i, j] += t * span
-                true_div[j, i] += t * span
-true_div /= ts.sequence_length
+for i in range(n):
+    for j in range(i + 1, n):
+        t = focal_tree.time(focal_tree.mrca(i, j))
+        true_div[i, j] = t
+        true_div[j, i] = t
 
 # ── Figure ──────────────────────────────────────────────────────
 fig, axes = plt.subplots(2, 2, figsize=(11, 8.5))
@@ -93,8 +90,8 @@ ax = axes[1, 0]
 im = ax.imshow(true_div, aspect="auto", cmap="viridis", interpolation="nearest")
 ax.set_xlabel("Haplotype")
 ax.set_ylabel("Haplotype")
-ax.set_title("C. True pairwise divergence (msprime)")
-plt.colorbar(im, ax=ax, label="Mean TMRCA (gen)", shrink=0.8)
+ax.set_title("C. True pairwise TMRCA at focal SNP")
+plt.colorbar(im, ax=ax, label="TMRCA (gen)", shrink=0.8)
 
 # Panel D: True vs inferred distance scatter
 ax = axes[1, 1]
