@@ -34,12 +34,12 @@ x_det_weak = deterministic_trajectory(s_weak, N, x0=1/(2*N), dt=1.0)
 L_profile = 2_000_000  # 2 Mb — large enough to show sweep recovery
 n_sample_profile = 20
 # Average over replicates for a smoother diversity curve
-n_div_reps = 30
+n_div_reps = 100
 div_reps = []
 for rep_seed in range(n_div_reps):
     pos_rep, div_rep = minimal_discoal(
         n=n_sample_profile, N=N, s=s_strong,
-        r_per_site=1e-8, L=L_profile, n_sites=30, seed=rep_seed,
+        r_per_site=1e-8, L=L_profile, n_sites=100, seed=rep_seed,
     )
     div_reps.append(div_rep)
 positions = pos_rep
@@ -47,7 +47,7 @@ rel_div = np.mean(div_reps, axis=0)
 
 # ── Structured coalescent under sweep for TMRCA (Panel C) ────────
 n_samples = 20
-n_reps = 20
+n_reps = 100
 
 coal_times_sweep = []
 coal_times_neutral = []
@@ -75,7 +75,7 @@ for _ in range(n_reps):
     coal_times_neutral.append(t)
 
 # ── Sweep duration vs selection coefficient (Panel D) ────────────
-s_range = np.logspace(-3, -1, 15)  # avoid very small s (slow logistic)
+s_range = np.logspace(-3, -1, 30)  # avoid very small s (slow logistic)
 durations = []
 for s_val in s_range:
     x = deterministic_trajectory(s_val, N, x0=1/(2*N), dt=1.0)

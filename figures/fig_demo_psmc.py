@@ -58,7 +58,7 @@ def lambda_true(t):
     return true_lambdas[-1]
 
 # Simulate diploid heterozygosity sequence
-L = 100_000
+L = 500_000
 seq, true_coal_times = simulate_psmc_input(L, theta, rho, lambda_true)
 
 # ── Build HMM with true parameters and decode ───────────────────
@@ -75,7 +75,7 @@ fig.suptitle(
 # Panel A: Input heterozygosity sequence
 ax = axes[0, 0]
 window = 500
-het_show = seq[:50_000].astype(float)
+het_show = seq[:min(100_000, L)].astype(float)
 het_rate = np.convolve(het_show, np.ones(window) / window, mode="valid")
 ax.plot(np.arange(len(het_rate)), het_rate, color="#2166AC", lw=0.5, alpha=0.7)
 ax.set_xlabel("Genomic position (bp)")

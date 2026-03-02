@@ -56,7 +56,7 @@ def lambda_true(t):
 
 # Simulate multiple diploid sequences
 n_diploids = 3
-L = 10_000
+L = 100_000
 sequences = []
 for _ in range(n_diploids):
     seq, _ = simulate_psmc_input(L, theta, rho, lambda_true)

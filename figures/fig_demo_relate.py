@@ -26,10 +26,10 @@ np.random.seed(2024)
 Ne = 10_000
 mu = 1.25e-8
 rho = 1e-8
-n_haps = 12
+n_haps = 20
 
 ts = msprime.simulate(
-    sample_size=n_haps, Ne=Ne, length=200_000,
+    sample_size=n_haps, Ne=Ne, length=500_000,
     recombination_rate=rho, mutation_rate=mu,
     random_seed=2024,
 )
@@ -63,7 +63,7 @@ true_div /= ts.sequence_length
 # ── Figure ──────────────────────────────────────────────────────
 fig, axes = plt.subplots(2, 2, figsize=(11, 8.5))
 fig.suptitle(
-    f"Demo: Relate on msprime Data ({n_haps} haplotypes, {n_sites} sites, 200 kb)",
+    f"Demo: Relate on msprime Data ({n_haps} haplotypes, {n_sites} sites, 500 kb)",
     fontsize=13, fontweight="bold", y=0.98,
 )
 
