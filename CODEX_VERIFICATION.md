@@ -1,7 +1,7 @@
 # Codex verification ledger
 
 Last reconciled: 2026-09-01  
-Baseline: GitHub `main` at `86a00ad`
+Baseline: GitHub `main` at `4f82b83`
 Scope: the current source-grounded, chapter-by-chapter Codex review campaign
 
 This ledger records **Codex verification**, not independent expert review or a
@@ -63,7 +63,7 @@ chapter review evidence, not necessarily the repository-wide total.
 
 ## Remaining campaign gates
 
-1. Review the eleven `NOT STARTED` Timepieces one chapter at a time.
+1. Review the nine `NOT STARTED` Timepieces one chapter at a time.
 2. Reconcile `docs/timepieces/verification.rst` from this ledger after each pushed
    chapter, while preserving its independent-domain-expert disclaimer.
 3. After all chapters are closed, run the entire repository test suite, execute all
