@@ -591,20 +591,21 @@ distribution lemma), with :math:`g(u) = 1` and :math:`h(u) = 1/\lambda(u)`.
        Lambda_t, _ = quad(lambda u: 1.0 / lambda_func(u), 0, t)
        return t / (C_pi * lambda_func(t)) * np.exp(-Lambda_t)
 
-   def compute_C_pi(lambda_func, t_max=20):
+   def compute_C_pi(lambda_func, t_max=np.inf):
        """Compute the normalization constant C_pi.
 
        C_pi = integral_0^inf exp(-Lambda(u)) du
 
-       We approximate the upper limit of infinity with t_max=20, which
-       is safe because the integrand decays exponentially.
+       The default evaluates the full improper integral. A finite ``t_max``
+       is an explicit truncation and is safe only when its omitted tail has
+       been bounded for the supplied population-size history.
        """
        def integrand(u):
            # For each u, compute Lambda(u) and then exp(-Lambda(u)).
            Lambda_u, _ = quad(lambda v: 1.0 / lambda_func(v), 0, u)
            return np.exp(-Lambda_u)
 
-       # Integrate the survival function from 0 to t_max.
+       # Integrate the survival function over the requested domain.
        C_pi, _ = quad(integrand, 0, t_max)
        return C_pi
 
@@ -622,7 +623,7 @@ distribution lemma), with :math:`g(u) = 1` and :math:`h(u) = 1/\lambda(u)`.
        # lambda t: ... creates a function that evaluates
        # t * pi(t), which we integrate to get the expected value.
        lambda t: t * stationary_distribution(t, lambda u: 1.0, C_pi_const),
-       0, 20
+       0, np.inf
    )
    print(f"Mean coalescence time (constant pop): {mean_T:.4f} (expected: 2.0)")
 

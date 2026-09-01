@@ -56,10 +56,10 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - I
      - :ref:`PSMC <psmc_timepiece>`
-     - 186
-     - --
-     - Population size history from a single diploid genome. The simplest inference
-       Timepiece.
+     - 205
+     - 2026-09-01
+     - Population size history from a single diploid genome; continuous-chain
+       normalization checked against analytic infinite-tail oracles.
    * - II
      - :ref:`SMC++ <smcpp_timepiece>`
      - 112

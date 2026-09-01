@@ -263,6 +263,17 @@ class TestEstimateThetaInitial:
 
 
 class TestFullContinuousChain:
+    def test_c_pi_integrates_the_full_tail_by_default(self):
+        # For constant lambda=a, C_pi is exactly a.  A cutoff at t=20 loses
+        # most of the mass when a is large.
+        lambda_func = lambda _t: 100.0
+        C_pi = compute_C_pi(lambda_func)
+        assert C_pi == pytest.approx(100.0)
+
+        # When a*rho=1, C_sigma=sum_{m>=0} 1/(1+m)^2=pi^2/6.
+        C_sigma = compute_C_sigma(lambda_func, 0.01, C_pi)
+        assert C_sigma == pytest.approx(np.pi ** 2 / 6, rel=1e-6)
+
     def test_zero_time_is_a_pure_no_recombination_point_mass(self):
         continuous, point_mass = full_transition_density(
             0.0, 0.0, 0.001, lambda t: 1.0)

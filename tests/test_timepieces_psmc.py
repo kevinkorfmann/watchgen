@@ -69,7 +69,7 @@ def stationary_distribution(t, lambda_func, C_pi=None):
     return t / (C_pi * lambda_func(t)) * np.exp(-Lambda_t)
 
 
-def compute_C_pi(lambda_func, t_max=20):
+def compute_C_pi(lambda_func, t_max=np.inf):
     """Compute the normalization constant C_pi."""
     def integrand(u):
         Lambda_u, _ = quad(lambda v: 1.0 / lambda_func(v), 0, u)
@@ -524,6 +524,10 @@ class TestStationaryDistribution:
         """For constant lambda=1, C_pi should be 1.0."""
         C_pi = compute_C_pi(lambda t: 1.0)
         assert abs(C_pi - 1.0) < 1e-3
+
+    def test_C_pi_does_not_silently_truncate_slow_tail(self):
+        """For constant lambda=a, the full survival integral equals a."""
+        assert compute_C_pi(lambda _t: 100.0) == pytest.approx(100.0)
 
     def test_integrates_to_one(self):
         """pi(t) should integrate to 1."""

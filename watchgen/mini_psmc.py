@@ -109,7 +109,7 @@ def stationary_distribution(t, lambda_func, C_pi=None):
     return t / (C_pi * lambda_func(t)) * np.exp(-Lambda_t)
 
 
-def compute_C_pi(lambda_func, t_max=20):
+def compute_C_pi(lambda_func, t_max=np.inf):
     """Compute the normalization constant C_pi.
 
     C_pi = integral_0^inf exp(-Lambda(u)) du
@@ -162,7 +162,7 @@ def full_stationary(t, lambda_func, rho, C_pi=None, C_sigma=None):
     return pi_t / (C_sigma * -np.expm1(-rho * t))
 
 
-def compute_C_sigma(lambda_func, rho, C_pi=None, t_max=20):
+def compute_C_sigma(lambda_func, rho, C_pi=None, t_max=np.inf):
     """Compute C_sigma = integral pi(t) / (1 - exp(-rho*t)) dt."""
     if rho <= 0 or t_max <= 0:
         raise ValueError("rho and t_max must be positive")
