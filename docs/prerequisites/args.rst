@@ -23,11 +23,12 @@ chronograph train for elapsed timing. The complete mechanical drawing must show
 all of these, along with every point where one train's output becomes another
 train's input.
 
-An **Ancestral Recombination Graph (ARG)** is that complete mechanical drawing
-for a genome's history. It captures *every* coalescence event and *every*
-recombination event across the entire sequence. Where a single coalescent tree
-shows one gear train, the ARG shows all of them, plus the couplings between
-them.
+An **ancestral recombination graph (ARG)** is that complete mechanical drawing
+for the ancestry of the sampled genome. It records the ancestral coalescence
+and recombination events needed to relate the sampled sequences across the
+region; it does not include unrelated events elsewhere in the population.
+Where a single coalescent tree shows one gear train, the ARG shows all of them,
+plus the couplings between them :cite:`hudson1983`.
 
 But before we can understand the ARG, we need to understand what recombination
 is and why it matters.
@@ -50,8 +51,8 @@ physically align, and segments are swapped between them.
    from your mother's chromosome, others from your father's.
 
    Why would evolution favor this shuffling? There are several theories, but
-   the dominant one is that recombination breaks up linkage between
-   deleterious mutations, allowing natural selection to act more efficiently.
+   one important consequence is that recombination breaks up linkage between
+   mutations, which can allow selection to act on them more independently.
    Without recombination, a bad mutation on a chromosome is permanently
    linked to every other variant on that chromosome. With recombination,
    good and bad variants can be separated, giving selection a clearer target.
@@ -97,10 +98,11 @@ but now two types of events can happen:
    when there are :math:`k` lineages. This is the same mechanism we derived in
    the :ref:`coalescent_theory` chapter.
 
-2. **Recombination**: A single lineage **splits** into two at a random
-   breakpoint. Each of the :math:`k` lineages recombines at rate
-   :math:`\rho/2`, where :math:`\rho = 4N_e r` and :math:`r` is the
-   per-generation recombination probability across the region.
+2. **Recombination**: A single ancestral chromosome **splits** at a random
+   breakpoint, with the material on either side followed through different
+   parents. If every active lineage spans the full region, each recombines at
+   rate :math:`\rho/2`, where :math:`\rho = 4N_e r` and :math:`r` is the
+   per-generation recombination probability across that region.
 
 .. admonition:: Where does :math:`\rho = 4N_e r` come from?
 
@@ -115,8 +117,11 @@ but now two types of events can happen:
 
       r \times 2N_e \ell = \frac{4N_e r}{2} \cdot \ell = \frac{\rho}{2} \cdot \ell
 
-   So the recombination rate **per coalescent time unit per lineage** is
-   :math:`\rho/2`, exactly paralleling the mutation rate :math:`\theta/2`.
+   Thus a lineage spanning the whole region has recombination rate
+   :math:`\rho/2` per coalescent time unit. After lineages carry different
+   amounts of ancestral material, the exact Hudson process weights them by
+   their available recombination links rather than assigning every lineage
+   this same rate :cite:`hudson1983`.
 
 .. admonition:: What is a "breakpoint"?
 
@@ -138,9 +143,8 @@ Going backwards in time, these two event types have opposite effects:
 - **Coalescence** reduces the number of lineages by 1 (two become one)
 - **Recombination** increases the number of lineages by 1 (one becomes two)
 
-This creates a competition. Coalescence simplifies the history; recombination
-complicates it. The total rate at which *something* happens when there are
-:math:`k` lineages is:
+Initially, while all :math:`k` lineages span the full region, these events
+compete at total rate:
 
 .. math::
 
@@ -149,15 +153,18 @@ complicates it. The total rate at which *something* happens when there are
 
 .. admonition:: Probability aside: competing exponential processes
 
-   As we established in the :ref:`coalescent_theory` chapter, when multiple
+   This displayed rate is the full-span special case. In the general process,
+   replace :math:`k\rho/2` by the sum of the lineage-specific recombination
+   rates determined by their ancestral material. As established in the
+   :ref:`coalescent_theory` chapter, when multiple
    independent exponential processes are racing, the time to the first event
-   is exponential with rate equal to the **sum** of the individual rates. Here,
-   the coalescence rate is :math:`\binom{k}{2}` and the recombination rate is
+   is exponential with rate equal to the **sum** of the individual rates. In
+   the initial full-span case, the coalescence rate is :math:`\binom{k}{2}` and the recombination rate is
    :math:`k\rho/2`, so the next event -- whichever type it is -- occurs after
    an exponential waiting time with rate :math:`\binom{k}{2} + k\rho/2`.
 
-   The probability that the event is a coalescence (rather than a
-   recombination) is proportional to its rate:
+   The corresponding initial probability that the event is a coalescence
+   (rather than a recombination) is proportional to its rate:
 
    .. math::
 
@@ -166,15 +173,17 @@ complicates it. The total rate at which *something* happens when there are
    This is a general property of competing Poisson processes: the probability
    that a particular process "wins" is its rate divided by the total rate.
 
-Let's simulate this process. The code below builds an ARG by tracing lineages
-backwards, allowing both coalescence and recombination events.
+Implementing Hudson's ancestral-material bookkeeping correctly is subtle. The
+code below therefore delegates exact simulation to :mod:`msprime`, which
+implements the coalescent with recombination and returns its standard
+:mod:`tskit` tree-sequence representation :cite:`msprime`.
 
 .. code-block:: python
 
-   import numpy as np
+   import msprime
 
-   def simulate_arg(n, rho, seq_length=1.0):
-       """Simulate an Ancestral Recombination Graph.
+   def simulate_arg(n, rho, seq_length=1.0, Ne=10_000, random_seed=None):
+       """Simulate a haploid sample under the coalescent with recombination.
 
        Parameters
        ----------
@@ -183,118 +192,43 @@ backwards, allowing both coalescence and recombination events.
        rho : float
            Population-scaled recombination rate (4*Ne*r) for the whole region.
        seq_length : float
-           Length of the genomic region.
+           Length of the continuous genomic region.
+       Ne : float
+           Diploid effective population size.
+       random_seed : int or None
+           Seed passed to msprime.
 
        Returns
        -------
-       coal_events : list of (time, child1, child2, parent)
-       recomb_events : list of (time, lineage, breakpoint, left_lineage, right_lineage)
+       tskit.TreeSequence
+           Correlated marginal genealogies. Node times are in generations.
        """
-       # Each lineage carries an interval [left, right) of ancestral material.
-       # This tracks which segment of the genome each lineage is responsible for.
-       next_label = n
-       # dict: lineage_label -> list of (left, right) intervals.
-       # Initially, each of the n samples covers the full sequence.
-       lineages = {}
-       for i in range(n):
-           lineages[i] = [(0.0, seq_length)]  # full sequence
+       if n < 2 or rho < 0 or seq_length <= 0 or Ne <= 0:
+           raise ValueError("require n >= 2, rho >= 0, seq_length > 0, and Ne > 0")
+       # rho = 4*Ne*(rate per unit)*(sequence length).
+       recombination_rate = rho / (4 * Ne * seq_length)
+       return msprime.sim_ancestry(
+           samples=n,
+           ploidy=1,
+           population_size=Ne,
+           sequence_length=seq_length,
+           recombination_rate=recombination_rate,
+           discrete_genome=False,
+           record_full_arg=True,
+           random_seed=random_seed,
+       )
 
-       coal_events = []
-       recomb_events = []
-       current_time = 0.0
+   ts = simulate_arg(n=5, rho=5.0, random_seed=42)
+   print(f"Samples: {ts.num_samples}")
+   print(f"Marginal-tree intervals: {ts.num_trees}")
+   print(f"Breakpoints: {list(ts.breakpoints())}")
 
-       # Continue until only one lineage remains (the MRCA for the whole genome)
-       while len(lineages) > 1:
-           k = len(lineages)
-           coal_rate = k * (k - 1) / 2      # binom(k, 2)
-           recomb_rate = k * rho / 2          # each lineage recombines at rate rho/2
-           total_rate = coal_rate + recomb_rate
-
-           # Sample waiting time from Exp(total_rate).
-           # np.random.exponential takes the *scale* (= 1/rate), not the rate.
-           wait = np.random.exponential(1.0 / total_rate)
-           current_time += wait
-
-           # Decide which event occurs: coalescence or recombination.
-           # np.random.random() draws a uniform random number in [0, 1).
-           if np.random.random() < coal_rate / total_rate:
-               # --- Coalescence event ---
-               # Convert dict keys to a list so we can index into them.
-               labels = list(lineages.keys())
-               # Pick two distinct lineages at random.
-               # np.random.choice(n, size=2, replace=False) picks 2 distinct
-               # indices from {0, 1, ..., n-1}.
-               i, j = np.random.choice(len(labels), size=2, replace=False)
-               c1, c2 = labels[i], labels[j]
-               parent = next_label
-               next_label += 1
-
-               # Merge ancestral material: the parent inherits all intervals
-               # from both children. The '+' operator concatenates two lists.
-               merged = lineages[c1] + lineages[c2]
-               lineages[parent] = merged
-               # 'del' removes a key from the dictionary, since these lineages
-               # no longer exist as separate entities after merging.
-               del lineages[c1]
-               del lineages[c2]
-
-               coal_events.append((current_time, c1, c2, parent))
-           else:
-               # --- Recombination event ---
-               labels = list(lineages.keys())
-               # np.random.randint(0, k) picks a random integer in {0, ..., k-1}
-               idx = np.random.randint(0, k)
-               lineage = labels[idx]
-
-               # Choose a breakpoint uniformly on [0, seq_length]
-               breakpoint = np.random.uniform(0, seq_length)
-
-               # Split ancestral material at the breakpoint.
-               # These are list comprehensions: concise ways to build a new list
-               # by filtering and transforming elements of an existing list.
-               #
-               # left_material: keep intervals (or parts of intervals) that fall
-               # to the LEFT of the breakpoint.
-               left_material = [(l, min(r, breakpoint))
-                                for l, r in lineages[lineage] if l < breakpoint]
-               # right_material: keep intervals (or parts of intervals) that fall
-               # to the RIGHT of the breakpoint.
-               right_material = [(max(l, breakpoint), r)
-                                 for l, r in lineages[lineage] if r > breakpoint]
-
-               # Only create new lineages if both sides have material.
-               # (If the breakpoint falls outside all intervals, one side is empty
-               # and the split has no effect.)
-               if left_material and right_material:
-                   left_label = next_label
-                   right_label = next_label + 1
-                   next_label += 2
-
-                   lineages[left_label] = left_material
-                   lineages[right_label] = right_material
-                   del lineages[lineage]
-
-                   recomb_events.append((current_time, lineage, breakpoint,
-                                        left_label, right_label))
-
-       return coal_events, recomb_events
-
-   np.random.seed(42)
-   coal_events, recomb_events = simulate_arg(n=5, rho=5.0)
-   print(f"Coalescence events: {len(coal_events)}")
-   print(f"Recombination events: {len(recomb_events)}")
-   for t, c1, c2, p in coal_events:
-       print(f"  Coal at t={t:.4f}: {c1} + {c2} -> {p}")
-   for t, lin, bp, l, r in recomb_events:
-       print(f"  Recomb at t={t:.4f}: {lin} splits at {bp:.4f} -> {l}, {r}")
-
-Notice how recombination events increase the number of active lineages. With
-:math:`\rho = 5`, recombination is fairly frequent -- you should see several
-recombination events interspersed with the coalescences. If you increase
-:math:`\rho`, recombination events become more common relative to coalescences,
-and the ARG becomes more complex. If you set :math:`\rho = 0`, no
-recombination occurs and you recover the simple coalescent tree from the
-previous chapter.
+Increasing :math:`\rho` increases recombination in distribution, but a realized
+recombination need not create an observable change between adjacent marginal
+trees. With :math:`\rho=0`, the result contains one marginal tree. The
+``record_full_arg`` option preserves additional event nodes; a simplified tree
+sequence generally retains the marginal genealogies without being a literal
+ledger of every ancestral recombination event.
 
 The Structure of an ARG: A Directed Acyclic Graph
 ====================================================
@@ -334,9 +268,11 @@ position, constructed by taking the ARG and ignoring all recombination events
 that don't affect position :math:`x`.
 
 Here's the key intuition: as you slide a pointer from left to right along the
-genome, the genealogical tree changes. At each recombination breakpoint, some
-branch in the tree detaches and reattaches elsewhere (or a new branch appears,
-or one disappears). Between breakpoints, the tree is constant.
+genome, the genealogical tree can change. Changes occur only at inherited
+recombination breakpoints, but not every ancestral recombination changes a
+marginal tree: the event may be later undone or leave the displayed genealogy
+unchanged. Between the edge breakpoints represented in a tree sequence, the
+tree is constant.
 
 This is like examining different cross-sections of a watch movement. At one
 cross-section, you see a particular arrangement of gears. Slide to a different
@@ -345,28 +281,22 @@ But between the swap points, the arrangement stays the same.
 
 .. code-block:: python
 
-   def extract_marginal_trees(coal_events, recomb_events, seq_length):
-       """Extract the breakpoints where marginal trees change.
+   def extract_tree_intervals(ts):
+       """Return intervals on which the represented marginal tree is constant.
 
-       Returns the breakpoints that partition the genome into segments
-       with constant tree topology.
+       These are tskit's actual tree intervals, not inferred directly from a
+       raw list of recombination events.
        """
-       # Build a sorted list of unique breakpoints.
-       # set() removes duplicates, sorted() puts them in order.
-       # The list comprehension [bp for _, _, bp, _, _ in recomb_events]
-       # extracts the third element (the breakpoint position) from each
-       # recombination event tuple, ignoring the other fields (marked _).
-       breakpoints = sorted(set([0.0, seq_length] +
-                                [bp for _, _, bp, _, _ in recomb_events]))
-       print(f"Number of distinct trees: {len(breakpoints) - 1}")
-       print(f"Breakpoints: {[f'{b:.4f}' for b in breakpoints]}")
-       return breakpoints
+       return [(tree.interval.left, tree.interval.right) for tree in ts.trees()]
 
-   breakpoints = extract_marginal_trees(coal_events, recomb_events, 1.0)
+   intervals = extract_tree_intervals(ts)
+   print(f"Number of tree intervals: {len(intervals)}")
+   print(f"Intervals: {intervals}")
 
-The number of distinct marginal trees equals the number of recombination events
-plus one (the original tree, plus one new tree for each recombination). For our
-simulation with :math:`\rho = 5`, you should see several distinct trees.
+There is no general ``recombination events + 1`` rule. Several events can map
+to the same breakpoint, a recombination can be invisible in the marginal
+trees, and simplified representations can discard event nodes while preserving
+all marginal trees.
 
 The key property that connects all of this:
 
@@ -374,24 +304,24 @@ The key property that connects all of this:
 
    \text{ARG} = \text{sequence of marginal trees} + \text{recombination events connecting them}
 
-This is the data structure that SINGER infers from sequence data. The marginal
-trees tell us the genealogy at each position; the recombination events tell us
-how the genealogy changes as we move along the genome.
+This is one useful conceptual view of the object SINGER samples from sequence
+data. The marginal trees tell us the genealogy at each position; a fuller ARG
+also records ancestral events connecting those trees.
 
 The Tree Sequence Representation
 =================================
 
 Storing an explicit tree for every base pair along the genome would be enormously
-wasteful -- a human chromosome has hundreds of millions of base pairs but
-typically only thousands to tens of thousands of distinct marginal trees. Modern
-tools represent ARGs as **tree sequences** (Kelleher et al., 2016): an ordered
-list of marginal trees along the genome, stored efficiently by recording only
-the **changes** (which branches are removed and added) at each recombination
-breakpoint.
+wasteful. Adjacent positions usually share most edges, so modern tools encode
+correlated genealogies as **succinct tree sequences**: node and interval-specific
+edge tables from which marginal trees are generated efficiently
+:cite:`msprime`.
 
-This is a form of **differential encoding** -- rather than writing out each
-tree in full, we store the first tree completely and then, at each breakpoint,
-record only what changed. This is analogous to how a watchmaker's technical
+This behaves like **differential encoding** during tree iteration: rather than
+materializing every tree in full, edges ending at a breakpoint are removed and
+edges beginning there are inserted. The stored object itself is a set of
+tables, not literally a first tree followed by edit commands. This is analogous
+to how a watchmaker's technical
 manual might describe the base caliber in full, then describe each complication
 variant by listing only the modified components.
 
@@ -464,30 +394,28 @@ The fundamental data structure has two tables:
    ts.add_node(0.8)  # node 5
    ts.add_node(1.2)  # node 6
 
-   # First tree (positions 0.0 to 0.6): topology ((0,1), (2,3))
-   # Nodes 0 and 1 coalesce into node 4; nodes 2 and 3 into node 5;
-   # then nodes 4 and 5 into node 6.
-   ts.add_edge(0.0, 0.6, 4, 0)   # 0 -> 4 for positions [0.0, 0.6)
-   ts.add_edge(0.0, 1.0, 4, 1)   # 1 -> 4 for positions [0.0, 1.0)
-   ts.add_edge(0.0, 1.0, 5, 2)   # 2 -> 5 for positions [0.0, 1.0)
-   ts.add_edge(0.0, 1.0, 5, 3)   # 3 -> 5 for positions [0.0, 1.0)
-   ts.add_edge(0.0, 0.6, 6, 4)   # 4 -> 6 for positions [0.0, 0.6)
-   ts.add_edge(0.0, 1.0, 6, 5)   # 5 -> 6 for positions [0.0, 1.0)
-
-   # After recombination at position 0.6, node 0 moves:
-   # Instead of joining node 4 (with node 1), node 0 now joins node 5
-   # (with nodes 2 and 3). This represents a change in genealogy.
-   ts.add_edge(0.6, 1.0, 5, 0)   # 0 -> 5 for positions [0.6, 1.0)
+   # Left tree: ((0,1),(2,3)); right tree: ((0,2),(1,3)).
+   # Samples 1 and 2 exchange parents at position 0.6. Both intervals are
+   # valid rooted binary trees on all four samples.
+   ts.add_edge(0.0, 1.0, 4, 0)
+   ts.add_edge(0.0, 0.6, 4, 1)
+   ts.add_edge(0.6, 1.0, 4, 2)
+   ts.add_edge(0.0, 0.6, 5, 2)
+   ts.add_edge(0.6, 1.0, 5, 1)
+   ts.add_edge(0.0, 1.0, 5, 3)
+   ts.add_edge(0.0, 1.0, 6, 4)
+   ts.add_edge(0.0, 1.0, 6, 5)
 
    for left, right, edges in ts.trees(1.0):
        print(f"\nTree at [{left:.1f}, {right:.1f}):")
        for p, c in edges:
            print(f"  {c} -> {p}")
 
-Examine the output: in the first tree (positions 0.0 to 0.6), nodes 0 and 1 are
-siblings (both children of node 4). In the second tree (positions 0.6 to 1.0),
-node 0 has moved to become a child of node 5, joining nodes 2 and 3. Only one
-edge changed -- this is the efficiency of the tree sequence representation.
+Examine the output: in the first tree (positions 0.0 to 0.6), samples 0 and 1
+are siblings under node 4. In the second tree (positions 0.6 to 1.0), samples 0
+and 2 are siblings under node 4. The two parent assignments that change are
+stored only on their respective intervals, while the four unchanged edges span
+the whole sequence.
 
 Branch Lengths and the ARG
 ===========================
@@ -530,7 +458,7 @@ at position :math:`x`.
 
       L(\mathcal{G}) = \sum_{i=1}^{T} (\text{right}_i - \text{left}_i) \times L(\Psi_i)
 
-   where the sum runs over the :math:`T` distinct marginal trees and
+   where the sum runs over the :math:`T` marginal-tree intervals and
    :math:`[\text{left}_i, \text{right}_i)` is the genomic interval where tree
    :math:`\Psi_i` applies. Each tree's branch length is weighted by how many
    base pairs it covers (its "span").
@@ -598,11 +526,11 @@ This turns out to be extraordinarily difficult, for several reinforcing reasons:
    movement's assembly -- every gear placed, every screw turned, in exact order
    -- by examining only the finished watch.
 
-2. **Recombination creates reticulations.** Unlike trees, ARGs are directed
+2. **Recombination creates reticulations.** Unlike trees, explicit ARGs are directed
    acyclic graphs with **reticulation nodes** -- nodes that have two parents
    (one from each side of a recombination breakpoint). This makes the
    combinatorial structure far richer than for trees, where each node has
-   exactly one parent.
+   exactly one parent for each non-root node.
 
 3. **Data is sparse.** We only observe the *leaves* of the ARG (the sampled
    sequences at the present), and we only see positions where mutations happened
@@ -619,12 +547,13 @@ This turns out to be extraordinarily difficult, for several reinforcing reasons:
 .. admonition:: Probability aside: the curse of dimensionality
 
    The space of possible ARGs is a high-dimensional combinatorial object. For
-   :math:`n` samples and a genome of length :math:`S` with recombination rate
-   :math:`\rho`, the expected number of recombination events is
-   :math:`O(n \rho S)`, and each one creates a branching point in the space of
-   possible histories. Exhaustive enumeration is out of the question. This is
-   why Bayesian methods that *sample* from the posterior distribution of ARGs
-   -- rather than searching for a single best ARG -- are essential.
+   :math:`n` samples and a recombining region, both the number of ancestral
+   events and the possible ways of connecting them are random. There is no
+   universal :math:`O(n\rho S)` event-count formula: the convention for
+   :math:`\rho`, ancestral material, demography, and stopping rule all matter.
+   Exhaustive enumeration is out of the question. Posterior samplers such as
+   SINGER retain uncertainty, while other useful methods construct point or
+   approximate estimates; Bayesian sampling is not the only viable strategy.
 
 This is why methods like SINGER exist. Rather than attempting to search the
 full space of ARGs, SINGER uses two powerful mathematical tools to make
@@ -658,13 +587,13 @@ drawing. Here is what we've established:
    * - Marginal tree
      - The genealogy at a single genome position; constant between breakpoints
    * - Breakpoint
-     - A genomic position where recombination changes the marginal tree
+     - A crossover coordinate; it need not produce a visible tree change
    * - Tree sequence
      - Efficient storage: record only the changes between adjacent marginal trees
    * - Total branch length
      - Determines expected mutation count: :math:`\mathbb{E}[\text{muts}] = \frac{\theta}{2}L(\mathcal{G})`
    * - Event rates
-     - Coalescence at :math:`\binom{k}{2}`, recombination at :math:`k\rho/2`
+     - Initially :math:`\binom{k}{2}` and :math:`k\rho/2`; later recombination depends on ancestral material
 
 The ARG is the object we ultimately want to infer -- it is the master blueprint
 of the genome's history. But as we've seen, direct inference is intractable.

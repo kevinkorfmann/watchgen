@@ -6,14 +6,15 @@ correctness via structural properties, mathematical invariants, or known behavio
 
 import numpy as np
 import pytest
+import msprime
 
 
 # ---------------------------------------------------------------------------
 # Code block 1: simulate_arg
 # ---------------------------------------------------------------------------
 
-def simulate_arg(n, rho, seq_length=1.0):
-    """Simulate an Ancestral Recombination Graph.
+def simulate_arg(n, rho, seq_length=1.0, Ne=10_000, random_seed=None):
+    """Simulate a haploid sample under the coalescent with recombination.
 
     Parameters
     ----------
@@ -22,240 +23,130 @@ def simulate_arg(n, rho, seq_length=1.0):
     rho : float
         Population-scaled recombination rate (4*Ne*r) for the whole region.
     seq_length : float
-        Length of the genomic region.
+        Length of the continuous genomic region.
+    Ne : float
+        Diploid effective population size.
+    random_seed : int or None
+        Seed passed to msprime.
 
     Returns
     -------
-    coal_events : list of (time, child1, child2, parent)
-    recomb_events : list of (time, lineage, breakpoint, left_lineage, right_lineage)
+    tskit.TreeSequence
+        Correlated marginal genealogies. Node times are in generations.
     """
-    next_label = n
-    lineages = {}
-    for i in range(n):
-        lineages[i] = [(0.0, seq_length)]
-
-    coal_events = []
-    recomb_events = []
-    current_time = 0.0
-
-    while len(lineages) > 1:
-        k = len(lineages)
-        coal_rate = k * (k - 1) / 2
-        recomb_rate = k * rho / 2
-        total_rate = coal_rate + recomb_rate
-
-        wait = np.random.exponential(1.0 / total_rate)
-        current_time += wait
-
-        if np.random.random() < coal_rate / total_rate:
-            labels = list(lineages.keys())
-            i, j = np.random.choice(len(labels), size=2, replace=False)
-            c1, c2 = labels[i], labels[j]
-            parent = next_label
-            next_label += 1
-
-            merged = lineages[c1] + lineages[c2]
-            lineages[parent] = merged
-            del lineages[c1]
-            del lineages[c2]
-
-            coal_events.append((current_time, c1, c2, parent))
-        else:
-            labels = list(lineages.keys())
-            idx = np.random.randint(0, k)
-            lineage = labels[idx]
-
-            breakpoint = np.random.uniform(0, seq_length)
-
-            left_material = [(l, min(r, breakpoint))
-                             for l, r in lineages[lineage] if l < breakpoint]
-            right_material = [(max(l, breakpoint), r)
-                              for l, r in lineages[lineage] if r > breakpoint]
-
-            if left_material and right_material:
-                left_label = next_label
-                right_label = next_label + 1
-                next_label += 2
-
-                lineages[left_label] = left_material
-                lineages[right_label] = right_material
-                del lineages[lineage]
-
-                recomb_events.append((current_time, lineage, breakpoint,
-                                     left_label, right_label))
-
-    return coal_events, recomb_events
+    if n < 2 or rho < 0 or seq_length <= 0 or Ne <= 0:
+        raise ValueError("require n >= 2, rho >= 0, seq_length > 0, and Ne > 0")
+    recombination_rate = rho / (4 * Ne * seq_length)
+    return msprime.sim_ancestry(
+        samples=n,
+        ploidy=1,
+        population_size=Ne,
+        sequence_length=seq_length,
+        recombination_rate=recombination_rate,
+        discrete_genome=False,
+        record_full_arg=True,
+        random_seed=random_seed,
+    )
 
 
 class TestSimulateArg:
     """Tests for the simulate_arg function."""
 
-    def test_returns_two_lists(self):
-        """The function should return two lists."""
-        np.random.seed(0)
-        coal, recomb = simulate_arg(5, rho=5.0)
-        assert isinstance(coal, list)
-        assert isinstance(recomb, list)
+    def test_returns_tree_sequence_with_requested_samples(self):
+        ts = simulate_arg(5, rho=5.0, random_seed=1)
+        assert ts.num_samples == 5
+        assert ts.sequence_length == pytest.approx(1.0)
 
     def test_no_recombination_when_rho_zero(self):
-        """With rho=0, there should be no recombination events, and exactly n-1 coalescences."""
-        np.random.seed(1)
-        n = 6
-        coal, recomb = simulate_arg(n, rho=0.0)
-        assert len(recomb) == 0
-        assert len(coal) == n - 1
+        """With rho=0, the tree sequence contains one marginal tree."""
+        ts = simulate_arg(6, rho=0.0, random_seed=2)
+        assert ts.num_trees == 1
 
-    def test_coalescence_events_have_correct_structure(self):
-        """Each coalescence event should be (time, child1, child2, parent)."""
-        np.random.seed(2)
-        coal, _ = simulate_arg(5, rho=2.0)
-        for event in coal:
-            assert len(event) == 4
-            t, c1, c2, p = event
-            assert t > 0.0
-            assert c1 != c2
-
-    def test_recombination_events_have_correct_structure(self):
-        """Each recombination event should be (time, lineage, breakpoint, left, right)."""
-        np.random.seed(3)
-        _, recomb = simulate_arg(5, rho=10.0)
-        for event in recomb:
-            assert len(event) == 5
-            t, lineage, bp, left, right = event
-            assert t > 0.0
-            assert 0.0 <= bp <= 1.0
-            assert left != right
-
-    def test_times_are_positive(self):
-        """All event times should be positive."""
-        np.random.seed(4)
-        coal, recomb = simulate_arg(5, rho=5.0)
-        for t, _, _, _ in coal:
-            assert t > 0
-        for t, _, _, _, _ in recomb:
-            assert t > 0
+    def test_parent_times_are_older(self):
+        ts = simulate_arg(5, rho=5.0, random_seed=3)
+        for edge in ts.edges():
+            assert ts.node(edge.parent).time > ts.node(edge.child).time
 
     def test_breakpoints_within_sequence(self):
-        """Recombination breakpoints should be within [0, seq_length]."""
-        np.random.seed(5)
-        seq_length = 2.0
-        _, recomb = simulate_arg(5, rho=10.0, seq_length=seq_length)
-        for _, _, bp, _, _ in recomb:
-            assert 0.0 <= bp <= seq_length
+        """Tree intervals should stay within [0, seq_length]."""
+        ts = simulate_arg(5, rho=10.0, seq_length=2.0, random_seed=4)
+        for tree in ts.trees():
+            assert 0 <= tree.interval.left < tree.interval.right <= 2.0
 
     def test_more_recombination_with_higher_rho(self):
         """Higher rho should generally produce more recombination events.
 
         This is a statistical test over many replicates.
         """
-        np.random.seed(6)
-        n_reps = 100
-        low_rho_recomb = []
-        high_rho_recomb = []
-        for _ in range(n_reps):
-            _, recomb_low = simulate_arg(5, rho=1.0)
-            low_rho_recomb.append(len(recomb_low))
-            _, recomb_high = simulate_arg(5, rho=5.0)
-            high_rho_recomb.append(len(recomb_high))
-        assert np.mean(high_rho_recomb) > np.mean(low_rho_recomb)
+        low = [simulate_arg(5, 0.5, random_seed=j).num_trees for j in range(1, 31)]
+        high = [simulate_arg(5, 10, random_seed=j).num_trees for j in range(31, 61)]
+        assert np.mean(high) > np.mean(low)
 
     def test_terminates_with_two_samples(self):
-        """The simplest case (n=2) should terminate and produce at least one coalescence."""
-        np.random.seed(7)
-        coal, recomb = simulate_arg(2, rho=5.0)
-        # Must have at least 1 coalescence event to reduce 2 lineages to 1
-        assert len(coal) >= 1
+        """The simplest valid sample should produce rooted marginal trees."""
+        ts = simulate_arg(2, rho=5.0, random_seed=5)
+        assert all(tree.num_roots == 1 for tree in ts.trees())
 
     def test_custom_seq_length(self):
-        """Should work with different sequence lengths."""
-        np.random.seed(8)
-        seq_length = 10.0
-        coal, recomb = simulate_arg(4, rho=3.0, seq_length=seq_length)
-        for _, _, bp, _, _ in recomb:
-            assert 0.0 <= bp <= seq_length
-        assert len(coal) >= 1
+        ts = simulate_arg(4, rho=3.0, seq_length=10.0, random_seed=6)
+        assert ts.sequence_length == pytest.approx(10.0)
 
     def test_doc_example_runs(self):
-        """Run the documented example: seed=42, n=5, rho=5.0."""
-        np.random.seed(42)
-        coal_events, recomb_events = simulate_arg(n=5, rho=5.0)
-        assert len(coal_events) >= 1
-        # The doc prints both event lists; just verify they're non-empty lists
-        assert isinstance(coal_events, list)
-        assert isinstance(recomb_events, list)
+        ts = simulate_arg(n=5, rho=5.0, random_seed=42)
+        assert ts.num_samples == 5
+        assert list(ts.breakpoints())[0] == 0
+        assert list(ts.breakpoints())[-1] == 1
+
+    @pytest.mark.parametrize("kwargs", [
+        {"n": 1, "rho": 1}, {"n": 2, "rho": -1},
+        {"n": 2, "rho": 1, "seq_length": 0}, {"n": 2, "rho": 1, "Ne": 0},
+    ])
+    def test_rejects_invalid_parameters(self, kwargs):
+        with pytest.raises(ValueError):
+            simulate_arg(**kwargs)
 
 
 # ---------------------------------------------------------------------------
-# Code block 2: extract_marginal_trees
+# Code block 2: extract_tree_intervals
 # ---------------------------------------------------------------------------
 
-def extract_marginal_trees(coal_events, recomb_events, seq_length):
-    """Extract the breakpoints where marginal trees change.
+def extract_tree_intervals(ts):
+    """Return intervals on which the represented marginal tree is constant.
 
-    Returns the breakpoints that partition the genome into segments
-    with constant tree topology.
+    These are tskit's actual tree intervals, not inferred directly from a
+    raw list of recombination events.
     """
-    breakpoints = sorted(set([0.0, seq_length] +
-                             [bp for _, _, bp, _, _ in recomb_events]))
-    return breakpoints
+    return [(tree.interval.left, tree.interval.right) for tree in ts.trees()]
 
 
-class TestExtractMarginalTrees:
-    """Tests for the extract_marginal_trees function."""
+class TestExtractTreeIntervals:
 
     def test_always_includes_endpoints(self):
         """Breakpoints should always include 0.0 and seq_length."""
-        np.random.seed(10)
-        coal, recomb = simulate_arg(5, rho=5.0)
-        bp = extract_marginal_trees(coal, recomb, 1.0)
-        assert bp[0] == 0.0
-        assert bp[-1] == 1.0
+        ts = simulate_arg(5, rho=5.0, random_seed=10)
+        intervals = extract_tree_intervals(ts)
+        assert intervals[0][0] == 0.0
+        assert intervals[-1][1] == 1.0
 
     def test_sorted_breakpoints(self):
-        """Breakpoints should be sorted in increasing order."""
-        np.random.seed(11)
-        coal, recomb = simulate_arg(5, rho=10.0)
-        bp = extract_marginal_trees(coal, recomb, 1.0)
-        for i in range(1, len(bp)):
-            assert bp[i] > bp[i - 1]
+        ts = simulate_arg(5, rho=10.0, random_seed=11)
+        intervals = extract_tree_intervals(ts)
+        for previous, current in zip(intervals, intervals[1:]):
+            assert previous[1] == pytest.approx(current[0])
 
     def test_no_recombination_gives_one_tree(self):
-        """With no recombination events, there should be exactly 1 marginal tree
-        (breakpoints = [0.0, seq_length], so number of trees = 1).
-        """
-        np.random.seed(12)
-        coal, recomb = simulate_arg(5, rho=0.0)
-        bp = extract_marginal_trees(coal, recomb, 1.0)
-        assert len(bp) == 2  # [0.0, 1.0]
-        # Number of distinct trees = len(bp) - 1 = 1
-        assert len(bp) - 1 == 1
-
-    def test_num_trees_equals_recomb_plus_one(self):
-        """Number of distinct marginal trees should equal number of recombination events + 1."""
-        np.random.seed(13)
-        coal, recomb = simulate_arg(5, rho=5.0)
-        bp = extract_marginal_trees(coal, recomb, 1.0)
-        # All recombination breakpoints are unique (from set), plus the two endpoints
-        # The number of unique breakpoints from recomb events might be less than len(recomb)
-        # if two events happen at the same position (very unlikely with continuous dist).
-        num_unique_recomb_breakpoints = len(set(b for _, _, b, _, _ in recomb))
-        assert len(bp) - 1 == num_unique_recomb_breakpoints + 1
+        ts = simulate_arg(5, rho=0.0, random_seed=12)
+        assert extract_tree_intervals(ts) == [(0.0, 1.0)]
 
     def test_works_with_custom_seq_length(self):
-        """Should work correctly with a non-unit sequence length."""
-        np.random.seed(14)
-        seq_length = 5.0
-        coal, recomb = simulate_arg(4, rho=3.0, seq_length=seq_length)
-        bp = extract_marginal_trees(coal, recomb, seq_length)
-        assert bp[0] == 0.0
-        assert bp[-1] == seq_length
+        ts = simulate_arg(4, rho=3.0, seq_length=5.0, random_seed=14)
+        intervals = extract_tree_intervals(ts)
+        assert intervals[0][0] == 0.0
+        assert intervals[-1][1] == 5.0
 
     def test_doc_example_runs(self):
-        """Run the documented example after simulating with seed=42."""
-        np.random.seed(42)
-        coal_events, recomb_events = simulate_arg(n=5, rho=5.0)
-        breakpoints = extract_marginal_trees(coal_events, recomb_events, 1.0)
-        assert len(breakpoints) >= 2
+        ts = simulate_arg(n=5, rho=5.0, random_seed=42)
+        assert len(extract_tree_intervals(ts)) == ts.num_trees
 
 
 # ---------------------------------------------------------------------------
@@ -315,16 +206,15 @@ def _build_doc_example_ts():
     ts.add_node(0.8)   # node 5
     ts.add_node(1.2)   # node 6
 
-    # First tree (positions 0.0 to 0.6): topology ((0,1), (2,3))
-    ts.add_edge(0.0, 0.6, 4, 0)
-    ts.add_edge(0.0, 1.0, 4, 1)
-    ts.add_edge(0.0, 1.0, 5, 2)
+    # Left tree: ((0,1),(2,3)); right tree: ((0,2),(1,3)).
+    ts.add_edge(0.0, 1.0, 4, 0)
+    ts.add_edge(0.0, 0.6, 4, 1)
+    ts.add_edge(0.6, 1.0, 4, 2)
+    ts.add_edge(0.0, 0.6, 5, 2)
+    ts.add_edge(0.6, 1.0, 5, 1)
     ts.add_edge(0.0, 1.0, 5, 3)
-    ts.add_edge(0.0, 0.6, 6, 4)
+    ts.add_edge(0.0, 1.0, 6, 4)
     ts.add_edge(0.0, 1.0, 6, 5)
-
-    # After recombination at position 0.6, node 0 moves to node 5
-    ts.add_edge(0.6, 1.0, 5, 0)
 
     return ts
 
@@ -368,7 +258,7 @@ class TestSimpleTreeSequence:
             assert intervals[i][0] == pytest.approx(intervals[i - 1][1])
 
     def test_doc_example_two_trees(self):
-        """The documented example should produce exactly 2 distinct tree intervals."""
+        """The documented example should produce exactly 2 tree intervals."""
         ts = _build_doc_example_ts()
         intervals = list(ts.trees(1.0))
         # There should be 2 intervals: [0.0, 0.6) and [0.6, 1.0)
@@ -391,22 +281,18 @@ class TestSimpleTreeSequence:
         assert (6, 5) in edge_set  # node 5 -> node 6
 
     def test_doc_example_second_tree_topology(self):
-        """In the second tree [0.6, 1.0), node 0 should be a child of node 5 (not 4)."""
+        """In the second tree, samples 0 and 2 should be children of node 4."""
         ts = _build_doc_example_ts()
         intervals = list(ts.trees(1.0))
         left, right, edges = intervals[1]
         assert left == pytest.approx(0.6)
         assert right == pytest.approx(1.0)
         edge_set = set(edges)
-        # Node 0 is now a child of node 5
-        assert (5, 0) in edge_set
-        # Node 0 should NOT be a child of node 4
-        assert (4, 0) not in edge_set
-        # Node 1 is still a child of node 4
-        assert (4, 1) in edge_set
-        # Nodes 2, 3 still children of 5
-        assert (5, 2) in edge_set
+        assert (4, 0) in edge_set
+        assert (4, 2) in edge_set
+        assert (5, 1) in edge_set
         assert (5, 3) in edge_set
+        assert len(edge_set) == 6
 
     def test_empty_tree_sequence(self):
         """A tree sequence with no edges should yield intervals with no active edges."""
@@ -498,13 +384,14 @@ class TestTotalBranchLength:
             4: 0.5, 5: 0.8, 6: 1.2              # internal nodes
         }
         edges = [
-            (0.0, 0.6, 4, 0),
-            (0.0, 1.0, 4, 1),
-            (0.0, 1.0, 5, 2),
+            (0.0, 1.0, 4, 0),
+            (0.0, 0.6, 4, 1),
+            (0.6, 1.0, 4, 2),
+            (0.0, 0.6, 5, 2),
+            (0.6, 1.0, 5, 1),
             (0.0, 1.0, 5, 3),
-            (0.0, 0.6, 6, 4),
+            (0.0, 1.0, 6, 4),
             (0.0, 1.0, 6, 5),
-            (0.6, 1.0, 5, 0),
         ]
 
         # First tree at position 0.3:
@@ -520,21 +407,20 @@ class TestTotalBranchLength:
             4: 0.5, 5: 0.8, 6: 1.2
         }
         edges = [
-            (0.0, 0.6, 4, 0),
-            (0.0, 1.0, 4, 1),
-            (0.0, 1.0, 5, 2),
+            (0.0, 1.0, 4, 0),
+            (0.0, 0.6, 4, 1),
+            (0.6, 1.0, 4, 2),
+            (0.0, 0.6, 5, 2),
+            (0.6, 1.0, 5, 1),
             (0.0, 1.0, 5, 3),
-            (0.0, 0.6, 6, 4),
+            (0.0, 1.0, 6, 4),
             (0.0, 1.0, 6, 5),
-            (0.6, 1.0, 5, 0),
         ]
 
         # Second tree at position 0.8:
-        # Active edges: 1->4 (0.5), 2->5 (0.8), 3->5 (0.8), 5->6 (0.4), 0->5 (0.8)
-        # Note: 0->4 is NOT active (only [0.0, 0.6)), 4->6 is NOT active (only [0.0, 0.6))
-        # Total = 0.5 + 0.8 + 0.8 + 0.4 + 0.8 = 3.3
+        # Topology ((0,2),(1,3)); total = 0.5 + 0.5 + 0.8 + 0.8 + 0.7 + 0.4 = 3.7
         tbl_second = total_branch_length(node_times, edges, 0.8)
-        assert tbl_second == pytest.approx(3.3, abs=1e-10)
+        assert tbl_second == pytest.approx(3.7, abs=1e-10)
 
     def test_branch_length_nonnegative(self):
         """Total branch length should never be negative (parent times >= child times)."""
@@ -572,46 +458,29 @@ class TestTotalBranchLength:
 # ---------------------------------------------------------------------------
 
 class TestArgIntegration:
-    """Integration tests combining simulate_arg with extract_marginal_trees."""
+    """Integration tests combining simulation and tree iteration."""
 
     def test_simulate_then_extract(self):
-        """Simulating an ARG and extracting breakpoints should work end-to-end."""
-        np.random.seed(50)
-        coal, recomb = simulate_arg(5, rho=5.0)
-        bp = extract_marginal_trees(coal, recomb, 1.0)
-        assert len(bp) >= 2
-        assert bp[0] == 0.0
-        assert bp[-1] == 1.0
+        ts = simulate_arg(5, rho=5.0, random_seed=50)
+        intervals = extract_tree_intervals(ts)
+        assert intervals[0][0] == 0.0
+        assert intervals[-1][1] == 1.0
 
     def test_zero_rho_produces_single_tree(self):
         """With rho=0, we should get exactly one marginal tree."""
-        np.random.seed(51)
-        coal, recomb = simulate_arg(10, rho=0.0)
-        bp = extract_marginal_trees(coal, recomb, 1.0)
-        assert len(bp) == 2  # [0.0, 1.0]
+        ts = simulate_arg(10, rho=0.0, random_seed=51)
+        assert extract_tree_intervals(ts) == [(0.0, 1.0)]
 
-    def test_all_coalescence_times_before_recombination_check(self):
-        """All events should have positive times, and the simulation should terminate."""
-        np.random.seed(52)
-        coal, recomb = simulate_arg(8, rho=8.0)
-        all_times = [t for t, _, _, _ in coal] + [t for t, _, _, _, _ in recomb]
-        assert all(t > 0 for t in all_times)
+    def test_all_marginal_trees_are_rooted(self):
+        ts = simulate_arg(8, rho=8.0, random_seed=52)
+        assert all(tree.num_roots == 1 for tree in ts.trees())
 
     def test_large_rho_many_recombinations(self):
-        """With very large rho, expect many recombination events."""
-        np.random.seed(53)
-        _, recomb = simulate_arg(5, rho=10.0)
-        # With rho=10 and n=5, we expect many recombinations
-        assert len(recomb) > 0
+        """This seeded high-rho simulation has multiple tree intervals."""
+        ts = simulate_arg(5, rho=10.0, random_seed=53)
+        assert ts.num_trees > 1
 
-    def test_arg_event_labels_are_unique(self):
-        """All parent and new lineage labels across all events should be unique."""
-        np.random.seed(54)
-        coal, recomb = simulate_arg(5, rho=5.0)
-        all_new_labels = []
-        for _, _, _, parent in coal:
-            all_new_labels.append(parent)
-        for _, _, _, left_label, right_label in recomb:
-            all_new_labels.append(left_label)
-            all_new_labels.append(right_label)
-        assert len(all_new_labels) == len(set(all_new_labels))
+    def test_node_ids_are_unique(self):
+        ts = simulate_arg(5, rho=5.0, random_seed=54)
+        ids = [node.id for node in ts.nodes()]
+        assert ids == list(range(ts.num_nodes))
