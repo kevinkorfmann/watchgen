@@ -375,11 +375,11 @@ positions (see :ref:`gamma_smc_forward_backward`).
 
    def gamma_smc_forward_segmented(observations, theta, rho, flow_field,
                                     h_max=1.0):
-       """Gamma-SMC forward pass with segmentation and entropy clipping.
+       """Transparent segmented pass with entropy clipping.
 
-       This is the full algorithm combining all four components:
-       segmentation, caching (via repeated flow field application),
-       flow field queries, and entropy clipping.
+       For clarity this listing replays every per-site update. The production
+       C++ implementation replaces these loops with the cached multi-step
+       maps described above.
 
        Parameters
        ----------
@@ -435,8 +435,8 @@ positions (see :ref:`gamma_smc_forward_backward`).
            if final_obs == 1:  # het
                alpha += 1
                beta += theta
-           elif final_obs == 0:  # trailing hom (end of sequence)
-               beta += theta
+           # final_obs == 0 is a trailing-block sentinel, not another site;
+           # its n_hom emissions were already applied in the loop above.
 
            results.append((alpha, beta))
 
@@ -457,8 +457,8 @@ positions (see :ref:`gamma_smc_forward_backward`).
    results = gamma_smc_forward_segmented(obs, 0.001, 0.0004, ZeroFlow())
    print(f"Input: {n_sites} positions, {sum(obs)} hets")
    print(f"Segments: {len(segments)} (one per het + final)")
-   print(f"Speedup: {n_sites}/{len(segments)} = "
-         f"{n_sites/len(segments):.0f}x fewer operations")
+   print(f"Segment compression ratio: {n_sites}/{len(segments)} = "
+         f"{n_sites/len(segments):.0f}x (the mini replays each step)")
    a_final, b_final = results[-1]
    print(f"Final posterior: Gamma({a_final:.1f}, {b_final:.4f}), "
          f"mean = {a_final/b_final:.2f}")

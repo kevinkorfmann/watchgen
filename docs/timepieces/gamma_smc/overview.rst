@@ -120,16 +120,16 @@ the differences where they arise.
    * - :math:`p(t \mid s)`
      - SMC transition density: the probability density of the TMRCA at
        the next position being :math:`t`, given that the current TMRCA is
-       :math:`s`. Derived from the SMC' model.
+       :math:`s`. Derived from the pairwise SMC framework.
 
 
-The SMC' Transition Model
+The SMC Transition Model
 ===========================
 
-Gamma-SMC uses the **SMC' model** (Marjoram & Wall, 2006), the same model
+Gamma-SMC uses the pairwise **SMC transition model**, from the same framework
 that underlies PSMC. At each genomic position, a recombination event may
-detach one lineage, which then re-coalesces -- possibly onto the *same*
-branch (which the original SMC model of McVean & Cardin does not allow).
+detach one lineage, which then re-coalesces; events that leave the pairwise
+TMRCA unchanged contribute a point mass at the current time.
 
 Under constant population size, the transition density conditioned on
 recombination is:
@@ -214,8 +214,9 @@ The complete Gamma-SMC pipeline consists of five stages:
 
 4. **Forward and backward passes**. For each pair of haplotypes, sweep
    forward along the genome using cached lookups for long stretches and
-   conjugate updates at heterozygous sites. Then sweep backward (= forward on
-   the reversed sequence). Record the gamma parameters at output positions.
+   conjugate updates at heterozygous sites. Then sweep backward by reusing the
+   forward machinery on the reversed sequence and applying the required
+   additional transition. Record the gamma parameters at output positions.
 
 5. **Posterior combination**. At each output position, combine the forward
    and backward gamma approximations:

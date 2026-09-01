@@ -23,8 +23,9 @@ Components
 2. **Flow Field** -- Precomputed 2D vector field mapping gamma parameters
    through one SMC transition step via bilinear interpolation.
 3. **Forward-Backward CS-HMM** -- Forward pass sweeps left-to-right;
-   backward pass is a forward pass on the reversed sequence; combination
-   yields Gamma(a_fwd + a_bwd - 1, b_fwd + b_bwd - 1).
+   backward reuses the forward machinery in reverse with the required extra
+   transition and excludes the focal emission; combination yields
+   Gamma(a_fwd + a_bwd - 1, b_fwd + b_bwd - 1).
 4. **Segmentation and Caching** -- Consecutive hom/missing positions are
    grouped into segments; entropy clipping prevents approximation drift.
 
@@ -35,9 +36,8 @@ coalescence times."  *Genome Research* 33, 1023-1031 (2023).
 """
 
 import numpy as np
+from scipy.special import digamma, gammaincc, gammaln, hyp1f1
 from scipy.stats import gamma as gamma_dist
-from scipy.special import digamma, gammaln
-
 
 # ---------------------------------------------------------------------------
 # Gamma Approximation (gamma_approximation.rst)
@@ -53,7 +53,8 @@ def gamma_emission_update(alpha, beta, y, theta):
     beta : float
         Current rate parameter.
     y : int
-        Observation: 1 (het), 0 (hom), or -1 (missing).
+        Mutation count (0, 1, ...), or -1 for missing. Per-base Gamma-SMC
+        normally uses the binary counts 0 (hom) and 1 (het).
     theta : float
         Scaled mutation rate.
 
@@ -62,6 +63,12 @@ def gamma_emission_update(alpha, beta, y, theta):
     alpha_new, beta_new : float
         Updated gamma parameters.
     """
+    if alpha <= 0 or beta <= 0:
+        raise ValueError("alpha and beta must be positive")
+    if theta < 0:
+        raise ValueError("theta must be non-negative")
+    if not isinstance(y, (int, np.integer)) or y < -1:
+        raise ValueError("y must be -1 (missing) or a non-negative count")
     if y == -1:  # missing
         return alpha, beta
     return alpha + y, beta + theta
@@ -141,12 +148,35 @@ def gamma_pdf_partials(x, alpha, beta):
     return f, df_dalpha, df_dbeta
 
 
+def smc_transition_perturbation(t, alpha, beta):
+    """Derivative of the SMC transition density at zero recombination.
+
+    This is the signed density perturbation used by Gamma-SMC's canonical
+    flow-field generator.  The official implementation evaluates the Kummer
+    functions with Arb ball arithmetic; SciPy is adequate for the moderate
+    parameter values used by this teaching implementation, but not for
+    generating the production grid at its most extreme coordinates.
+    """
+    t = np.asarray(t, dtype=float)
+    if alpha <= 0 or beta <= 0 or np.any(t <= 0):
+        raise ValueError("t, alpha, and beta must be positive")
+
+    log_scale = -t + alpha * np.log(t * beta) - gammaln(alpha + 1)
+    first = np.exp(log_scale) * hyp1f1(alpha, alpha + 1, -(beta - 1) * t)
+    second = np.exp(log_scale) * hyp1f1(alpha, alpha + 1, -(beta + 1) * t)
+    f = gamma_dist.pdf(t, a=alpha, scale=1.0 / beta)
+    return (first - second
+            + (np.exp(-2 * t) / 2 - 0.5 - t) * f
+            + (1 - np.exp(-2 * t)) * gammaincc(alpha, beta * t))
+
+
 def compute_flow_at_point(l_mu, l_C, n_eval=2000):
     """Compute the flow displacement at one grid point.
 
-    This is a simplified skeleton showing the least-squares structure.
-    The full implementation requires Kummer's hypergeometric function
-    M(a, b, z) via the Arb library for the perturbation evaluation.
+    This follows the official canonical-grid generator's least-squares
+    projection, using SciPy rather than Arb for the Kummer function.  It is
+    intended for moderate coordinates and exposition, not production-grid
+    generation at extreme parameter values.
 
     Parameters
     ----------
@@ -164,24 +194,30 @@ def compute_flow_at_point(l_mu, l_C, n_eval=2000):
     alpha = 10.0 ** (-2 * l_C)
     beta = alpha * 10.0 ** (-l_mu)
 
-    # Step 2: set up evaluation grid over the support of Gamma(alpha, beta)
-    mean = alpha / beta
-    std = np.sqrt(alpha) / beta
-    x = np.linspace(max(1e-10, mean - 4 * std), mean + 6 * std, n_eval)
+    if n_eval < 10:
+        raise ValueError("n_eval must be at least 10")
+
+    # Step 2: cover the gamma bulk and the exponential transition tail.
+    # A geometric grid resolves the steep density close to zero.
+    upper = max(gamma_dist.isf(1e-6, a=alpha, scale=1.0 / beta),
+                -np.log(1e-3))
+    x = np.geomspace(1e-10, upper, n_eval)
 
     # Step 3: evaluate partial derivatives
-    f, df_da, df_db = gamma_pdf_partials(x, alpha, beta)
+    _, df_da, df_db = gamma_pdf_partials(x, alpha, beta)
 
-    # Step 4: in the full implementation, evaluate the perturbation
-    # (p_{alpha,beta}(x) - f_{alpha,beta}(x)) / rho using Kummer's M.
-    # Here we use a placeholder zero perturbation for illustration.
-    perturbation = np.zeros_like(x)  # placeholder
+    # Step 4: evaluate the first-order SMC transition perturbation.
+    perturbation = smc_transition_perturbation(x, alpha, beta)
 
     # Step 5: solve least-squares for (u, v) in log10(alpha), log10(beta)
     # Use chain rule: df/d(log10 a) = a*ln(10) * df/da
     A = np.column_stack([alpha * np.log(10) * df_da,
                          beta * np.log(10) * df_db])
-    result = np.linalg.lstsq(A, perturbation, rcond=None)
+    # The upstream generator minimizes an integral, approximated here with
+    # trapezoidal quadrature weights on the nonuniform grid.
+    weights = np.sqrt(np.gradient(x))
+    result = np.linalg.lstsq(A * weights[:, None],
+                             perturbation * weights, rcond=None)
     delta_log_a, delta_log_b = result[0]
 
     # Step 6: convert to (delta_l_mu, delta_l_C)
@@ -277,6 +313,14 @@ def gamma_smc_forward(observations, theta, rho, flow_field):
     betas : ndarray, shape (N,)
         Forward rate parameter at each position.
     """
+    observations = np.asarray(observations, dtype=int)
+    if observations.ndim != 1:
+        raise ValueError("observations must be one-dimensional")
+    if np.any(observations < -1):
+        raise ValueError("observations must be -1 or non-negative counts")
+    if theta < 0 or rho < 0:
+        raise ValueError("theta and rho must be non-negative")
+
     N = len(observations)
     alphas = np.zeros(N)
     betas = np.zeros(N)
@@ -307,6 +351,43 @@ def gamma_smc_forward(observations, theta, rho, flow_field):
     return alphas, betas
 
 
+def gamma_smc_backward(observations, theta, rho, flow_field):
+    """Compute prior-normalized backward densities at every position.
+
+    The backward density at position ``i`` contains evidence strictly to the
+    right of ``i``.  Moving one position left therefore applies the emission
+    at the position being left and then one transition.  This is the
+    "additional transition" required when Gamma-SMC expresses the backward
+    recursion as a forward pass on the reversed sequence.
+    """
+    observations = np.asarray(observations, dtype=int)
+    # Reuse the forward pass for validation and empty-array behavior.
+    gamma_smc_forward(observations[:0], theta, rho, flow_field)
+    if observations.ndim != 1 or np.any(observations < -1):
+        raise ValueError("observations must be -1 or non-negative counts")
+
+    n = len(observations)
+    alphas = np.zeros(n)
+    betas = np.zeros(n)
+    alpha, beta = 1.0, 1.0
+
+    for i in range(n - 1, -1, -1):
+        alphas[i] = alpha
+        betas[i] = beta
+        if i == 0:
+            continue
+        alpha, beta = gamma_emission_update(
+            alpha, beta, int(observations[i]), theta
+        )
+        l_mu, l_C = to_log_coords(alpha, beta)
+        dl_mu, dl_C = flow_field.query(l_mu, l_C)
+        alpha, beta = from_log_coords(
+            l_mu + rho * dl_mu, l_C + rho * dl_C
+        )
+
+    return alphas, betas
+
+
 def gamma_smc_posterior(observations, theta, rho, flow_field):
     """Compute the full Gamma-SMC posterior at each position.
 
@@ -331,13 +412,11 @@ def gamma_smc_posterior(observations, theta, rho, flow_field):
     # Forward pass (left to right)
     a_fwd, b_fwd = gamma_smc_forward(observations, theta, rho, flow_field)
 
-    # Backward pass = forward pass on reversed sequence
-    a_bwd_rev, b_bwd_rev = gamma_smc_forward(
-        observations[::-1], theta, rho, flow_field
+    # The backward density excludes the focal emission and includes the
+    # extra transition needed by the reversed-forward formulation.
+    a_bwd, b_bwd = gamma_smc_backward(
+        observations, theta, rho, flow_field
     )
-    # Reverse the backward results to align with original positions
-    a_bwd = a_bwd_rev[::-1]
-    b_bwd = b_bwd_rev[::-1]
 
     # Combine: Gamma(a + a' - 1, b + b' - 1)
     post_alpha = a_fwd + a_bwd - 1
@@ -450,11 +529,12 @@ def entropy_clip(alpha, beta, h_max=1.0, tol=1e-8):
 
 def gamma_smc_forward_segmented(observations, theta, rho, flow_field,
                                 h_max=1.0):
-    """Gamma-SMC forward pass with segmentation and entropy clipping.
+    """Transparent segmented forward pass with entropy clipping.
 
-    This is the full algorithm combining all four components:
-    segmentation, caching (via repeated flow field application),
-    flow field queries, and entropy clipping.
+    This reference implementation deliberately replays each per-site update;
+    the production C++ program replaces those inner loops with precomputed
+    multi-step cache lookups.  It therefore demonstrates cache semantics, not
+    the production speed-up itself.
 
     Parameters
     ----------
@@ -510,8 +590,8 @@ def gamma_smc_forward_segmented(observations, theta, rho, flow_field,
         if final_obs == 1:  # het
             alpha += 1
             beta += theta
-        elif final_obs == 0:  # trailing hom (end of sequence)
-            beta += theta
+        # For a trailing block final_obs is a sentinel, not an additional
+        # homozygous site: all n_hom emissions were already applied above.
 
         results.append((alpha, beta))
 
@@ -573,7 +653,7 @@ def demo():
     dl_mu, dl_C = compute_flow_at_point(0.0, -0.5)
     print(f"Flow at (l_mu=0, l_C=-0.5): "
           f"delta_l_mu={dl_mu:.6f}, delta_l_C={dl_C:.6f}")
-    print("(Zero because we used a placeholder perturbation)")
+    print("(SciPy teaching projection; production grids use Arb arithmetic)")
 
     # Build a small demonstration flow field
     dl_mu_grid = np.zeros((51, 50))
@@ -655,8 +735,8 @@ def demo():
     )
     print(f"Input: {n_sites} positions, {sum(obs_large)} hets")
     print(f"Segments: {len(segments)} (one per het + final)")
-    print(f"Speedup: {n_sites}/{len(segments)} = "
-          f"{n_sites/len(segments):.0f}x fewer operations")
+    print(f"Segment compression ratio: {n_sites}/{len(segments)} = "
+          f"{n_sites/len(segments):.0f}x (the mini replays each step)")
     a_final, b_final = results[-1]
     print(f"Final posterior: Gamma({a_final:.1f}, {b_final:.4f}), "
           f"mean = {a_final/b_final:.2f}")

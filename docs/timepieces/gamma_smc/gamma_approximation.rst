@@ -204,7 +204,7 @@ position :math:`i + 1`, we must compute:
 
    p_{\alpha,\beta}(t) := \int_0^\infty p(t \mid s) \cdot f_{\alpha,\beta}(s) \, ds
 
-where :math:`p(t \mid s)` is the SMC' transition density (including the
+where :math:`p(t \mid s)` is the SMC transition density (including the
 no-recombination case). This compound distribution :math:`p_{\alpha,\beta}(t)`
 is the predictive distribution of the TMRCA at the next position, given our
 current gamma belief.
@@ -361,7 +361,7 @@ The Closed-Form Perturbation
 -------------------------------
 
 The key quantity :math:`(p_{\alpha,\beta}(t) - f_{\alpha,\beta}(t))/\rho`
-can be evaluated analytically. Starting from the SMC' transition density and
+can be evaluated analytically. Starting from the SMC transition density and
 integrating against the gamma prior, one obtains (see the full derivation in
 Appendix E of the supplement):
 
@@ -369,7 +369,7 @@ Appendix E of the supplement):
 
    \frac{p_{\alpha,\beta}(t) - f_{\alpha,\beta}(t)}{\rho} \approx \;
    & e^{-t} \cdot \frac{(\beta t)^\alpha}{\Gamma(\alpha + 1)}
-   \left[ M(\alpha, \alpha+1, (\beta - 1)t) - M(\alpha, \alpha+1, -(\beta+1)t) \right] \\
+   \left[ M(\alpha, \alpha+1, -(\beta - 1)t) - M(\alpha, \alpha+1, -(\beta+1)t) \right] \\
    & + \frac{2t + e^{-2t} - 1}{2} \cdot f_{\alpha,\beta}(t) \\
    & + (1 - e^{-2t}) \cdot \frac{\Gamma(\alpha, \beta t)}{\Gamma(\alpha)} \\
    & - 2t \cdot f_{\alpha,\beta}(t)
@@ -384,7 +384,7 @@ where:
 - :math:`\Gamma(\alpha, x) = \int_x^\infty t^{\alpha-1} e^{-t} dt` is the
   **upper incomplete gamma function**.
 
-The four terms arise from integrating the SMC' transition density against the
+The four terms arise from integrating the SMC transition density against the
 gamma prior, splitting the integral into three regions (:math:`s < t`,
 :math:`s = t`, and :math:`s > t`):
 
@@ -403,7 +403,7 @@ gamma prior, splitting the integral into three regions (:math:`s < t`,
    only on :math:`\alpha` and :math:`\beta` -- not on :math:`\theta`,
    :math:`\rho`, or :math:`N_e`. This is because the perturbation is
    normalized by :math:`\rho`, and the remaining expression involves only the
-   gamma distribution parameters and the SMC' transition kernel (which, for
+   gamma distribution parameters and the SMC transition kernel (which, for
    constant population size, has no free parameters beyond the time units).
 
    This parameter independence is what makes Gamma-SMC's precomputation

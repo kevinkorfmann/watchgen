@@ -132,7 +132,7 @@ At each grid point :math:`(l_\mu, l_C)`, the computation proceeds as follows:
 
    import numpy as np
    from scipy.stats import gamma as gamma_dist
-   from scipy.special import digamma
+   from scipy.special import digamma, gammaincc, gammaln, hyp1f1
 
    def gamma_pdf_partials(x, alpha, beta):
        """Evaluate the gamma PDF and its partial derivatives.
@@ -162,12 +162,23 @@ At each grid point :math:`(l_\mu, l_C)`, the computation proceeds as follows:
        df_dbeta = f * (alpha / beta - x)
        return f, df_dalpha, df_dbeta
 
+   def smc_transition_perturbation(t, alpha, beta):
+       """First-order SMC transition-density change used upstream."""
+       log_scale = -t + alpha * np.log(t * beta) - gammaln(alpha + 1)
+       first = (np.exp(log_scale)
+                * hyp1f1(alpha, alpha + 1, -(beta - 1) * t))
+       second = (np.exp(log_scale)
+                 * hyp1f1(alpha, alpha + 1, -(beta + 1) * t))
+       f = gamma_dist.pdf(t, a=alpha, scale=1.0 / beta)
+       return (first - second
+               + (np.exp(-2 * t) / 2 - 0.5 - t) * f
+               + (1 - np.exp(-2 * t)) * gammaincc(alpha, beta * t))
+
    def compute_flow_at_point(l_mu, l_C, n_eval=2000):
        """Compute the flow displacement at one grid point.
 
-       This is a simplified skeleton showing the least-squares structure.
-       The full implementation requires Kummer's hypergeometric function
-       M(a, b, z) via the Arb library for the perturbation evaluation.
+       This teaching version uses SciPy for Kummer's function. The production
+       grid generator uses Arb ball arithmetic at extreme coordinates.
 
        Parameters
        ----------
@@ -185,22 +196,23 @@ At each grid point :math:`(l_\mu, l_C)`, the computation proceeds as follows:
        alpha = 10.0 ** (-2 * l_C)
        beta = alpha * 10.0 ** (-l_mu)
 
-       # Step 2: set up evaluation grid over the support of Gamma(alpha, beta)
-       mean = alpha / beta
-       std = np.sqrt(alpha) / beta
-       x = np.linspace(max(1e-10, mean - 4*std), mean + 6*std, n_eval)
+       # Step 2: cover the gamma bulk and exponential transition tail
+       upper = max(gamma_dist.isf(1e-6, a=alpha, scale=1.0 / beta),
+                   -np.log(1e-3))
+       x = np.geomspace(1e-10, upper, n_eval)
 
        # Step 3: evaluate partial derivatives
        f, df_da, df_db = gamma_pdf_partials(x, alpha, beta)
 
-       # Step 4: in the full implementation, evaluate the perturbation
-       # (p_{alpha,beta}(x) - f_{alpha,beta}(x)) / rho using Kummer's M.
-       # Here we use a placeholder zero perturbation for illustration.
-       perturbation = np.zeros_like(x)  # placeholder
+       # Step 4: evaluate the canonical first-order SMC perturbation
+       perturbation = smc_transition_perturbation(x, alpha, beta)
 
        # Step 5: solve least-squares for (u, v) in log10(alpha), log10(beta)
-       A = np.column_stack([df_da, df_db])
-       result = np.linalg.lstsq(A, perturbation, rcond=None)
+       A = np.column_stack([alpha * np.log(10) * df_da,
+                            beta * np.log(10) * df_db])
+       weights = np.sqrt(np.gradient(x))
+       result = np.linalg.lstsq(A * weights[:, None],
+                                perturbation * weights, rcond=None)
        delta_log_a, delta_log_b = result[0]
 
        # Step 6: convert to (delta_l_mu, delta_l_C)
@@ -208,11 +220,10 @@ At each grid point :math:`(l_\mu, l_C)`, the computation proceeds as follows:
        delta_l_C = -0.5 * delta_log_a
        return delta_l_mu, delta_l_C
 
-   # Demonstrate the structure (flow is zero with placeholder perturbation)
+   # Demonstrate a genuine, nonzero canonical-flow projection
    dl_mu, dl_C = compute_flow_at_point(0.0, -0.5)
    print(f"Flow at (l_mu=0, l_C=-0.5): "
          f"delta_l_mu={dl_mu:.6f}, delta_l_C={dl_C:.6f}")
-   print("(Zero because we used a placeholder perturbation)")
 
 The result is stored as the displacement
 :math:`(\Delta l_\mu, \Delta l_C) = (l_\mu' - l_\mu, l_C' - l_C)` at each

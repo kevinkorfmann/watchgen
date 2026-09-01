@@ -141,14 +141,15 @@ The forward pass proceeds along the genome, recording the gamma parameters
        alpha, beta = 1.0, 1.0
 
        for i in range(N):
-           # Step 1: Transition via flow field
-           l_mu = np.log10(alpha / beta)
-           l_C = np.log10(1.0 / np.sqrt(alpha))
-           dl_mu, dl_C = flow_field.query(l_mu, l_C)
-           l_mu += rho * dl_mu  # displacement scaled by rho
-           l_C += rho * dl_C
-           alpha = 10.0 ** (-2 * l_C)
-           beta = alpha * 10.0 ** (-l_mu)
+           # Transition from i-1 to i; no transition precedes site zero.
+           if i > 0:
+               l_mu = np.log10(alpha / beta)
+               l_C = np.log10(1.0 / np.sqrt(alpha))
+               dl_mu, dl_C = flow_field.query(l_mu, l_C)
+               l_mu += rho * dl_mu
+               l_C += rho * dl_C
+               alpha = 10.0 ** (-2 * l_C)
+               beta = alpha * 10.0 ** (-l_mu)
 
            # Step 2: Emission update (conjugate)
            y = observations[i]
@@ -186,14 +187,18 @@ from right to left. The continuous-state analogue is:
 
    \tilde{\alpha}(x_{i+1}) := P(X_{i+1} = x_{i+1} \mid Y_{i+1:N} = y_{i+1:N})
 
-Gamma-SMC uses a key reformulation: instead of deriving a separate backward
-recursion, it observes that the backward density can be obtained by **running
-the forward algorithm on the reversed sequence**. That is:
+Gamma-SMC uses a key reformulation: the backward calculation reuses the
+forward machinery on the reversed sequence. One indexing detail is essential:
+the backward density stored at position :math:`i` contains evidence
+**strictly to the right** of :math:`i`, so it does not include the focal
+emission :math:`y_i`. That is:
 
 - Reverse the observation sequence: :math:`y_N, y_{N-1}, \ldots, y_1`.
 - Run the standard forward pass on this reversed sequence.
-- At each position :math:`i+1`, the resulting forward density is the backward
-  density :math:`\tilde{\alpha}(x_{i+1})`.
+- Incorporate the emission at the position being left, then apply the
+  additional transition that moves the density one position left.
+- Record the result at :math:`i`; the focal observation remains represented
+  only in the ordinary forward density.
 
 This is possible because the SMC transition density is symmetric in a specific
 sense: reversing the sequence and re-running the forward algorithm produces
@@ -299,6 +304,35 @@ density would be aligned to position :math:`i+1` instead of :math:`i`.
 
 .. code-block:: python
 
+   def gamma_smc_backward(observations, theta, rho, flow_field):
+       """Backward densities containing evidence strictly right of i."""
+       n = len(observations)
+       alphas = np.zeros(n)
+       betas = np.zeros(n)
+       alpha, beta = 1.0, 1.0
+
+       for i in range(n - 1, -1, -1):
+           alphas[i], betas[i] = alpha, beta
+           if i == 0:
+               continue
+
+           # Evidence at i belongs to the backward message for i-1.
+           y = observations[i]
+           if y >= 0:
+               alpha += y
+               beta += theta
+
+           # Additional transition from i to i-1.
+           l_mu = np.log10(alpha / beta)
+           l_C = np.log10(1.0 / np.sqrt(alpha))
+           dl_mu, dl_C = flow_field.query(l_mu, l_C)
+           l_mu += rho * dl_mu
+           l_C += rho * dl_C
+           alpha = 10.0 ** (-2 * l_C)
+           beta = alpha * 10.0 ** (-l_mu)
+
+       return alphas, betas
+
    def gamma_smc_posterior(observations, theta, rho, flow_field):
        """Compute the full Gamma-SMC posterior at each position.
 
@@ -323,13 +357,9 @@ density would be aligned to position :math:`i+1` instead of :math:`i`.
        # Forward pass (left to right)
        a_fwd, b_fwd = gamma_smc_forward(observations, theta, rho, flow_field)
 
-       # Backward pass = forward pass on reversed sequence
-       a_bwd_rev, b_bwd_rev = gamma_smc_forward(
-           observations[::-1], theta, rho, flow_field
+       a_bwd, b_bwd = gamma_smc_backward(
+           observations, theta, rho, flow_field
        )
-       # Reverse the backward results to align with original positions
-       a_bwd = a_bwd_rev[::-1]
-       b_bwd = b_bwd_rev[::-1]
 
        # Combine: Gamma(a + a' - 1, b + b' - 1)
        post_alpha = a_fwd + a_bwd - 1
@@ -385,8 +415,9 @@ The Gamma-SMC forward-backward algorithm:
    :math:`\mathcal{F}` (transition) then conjugate update (emission) at each
    position. Cost: :math:`O(N)`.
 
-2. **Backward pass**: run the forward algorithm on the reversed sequence.
-   Cost: :math:`O(N)`.
+2. **Backward pass**: reuse the forward machinery on the reversed sequence,
+   excluding the focal emission and applying the additional transition needed
+   to align each backward density. Cost: :math:`O(N)`.
 
 3. **Combination**: at each output position, combine forward
    :math:`\text{Gamma}(a, b)` and backward :math:`\text{Gamma}(a', b')` into

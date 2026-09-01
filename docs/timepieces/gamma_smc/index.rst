@@ -68,8 +68,9 @@ The four gears of Gamma-SMC:
 3. **The Forward-Backward CS-HMM** (the mainspring) -- The forward pass sweeps
    along the genome, updating the gamma parameters at each position via the
    flow field (transition) and conjugate update (emission). The backward pass
-   is simply the forward algorithm run on the **reversed sequence**. The
-   forward and backward gamma approximations are combined via a simple formula:
+   reuses that machinery on the **reversed sequence**, with the additional
+   transition needed to align its density and without duplicating the focal
+   emission. The two gamma approximations are then combined via:
    :math:`\text{Gamma}(\alpha + \alpha' - 1, \beta + \beta' - 1)`. This
    combination yields the full posterior at each site.
 
@@ -190,7 +191,7 @@ local ancestry, or feeding into demographic inference pipelines).
    - :ref:`Coalescent Theory <coalescent_theory>` -- the exponential distribution
      of coalescence times and coalescent time units
    - :ref:`Hidden Markov Models <hmms>` -- the forward-backward algorithm
-   - :ref:`The SMC <smc>` -- the SMC/SMC' transition density for constant
+   - :ref:`The SMC <smc>` -- the pairwise SMC transition density for constant
      population size
 
    The :ref:`PSMC Timepiece <psmc_timepiece>` is helpful but not strictly

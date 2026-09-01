@@ -13,23 +13,25 @@ mathematical properties and expected behaviors of each component:
 
 import numpy as np
 import pytest
+from scipy.special import gammaln
 from scipy.stats import gamma as gamma_dist
-from scipy.special import digamma, gammaln
 
 from watchgen.mini_gamma_smc import (
-    gamma_emission_update,
-    to_log_coords,
-    from_log_coords,
-    gamma_pdf_partials,
     FlowField,
+    compute_flow_at_point,
+    entropy_clip,
+    from_log_coords,
+    gamma_emission_update,
+    gamma_entropy,
+    gamma_pdf_partials,
+    gamma_smc_backward,
     gamma_smc_forward,
+    gamma_smc_forward_segmented,
     gamma_smc_posterior,
     segment_observations,
-    gamma_entropy,
-    entropy_clip,
-    gamma_smc_forward_segmented,
+    smc_transition_perturbation,
+    to_log_coords,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers: create flow fields for testing
@@ -196,6 +198,20 @@ class TestGammaPdfPartials:
         assert np.allclose(analytical, numerical, rtol=1e-4)
 
 
+class TestCanonicalFlow:
+    def test_transition_perturbation_has_zero_total_mass(self):
+        """A density derivative must integrate to zero."""
+        x = np.geomspace(1e-8, 30.0, 20_000)
+        perturbation = smc_transition_perturbation(x, 2.0, 2.0)
+        assert abs(np.trapezoid(perturbation, x)) < 2e-3
+
+    def test_flow_is_not_placeholder_zero(self):
+        dl_mu, dl_C = compute_flow_at_point(0.0, -0.2, n_eval=500)
+        assert np.isfinite(dl_mu)
+        assert np.isfinite(dl_C)
+        assert abs(dl_mu) + abs(dl_C) > 1e-5
+
+
 # ===========================================================================
 # Tests for FlowField
 # ===========================================================================
@@ -264,7 +280,7 @@ class TestGammaSmcForward:
         """Alpha should increase by 1 for each het observation."""
         ff = _make_zero_flow_field()
         obs = [1, 1, 1]
-        alphas, betas = gamma_smc_forward(obs, theta=0.01, rho=0.0, flow_field=ff)
+        alphas, _ = gamma_smc_forward(obs, theta=0.01, rho=0.0, flow_field=ff)
         # Starting alpha=1, three hets: alpha should be ~4
         assert alphas[-1] > 3.5
 
@@ -273,7 +289,7 @@ class TestGammaSmcForward:
         ff = _make_zero_flow_field()
         theta = 0.05
         obs = [0, 0, 0, 0, 0]
-        alphas, betas = gamma_smc_forward(obs, theta=theta, rho=0.0, flow_field=ff)
+        _, betas = gamma_smc_forward(obs, theta=theta, rho=0.0, flow_field=ff)
         # Starting beta=1, five homs: beta ~ 1 + 5*theta = 1.25
         assert abs(betas[-1] - (1.0 + 5 * theta)) < 0.01
 
@@ -282,8 +298,8 @@ class TestGammaSmcForward:
         ff = _make_zero_flow_field()
         obs_all_miss = [-1, -1, -1]
         obs_all_hom = [0, 0, 0]
-        a_miss, b_miss = gamma_smc_forward(obs_all_miss, theta=0.01, rho=0.0, flow_field=ff)
-        a_hom, b_hom = gamma_smc_forward(obs_all_hom, theta=0.01, rho=0.0, flow_field=ff)
+        _, b_miss = gamma_smc_forward(obs_all_miss, theta=0.01, rho=0.0, flow_field=ff)
+        _, b_hom = gamma_smc_forward(obs_all_hom, theta=0.01, rho=0.0, flow_field=ff)
         # Missing should keep alpha and beta unchanged (relative to no emission)
         assert b_miss[-1] < b_hom[-1]
 
@@ -334,7 +350,7 @@ class TestGammaSmcPosterior:
         """Posterior should have higher alpha (lower CV) than the prior."""
         ff = _make_zero_flow_field()
         obs = [0, 1, 0, 0, 1, 0]
-        post_a, post_b = gamma_smc_posterior(obs, theta=0.01, rho=0.0, flow_field=ff)
+        post_a, _ = gamma_smc_posterior(obs, theta=0.01, rho=0.0, flow_field=ff)
         # The prior is Gamma(1, 1), so post_alpha should be > 1
         for a in post_a:
             assert a > 1.0
@@ -349,6 +365,21 @@ class TestGammaSmcPosterior:
         for k in range(len(obs)):
             assert abs(post_a[k] - post_a[len(obs) - 1 - k]) < 0.1
             assert abs(post_b[k] - post_b[len(obs) - 1 - k]) < 0.1
+
+    def test_backward_excludes_focal_emission(self):
+        ff = _make_zero_flow_field()
+        obs = [0, 1, 0]
+        a_bwd, b_bwd = gamma_smc_backward(obs, 0.1, 0.0, ff)
+        assert np.allclose(a_bwd, [2.0, 1.0, 1.0])
+        assert np.allclose(b_bwd, [1.2, 1.1, 1.0])
+
+    def test_zero_recombination_counts_each_site_once(self):
+        """With identity transitions every position sees the same data."""
+        ff = _make_zero_flow_field()
+        obs = [0, 1, -1, 0, 1]
+        post_a, post_b = gamma_smc_posterior(obs, 0.1, 0.0, ff)
+        assert np.allclose(post_a, 3.0)  # prior shape + two hets
+        assert np.allclose(post_b, 1.4)  # four called sites
 
 
 # ===========================================================================
@@ -404,12 +435,7 @@ class TestSegmentObservations:
         segments = segment_observations(obs)
         total = sum(n_miss + n_hom + (1 if final == 1 else 0)
                     for n_miss, n_hom, final in segments)
-        # Add trailing non-het positions
-        trailing = sum(n_miss + n_hom for n_miss, n_hom, final in segments if final == 0)
-        het_count = sum(1 for y in obs if y == 1)
-        hom_count = sum(1 for y in obs if y == 0)
-        miss_count = sum(1 for y in obs if y == -1)
-        assert het_count + hom_count + miss_count == len(obs)
+        assert total == len(obs)
 
 
 # ===========================================================================
@@ -481,7 +507,7 @@ class TestEntropyClip:
         # Find params where entropy equals exactly some value
         alpha, beta = 10.0, 10.0
         h = gamma_entropy(alpha, beta)
-        a_clip, b_clip = entropy_clip(alpha, beta, h_max=h)
+        a_clip, _ = entropy_clip(alpha, beta, h_max=h)
         assert abs(a_clip - alpha) < 1.0  # might shift slightly due to bisection
 
     def test_positive_result(self):
@@ -521,6 +547,13 @@ class TestGammaSmcForwardSegmented:
         results = gamma_smc_forward_segmented(obs, 0.001, 0.0, ff)
         assert len(results) == 1
 
+    def test_trailing_hom_is_not_double_counted(self):
+        ff = _make_zero_flow_field()
+        results = gamma_smc_forward_segmented(
+            [1, 0, 0], 0.1, 0.0, ff, h_max=10.0
+        )
+        assert results[-1] == pytest.approx((2.0, 1.3))
+
 
 # ===========================================================================
 # Integration tests
@@ -559,14 +592,11 @@ class TestIntegration:
         # Third segment: 0, 0, 0 -> (0, 3, 0)
         assert segments[2] == (0, 3, 0)
 
-    def test_posterior_mean_reflects_data(self):
-        """Positions near heterozygous sites should have higher posterior mean
-        (larger TMRCA estimate)."""
+    def test_zero_flow_posterior_uses_all_data_once(self):
+        """Identity transitions make the full posterior position invariant."""
         ff = _make_zero_flow_field()
         # A het site surrounded by hom sites
         obs = [0] * 10 + [1] + [0] * 10
         post_a, post_b = gamma_smc_posterior(obs, theta=0.01, rho=0.0, flow_field=ff)
         means = post_a / post_b
-        # The mean at the het site should be among the highest
-        het_idx = 10
-        assert means[het_idx] > np.median(means)
+        assert np.allclose(means, means[0])

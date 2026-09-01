@@ -13,10 +13,8 @@ Covers:
 """
 
 import numpy as np
-import pytest
-from scipy.stats import gamma as gamma_dist
 from scipy.special import digamma, gammaln
-
+from scipy.stats import gamma as gamma_dist
 
 # ---------------------------------------------------------------------------
 # Re-defined functions from docs/timepieces/gamma_smc/gamma_approximation.rst
@@ -99,13 +97,14 @@ def gamma_smc_forward(observations, theta, rho, flow_field):
     alpha, beta = 1.0, 1.0
 
     for i in range(N):
-        l_mu = np.log10(alpha / beta)
-        l_C = np.log10(1.0 / np.sqrt(alpha))
-        dl_mu, dl_C = flow_field.query(l_mu, l_C)
-        l_mu += rho * dl_mu
-        l_C += rho * dl_C
-        alpha = 10.0 ** (-2 * l_C)
-        beta = alpha * 10.0 ** (-l_mu)
+        if i > 0:
+            l_mu = np.log10(alpha / beta)
+            l_C = np.log10(1.0 / np.sqrt(alpha))
+            dl_mu, dl_C = flow_field.query(l_mu, l_C)
+            l_mu += rho * dl_mu
+            l_C += rho * dl_C
+            alpha = 10.0 ** (-2 * l_C)
+            beta = alpha * 10.0 ** (-l_mu)
 
         y = observations[i]
         if y >= 0:
@@ -118,15 +117,37 @@ def gamma_smc_forward(observations, theta, rho, flow_field):
     return alphas, betas
 
 
+def gamma_smc_backward(observations, theta, rho, flow_field):
+    """Backward densities containing evidence strictly right of i."""
+    n = len(observations)
+    alphas = np.zeros(n)
+    betas = np.zeros(n)
+    alpha, beta = 1.0, 1.0
+    for i in range(n - 1, -1, -1):
+        alphas[i], betas[i] = alpha, beta
+        if i == 0:
+            continue
+        y = observations[i]
+        if y >= 0:
+            alpha += y
+            beta += theta
+        l_mu = np.log10(alpha / beta)
+        l_C = np.log10(1.0 / np.sqrt(alpha))
+        dl_mu, dl_C = flow_field.query(l_mu, l_C)
+        l_mu += rho * dl_mu
+        l_C += rho * dl_C
+        alpha = 10.0 ** (-2 * l_C)
+        beta = alpha * 10.0 ** (-l_mu)
+    return alphas, betas
+
+
 def gamma_smc_posterior(observations, theta, rho, flow_field):
     """Compute the full Gamma-SMC posterior at each position."""
     a_fwd, b_fwd = gamma_smc_forward(observations, theta, rho, flow_field)
 
-    a_bwd_rev, b_bwd_rev = gamma_smc_forward(
-        observations[::-1], theta, rho, flow_field
+    a_bwd, b_bwd = gamma_smc_backward(
+        observations, theta, rho, flow_field
     )
-    a_bwd = a_bwd_rev[::-1]
-    b_bwd = b_bwd_rev[::-1]
 
     post_alpha = a_fwd + a_bwd - 1
     post_beta = b_fwd + b_bwd - 1
@@ -422,7 +443,7 @@ class TestGammaSmcForward:
         """Alpha should increase by 1 for each het observation."""
         ff = _make_zero_flow_field()
         obs = [1, 1, 1]
-        alphas, betas = gamma_smc_forward(obs, theta=0.01, rho=0.0, flow_field=ff)
+        alphas, _ = gamma_smc_forward(obs, theta=0.01, rho=0.0, flow_field=ff)
         # Starting alpha=1, three hets: alpha should be ~4
         assert alphas[-1] > 3.5
 
@@ -431,7 +452,7 @@ class TestGammaSmcForward:
         ff = _make_zero_flow_field()
         theta = 0.05
         obs = [0, 0, 0, 0, 0]
-        alphas, betas = gamma_smc_forward(obs, theta=theta, rho=0.0, flow_field=ff)
+        _, betas = gamma_smc_forward(obs, theta=theta, rho=0.0, flow_field=ff)
         # Starting beta=1, five homs: beta ~ 1 + 5*theta = 1.25
         assert abs(betas[-1] - (1.0 + 5 * theta)) < 0.01
 
@@ -440,8 +461,8 @@ class TestGammaSmcForward:
         ff = _make_zero_flow_field()
         obs_all_miss = [-1, -1, -1]
         obs_all_hom = [0, 0, 0]
-        a_miss, b_miss = gamma_smc_forward(obs_all_miss, theta=0.01, rho=0.0, flow_field=ff)
-        a_hom, b_hom = gamma_smc_forward(obs_all_hom, theta=0.01, rho=0.0, flow_field=ff)
+        _, b_miss = gamma_smc_forward(obs_all_miss, theta=0.01, rho=0.0, flow_field=ff)
+        _, b_hom = gamma_smc_forward(obs_all_hom, theta=0.01, rho=0.0, flow_field=ff)
         # Missing should keep alpha and beta unchanged (relative to no emission)
         assert b_miss[-1] < b_hom[-1]
 
@@ -492,7 +513,7 @@ class TestGammaSmcPosterior:
         """Posterior should have higher alpha (lower CV) than the prior."""
         ff = _make_zero_flow_field()
         obs = [0, 1, 0, 0, 1, 0]
-        post_a, post_b = gamma_smc_posterior(obs, theta=0.01, rho=0.0, flow_field=ff)
+        post_a, _ = gamma_smc_posterior(obs, theta=0.01, rho=0.0, flow_field=ff)
         # The prior is Gamma(1, 1), so post_alpha should be > 1
         for a in post_a:
             assert a > 1.0
@@ -507,6 +528,20 @@ class TestGammaSmcPosterior:
         for k in range(len(obs)):
             assert abs(post_a[k] - post_a[len(obs) - 1 - k]) < 0.1
             assert abs(post_b[k] - post_b[len(obs) - 1 - k]) < 0.1
+
+    def test_backward_excludes_focal_emission(self):
+        ff = _make_zero_flow_field()
+        a_bwd, b_bwd = gamma_smc_backward([0, 1, 0], 0.1, 0.0, ff)
+        assert np.allclose(a_bwd, [2.0, 1.0, 1.0])
+        assert np.allclose(b_bwd, [1.2, 1.1, 1.0])
+
+    def test_zero_recombination_counts_each_site_once(self):
+        ff = _make_zero_flow_field()
+        post_a, post_b = gamma_smc_posterior(
+            [0, 1, -1, 0, 1], 0.1, 0.0, ff
+        )
+        assert np.allclose(post_a, 3.0)
+        assert np.allclose(post_b, 1.4)
 
 
 # ===========================================================================
@@ -562,12 +597,7 @@ class TestSegmentObservations:
         segments = segment_observations(obs)
         total = sum(n_miss + n_hom + (1 if final == 1 else 0)
                     for n_miss, n_hom, final in segments)
-        # Add trailing non-het positions
-        trailing = sum(n_miss + n_hom for n_miss, n_hom, final in segments if final == 0)
-        het_count = sum(1 for y in obs if y == 1)
-        hom_count = sum(1 for y in obs if y == 0)
-        miss_count = sum(1 for y in obs if y == -1)
-        assert het_count + hom_count + miss_count == len(obs)
+        assert total == len(obs)
 
 
 # ===========================================================================
@@ -639,7 +669,7 @@ class TestEntropyClip:
         # Find params where entropy equals exactly some value
         alpha, beta = 10.0, 10.0
         h = gamma_entropy(alpha, beta)
-        a_clip, b_clip = entropy_clip(alpha, beta, h_max=h)
+        a_clip, _ = entropy_clip(alpha, beta, h_max=h)
         assert abs(a_clip - alpha) < 1.0  # might shift slightly due to bisection
 
     def test_positive_result(self):
@@ -687,14 +717,11 @@ class TestIntegration:
         # Third segment: 0, 0, 0 -> (0, 3, 0)
         assert segments[2] == (0, 3, 0)
 
-    def test_posterior_mean_reflects_data(self):
-        """Positions near heterozygous sites should have higher posterior mean
-        (larger TMRCA estimate)."""
+    def test_zero_flow_posterior_uses_all_data_once(self):
+        """Identity transitions make the full posterior position invariant."""
         ff = _make_zero_flow_field()
         # A het site surrounded by hom sites
         obs = [0] * 10 + [1] + [0] * 10
         post_a, post_b = gamma_smc_posterior(obs, theta=0.01, rho=0.0, flow_field=ff)
         means = post_a / post_b
-        # The mean at the het site should be among the highest
-        het_idx = 10
-        assert means[het_idx] > np.median(means)
+        assert np.allclose(means, means[0])
