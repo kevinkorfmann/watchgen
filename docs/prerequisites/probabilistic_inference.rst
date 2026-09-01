@@ -4,7 +4,7 @@
 Likelihood-Based Probabilistic Inference
 ================================================
 
-   *"The data are fixed; the model is the variable. The likelihood surface tells you which models are consistent with reality."*
+   *"The data are fixed; the parameters vary. The likelihood surface ranks their support within the model."*
 
 A watchmaker presented with a broken watch doesn't guess randomly. She examines
 the symptoms -- the watch runs 5 minutes fast per day, the second hand stutters
@@ -13,7 +13,7 @@ specific symptoms?* The configurations that best explain the symptoms are the
 most likely diagnoses.
 
 This is the logic of likelihood-based inference, and it is the inferential
-backbone of every Timepiece in this book. Given observed genetic data (the
+backbone of every inferential Timepiece in this book. Given observed genetic data (the
 symptoms), we want to find the demographic history, genealogy, or set of
 parameters (the internal configuration) that best explains what we see. This
 chapter introduces the framework that makes this possible: the likelihood
@@ -34,7 +34,9 @@ data tell us about the parameters?"
 Why Likelihood?
 ================
 
-Every method in this book follows the same inferential logic:
+Every inference method in this book follows the same inferential logic. The
+simulation Timepieces instead run the generative model in the forward
+direction, from parameters to synthetic data.
 
 1. **Propose a model** with parameters :math:`\theta` (a demographic history,
    a genealogy, a set of population sizes and split times).
@@ -58,12 +60,16 @@ that can be compared to the genome sequences in your FASTA file.
    how lineages merge backward in time. The mutation model tells us how
    differences accumulate on branches. The recombination model tells us how
    the genealogy changes along the genome. Because these models are fully
-   specified probability models, we can compute the probability of *any*
-   observed dataset under *any* set of parameters. This is what makes
-   likelihood-based inference possible -- and powerful. The alternative would
-   be purely descriptive statistics (like :math:`F_{ST}` or Tajima's D),
-   which summarize the data but cannot easily distinguish between different
-   mechanistic explanations.
+   specified probability models, they define a probability mass or density
+   for possible data under each admissible parameter value. This is what makes
+   likelihood-based inference possible. It does *not* mean that every
+   likelihood can be evaluated exactly: for many realistic models latent
+   variables must be marginalized by an HMM or Monte Carlo method, or the
+   full likelihood is replaced by an approximation or composite likelihood.
+   Summary statistics such as :math:`F_{ST}` and
+   Tajima's D compress the data and can diagnose departures from simple null
+   models, but a value of either statistic generally does not identify one
+   unique demographic or selective mechanism.
 
 
 The Likelihood Function
@@ -78,6 +84,11 @@ migration rates, mutation rates, etc.), the **likelihood function** is:
 
 This reads: "the probability of observing data :math:`D` if the true
 parameters were :math:`\theta`."
+
+For discrete data, :math:`P(D\mid\theta)` is a probability mass. For
+continuous data it denotes a density at the observed value; the probability
+of any one exact continuous outcome is zero. In either case, the likelihood
+need not integrate to one over :math:`\theta`.
 
 Crucially, the likelihood is a function of :math:`\theta`, not of :math:`D`.
 The data are fixed (you've already sequenced the genomes); the parameters are
@@ -121,8 +132,7 @@ this chapter and the rest of the book.
    distinguish. The entire shape of this landscape -- not just its peak --
    contains information about what the data can and cannot tell you.
 
-Each Timepiece computes the likelihood differently, but the logic is always
-the same:
+Each inferential Timepiece constructs an objective differently:
 
 .. list-table::
    :header-rows: 1
@@ -142,10 +152,10 @@ the same:
      - Product over sites given a proposed ARG
    * - **tsdate**
      - Mutations on tree sequence edges
-     - Poisson mutation likelihood x coalescent prior
+     - Poisson edge likelihood times a coalescent prior
    * - **PHLASH**
-     - SFS + het/hom sequences
-     - Composite: SFS likelihood + coalescent HMM
+     - Heterozygosity sequences, SFS, and optionally LD summaries
+     - Composite PSMC, SFS, and optional LD terms
 
 The rest of this chapter builds your fluency with the distributions that
 appear in this table. By the end, you will have derived, coded, and
@@ -293,12 +303,14 @@ rate must be high (small population); if they coalesce slowly (large
 .. admonition:: Biology Aside -- Estimating population size from coalescence times
 
    Since :math:`\lambda = 1/(2N_e)`, the MLE of the effective population
-   size is :math:`\hat{N}_e = \bar{t}/2` (when time is in generations) or
-   simply :math:`\hat{N}_e = \bar{t}` in coalescent units. This is the
+   size is :math:`\hat{N}_e = \bar{t}/2` when the observed times are in
+   generations. If times have already been divided by :math:`2N_{\rm ref}`,
+   the fitted rate estimates :math:`N_{\rm ref}/N_e`; converting back to an
+   absolute :math:`N_e` requires the reference scale. This is the
    simplest possible demographic estimator: observe how long lineages take
    to coalesce, and infer the population size from the average. Every
-   Timepiece in this book is, at its core, a more sophisticated version of
-   this idea.
+   inferential Timepiece based on coalescence times elaborates this idea while
+   accounting for unobserved genealogies, recombination, and dependence.
 
 .. code-block:: python
 
@@ -357,10 +369,13 @@ The Poisson Distribution: Mutations and the SFS
 --------------------------------------------------
 
 Mutations accumulate on the branches of a genealogy as a **Poisson process**.
-If a branch has length :math:`\ell` (in coalescent time units) and the
-mutation rate is :math:`\mu` per site per generation, the expected number of
-mutations on that branch is :math:`\mu \ell`. For a genomic region of
-:math:`L` sites, the expected number is :math:`\mu \ell L`.
+If a branch has length :math:`\ell` generations and the mutation rate is
+:math:`\mu` per site per generation, the expected number of mutations on
+that branch is :math:`\mu \ell` per site, or :math:`\mu \ell L` across a
+region of :math:`L` sites. If branch length is expressed in units of
+:math:`2N_{\rm ref}` generations, it must first be multiplied by
+:math:`2N_{\rm ref}` (or, equivalently, paired with the scaled mutation rate
+:math:`\theta=4N_{\rm ref}\mu` for diploids).
 
 The Poisson distribution with mean :math:`\mu` has probability mass function:
 
@@ -397,12 +412,15 @@ events are interchangeable (order doesn't matter).
 
    The Poisson distribution describes "the number of events in a fixed
    interval when events occur independently at a constant average rate."
-   Mutations fit this description precisely: they occur independently at each
-   nucleotide position, at a roughly constant rate per generation. The
-   infinite-sites model (standard in population genetics) assumes that each
-   mutation hits a new site, so the number of segregating sites in a genomic
-   region is Poisson-distributed with a mean that depends on the total branch
-   length of the genealogy.
+   The usual mutation model idealizes mutations this way: conditional on a
+   genealogy and a specified rate, events on disjoint branch segments are
+   independent Poisson increments. Real mutation rates vary with sequence
+   context, genomic position, and time, so this is a model rather than a
+   literal property of every mutation. The infinite-sites model assumes that each
+   mutation hits a new site, so *conditional on a fixed genealogy* the number
+   of segregating sites in a genomic region is Poisson with a mean determined
+   by its total branch length. After integrating over a random genealogy, the
+   count is generally a Poisson mixture rather than exactly Poisson.
 
 **From one branch to the whole SFS.** The Poisson model for a single branch
 extends naturally to the entire site frequency spectrum. The SFS counts, for
@@ -410,11 +428,11 @@ each frequency :math:`k` from 1 to :math:`n-1`, how many polymorphic sites
 have exactly :math:`k` copies of the derived allele in a sample of :math:`n`
 chromosomes.
 
-Under the Poisson random field model, mutations land on branches of the
-genealogy as independent Poisson events. A mutation on a branch that subtends
+Under the Poisson random-field approximation, mutations land on branches as
+Poisson events and frequency-class counts are modeled as independent. A
+mutation on a branch that subtends
 :math:`k` leaves out of :math:`n` total produces a site at frequency
-:math:`k/n`. Because mutations are independent across sites, the total number
-of sites at each frequency is itself Poisson-distributed:
+:math:`k/n`. The resulting working model is:
 
 .. math::
 
@@ -425,8 +443,9 @@ branch length subtending exactly :math:`k` leaves, multiplied by the mutation
 rate. The parameter :math:`\theta` encodes the demographic history that
 determines these branch lengths.
 
-**Deriving the SFS log-likelihood.** Because the :math:`n-1` SFS entries are
-independent Poisson random variables, the joint probability of the entire
+**Deriving the SFS log-likelihood.** Under the working assumption that the
+:math:`n-1` SFS entries are independent Poisson variables, the joint
+probability of the entire
 observed SFS :math:`\mathbf{D} = (D_1, \ldots, D_{n-1})` is the product of
 :math:`n-1` Poisson probabilities:
 
@@ -457,8 +476,11 @@ during optimization:
    \ell_{\text{SFS}}(\theta) = \sum_{k=1}^{n-1}
    \big[ D_k \log \xi_k(\theta) - \xi_k(\theta) \big] + \text{const}
 
-This is exactly the likelihood that ``dadi``, ``moments``, and ``momi2``
-maximize. Here it is in Python, so you can see the formula in action:
+This is the Poisson random-field likelihood available in ``dadi`` and used
+in closely related SFS workflows. These packages also commonly use a
+multinomial likelihood conditional on the total number of segregating sites;
+in that case only the normalized SFS shape enters the objective
+:cite:`dadi,moments,momi2`. Here is the Poisson form in Python:
 
 .. code-block:: python
 
@@ -602,24 +624,31 @@ model. We can't just take the sample mean -- instead, we search over
 
 .. admonition:: Biology Aside -- Watterson's estimator
 
-   The analytical MLE of :math:`\theta` from the SFS under the neutral model
-   is :math:`\hat{\theta}_W = S / \sum_{k=1}^{n-1} 1/k`, where :math:`S`
-   is the total number of segregating sites. This is **Watterson's
-   estimator** -- one of the most famous results in population genetics,
-   derived in 1975. It is the starting point for neutrality tests like
+   Under the independent-Poisson SFS working model, the analytical MLE of
+   :math:`\theta` is :math:`S / \sum_{k=1}^{n-1} 1/k`, where :math:`S` is the
+   total number of segregating sites. The same expression is **Watterson's
+   estimator**, originally derived as an unbiased estimator under the
+   infinite-sites neutral model :cite:`watterson1975`; calling it an MLE
+   without naming the Poisson working model would overstate the result. It is
+   the starting point for neutrality tests like
    Tajima's D, which compares Watterson's estimator (based on the total
    number of segregating sites) with a frequency-weighted estimator (based on
    the average pairwise differences). When the two disagree, it signals a
    departure from the standard neutral model -- for example, a recent
-   population expansion or a selective sweep.
+   population expansion or a selective sweep -- but finite-sample variation,
+   linkage, sequencing error, and other violations can also create a
+   difference. Tajima's D standardizes the contrast by its neutral-model
+   variance rather than treating every nonzero difference as evidence.
 
 
 The Gamma Distribution: Ages and Rates
 -----------------------------------------
 
 The **gamma distribution** appears throughout population genetics as a
-flexible model for positive continuous quantities -- most prominently as the
-prior distribution on node ages in ``tsdate``.
+flexible model for positive continuous quantities. In current ``tsdate``,
+gamma distributions approximate marginal posteriors for node ages; they are
+not, in general, the exact coalescent prior or exact posterior
+:cite:`tsdate_vg`.
 
 A gamma random variable with shape :math:`\alpha > 0` and rate
 :math:`\beta > 0` has density:
@@ -768,23 +797,23 @@ optimal :math:`\hat{\beta}(\alpha)` and maximize over :math:`\alpha` alone.
 
 .. admonition:: Biology Aside -- Why gamma for node ages?
 
-   The age of an internal node in a genealogy is the sum of exponential
-   waiting times (one for each coalescent interval the node passes through).
-   A sum of exponential random variables follows a gamma distribution. Even
-   when the population size varies over time (making the rates differ), the
-   gamma remains a good approximation because it is flexible enough to
-   capture a wide range of shapes. This is why ``tsdate`` uses the gamma
-   family as its variational approximation: it is mathematically convenient
-   (as we'll see when we discuss conjugate priors below) and biologically
-   motivated.
+   Under a constant-size Kingman coalescent, waiting times while there are
+   different numbers of ancestral lineages are exponential but have
+   *different* rates. Their sum is therefore generally hypoexponential, not
+   gamma; a gamma law is exact only for sums of independent exponentials with
+   a common rate. ``tsdate`` uses the gamma family as a tractable
+   approximation because it has positive support, flexible shape, and a
+   convenient exponential-family representation for moment matching
+   :cite:`tsdate_vg`.
 
 
 The Gaussian Distribution: Smoothness Priors
 -----------------------------------------------
 
-The **Gaussian** (normal) distribution appears in population genetics
-inference not as a data model, but as a **prior** -- specifically, a
-smoothness prior on demographic histories.
+The **Gaussian** (normal) distribution appears in population genetics both
+as a data model and as a prior. A common regularizer for a discretized
+demographic history is a Gaussian random walk on adjacent log population
+sizes; the example below illustrates that generic construction.
 
 The Gaussian density for a scalar :math:`x` with mean :math:`\mu` and
 variance :math:`\sigma^2` is:
@@ -806,12 +835,10 @@ Gaussian with mean :math:`\boldsymbol{\mu}` and covariance matrix
 
 .. admonition:: Biology Aside -- Smoothness in demographic history
 
-   PHLASH represents the demographic history as a vector of log-population
-   sizes :math:`\mathbf{h} = (\log N_1, \log N_2, \ldots, \log N_M)` at
-   :math:`M` time points. It places a multivariate Gaussian prior on
-   :math:`\mathbf{h}` with a covariance matrix that encodes smoothness:
-   adjacent time points are correlated, so the population size cannot jump
-   wildly from one epoch to the next without incurring a penalty.
+   Let :math:`\mathbf{h} = (\log N_1, \log N_2, \ldots, \log N_M)` denote
+   log population sizes in adjacent epochs. A first-order Gaussian
+   random-walk prior assigns independent normal increments
+   :math:`h_{k+1}-h_k \sim N(0,\sigma^2)`.
 
    Concretely, the prior penalizes large *differences* between adjacent
    entries:
@@ -821,10 +848,15 @@ Gaussian with mean :math:`\boldsymbol{\mu}` and covariance matrix
       \log p(\mathbf{h}) \propto -\frac{1}{2\sigma^2}
       \sum_{k=1}^{M-1} (h_{k+1} - h_k)^2
 
-   This is a random-walk prior: it says "I expect the demographic history to
-   change gradually." The hyperparameter :math:`\sigma^2` controls how much
-   change is allowed per time step -- smaller :math:`\sigma^2` enforces
-   smoother histories, larger :math:`\sigma^2` allows more variation.
+   This prior says "I expect the demographic history to change gradually."
+   The hyperparameter :math:`\sigma^2` controls how much change is allowed
+   per time step. The difference penalty alone is *improper* because adding a
+   constant to every :math:`h_k` changes no increment; a proper prior also
+   anchors one level or adds a separate level penalty. PHLASH's published
+   model instead uses random low-dimensional time discretizations and
+   averages posterior histories; its software also exposes optional
+   quadratic penalties, so the generic random-walk example should not be
+   mistaken for the complete PHLASH prior :cite:`phlash`.
 
 **Gaussian MLE.** For :math:`n` observations :math:`x_1, \ldots, x_n` from
 :math:`N(\mu, \sigma^2)`, the log-likelihood is:
@@ -938,19 +970,22 @@ for the gamma shape parameter, or for complex demographic models), we use
 numerical optimization -- gradient ascent, Newton's method, or specialized
 algorithms like ``scipy.optimize.minimize``.
 
-The MLE has attractive statistical properties:
+Under correct specification, identifiability, and the usual regularity
+conditions, the MLE has attractive large-sample properties:
 
-- **Consistency**: as the amount of data grows, the MLE converges to the true
-  parameter values.
-- **Efficiency**: among all consistent estimators, the MLE achieves the
-  smallest possible variance (asymptotically).
+- **Consistency**: as the amount of independent information grows, the MLE
+  converges to the true parameter value.
+- **Efficiency**: in regular parametric models, the MLE asymptotically
+  attains the inverse Fisher-information bound. This is not a claim that it
+  has the smallest variance among every conceivable consistent estimator.
 - **Invariance**: if :math:`\hat{\theta}` is the MLE of :math:`\theta`, then
-  :math:`f(\hat{\theta})` is the MLE of :math:`f(\theta)` for any function
-  :math:`f`.
+  :math:`f(\hat{\theta})` is an MLE under a one-to-one reparameterization
+  :math:`f`; more general transformations require profiling over parameter
+  values that map to the same transformed value.
 
-In practice, ``dadi``, ``moments``, and ``momi2`` all use MLE as their
-primary inference strategy: they search the space of demographic parameters
-for the values that maximize the Poisson log-likelihood of the observed SFS.
+In practice, ``dadi``, ``moments``, and ``momi2`` support likelihood-based
+optimization of demographic parameters using Poisson or multinomial SFS
+objectives :cite:`dadi,moments,momi2`.
 
 .. admonition:: Practical caveat -- Local optima
 
@@ -964,85 +999,54 @@ for the values that maximize the Poisson log-likelihood of the observed SFS.
    with fewer local optima.
 
 
-Worked Example: Inferring Population Size from the SFS
+Worked Example: Inferring the SFS Scale
 --------------------------------------------------------
 
-Here is a complete MLE example that mirrors what ``dadi`` and ``moments`` do
-internally: given an observed SFS, find the population size ratio :math:`\nu`
-that maximizes the Poisson log-likelihood.
+Here is a complete MLE example using an exact result rather than a fabricated
+demographic approximation. Under the standard neutral, constant-size,
+infinite-sites model, the expected unfolded SFS is
+:math:`\xi_k=\theta/k`, where the regional scale
+:math:`\theta=4N_e\mu L` for a diploid population. Given an observed SFS, we
+estimate :math:`\theta` by maximizing its Poisson likelihood. Real ``dadi``
+and ``moments`` analyses first compute the expected SFS shape under a chosen
+demographic model and then optimize its parameters; the toy calculation here
+isolates the likelihood step :cite:`dadi,moments`.
 
 .. code-block:: python
 
    import numpy as np
-   from scipy.optimize import minimize_scalar
    from scipy.special import gammaln
 
-   def expected_sfs_two_epoch(n, theta, nu, T):
-       """Expected SFS for a two-epoch model (approximate).
-
-       Population was size N_ref in the past, then changed to nu*N_ref
-       at time T (in coalescent units) before present.
-
-       This uses the neutral expectation xi_k = theta/k as a baseline,
-       then scales by a correction factor that depends on nu and T.
-       (A full calculation would integrate the coalescent with variable
-       population size; here we use the simple approximation for
-       pedagogical clarity.)
-
-       Parameters
-       ----------
-       n : int
-           Sample size (number of haploid chromosomes).
-       theta : float
-           Baseline population-scaled mutation rate (4*N_ref*mu*L).
-       nu : float
-           Ratio of current to ancestral population size.
-       T : float
-           Time of size change in coalescent units.
-
-       Returns
-       -------
-       xi : ndarray, shape (n-1,)
-           Expected SFS entries for k = 1, ..., n-1.
-       """
+   def expected_sfs_constant(n, theta):
+       """Exact expected unfolded SFS under constant population size."""
        k = np.arange(1, n)
-       # Under constant size: xi_k = theta / k
-       # Size change modifies the total branch length.
-       # For a simple two-epoch model, the expected total coalescence
-       # time is approximately T + nu*(total_time - T) when T is small
-       # relative to total coalescent time.
-       # Here we use the exact 1-population result for the k-th entry:
-       # larger nu -> more singletons (population expansion signature)
-       # smaller nu -> fewer singletons (bottleneck signature)
-       base = theta / k
-       # Correction: expansion (nu > 1) inflates low-frequency classes
-       correction = 1.0 + (nu - 1.0) * (1.0 - np.exp(-T * k / nu))
-       return base * np.maximum(correction, 0.01)
+       return theta / k
 
    def sfs_poisson_loglik(D_obs, xi_expected):
        """Poisson log-likelihood of observed SFS given expected."""
        xi = np.maximum(xi_expected, 1e-300)
        return np.sum(D_obs * np.log(xi) - xi - gammaln(D_obs + 1))
 
-   # Generate data: true model has nu=3.0 (threefold expansion), T=0.2
+   # Generate an observed SFS under the exact constant-size model
    np.random.seed(42)
    n = 30
-   theta = 500.0
-   nu_true = 3.0
-   T_true = 0.2
+   theta_true = 500.0
 
-   xi_true = expected_sfs_two_epoch(n, theta, nu_true, T_true)
+   xi_true = expected_sfs_constant(n, theta_true)
    D_obs = np.random.poisson(xi_true)
 
-   # Scan nu values and compute log-likelihood for each
-   nus = np.linspace(0.5, 8.0, 200)
-   lls = [sfs_poisson_loglik(D_obs, expected_sfs_two_epoch(n, theta, nu, T_true))
-          for nu in nus]
+   # Scan theta values and compute the log-likelihood for each
+   thetas = np.linspace(200.0, 800.0, 400)
+   lls = [sfs_poisson_loglik(D_obs, expected_sfs_constant(n, theta))
+          for theta in thetas]
    lls = np.array(lls)
 
-   nu_mle = nus[np.argmax(lls)]
-   print(f"True nu:  {nu_true:.2f}")
-   print(f"MLE nu:   {nu_mle:.2f}")
+   theta_mle_grid = thetas[np.argmax(lls)]
+   harmonic = np.sum(1.0 / np.arange(1, n))
+   theta_mle_exact = np.sum(D_obs) / harmonic
+   print(f"True theta:       {theta_true:.2f}")
+   print(f"Grid-search MLE:  {theta_mle_grid:.2f}")
+   print(f"Analytical MLE:   {theta_mle_exact:.2f}")
    print(f"Log-likelihood at MLE:  {np.max(lls):.2f}")
    print(f"Log-likelihood at true: {sfs_poisson_loglik(D_obs, xi_true):.2f}")
 
@@ -1086,7 +1090,8 @@ This connects the curvature of the likelihood to the uncertainty in the
 estimate: sharp peak (large :math:`I`) means small variance (precise MLE);
 flat peak (small :math:`I`) means large variance (imprecise MLE).
 
-This gives an approximate **95% confidence interval**:
+Replacing the unknown information by its value at the MLE gives the familiar
+large-sample Wald **95% confidence interval**:
 
 .. math::
 
@@ -1094,7 +1099,10 @@ This gives an approximate **95% confidence interval**:
 
 where 1.96 is the :math:`z`-value for 95% coverage under the normal
 distribution, and :math:`1/\sqrt{I(\hat{\theta})}` is the **standard error**
-of the MLE.
+of the MLE. Wald intervals can perform poorly near parameter boundaries or
+with little data. For a positive rate, an interval constructed on
+:math:`\log\lambda` or an exact/profile-likelihood interval avoids a negative
+lower endpoint.
 
 .. admonition:: Plain-language summary -- Fisher information as a ruler
 
@@ -1119,8 +1127,10 @@ Differentiating again:
 
 This is already non-random (it doesn't depend on the data :math:`t_i`), so
 the expectation is just itself: :math:`I(\lambda) = n/\lambda^2`. The
-variance of the MLE is :math:`1/I(\lambda) = \lambda^2/n`, and the standard
-error is :math:`\lambda/\sqrt{n}`.
+*asymptotic* variance of the MLE is
+:math:`1/I(\lambda) = \lambda^2/n`, and its asymptotic standard error is
+:math:`\lambda/\sqrt{n}`. The exact finite-sample distribution of the
+reciprocal sample mean is skewed.
 
 The 95% CI is :math:`\hat{\lambda} \pm 1.96 \cdot \hat{\lambda}/\sqrt{n}`.
 Notice that the CI width is proportional to :math:`1/\sqrt{n}` -- quadrupling
@@ -1215,9 +1225,12 @@ SVGD). But for certain combinations of likelihood and prior, the posterior
 has the **same functional form** as the prior. These are called **conjugate
 priors**, and they give exact, closed-form Bayesian updates.
 
-Conjugate priors are not just a mathematical curiosity -- they are the engine
-behind ``tsdate``'s Expectation Propagation algorithm, and they appear in
-simplified form in several other Timepieces.
+Conjugate priors are not just a mathematical curiosity. The simple
+gamma--Poisson update below also explains why gamma factors are convenient in
+message-passing algorithms. It is important, however, to distinguish that
+one-variable conjugate calculation from ``tsdate``'s actual edge factor,
+which depends on the *difference* between a parent and child time and is
+handled by Expectation Propagation and moment matching :cite:`tsdate_vg`.
 
 .. list-table::
    :header-rows: 1
@@ -1230,7 +1243,7 @@ simplified form in several other Timepieces.
    * - Poisson(:math:`\lambda`)
      - Gamma(:math:`\alpha, \beta`)
      - Gamma(:math:`\alpha', \beta'`)
-     - **tsdate**
+     - Exact for one unknown exposure
    * - Binomial(:math:`n, p`)
      - Beta(:math:`a, b`)
      - Beta(:math:`a', b'`)
@@ -1238,13 +1251,13 @@ simplified form in several other Timepieces.
    * - Normal(:math:`\mu, \sigma^2`)
      - Normal(:math:`\mu_0, \sigma_0^2`)
      - Normal(:math:`\mu', \sigma'^2`)
-     - **PHLASH** (approx.)
+     - Generic Gaussian models
 
 The Gamma-Poisson Conjugacy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This is the most important conjugacy for this book, because it is the
-foundation of ``tsdate``'s variational gamma algorithm.
+This is a useful exact conjugacy and a stepping stone toward understanding
+gamma approximations in node-dating algorithms.
 
 **Setup.** Suppose the number of mutations :math:`k` on a branch of length
 :math:`t` follows a Poisson distribution with rate :math:`\mu t`:
@@ -1281,7 +1294,7 @@ This is the Bayesian update rule:
 - **Rate update**: :math:`\beta' = \beta + \mu` (the mutation rate adds to
   the rate parameter).
 
-.. admonition:: Biology Aside -- What the Bayesian update means for node dating
+.. admonition:: Biology Aside -- A simplified branch-length update
 
    Consider a branch in a genealogy with 3 observed mutations and a
    per-branch mutation rate of :math:`\mu = 0.5` per coalescent unit. If our
@@ -1296,11 +1309,14 @@ This is the Bayesian update rule:
    :math:`2/1.5 = 1.33` -- the data (no mutations suggesting a shorter
    branch) have pulled the estimate downward.
 
-   This is exactly what ``tsdate`` does at every edge in the tree sequence:
-   it starts with a coalescent prior, observes the mutation data, and
-   updates to a gamma posterior. The Expectation Propagation algorithm
-   (see :ref:`tsdate_variational_gamma`) iterates these updates across the
-   tree until the node age estimates are globally consistent.
+   This calculation treats the branch length :math:`t` itself as the one
+   unknown. In ``tsdate``, an edge length is :math:`t_p-t_c`, so its Poisson
+   factor couples two node ages and is not conjugate to independent gamma
+   marginals for :math:`t_p` and :math:`t_c`. The variational-gamma algorithm
+   removes an edge's current approximate factors, combines the true coupled
+   factor with the remaining ``cavity`` distribution, and moment-matches new
+   gamma marginals. Those are approximate EP updates, not repeated
+   :math:`(\alpha+k,\beta+\mu)` updates :cite:`tsdate_vg`.
 
 .. code-block:: python
 
@@ -1394,9 +1410,10 @@ The result is the kernel of a Beta distribution:
    p \mid k \;\sim\; \text{Beta}(a + k, \; b + n - k)
 
 The update rule is: add the observed successes to :math:`a`, and add the
-observed failures to :math:`b`. The prior "pseudo-counts" :math:`a` and
-:math:`b` act as if we had already seen :math:`a-1` successes and
-:math:`b-1` failures before collecting any data.
+observed failures to :math:`b`. Calling :math:`a` and :math:`b`
+"pseudo-counts" is useful shorthand, but the exact offset depends on what is
+being matched: the beta density has exponents :math:`a-1` and :math:`b-1`,
+whereas its mean has denominator :math:`a+b`.
 
 .. code-block:: python
 
@@ -1443,12 +1460,11 @@ observed failures to :math:`b`. The prior "pseudo-counts" :math:`a` and
    This is computationally free -- no MCMC needed, no approximation
    required.
 
-   In ``tsdate``, the gamma-Poisson conjugacy is what makes Expectation
-   Propagation feasible: at each step, the algorithm absorbs the information
-   from one mutation observation by simply updating :math:`\alpha` and
-   :math:`\beta`. Thousands of these updates can be performed in
-   milliseconds. Without conjugacy, each update would require an expensive
-   numerical integration.
+   ``tsdate`` gains efficiency from representing approximate node marginals
+   with two gamma natural parameters, but its EP projection also evaluates
+   moments of a coupled parent--child edge factor. The current implementation
+   contains distinct rootward, leafward, and two-node projection routines;
+   it does not apply the scalar update above verbatim :cite:`tsdate_vg`.
 
 
 Bayesian inference in this book appears in:
@@ -1456,9 +1472,10 @@ Bayesian inference in this book appears in:
 - **ARGweaver**: MCMC sampling over ARGs, with a coalescent prior on the
   genealogy
 - **SINGER**: MCMC sampling with data-informed proposals (SGPR)
-- **tsdate**: Expectation Propagation with a coalescent prior on node ages
-  (gamma-Poisson conjugacy)
-- **PHLASH**: SVGD with a Gaussian smoothness prior on the demographic history
+- **tsdate**: Expectation Propagation with gamma approximations to node-age
+  marginals and coupled Poisson edge factors
+- **PHLASH**: SVGD targeting a posterior over randomly discretized population
+  size histories
 
 
 Composite and Approximate Likelihoods
@@ -1468,21 +1485,27 @@ In many settings, computing the exact likelihood is too expensive. Several
 Timepieces use **approximations** that retain the essential structure while
 being computationally feasible.
 
-- **Composite likelihood**: treats different parts of the data as independent
-  when they are not. For example, ``momi2`` treats each SNP as independent
-  (ignoring linkage), and PHLASH combines an SFS likelihood with a pairwise
-  HMM likelihood. Composite likelihoods give consistent parameter estimates
-  but require corrections (Godambe information matrix, block bootstrap) for
-  accurate uncertainty quantification.
+- **Composite likelihood**: multiplies valid component likelihoods without
+  modeling their full joint dependence. For example, ``momi2`` uses the SFS
+  while ignoring linkage among SNPs, and PHLASH multiplies marginal PSMC
+  likelihoods across genomes and adds SFS and optional LD terms
+  :cite:`momi2,phlash`. Composite-likelihood estimators can be consistent
+  under correct component models, identifiability, and suitable dependence
+  conditions, but this is not automatic. Naive inverse-Hessian standard
+  errors generally require a sandwich/Godambe correction or a block
+  bootstrap.
 
-- **Pairwise likelihood**: instead of modeling all :math:`n` samples jointly,
-  PSMC and SMC++ model the coalescence of a single pair of haplotypes at a
-  time. This reduces an :math:`n`-sample problem to a 2-sample problem at the
-  cost of ignoring higher-order genealogical correlations.
+- **Pairwise and conditional likelihoods**: PSMC models the two haplotypes in
+  one diploid genome. SMC++ does not simply repeat a two-sample PSMC: it tracks
+  the coalescence time of a distinguished pair while its emissions use the
+  conditional SFS of the remaining, undistinguished lineages. Multiple choices
+  of the distinguished pair can then be combined as a composite likelihood
+  :cite:`psmc,smcpp`.
 
-- **Pseudo-likelihood**: tsinfer uses a heuristic likelihood based on the
-  Li-Stephens copying model, which approximates the full genealogical
-  likelihood with a computationally tractable HMM.
+- **Copying-model objective**: tsinfer uses Li--Stephens-style matching to
+  choose parsimonious copying paths when building and matching ancestors. It
+  is an algorithmic approximation for topology inference, not a calibrated
+  likelihood for demographic parameters :cite:`tsinfer,lshmm`.
 
 These approximations are not defects -- they are engineering choices that make
 inference possible at genomic scale. Understanding *which* approximation each
@@ -1493,12 +1516,14 @@ for interpreting results correctly.
 Worked Example: Composite Likelihood from Two Data Sources
 ------------------------------------------------------------
 
-PHLASH combines an SFS likelihood with a pairwise coalescent HMM likelihood.
-Here we build a simplified version to show how composite likelihoods work.
+PHLASH combines marginal PSMC likelihoods with an SFS penalty and, when
+requested, an LD-summary term :cite:`phlash`. Here we build a deliberately
+simpler two-summary example to show the arithmetic of a composite objective;
+it is not a reimplementation of PHLASH.
 
 Suppose we want to estimate the effective population size :math:`N_e` (or
 equivalently, the coalescence rate :math:`\lambda = 1/(2N_e)`) using two
-independent data sources:
+summaries of genetic data:
 
 1. **The SFS**: from a sample of :math:`n` chromosomes, we observe counts of
    segregating sites at each frequency.
@@ -1532,13 +1557,13 @@ multiplies them (adds the log-likelihoods):
    def het_log_likelihood(theta, n_het, n_sites):
        """Binomial log-likelihood for heterozygosity.
 
-       The expected heterozygosity per site is approximately
-       theta / (theta + n_sites) for small theta, or more precisely,
-       the probability of a het site is 1 - exp(-theta / n_sites)
-       under the Poisson model.
+       Marginalizing exp(-2*mu*T) over an exponential pairwise
+       coalescence time gives p_het = theta_site/(1 + theta_site),
+       where theta_site = theta_region/n_sites.
        """
        # Expected fraction of heterozygous sites
-       p_het = 1.0 - np.exp(-theta / n_sites)
+       theta_site = theta / n_sites
+       p_het = theta_site / (1.0 + theta_site)
        p_het = np.clip(p_het, 1e-300, 1 - 1e-300)
        n_hom = n_sites - n_het
        return n_het * np.log(p_het) + n_hom * np.log(1.0 - p_het)
@@ -1555,7 +1580,8 @@ multiplies them (adds the log-likelihoods):
    D_obs = np.random.poisson(xi_true)
 
    # Source 2: heterozygosity
-   p_het_true = 1.0 - np.exp(-theta_true / n_sites)
+   theta_site_true = theta_true / n_sites
+   p_het_true = theta_site_true / (1.0 + theta_site_true)
    n_het = np.random.binomial(n_sites, p_het_true)
 
    # Compute individual and composite log-likelihoods
@@ -1588,13 +1614,15 @@ multiplies them (adds the log-likelihoods):
    pairwise HMM captures linkage but only for one pair. By adding their
    log-likelihoods, we get an estimate that benefits from both sources.
 
-   The catch is that the two sources are not truly independent (they arise
-   from the same genealogy), so the composite likelihood overestimates its
-   own precision. The composite MLE is still *consistent* -- it converges to
-   the true value with enough data -- but the standard errors from the
-   composite likelihood are too small. This is why PHLASH uses the posterior
-   (via SVGD with a prior) rather than the curvature of the composite
-   likelihood for uncertainty quantification.
+   The catch is that the two summaries are not truly independent (they arise
+   from overlapping genealogical information), so curvature alone does not
+   determine estimator variance. Under suitable conditions the composite
+   estimator remains consistent, but uncertainty is governed by both score
+   variability and expected curvature. A posterior formed from an unadjusted
+   composite likelihood can likewise be miscalibrated; using SVGD does not by
+   itself restore the missing dependence. PHLASH therefore evaluates the
+   calibration of its composite-likelihood posterior empirically
+   :cite:`phlash`.
 
 
 .. _amortized_inference:
@@ -1602,22 +1630,26 @@ multiplies them (adds the log-likelihoods):
 The Other Paradigm: Neural Networks and Amortized Inference
 =============================================================
 
-Every Timepiece in this book follows the classical paradigm: **define a
-generative model, derive (or approximate) the likelihood, optimize or sample**.
-In recent years, a fundamentally different approach has emerged from machine
-learning: **amortized inference** via neural networks.
+The inferential Timepieces in this book mostly follow a classical paradigm:
+**define a generative model, derive an exact or approximate objective, then
+optimize or sample**. Simulation-based inference (SBI) offers another route
+when a simulator is available but its likelihood is unavailable or too costly
+to evaluate. Some SBI procedures use neural networks and amortize the cost of
+inference across many datasets; others, including classical approximate
+Bayesian computation (ABC), are neither neural nor amortized.
 
 The key idea
 -------------
 
-Instead of computing the likelihood for each new dataset, amortized inference
-trains a neural network to *learn the mapping* from data to parameters
-directly:
+Instead of running a new optimizer or sampler from scratch for each dataset,
+an amortized estimator trains a network to learn a reusable conditional
+mapping. Depending on the method, its output may be a point estimate, a
+likelihood ratio, a likelihood surrogate, or an approximate posterior:
 
 .. code-block:: text
 
    Classical (this book):    Data  ->  Likelihood function  ->  Optimizer/MCMC  ->  Parameters
-   Amortized:                Data  ->  Trained neural network  ->  Parameters (instantly)
+   Amortized:                Data  ->  Trained network  ->  Estimate or distribution
 
 The training process is:
 
@@ -1625,28 +1657,31 @@ The training process is:
    under randomly sampled parameters.
 2. **Train** a neural network to predict the parameters (or the full
    posterior) from each simulated dataset.
-3. **Apply** the trained network to the real data to get parameter estimates
-   in milliseconds.
+3. **Apply** the trained network to observed data, then validate calibration
+   and simulation-to-observation fit.
 
-This approach goes by many names: **simulation-based inference (SBI)**,
-**neural posterior estimation (NPE)**, **likelihood-free inference**, or
-**approximate Bayesian computation with neural density estimators (ABC-NDE)**.
-Tools like ``dadi-ml``, ``pg-gan``, ``dinf``, ``popai``, and ``sbi``
-implement variants of this idea for population genetics.
+The terms are related but not synonyms. **Simulation-based inference** is the
+umbrella; **neural posterior estimation**, **neural likelihood estimation**,
+and **neural ratio estimation** are different SBI objectives. ABC accepts or
+weights simulations using a discrepancy and need not contain a neural density
+estimator. "Likelihood-free" means that inference does not evaluate the
+likelihood, not that the generative model lacks one.
 
 What amortized inference does well
 ------------------------------------
 
-- **Speed at inference time.** Once trained, a neural network produces
-  estimates in milliseconds -- compared to hours or days for MCMC. This is
-  transformative for large-scale studies with thousands of populations.
+- **Speed at inference time.** Once trained, a network can make each
+  subsequent conditional-density or parameter evaluation inexpensive. The
+  up-front simulation and training cost is worthwhile mainly when it can be
+  reused.
 - **Flexibility with summary statistics.** Neural networks can learn which
   features of the data are informative, without requiring the user to derive
   a likelihood function. This is powerful for complex models where the
   likelihood is intractable.
-- **Scalability to complex models.** Models with many populations, continuous
-  migration, and selection can be handled by simulating from them, even when
-  no analytical likelihood exists.
+- **Access to simulator-defined models.** Complex migration or selection
+  models can be considered even when their analytical likelihood is
+  unavailable, provided the simulator is accurate and the parameter space can
+  be covered adequately.
 
 What likelihood-based inference does well
 -------------------------------------------
@@ -1656,57 +1691,58 @@ What likelihood-based inference does well
   why a particular estimate was returned, and know exactly which assumptions
   are made. Neural networks are harder to interrogate -- their internal
   representations are opaque.
-- **Statistical guarantees.** MLEs have well-understood asymptotic properties
-  (consistency, efficiency, normality). Bayesian posteriors from MCMC
-  converge to the true posterior under mild conditions. Neural amortized
-  estimators provide no such guarantees in general -- their quality depends
-  on the training data, the network architecture, and the summary statistics.
-- **Extrapolation.** Likelihood-based methods work for *any* parameter
-  values within the model, including regions far from the training
-  distribution. Neural networks can fail silently when the real data fall
-  outside the distribution of their training simulations -- a dangerous
-  property when studying unusual populations or novel demographic scenarios.
-- **No simulation budget.** Likelihood-based methods evaluate the model
-  analytically or via efficient numerical algorithms. Amortized methods
-  require simulating enough training data to cover the parameter space, which
-  can be prohibitively expensive for high-dimensional models.
-- **Interpretability of uncertainty.** Bayesian posteriors from MCMC or SVGD
-  have clear probabilistic interpretations. Uncertainty estimates from neural
-  networks (e.g., from neural posterior estimation) are only as reliable as
-  the network's calibration, which is difficult to verify.
+- **Established diagnostics and asymptotics.** For regular, identifiable,
+  correctly specified models, MLE and exact Bayesian procedures have mature
+  theory. MCMC is only exact in the limit when its transition kernel targets
+  the intended posterior and the chain actually converges; SVGD is itself an
+  approximation.
+- **No training-distribution shift.** A likelihood can be evaluated wherever
+  its numerical method and parameterization are valid, whereas an amortized
+  estimator may be unreliable when observed data lie outside its prior-
+  predictive training distribution. Likelihood methods can still fail through
+  model misspecification, non-identifiability, or numerical approximation.
+- **No amortization budget.** Analytical and deterministic likelihood methods
+  avoid a large reusable training set, although some likelihood estimators
+  themselves use Monte Carlo simulation.
+- **Interpretable uncertainty target.** Exact likelihood and Bayesian methods
+  define the target distribution explicitly. Neither composite likelihoods,
+  finite MCMC runs, SVGD particles, nor neural posteriors are automatically
+  calibrated; each needs diagnostics appropriate to its approximation.
 
 .. admonition:: Biology Aside -- When to use which paradigm
 
-   **Use likelihood-based methods** (the focus of this book) when:
+   **Prefer a tractable likelihood-based method** when:
 
-   - You need trustworthy uncertainty quantification (e.g., for
-     publication-quality confidence intervals on divergence times)
+   - You need calibrated uncertainty and the likelihood approximation has
+     been validated for the setting
    - The model is well-specified and the likelihood can be computed or
      well-approximated
    - Transparency and reproducibility are paramount
    - You are studying a small number of populations with a well-defined model
 
-   **Consider amortized/neural methods** when:
+   **Consider amortized neural SBI** when:
 
    - The model is too complex for any analytical likelihood (e.g., many
      populations with continuous migration and selection)
    - You need to screen many populations quickly and will follow up
-     interesting cases with more rigorous methods
+     interesting cases with targeted diagnostics or follow-up inference
    - You want to explore which summary statistics are informative
    - Speed at inference time is critical (e.g., real-time analysis pipelines)
 
    In practice, the two paradigms are **complementary**, not competing.
    Amortized methods can provide fast initial estimates that serve as starting
-   points for likelihood-based refinement. Likelihood-based methods can
-   validate the accuracy of neural estimators on specific datasets. The most
-   rigorous analyses may use both.
+   points for likelihood-based refinement. Simulation-based calibration,
+   posterior-predictive checks, and coverage tests on held-out simulations can
+   assess neural estimators; agreement with a tractable likelihood in a
+   simplified model is another useful check.
 
 Why this book focuses on the likelihood approach
 --------------------------------------------------
 
 This book is about understanding mechanisms -- opening the watch and seeing
-every gear. Likelihood-based inference is inherently mechanistic: the
-likelihood function *is* the model, expressed as a probability. Every
+every gear. Likelihood-based inference is tied closely to a generative model:
+the likelihood is that model's probability mass or density evaluated at the
+observed data and viewed as a function of its parameters. Every
 equation you derive, every algorithm you implement, directly encodes the
 biological process that generated the data. When you build a PSMC from
 scratch, you understand *exactly* how population size history maps to the
@@ -1724,8 +1760,8 @@ are prerequisites for *both* paradigms.
 Summary
 ========
 
-This chapter has equipped you with the inferential toolkit that every
-Timepiece depends on. Here is what you should take away:
+This chapter has equipped you with the inferential toolkit used by the
+inference Timepieces. Here is what you should take away:
 
 **Four distributions** that generate genetic data:
 
@@ -1748,26 +1784,28 @@ Timepiece depends on. Here is what you should take away:
    * - Gamma(:math:`\alpha, \beta`)
      - Node ages, branch lengths
      - Numerical
-     - tsdate (prior + posterior)
+     - tsdate (approximate marginals)
    * - Gaussian(:math:`\mu, \sigma^2`)
-     - Smoothness priors
+     - Data models and regularizing priors
      - :math:`\hat{\mu} = \bar{x}`
-     - PHLASH (prior on log-sizes)
+     - Generic demographic regularization
 
 **Three inference strategies**:
 
 1. **MLE** -- find the peak of the likelihood surface. Used by dadi, moments,
    momi2. Fast but gives only a point estimate.
-2. **Bayesian inference** -- compute the full posterior distribution. Used by
-   ARGweaver, SINGER, tsdate, PHLASH. More informative but computationally
-   harder.
-3. **Composite likelihood** -- combine multiple approximate likelihoods. Used
+2. **Bayesian inference** -- target a posterior distribution, exactly or by an
+   explicitly stated approximation. Used by ARGweaver, SINGER, tsdate, and
+   PHLASH.
+3. **Composite likelihood** -- combine valid component likelihoods without
+   specifying their full joint dependence. Used
    by PHLASH, momi2. A practical compromise when the exact likelihood is
    intractable.
 
-**One key conjugacy**: Gamma prior + Poisson likelihood = Gamma posterior.
-This powers ``tsdate``'s Expectation Propagation and makes fast, exact
-Bayesian updates possible.
+**One key conjugacy**: for a single unknown Poisson exposure, a gamma prior
+gives a gamma posterior. This motivates convenient gamma representations, but
+``tsdate`` must approximate its coupled parent--child factors by moment
+matching.
 
 The inferential logic, in four lines:
 
@@ -1781,10 +1819,11 @@ The inferential logic, in four lines:
    conclusions about population sizes, divergence times, migration rates, and
    selection pressures.
 
-Every Timepiece in this book implements steps 1--3 in a different way, tailored
-to different data types and biological questions. But the underlying logic is
-always the same: *the data are fixed, the model is the variable, and the
-likelihood tells you which models are consistent with reality.*
+Every inferential Timepiece implements steps 1--3 in a different way, tailored
+to different data types and biological questions. The data are fixed when the
+likelihood is viewed as a function of parameters; relative likelihood then
+measures support *within the stated model*. It does not establish that the
+model itself is true.
 
 Next: :ref:`coalescent_theory` -- the biological foundation that every
 Timepiece depends on.

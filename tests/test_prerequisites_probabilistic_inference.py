@@ -8,7 +8,7 @@ Covers:
 - Gaussian distribution: log-likelihood, smoothness prior
 - Bayesian updates: gamma-Poisson conjugacy, beta-binomial conjugacy
 - Composite likelihood: combining SFS + heterozygosity
-- MLE worked example: two-epoch SFS inference
+- MLE worked example: exact constant-size SFS scale inference
 """
 
 import numpy as np
@@ -107,12 +107,10 @@ def beta_binomial_update(a_prior, b_prior, k, n):
     return a_prior + k, b_prior + n - k
 
 
-def expected_sfs_two_epoch(n, theta, nu, T):
-    """Expected SFS for a two-epoch model (approximate)."""
+def expected_sfs_constant(n, theta):
+    """Exact expected unfolded SFS under constant population size."""
     k = np.arange(1, n)
-    base = theta / k
-    correction = 1.0 + (nu - 1.0) * (1.0 - np.exp(-T * k / nu))
-    return base * np.maximum(correction, 0.01)
+    return theta / k
 
 
 def sfs_poisson_loglik(D_obs, xi_expected):
@@ -131,7 +129,8 @@ def sfs_log_likelihood_theta(theta, D_obs, n):
 
 def het_log_likelihood(theta, n_het, n_sites):
     """Binomial log-likelihood for heterozygosity."""
-    p_het = 1.0 - np.exp(-theta / n_sites)
+    theta_site = theta / n_sites
+    p_het = theta_site / (1.0 + theta_site)
     p_het = np.clip(p_het, 1e-300, 1 - 1e-300)
     n_hom = n_sites - n_het
     return n_het * np.log(p_het) + n_hom * np.log(1.0 - p_het)
@@ -511,34 +510,34 @@ class TestBetaBinomialUpdate:
 
 
 # ===========================================================================
-# Tests for expected_sfs_two_epoch
+# Tests for expected_sfs_constant
 # ===========================================================================
 
-class TestExpectedSfsTwoEpoch:
+class TestExpectedSfsConstant:
     def test_output_length(self):
         """SFS should have n-1 entries."""
-        sfs = expected_sfs_two_epoch(20, 100.0, 1.0, 0.1)
+        sfs = expected_sfs_constant(20, 100.0)
         assert len(sfs) == 19
 
     def test_positive_entries(self):
         """All SFS entries should be positive."""
-        sfs = expected_sfs_two_epoch(20, 100.0, 2.0, 0.2)
+        sfs = expected_sfs_constant(20, 100.0)
         assert np.all(sfs > 0)
 
-    def test_expansion_vs_contraction(self):
-        """Expansion and contraction should produce different SFS."""
-        sfs_expand = expected_sfs_two_epoch(20, 100.0, 5.0, 0.2)
-        sfs_contract = expected_sfs_two_epoch(20, 100.0, 0.2, 0.2)
-        assert not np.allclose(sfs_expand, sfs_contract)
+    def test_linear_in_theta(self):
+        """Doubling theta doubles every expected SFS entry."""
+        sfs_1 = expected_sfs_constant(20, 100.0)
+        sfs_2 = expected_sfs_constant(20, 200.0)
+        assert np.allclose(sfs_2, 2 * sfs_1)
 
-    def test_neutral_baseline(self):
-        """With nu=1.0 and T=0, SFS should be close to theta/k."""
+    def test_exact_neutral_expectation(self):
+        """The exact neutral expectation is theta/k."""
         n = 20
         theta = 100.0
-        sfs = expected_sfs_two_epoch(n, theta, 1.0, 0.0)
+        sfs = expected_sfs_constant(n, theta)
         k = np.arange(1, n)
         expected = theta / k
-        assert np.allclose(sfs, expected, rtol=0.01)
+        assert np.allclose(sfs, expected)
 
 
 # ===========================================================================
@@ -568,7 +567,8 @@ class TestCompositeLikelihood:
         xi = theta_true / k
         D = np.random.poisson(xi)
 
-        p_het = 1.0 - np.exp(-theta_true / n_sites)
+        theta_site = theta_true / n_sites
+        p_het = theta_site / (1.0 + theta_site)
         n_het = np.random.binomial(n_sites, p_het)
 
         thetas = np.linspace(50, 400, 300)
