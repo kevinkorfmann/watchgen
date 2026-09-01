@@ -4,7 +4,7 @@ This module extracts and tests every Python code block from the SMC
 (Sequentially Markov Coalescent) prerequisites documentation.
 
 Code blocks tested:
-1. smc_transition       -- SMC transition on a marginal tree
+1. sample_smc_pruning_point -- Uniform pruning point on a marginal tree
 2. smc_branch_transition -- SMC branch-level transition matrix
 3. psmc_transition_density -- PSMC continuous transition density
 4. psmc_transition_cdf  -- PSMC cumulative distribution function
@@ -12,47 +12,73 @@ Code blocks tested:
 
 import numpy as np
 import pytest
+from pathlib import Path
+
+
+def adaptive_simpson(f, a, b, atol=1e-11, max_depth=20):
+    """Integrate a scalar function without sharing implementation formulas."""
+    fa, fb = f(a), f(b)
+    midpoint = (a + b) / 2
+    fm = f(midpoint)
+    whole = (b - a) * (fa + 4 * fm + fb) / 6
+
+    def refine(left, right, f_left, f_mid, f_right, estimate, tol, depth):
+        mid = (left + right) / 2
+        left_mid = (left + mid) / 2
+        right_mid = (mid + right) / 2
+        f_left_mid = f(left_mid)
+        f_right_mid = f(right_mid)
+        left_estimate = (mid - left) * (f_left + 4 * f_left_mid + f_mid) / 6
+        right_estimate = (right - mid) * (f_mid + 4 * f_right_mid + f_right) / 6
+        error = left_estimate + right_estimate - estimate
+        if depth == 0 or abs(error) <= 15 * tol:
+            return left_estimate + right_estimate + error / 15
+        return refine(
+            left, mid, f_left, f_left_mid, f_mid, left_estimate, tol / 2, depth - 1
+        ) + refine(
+            mid, right, f_mid, f_right_mid, f_right, right_estimate, tol / 2, depth - 1
+        )
+
+    return refine(a, b, fa, fm, fb, whole, atol, max_depth)
+
+
+def execute_rst_python_blocks(path):
+    """Execute Python code blocks exactly as published in an RST file."""
+    lines = Path(path).read_text().splitlines()
+    namespace = {}
+    i = 0
+    while i < len(lines):
+        if lines[i].strip() != ".. code-block:: python":
+            i += 1
+            continue
+        i += 1
+        while i < len(lines) and not lines[i].strip():
+            i += 1
+        indent = len(lines[i]) - len(lines[i].lstrip())
+        block = []
+        while i < len(lines):
+            line = lines[i]
+            if line.strip() and len(line) - len(line.lstrip()) < indent:
+                break
+            block.append(line[indent:] if line.strip() else "")
+            i += 1
+        exec("\n".join(block), namespace)
+    return namespace
 
 
 # ---------------------------------------------------------------------------
-# Code block 1: smc_transition
+# Code block 1: sample_smc_pruning_point
 # ---------------------------------------------------------------------------
 
-def smc_transition(tree_branches, recomb_rate, coal_rates):
-    """Compute SMC transition: given a marginal tree, produce the next one.
-
-    Under the SMC, recombination picks a branch (proportional to length),
-    snips above the recombination point, and the detached lineage re-coalesces
-    with one of the remaining branches -- never with a 'ghost' lineage outside
-    the current tree.
-
-    Parameters
-    ----------
-    tree_branches : list of (child, parent, lower_time, upper_time)
-    recomb_rate : float
-    coal_rates : callable
-
-    Returns
-    -------
-    dict or None
-    """
-    total_length = sum(u - l for _, _, l, u in tree_branches)
-    branch_lengths = [(u - l) for _, _, l, u in tree_branches]
-    probs = np.array(branch_lengths) / total_length
+def sample_smc_pruning_point(tree_branches):
+    """Sample a point uniformly on total branch length."""
+    branch_lengths = np.array([u - l for _, _, l, u in tree_branches])
+    if len(branch_lengths) == 0 or np.any(branch_lengths <= 0):
+        raise ValueError("tree must contain positive-length branches")
+    probs = branch_lengths / branch_lengths.sum()
     idx = np.random.choice(len(tree_branches), p=probs)
-    child, parent, lower, upper = tree_branches[idx]
-    recomb_time = np.random.uniform(lower, upper)
-    available = [(c, p, l, u) for c, p, l, u in tree_branches
-                 if u > recomb_time and (c, p, l, u) != tree_branches[idx]]
-    if not available:
-        return None
-    rejoin_idx = np.random.randint(len(available))
-    rejoin_branch = available[rejoin_idx]
-    return {
-        'recomb_branch': tree_branches[idx],
-        'recomb_time': recomb_time,
-        'rejoin_branch': rejoin_branch,
-    }
+    _, _, lower, upper = tree_branches[idx]
+    return tree_branches[idx], np.random.uniform(lower, upper)
 
 
 # Example tree used in the documentation
@@ -66,47 +92,25 @@ EXAMPLE_TREE_BRANCHES = [
 ]
 
 
-class TestSMCTransition:
-    """Tests for the smc_transition function."""
+class TestSMCPruningPoint:
 
-    def test_returns_dict_or_none(self):
-        """Verify that smc_transition returns a dict with expected keys or None."""
+    def test_returns_branch_and_time(self):
         np.random.seed(42)
-        result = smc_transition(EXAMPLE_TREE_BRANCHES, 0.01, None)
-        assert result is not None
-        assert 'recomb_branch' in result
-        assert 'recomb_time' in result
-        assert 'rejoin_branch' in result
+        branch, pruning_time = sample_smc_pruning_point(EXAMPLE_TREE_BRANCHES)
+        assert branch in EXAMPLE_TREE_BRANCHES
+        assert branch[2] <= pruning_time <= branch[3]
 
     def test_recomb_branch_is_valid(self):
         """Verify that the recombination branch is one of the tree branches."""
         np.random.seed(42)
-        result = smc_transition(EXAMPLE_TREE_BRANCHES, 0.01, None)
-        assert result['recomb_branch'] in EXAMPLE_TREE_BRANCHES
+        branch, _ = sample_smc_pruning_point(EXAMPLE_TREE_BRANCHES)
+        assert branch in EXAMPLE_TREE_BRANCHES
 
     def test_recomb_time_within_branch(self):
         """Verify that recombination time falls within the chosen branch's interval."""
         np.random.seed(42)
-        result = smc_transition(EXAMPLE_TREE_BRANCHES, 0.01, None)
-        _, _, lower, upper = result['recomb_branch']
-        assert lower <= result['recomb_time'] <= upper
-
-    def test_rejoin_branch_is_different(self):
-        """Verify that the rejoin branch is not the same as the recombination branch."""
-        np.random.seed(42)
-        for _ in range(50):
-            result = smc_transition(EXAMPLE_TREE_BRANCHES, 0.01, None)
-            if result is not None:
-                assert result['rejoin_branch'] != result['recomb_branch']
-
-    def test_rejoin_branch_extends_above_recomb_time(self):
-        """Verify that the rejoin branch has upper_time > recomb_time (SMC constraint)."""
-        np.random.seed(42)
-        for _ in range(50):
-            result = smc_transition(EXAMPLE_TREE_BRANCHES, 0.01, None)
-            if result is not None:
-                _, _, _, u = result['rejoin_branch']
-                assert u > result['recomb_time']
+        branch, pruning_time = sample_smc_pruning_point(EXAMPLE_TREE_BRANCHES)
+        assert branch[2] <= pruning_time <= branch[3]
 
     def test_branch_selection_proportional_to_length(self):
         """Verify branches are selected roughly proportional to their length."""
@@ -114,10 +118,8 @@ class TestSMCTransition:
         counts = {i: 0 for i in range(len(EXAMPLE_TREE_BRANCHES))}
         n_trials = 10000
         for _ in range(n_trials):
-            result = smc_transition(EXAMPLE_TREE_BRANCHES, 0.01, None)
-            if result is not None:
-                idx = EXAMPLE_TREE_BRANCHES.index(result['recomb_branch'])
-                counts[idx] += 1
+            branch, _ = sample_smc_pruning_point(EXAMPLE_TREE_BRANCHES)
+            counts[EXAMPLE_TREE_BRANCHES.index(branch)] += 1
 
         # Compute expected proportions from branch lengths
         lengths = [u - l for _, _, l, u in EXAMPLE_TREE_BRANCHES]
@@ -134,10 +136,15 @@ class TestSMCTransition:
     def test_reproducibility_with_seed(self):
         """Verify that results are reproducible when using the same random seed."""
         np.random.seed(42)
-        result1 = smc_transition(EXAMPLE_TREE_BRANCHES, 0.01, None)
+        result1 = sample_smc_pruning_point(EXAMPLE_TREE_BRANCHES)
         np.random.seed(42)
-        result2 = smc_transition(EXAMPLE_TREE_BRANCHES, 0.01, None)
+        result2 = sample_smc_pruning_point(EXAMPLE_TREE_BRANCHES)
         assert result1 == result2
+
+    @pytest.mark.parametrize("branches", [[], [(0, 1, 1.0, 1.0)]])
+    def test_rejects_invalid_trees(self, branches):
+        with pytest.raises(ValueError):
+            sample_smc_pruning_point(branches)
 
 
 # ---------------------------------------------------------------------------
@@ -145,7 +152,7 @@ class TestSMCTransition:
 # ---------------------------------------------------------------------------
 
 def smc_branch_transition(tau, p, rho, n_branches):
-    """Compute SMC transition probabilities between branches.
+    """Compute SINGER's stay-or-switch transition between branch states.
 
     A[i,j] = (1 - r_i) * delta(i,j) + r_i * q_j / sum(q)
 
@@ -160,10 +167,20 @@ def smc_branch_transition(tau, p, rho, n_branches):
     -------
     T : ndarray of shape (K, K)
     """
+    tau = np.asarray(tau, dtype=float)
+    p = np.asarray(p, dtype=float)
     K = n_branches
+    if tau.shape != (K,) or p.shape != (K,):
+        raise ValueError("tau and p must both have length n_branches")
+    if np.any(tau < 0) or rho < 0 or np.any(p < 0) or not np.isclose(p.sum(), 1):
+        raise ValueError("require tau >= 0, rho >= 0, and normalized p >= 0")
+    if rho == 0:
+        return np.eye(K)
     r = 1 - np.exp(-rho / 2 * tau)
     q = r * p
     q_sum = q.sum()
+    if q_sum <= 0:
+        raise ValueError("at least one positive-probability branch must have tau > 0")
     T = np.zeros((K, K))
     for i in range(K):
         for j in range(K):
@@ -171,7 +188,8 @@ def smc_branch_transition(tau, p, rho, n_branches):
                 T[i, j] = (1 - r[i]) + r[i] * q[j] / q_sum
             else:
                 T[i, j] = r[i] * q[j] / q_sum
-    assert np.allclose(T.sum(axis=1), 1.0), "Rows must sum to 1"
+    if not np.allclose(T.sum(axis=1), 1.0):
+        raise RuntimeError("transition rows do not sum to one")
     return T
 
 
@@ -251,18 +269,32 @@ class TestSMCBranchTransition:
             # All ratios should be equal (q_j / q_sum)
             np.testing.assert_allclose(ratios, ratios[0], atol=1e-12)
 
-    def test_very_small_recombination_rate(self):
-        """When rho is very small, T should be close to the identity matrix.
-
-        Note: rho=0 exactly causes a 0/0 division in q_j / q_sum, so we test
-        with a very small positive rho instead.
-        """
+    def test_zero_recombination_rate(self):
+        """At rho=0 the transition is exactly the identity."""
         K = 3
         tau = np.array([0.5, 1.0, 1.5])
         p = np.array([0.4, 0.3, 0.3])
-        rho = 1e-12  # near-zero recombination rate
+        rho = 0.0
         T = smc_branch_transition(tau, p, rho, K)
-        np.testing.assert_allclose(T, np.eye(K), atol=1e-6)
+        np.testing.assert_array_equal(T, np.eye(K))
+
+    def test_detailed_balance(self):
+        """The constructed kernel is reversible with respect to p."""
+        tau = np.array([0.2, 0.7, 1.4, 2.0])
+        p = np.array([0.1, 0.2, 0.3, 0.4])
+        T = smc_branch_transition(tau, p, 0.8, len(tau))
+        np.testing.assert_allclose(p[:, None] * T, p[None, :] * T.T, atol=1e-12)
+
+    @pytest.mark.parametrize("tau,p,rho,k", [
+        ([1.0], [1.0], -0.1, 1),
+        ([-1.0], [1.0], 0.1, 1),
+        ([1.0, 2.0], [1.0], 0.1, 2),
+        ([1.0, 2.0], [0.2, 0.2], 0.1, 2),
+        ([0.0, 0.0], [0.5, 0.5], 0.1, 2),
+    ])
+    def test_rejects_invalid_parameters(self, tau, p, rho, k):
+        with pytest.raises(ValueError):
+            smc_branch_transition(tau, p, rho, k)
 
     def test_large_recombination_rate(self):
         """With very high rho, T[i,j] should approach q_j / sum(q) for all i."""
@@ -312,11 +344,13 @@ def psmc_transition_density(t, s, rho):
     density : float or ndarray
     """
     p_no_recomb = np.exp(-rho * s)
-    p_recomb = 1 - p_no_recomb
+    p_recomb = -np.expm1(-rho * s)
     t = np.asarray(t, dtype=float)
+    if s <= 0 or rho < 0 or np.any(t < 0):
+        raise ValueError("require t >= 0, s > 0, and rho >= 0")
     density = np.zeros_like(t)
     mask_lt = t < s
-    density[mask_lt] = (p_recomb / s) * (1 - np.exp(-t[mask_lt]))
+    density[mask_lt] = (p_recomb / s) * (-np.expm1(-t[mask_lt]))
     mask_ge = t >= s
     density[mask_ge] = (p_recomb / s) * (
         np.exp(-(t[mask_ge] - s)) - np.exp(-t[mask_ge])
@@ -436,12 +470,14 @@ def psmc_transition_cdf(t, s, rho):
     cdf : float or ndarray
     """
     p_no_recomb = np.exp(-rho * s)
-    p_recomb = 1 - p_no_recomb
+    p_recomb = -np.expm1(-rho * s)
     t = np.asarray(t, dtype=float)
+    if s <= 0 or rho < 0 or np.any(t < 0):
+        raise ValueError("require t >= 0, s > 0, and rho >= 0")
     cdf = np.zeros_like(t)
     mask_lt = t < s
     cdf[mask_lt] = (p_recomb / s) * (
-        t[mask_lt] + np.exp(-t[mask_lt]) - 1
+        t[mask_lt] + np.expm1(-t[mask_lt])
     )
     mask_ge = t >= s
     cdf[mask_ge] = (p_recomb / s) * (
@@ -545,3 +581,84 @@ class TestPSMCTransitionCDF:
                 np.testing.assert_allclose(cdf_values[0], 0.0, atol=1e-10)
                 # Ends near 1
                 np.testing.assert_allclose(cdf_values[-1], 1.0, atol=0.01)
+
+
+class TestPSMCIndependentValidation:
+    """Independent quadrature, calculus, limit, and simulation checks."""
+
+    @pytest.mark.parametrize("s,rho", [(0.2, 0.01), (1.0, 0.5), (3.0, 4.0)])
+    def test_adaptive_quadrature_plus_atom_is_one(self, s, rho):
+        f = lambda x: float(psmc_transition_density(np.array([x]), s, rho)[0])
+        # Split at the density's piecewise boundary. At s + 50 the omitted
+        # exponential tail is below 2e-22 times its finite prefactor.
+        continuous = adaptive_simpson(f, 0, s) + adaptive_simpson(f, s, s + 50)
+        assert continuous + np.exp(-rho * s) == pytest.approx(1.0, abs=1e-10)
+
+    @pytest.mark.parametrize("s,rho,t", [(1.0, 0.5, 0.3), (1.0, 0.5, 2.0)])
+    def test_cdf_derivative_matches_density_away_from_atom(self, s, rho, t):
+        h = 1e-5
+        derivative = (
+            psmc_transition_cdf(np.array([t + h]), s, rho)[0]
+            - psmc_transition_cdf(np.array([t - h]), s, rho)[0]
+        ) / (2 * h)
+        density = psmc_transition_density(np.array([t]), s, rho)[0]
+        assert derivative == pytest.approx(density, rel=1e-7, abs=1e-9)
+
+    def test_zero_rho_is_a_point_mass_at_s(self):
+        s = 1.7
+        np.testing.assert_array_equal(
+            psmc_transition_density(np.array([0.2, s, 4.0]), s, 0),
+            np.zeros(3),
+        )
+        np.testing.assert_array_equal(
+            psmc_transition_cdf(np.array([0.2, s - 1e-9, s, 4.0]), s, 0),
+            np.array([0.0, 0.0, 1.0, 1.0]),
+        )
+
+    def test_monte_carlo_sampler_matches_analytic_cdf_and_mean(self):
+        """Generate from the defining mixture without using either formula."""
+        rng = np.random.default_rng(20260901)
+        s, rho, n = 1.3, 0.8, 200_000
+        recomb = rng.random(n) < -np.expm1(-rho * s)
+        draws = np.full(n, s)
+        count = recomb.sum()
+        draws[recomb] = rng.uniform(0, s, count) + rng.exponential(1, count)
+        for x in [0.2, 0.9, s, 2.5, 5.0]:
+            empirical = np.mean(draws <= x)
+            analytic = psmc_transition_cdf(np.array([x]), s, rho)[0]
+            assert empirical == pytest.approx(analytic, abs=0.004)
+        p_recomb = -np.expm1(-rho * s)
+        expected_mean = (1 - p_recomb) * s + p_recomb * (s / 2 + 1)
+        assert draws.mean() == pytest.approx(expected_mean, abs=0.008)
+
+    @pytest.mark.parametrize("s,rho,t", [(0, 1, 1), (1, -1, 1), (1, 1, -1)])
+    def test_invalid_domains_are_rejected(self, s, rho, t):
+        with pytest.raises(ValueError):
+            psmc_transition_density(np.array([t]), s, rho)
+        with pytest.raises(ValueError):
+            psmc_transition_cdf(np.array([t]), s, rho)
+
+
+class TestPublishedCodeParity:
+    def test_rst_blocks_execute_and_match_validated_functions(self):
+        rst = Path(__file__).parents[1] / "docs/prerequisites/smc.rst"
+        published = execute_rst_python_blocks(rst)
+        assert "sample_smc_pruning_point" in published
+        assert "smc_branch_transition" in published
+        assert "psmc_transition_density" in published
+        assert "psmc_transition_cdf" in published
+        tau = np.array([0.2, 0.5, 1.0])
+        p = np.array([0.2, 0.3, 0.5])
+        np.testing.assert_allclose(
+            published["smc_branch_transition"](tau, p, 0.7, 3),
+            smc_branch_transition(tau, p, 0.7, 3),
+        )
+        grid = np.array([0.0, 0.4, 1.0, 2.0])
+        np.testing.assert_allclose(
+            published["psmc_transition_density"](grid, 1.0, 0.7),
+            psmc_transition_density(grid, 1.0, 0.7),
+        )
+        np.testing.assert_allclose(
+            published["psmc_transition_cdf"](grid, 1.0, 0.7),
+            psmc_transition_cdf(grid, 1.0, 0.7),
+        )

@@ -32,19 +32,21 @@ Timepieces.
 The Problem with the Full Coalescent
 ======================================
 
-The coalescent with recombination (CwR) is the correct model for ancestry along
-a recombining chromosome (see :ref:`args`). But it has a fatal flaw for
-computation: the process of marginal trees along the genome is **not Markov**.
+The coalescent with recombination (CwR) is the standard large-population
+ancestral model for a recombining chromosome (see :ref:`args`). It is itself a
+limit of idealized population models, not literal biology. Its marginal-tree
+process along the genome is **not Markov**.
 
 In the CwR, the marginal tree at position :math:`x` depends on the trees at
 *all* previous positions, not just the immediately preceding one. This means we
 cannot directly plug the tree sequence into a Hidden Markov Model -- and without
 HMMs, efficient inference is out of reach.
 
-The **Sequentially Markov Coalescent (SMC)** (McVean and Cardin, 2005; Marjoram
-and Wall, 2006) is an approximation that restores the Markov property by
-excluding a class of rare events. The rest of this chapter develops this idea
-step by step.
+The **Sequentially Markov Coalescent (SMC)** was introduced by McVean and Cardin
+:cite:`mcvean_cardin2005`. Marjoram and Wall subsequently described the related
+SMC' modification :cite:`marjoram_wall2006`. These approximations restore a
+Markov description along the genome by restricting ancestral events. The rest
+of this chapter develops the basic SMC idea step by step.
 
 
 What Does "Markov" Mean, and Why Does It Matter?
@@ -97,8 +99,8 @@ every :math:`\ell`:
 Why Markov Matters for Computation
 ------------------------------------
 
-The Markov property is not just a mathematical nicety -- it is a **computational
-necessity**. Recall from the :ref:`HMM chapter <hmms>` that the forward
+The Markov property is not just a mathematical nicety -- it is what enables the
+standard HMM dynamic program. Recall from the :ref:`HMM chapter <hmms>` that the forward
 algorithm computes the likelihood of an observed sequence in :math:`O(L K^2)`
 time, where :math:`L` is the sequence length and :math:`K` is the number of
 hidden states. This efficiency relies entirely on the Markov property: at each
@@ -223,29 +225,27 @@ The Markov property is restored, and we can build an HMM.
 How Good Is the Approximation?
 ---------------------------------
 
-The events excluded by the SMC (re-coalescence with a lineage not in the
-current tree) are rare: they require a specific lineage to leave the tree and
-then return. For large sample sizes, the current tree has many branches, so
-re-coalescence with an existing branch is overwhelmingly likely anyway.
-Empirically, the SMC matches the CwR very closely for most statistics of
-interest.
+The events excluded by SMC require ancestral information absent from the
+current marginal tree. Their importance depends on recombination distance,
+sample size, and the statistic being studied; they are not uniformly
+negligible. SMC' permits additional re-coalescences, including events that can
+leave the marginal tree unchanged, and was introduced to improve agreement
+with the CwR :cite:`marjoram_wall2006`.
 
-Think of it this way: the approximation removes a set of paths through the ARG
-that are both rare and difficult to track. The resulting model captures the vast
-majority of the probability mass while gaining the enormous computational
-advantage of the Markov property.
+Think of it this way: the approximation removes paths through the ARG that are
+difficult to summarize by the current tree. The gain is a tractable Markov
+model; the accuracy cost must be assessed for the application.
 
 .. code-block:: python
 
    import numpy as np
 
-   def smc_transition(tree_branches, recomb_rate, coal_rates):
-       """Compute SMC transition: given a marginal tree, produce the next one.
+   def sample_smc_pruning_point(tree_branches):
+       """Sample the pruning point used to begin an SMC transition.
 
-       Under the SMC, recombination picks a branch (proportional to length),
-       snips above the recombination point, and the detached lineage re-coalesces
-       with one of the remaining branches -- never with a 'ghost' lineage outside
-       the current tree.
+       This implements only the exact first step: choose a point uniformly on
+       the current tree's total branch length. It deliberately does not pretend
+       to implement the time-dependent re-coalescence and topology update.
 
        Parameters
        ----------
@@ -255,17 +255,10 @@ advantage of the Markov property.
            - parent: node index of the parent end of the branch
            - lower_time: time at the child (bottom of branch)
            - upper_time: time at the parent (top of branch)
-       recomb_rate : float
-           rho/2 per unit branch length.
-       coal_rates : callable
-           coal_rates(t) returns the coalescence rate at time t.
-
        Returns
        -------
-       dict or None
-           Description of the transition (which branch was cut, where,
-           and which branch was rejoined), or None if no valid
-           re-coalescence target exists.
+       branch, time
+           The selected branch tuple and pruning time.
        """
        # Compute the total branch length of the tree.
        # The expression (u - l) computes the length of one branch;
@@ -273,17 +266,18 @@ advantage of the Markov property.
        # The syntax "_, _, l, u" is called tuple unpacking: it extracts
        # the third and fourth elements (lower_time, upper_time) from each
        # 4-tuple, ignoring the first two (child, parent) with underscores.
-       total_length = sum(u - l for _, _, l, u in tree_branches)
+       branch_lengths = np.array([u - l for _, _, l, u in tree_branches])
+       if len(branch_lengths) == 0 or np.any(branch_lengths <= 0):
+           raise ValueError("tree must contain positive-length branches")
+       total_length = branch_lengths.sum()
 
        # Probability of recombination on each branch (proportional to length).
        # This is a list comprehension: it creates a new list by computing
        # (u - l) for each branch tuple in tree_branches.
-       branch_lengths = [(u - l) for _, _, l, u in tree_branches]
-
-       # Convert to a NumPy array and normalize to get probabilities.
+       # Normalize to get probabilities.
        # Longer branches are more likely to be hit by recombination because
        # they represent more "exposure time" to the recombination process.
-       probs = np.array(branch_lengths) / total_length
+       probs = branch_lengths / total_length
 
        # Randomly pick which branch the recombination falls on,
        # weighted by branch length.
@@ -293,40 +287,13 @@ advantage of the Markov property.
        # This is tuple unpacking again: the single element
        # tree_branches[idx] is a 4-tuple, and we assign each element
        # to a separate variable.
-       child, parent, lower, upper = tree_branches[idx]
+       _, _, lower, upper = tree_branches[idx]
 
        # Pick a recombination time uniformly on the chosen branch.
        # The recombination can happen anywhere between the bottom (lower)
        # and top (upper) of this branch.
-       recomb_time = np.random.uniform(lower, upper)
-
-       # Under the SMC: re-coalesce with a branch in the CURRENT tree
-       # above the recombination time. This is the key SMC restriction --
-       # in the full CwR, we could also coalesce with ghost lineages.
-       #
-       # This list comprehension filters tree_branches to keep only those
-       # branches that:
-       #   (a) extend above the recombination time (u > recomb_time), AND
-       #   (b) are not the same branch that was cut.
-       # The "!=" comparison checks tuple inequality element by element.
-       available = [(c, p, l, u) for c, p, l, u in tree_branches
-                    if u > recomb_time and (c, p, l, u) != tree_branches[idx]]
-
-       if not available:
-           return None  # No valid re-coalescence (rare edge case)
-
-       # Choose re-coalescence branch (simplified: uniform random choice).
-       # In reality, the coalescent process determines this with rates
-       # that depend on the number of lineages at each time, but for
-       # illustration we use a uniform distribution.
-       rejoin_idx = np.random.randint(len(available))
-       rejoin_branch = available[rejoin_idx]
-
-       return {
-           'recomb_branch': tree_branches[idx],
-           'recomb_time': recomb_time,
-           'rejoin_branch': rejoin_branch,
-       }
+       pruning_time = np.random.uniform(lower, upper)
+       return tree_branches[idx], pruning_time
 
    # Example tree: ((0,1):4, (2,3):5, (4,5):6)
    # This is a tree with 4 leaf nodes (0, 1, 2, 3) and 2 internal nodes
@@ -342,23 +309,27 @@ advantage of the Markov property.
    ]
 
    np.random.seed(42)
-   result = smc_transition(tree_branches, 0.01, None)
-   if result:
-       print(f"Recombination on branch: {result['recomb_branch']}")
-       print(f"Recombination time: {result['recomb_time']:.4f}")
-       print(f"Re-join branch: {result['rejoin_branch']}")
+   branch, pruning_time = sample_smc_pruning_point(tree_branches)
+   print(f"Pruned branch: {branch}")
+   print(f"Pruning time: {pruning_time:.4f}")
+
+The next SMC step evolves the floating lineage backward with a hazard equal to
+the number of eligible lineages and updates the topology at re-coalescence. A
+uniform draw from currently visible branches is not that distribution. Exact
+simulation should use a tested implementation such as ``msprime`` with its
+``StandardCoalescent``/SMC model options :cite:`msprime`.
 
 Now that we have established the SMC approximation and its key consequence --
 the Markov property -- we can derive the transition probabilities that an HMM
 needs.
 
 
-The SMC Transition Probability
-================================
+The SINGER Branch-HMM Transition
+=================================
 
-Under the SMC, when a recombination occurs in a new lineage being threaded onto
-the tree, the probability of the lineage moving from branch :math:`b_i` to
-branch :math:`b_j` is:
+SINGER uses an SMC-motivated approximation when threading a new lineage onto a
+partial ARG. Its branch-sampling HMM assigns the transition
+:cite:`singer`:
 
 .. math::
 
@@ -373,11 +344,12 @@ where:
 - :math:`q_j = r_j \cdot p_j` weights the re-joining probability
 - :math:`\delta_{ij}` is the Kronecker delta (1 if :math:`i = j`, 0 otherwise)
 
-This transition has the classic **stay-or-switch** structure: with probability
+This is not the general SMC transition kernel on whole marginal trees. It is a
+branch-state kernel used inside SINGER. It has the classic **stay-or-switch** structure: with probability
 :math:`1 - r_i`, nothing happens and we stay on the same branch; with
 probability :math:`r_i`, a recombination occurs and we jump to a new branch
-chosen according to the weights :math:`q_j`. This is exactly the Li-Stephens
-transition structure from the :ref:`HMM chapter <hmms>`.
+chosen according to the weights :math:`q_j`. This is the generalized
+Li--Stephens-type structure from the :ref:`HMM chapter <hmms>`.
 
 Deriving :math:`r_i`: The Recombination Probability
 ------------------------------------------------------
@@ -418,21 +390,18 @@ stationary distribution satisfies :math:`\pi_j = \sum_i \pi_i A_{ij}`:
    A **stationary distribution** :math:`\pi` of a Markov chain with transition
    matrix :math:`A` is a probability vector such that :math:`\pi A = \pi`. If the
    chain starts in distribution :math:`\pi`, it stays in distribution :math:`\pi`
-   forever. Requiring that the SMC chain have stationary distribution
-   :math:`p_i` (the coalescence probability for branch :math:`i`) ensures that
-   the chain is consistent with the coalescent in equilibrium.
+   forever. Here, choosing :math:`q_j=r_jp_j` makes the supplied vector
+   :math:`p` stationary by construction. Whether :math:`p` accurately
+   represents the desired branch-joining distribution is a separate modeling
+   question.
 
-The product :math:`r_j \cdot p_j` also has a physical interpretation: after a
-recombination at time :math:`u`, the lineage must re-coalesce at some time
-:math:`t > u`. Branches with higher representative times (larger :math:`\tau_j`)
-are more likely to be "available" for re-coalescence, and :math:`r_j` captures
-this effect. The coalescence probability :math:`p_j` captures the intrinsic
-likelihood of joining branch :math:`j`.
+The product :math:`r_jp_j` should therefore be read as SINGER's target weight,
+not as a universal physical re-coalescence probability for every SMC model.
 
 .. code-block:: python
 
    def smc_branch_transition(tau, p, rho, n_branches):
-       """Compute SMC transition probabilities between branches.
+       """Compute SINGER's stay-or-switch transition between branch states.
 
        This implements the stay-or-switch transition matrix:
            A[i,j] = (1 - r_i) * delta(i,j)  +  r_i * q_j / sum(q)
@@ -446,7 +415,7 @@ likelihood of joining branch :math:`j`.
        p : ndarray of shape (K,)
            Coalescence probability for each branch.
        rho : float
-           Population-scaled recombination rate (4*Ne*r*m per bin).
+           Effective population-scaled recombination parameter for this bin.
        n_branches : int
            Number of branches (K).
 
@@ -455,7 +424,15 @@ likelihood of joining branch :math:`j`.
        T : ndarray of shape (K, K)
            Transition matrix where T[i, j] = P(next branch = j | current = i).
        """
+       tau = np.asarray(tau, dtype=float)
+       p = np.asarray(p, dtype=float)
        K = n_branches
+       if tau.shape != (K,) or p.shape != (K,):
+           raise ValueError("tau and p must both have length n_branches")
+       if np.any(tau < 0) or rho < 0 or np.any(p < 0) or not np.isclose(p.sum(), 1):
+           raise ValueError("require tau >= 0, rho >= 0, and normalized p >= 0")
+       if rho == 0:
+           return np.eye(K)
 
        # Recombination probability for each branch:
        # r_i = 1 - exp(-rho/2 * tau_i)
@@ -468,6 +445,8 @@ likelihood of joining branch :math:`j`.
 
        # Sum of all re-joining weights (used to normalize).
        q_sum = q.sum()
+       if q_sum <= 0:
+           raise ValueError("at least one positive-probability branch must have tau > 0")
 
        # Build the K x K transition matrix.
        # T[i, j] is the probability of transitioning from branch i to branch j.
@@ -483,7 +462,8 @@ likelihood of joining branch :math:`j`.
                    T[i, j] = r[i] * q[j] / q_sum
 
        # Verify rows sum to 1 (each row is a probability distribution).
-       assert np.allclose(T.sum(axis=1), 1.0), "Rows must sum to 1"
+       if not np.allclose(T.sum(axis=1), 1.0):
+           raise RuntimeError("transition rows do not sum to one")
        return T
 
    # Example: 5 branches with different representative times and
@@ -498,8 +478,8 @@ likelihood of joining branch :math:`j`.
    print(np.round(T, 4))
    print(f"\nRow sums: {T.sum(axis=1)}")
 
-With the general SMC transition structure in hand, we now turn to the simplest
-and most important special case: the pairwise (two-sequence) version.
+With this SINGER-specific branch transition in hand, we now turn to a distinct
+pairwise SMC construction in which the hidden state is a coalescence time.
 
 
 PSMC: The Pairwise Case
@@ -526,14 +506,18 @@ variable rather than a discrete branch index. The transition density
 :math:`q_\rho(t \mid s)` gives the probability density of the new coalescence
 time :math:`t` given that the previous coalescence time was :math:`s`.
 
-Let us derive this transition density from first principles.
+The following is the one-effective-recombination kernel used in this
+introductory PSMC construction. It is a mixed distribution with a point mass
+and a continuous component; the finite-bin kernel is an approximation to the
+full along-genome process :cite:`psmc`.
 
 **Step 1: Does a recombination happen?**
 
 The two lineages form a branch of total length :math:`2s` (two lineages, each
 of length :math:`s`, but since we measure the rate :math:`\rho/2` per lineage
-the effective rate along both lineages together is :math:`\rho s`). The
-probability of *at least one* recombination is:
+the effective rate along both lineages together is :math:`\rho s`). For the
+interval between adjacent observations, the probability of at least one
+pruning event is:
 
 .. math::
 
@@ -585,18 +569,18 @@ coalescence time stays at :math:`s`. This is a **point mass** at :math:`t = s`:
 
 **Step 2: Where does the recombination happen?**
 
-Conditioned on a recombination occurring, let :math:`u` be the recombination time.
-Under the SMC, :math:`u` is **uniform** on :math:`[0, s]` (the branch extends
-from the present at 0 to the coalescence at :math:`s`). So:
+Conditioned on representing the interval by one effective pruning event, let
+:math:`u` be its time. An SMC pruning point is uniform on total tree length;
+for two equal branches this makes :math:`u` **uniform** on :math:`[0,s]`. Thus:
 
 .. math::
 
    p(u \mid \text{recomb}) = \frac{1}{s}, \quad 0 \leq u \leq s
 
-The recombination can strike anywhere along the branch with equal probability.
-This is because, given that at least one recombination event occurred on a
-branch of length :math:`s` (under a Poisson process), the location of the
-*first* event is approximately uniform for the rates we consider.
+This is not the distribution of the earliest event in *time* conditional on a
+temporal Poisson process. It follows from selecting an SMC pruning point
+uniformly over branch length after the genomic interval has been represented
+by one effective event :cite:`mcvean_cardin2005`.
 
 **Step 3: Where does the lineage re-coalesce?**
 
@@ -717,17 +701,17 @@ Therefore:
 
 **Step 5: Include the no-recombination probability.**
 
-Combining the recombination probability :math:`(1 - e^{-\rho s})` with the
+Combining the pruning probability :math:`(1 - e^{-\rho s})` with the
 conditional density :math:`q_0(t \mid s)`, and adding the point mass for the
 no-recombination case:
 
 .. math::
 
-   q_\rho(t \mid s) = \begin{cases}
-   \frac{1 - e^{-\rho s}}{s}[1 - e^{-t}] & t < s \\[6pt]
-   e^{-\rho s} & t = s \text{ (point mass: no recombination)} \\[6pt]
-   \frac{1 - e^{-\rho s}}{s}[e^{-(t-s)} - e^{-t}] & t > s
-   \end{cases}
+   K(dt\mid s) = e^{-\rho s}\,\delta_s(dt)
+   + (1-e^{-\rho s})q_0(t\mid s)\,dt.
+
+Writing the atom as a separate measure avoids treating its probability mass as
+an ordinary density value at :math:`t=s`.
 
 **Verification: Does the density integrate to 1?**
 
@@ -801,15 +785,14 @@ gives total probability :math:`(1 - e^{-\rho s}) + e^{-\rho s} = 1`.
        density : float or ndarray
            The continuous part of the transition density at each t.
        """
-       # Probability of no recombination on the pair of branches.
-       p_no_recomb = np.exp(-rho * s)
-
        # Probability that at least one recombination occurs.
-       p_recomb = 1 - p_no_recomb
+       p_recomb = -np.expm1(-rho * s)
 
        # Convert t to a NumPy array so we can use boolean indexing.
        # The dtype=float ensures we get floating-point arithmetic.
        t = np.asarray(t, dtype=float)
+       if s <= 0 or rho < 0 or np.any(t < 0):
+           raise ValueError("require t >= 0, s > 0, and rho >= 0")
 
        # Initialize output array to zero (same shape as t).
        density = np.zeros_like(t)
@@ -817,7 +800,7 @@ gives total probability :math:`(1 - e^{-\rho s}) + e^{-\rho s} = 1`.
        # Case 1: t < s (new coalescence time is earlier than old).
        # mask_lt is a boolean array: True where t < s, False elsewhere.
        mask_lt = t < s
-       density[mask_lt] = (p_recomb / s) * (1 - np.exp(-t[mask_lt]))
+       density[mask_lt] = (p_recomb / s) * (-np.expm1(-t[mask_lt]))
 
        # Case 2: t >= s (new coalescence time is later than old).
        # Note: at the single point t = s, the continuous density is
@@ -839,18 +822,19 @@ gives total probability :math:`(1 - e^{-\rho s}) + e^{-\rho s} = 1`.
    print(f"Transition density from s={s}, rho={rho}:")
    print(f"  Peak near t={t_values[np.argmax(densities)]:.2f}")
 
-   # np.trapz approximates the integral using the trapezoidal rule.
+   # np.trapezoid approximates the integral using the trapezoidal rule.
    # This should be close to (1 - exp(-rho * s)), the recombination probability.
-   print(f"  Integral (approx): {np.trapz(densities, t_values):.4f}")
+   print(f"  Integral (approx): {np.trapezoid(densities, t_values):.4f}")
 
    # The "missing mass" is the point mass at t = s (no recombination).
    print(f"  Missing mass (at t=s): {np.exp(-rho * s):.4f}")
 
    # Together they should sum to 1.
-   print(f"  Total: {np.trapz(densities, t_values) + np.exp(-rho * s):.4f}")
+   print(f"  Total: {np.trapezoid(densities, t_values) + np.exp(-rho * s):.4f}")
 
-The PSMC transition density is the foundation of the PSMC's time-discretized
-HMM (see :ref:`psmc_overview`) and of SINGER's **time sampling** step.
+This mixed kernel motivates time discretization in PSMC (see
+:ref:`psmc_overview`) and the related construction used in SINGER's **time
+sampling** step :cite:`psmc,singer`.
 
 
 The Cumulative Distribution Function
@@ -986,17 +970,19 @@ In summary:
        p_no_recomb = np.exp(-rho * s)
 
        # Probability of recombination (weight of the continuous part).
-       p_recomb = 1 - p_no_recomb
+       p_recomb = -np.expm1(-rho * s)
 
        # Convert t to a NumPy array for vectorized computation.
        t = np.asarray(t, dtype=float)
+       if s <= 0 or rho < 0 or np.any(t < 0):
+           raise ValueError("require t >= 0, s > 0, and rho >= 0")
        cdf = np.zeros_like(t)
 
        # Case 1: t < s
        # CDF is the integral of the density from 0 to t.
        mask_lt = t < s
        cdf[mask_lt] = (p_recomb / s) * (
-           t[mask_lt] + np.exp(-t[mask_lt]) - 1
+           t[mask_lt] + np.expm1(-t[mask_lt])
        )
 
        # Case 2: t >= s
@@ -1039,12 +1025,13 @@ The SMC provides ingredients 1 and 2. Here is the mapping:
    Without the SMC approximation (in the full CwR), we would need the entire
    tree history, and the HMM framework would not apply.
 
-2. **Conditional independence**: Given the tree at position :math:`\ell`, the
-   mutations at that position are independent of mutations at other positions.
-   This gives us emission probabilities :math:`P(X_\ell \mid Z_\ell)` that
-   depend only on the current hidden state, as HMMs require.
+2. **Conditional independence**: Under the usual site-independent mutation
+   model, the observation at position :math:`\ell` depends on its local hidden
+   genealogy (and mutation parameters), not observations at other positions.
+   This gives emission probabilities :math:`P(X_\ell \mid Z_\ell)` of the form
+   required by an HMM.
 
-3. **Li-Stephens structure**: The SMC transition probability has the
+3. **Li--Stephens structure in SINGER**: The branch-HMM transition above has the
    stay-or-switch form :math:`(1 - r_i)\delta_{ij} + r_i \cdot (\text{weights})`,
    which enables :math:`O(K)` forward steps instead of :math:`O(K^2)`.
    This is the same structure we studied in the :ref:`HMM chapter <hmms>`.
@@ -1072,8 +1059,8 @@ Summary
      - Ancestral lineages not in the current tree that could reappear in the CwR
    * - SMC approximation
      - Re-coalescence only with current tree branches; eliminates ghost lineages
-   * - SMC transitions
-     - Li-Stephens structure: :math:`(1-r_i)\delta_{ij} + r_i \frac{q_j}{\sum q}`
+   * - SINGER branch transitions
+     - Li--Stephens-type structure: :math:`(1-r_i)\delta_{ij} + r_i \frac{q_j}{\sum q}`
    * - PSMC transitions
      - Continuous-time density :math:`q_\rho(t|s)` and CDF :math:`Q_\rho(t|s)` for pairwise coalescence
    * - SMC + HMM
