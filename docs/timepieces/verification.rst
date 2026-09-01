@@ -38,8 +38,8 @@ The Timepieces are grouped by what they do, with verification status for each.
        coalescent cannot.
    * - XVIII
      - :ref:`discoal <discoal_timepiece>`
-     - 132
-     - --
+     - 32
+     - 2026-09-01
      - Coalescent simulation with selective sweeps via trajectory + structured coalescent.
 
 **Demographic inference** -- estimating population size history
