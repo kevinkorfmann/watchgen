@@ -66,9 +66,9 @@ time, you want to figure out what the weather has been doing.
 
 The weather follows a simple pattern:
 
-- If today is sunny, there is a 90% chance tomorrow is also sunny (weather tends
+- If today is sunny, there is a 95% chance tomorrow is also sunny (weather tends
   to persist).
-- If today is rainy, there is an 80% chance tomorrow is also rainy.
+- If today is rainy, there is a 90% chance tomorrow is also rainy.
 - When it is sunny, your colleague carries an umbrella only 10% of the time.
 - When it is rainy, your colleague carries an umbrella 80% of the time.
 
@@ -81,8 +81,10 @@ This is a two-state HMM:
 - **Emission probabilities**: The chance of seeing an umbrella given the weather
 
 Now, if you observe the sequence (Umbrella, Umbrella, No umbrella, Umbrella),
-what was the weather? This is the fundamental HMM inference question. The forward
-algorithm, which we develop below, gives us a principled way to answer it.
+what was the weather? This is the fundamental HMM inference question. The
+forward algorithm developed below computes filtered state probabilities;
+stochastic traceback later uses them to sample complete weather histories
+conditional on all observations.
 
 In genetics, replace "sunny/rainy" with "which branch of the genealogical tree
 the lineage sits on" and "umbrella/no umbrella" with "derived allele / ancestral
@@ -286,9 +288,11 @@ Let's implement a basic HMM:
 The Forward Algorithm
 ======================
 
-We now arrive at the first major computational tool: the **forward algorithm**.
-This algorithm answers the question: "Given a sequence of observations, how
-likely is each hidden state at each position?"
+We now arrive at the first major computational tool: the **forward algorithm**
+:cite:`rabiner1989`. It answers a filtering question: "Given observations up
+through the current position, how likely is each current hidden state?" It does
+not by itself give the smoothed marginal at an earlier position conditional on
+future observations.
 
 Think of it this way. Behind the watch face, many different gear configurations
 could produce the hand positions you observe. The forward algorithm systematically
@@ -724,10 +728,11 @@ would have :math:`K \approx 2000` states and :math:`K^2 = 4{,}000{,}000`
 operations per genomic position. Multiply by millions of positions and the
 computation becomes intractable.
 
-The **Li-Stephens model** (Li and Stephens, 2003) exploits a special structure in
-the transition matrix that reduces the per-position cost from :math:`O(K^2)` to
-:math:`O(K)`. This is the single most important computational trick in HMM-based
-ARG inference.
+The original **Li--Stephens copying model** :cite:`lshmm` exploits a special
+stay-or-jump structure in the transition matrix that reduces the per-position
+cost from :math:`O(K^2)` to :math:`O(K)`. The state-dependent form below is a
+useful generalization of that structure and matches the factorization used
+later for SINGER; it is not a verbatim statement of the original copying model.
 
 The Li-Stephens Transition Structure
 --------------------------------------
@@ -797,8 +802,10 @@ and the transition matrix is:
    \end{pmatrix}
 
 Notice the structure: each row has a large diagonal entry (staying) and small
-off-diagonal entries (jumping), and the off-diagonal entries in each column are
-identical (because :math:`q_j / \sum_k q_k` does not depend on the row).
+off-diagonal entries (jumping). In this example they are identical within each
+column because all :math:`r_i` are equal. With state-dependent :math:`r_i`, the
+jump term remains separable as :math:`r_i q_j/\sum_k q_k`, but those entries
+need not be identical across rows.
 
 **Proof that rows sum to 1.** For any row :math:`i`:
 
@@ -907,8 +914,8 @@ the shared :math:`R` (for the "jump" part). No double sum over states was needed
 
 .. code-block:: python
 
-   def forward_li_stephens(initial, r, q, emissions, observations):
-       """Forward algorithm with Li-Stephens transition structure.
+   def forward_li_stephens(initial, r, q, emissions):
+       """Unscaled forward demo with a Li--Stephens-type transition.
 
        The Li-Stephens transition matrix has the form:
            A[i,j] = (1 - r[i]) * delta(i,j) + r[i] * q[j] / sum(q)
@@ -926,8 +933,6 @@ the shared :math:`R` (for the "jump" part). No double sum over states was needed
            re-joining branch j after recombination.
        emissions : ndarray of shape (L, K)
            Pre-computed emission probabilities: emissions[ell, j] = P(X_ell | Z_ell = j).
-       observations : ignored (emissions pre-computed)
-
        Returns
        -------
        alpha : ndarray of shape (L, K)
@@ -970,10 +975,14 @@ the shared :math:`R` (for the "jump" part). No double sum over states was needed
 
    alpha = forward_li_stephens(
        initial=np.ones(K) / K,    # uniform initial distribution
-       r=r, q=q, emissions=emissions, observations=None
+       r=r, q=q, emissions=emissions
    )
    print(f"Forward probs shape: {alpha.shape}")
    print(f"Sum at last position: {alpha[-1].sum():.6e}")
+
+This final function isolates the linear-time algebra and is deliberately
+unscaled. Production code should combine the same transition factorization
+with the per-position scaling developed above.
 
 .. admonition:: Why this matters for SINGER
 

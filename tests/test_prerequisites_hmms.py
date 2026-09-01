@@ -405,8 +405,8 @@ class TestStochasticTraceback:
 # Code block 5: forward_li_stephens
 # ---------------------------------------------------------------------------
 
-def forward_li_stephens(initial, r, q, emissions, observations):
-    """Forward algorithm with Li-Stephens transition structure.
+def forward_li_stephens(initial, r, q, emissions):
+    """Unscaled forward demo with a Li--Stephens-type transition.
 
     A[i,j] = (1 - r[i]) * delta(i,j) + r[i] * q[j] / sum(q)
 
@@ -416,7 +416,6 @@ def forward_li_stephens(initial, r, q, emissions, observations):
     r : ndarray of shape (K,)
     q : ndarray of shape (K,)
     emissions : ndarray of shape (L, K)
-    observations : ignored
 
     Returns
     -------
@@ -450,7 +449,7 @@ class TestForwardLiStephens:
 
         alpha = forward_li_stephens(
             initial=np.ones(K) / K,
-            r=r, q=q, emissions=emissions, observations=None
+            r=r, q=q, emissions=emissions
         )
         assert alpha.shape == (L, K)
         assert np.all(alpha >= 0)
@@ -462,7 +461,7 @@ class TestForwardLiStephens:
         r = np.full(K, 0.1)
         q = np.ones(K) / K
         emissions = np.ones((L, K)) * 0.5
-        alpha = forward_li_stephens(np.ones(K) / K, r, q, emissions, None)
+        alpha = forward_li_stephens(np.ones(K) / K, r, q, emissions)
         assert alpha.shape == (L, K)
 
     def test_matches_full_forward_with_li_stephens_transition(self):
@@ -491,7 +490,7 @@ class TestForwardLiStephens:
         initial = np.ones(K) / K
 
         # Li-Stephens forward
-        alpha_ls = forward_li_stephens(initial, r, q, emissions, None)
+        alpha_ls = forward_li_stephens(initial, r, q, emissions)
 
         # Standard forward using the explicit transition matrix
         alpha_std = np.zeros((L, K))
@@ -511,7 +510,7 @@ class TestForwardLiStephens:
         r = np.random.uniform(0.01, 0.2, K)
         q = np.random.dirichlet(np.ones(K))
         emissions = np.random.uniform(0.1, 0.9, size=(L, K))
-        alpha = forward_li_stephens(np.ones(K) / K, r, q, emissions, None)
+        alpha = forward_li_stephens(np.ones(K) / K, r, q, emissions)
         assert np.all(alpha >= 0)
 
     def test_zero_recombination(self):
@@ -529,7 +528,7 @@ class TestForwardLiStephens:
             [0.5, 0.7, 0.6],
         ])
         initial = np.array([0.4, 0.3, 0.3])
-        alpha = forward_li_stephens(initial, r, q, emissions, None)
+        alpha = forward_li_stephens(initial, r, q, emissions)
 
         # With no recombination, alpha[ell, j] = initial[j] * prod(emissions[:ell+1, j])
         for j in range(K):
@@ -549,7 +548,7 @@ class TestForwardLiStephens:
         emissions = np.random.uniform(0.1, 0.9, size=(L, K))
         initial = np.ones(K) / K
 
-        alpha = forward_li_stephens(initial, r, q, emissions, None)
+        alpha = forward_li_stephens(initial, r, q, emissions)
 
         # With r=1, the stay term is 0, and the switch term dominates:
         # alpha[ell, j] = emissions[ell, j] * (q[j] / q_sum) * sum(alpha[ell-1])
@@ -600,7 +599,7 @@ class TestForwardLiStephens:
         # produces the desired initial alpha and the second has the test emissions
         # We use initial = prev_alpha and emissions[0] = ones so alpha[0] = prev_alpha
         emissions = np.vstack([np.ones(K), current_emissions])
-        alpha = forward_li_stephens(prev_alpha, r, q, emissions, None)
+        alpha = forward_li_stephens(prev_alpha, r, q, emissions)
 
         np.testing.assert_allclose(alpha[1, 0], 0.328, atol=1e-10)
         np.testing.assert_allclose(alpha[1, 1], 0.207, atol=1e-10)
@@ -613,5 +612,5 @@ class TestForwardLiStephens:
         r = np.full(K, 0.05)
         q = np.random.dirichlet(np.ones(K))
         emissions = np.random.uniform(0.1, 0.9, size=(L, K))
-        alpha = forward_li_stephens(np.ones(K) / K, r, q, emissions, None)
+        alpha = forward_li_stephens(np.ones(K) / K, r, q, emissions)
         assert alpha[-1].sum() > 0
