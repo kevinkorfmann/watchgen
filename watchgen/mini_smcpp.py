@@ -1,790 +1,505 @@
-"""
-Mini SMC++ -- a pedagogical implementation of the SMC++ algorithm.
+"""Small, faithful building blocks for SMC++.
 
-SMC++ (Terhorst, Kamm & Song, 2017) extends PSMC from a single diploid genome
-to multiple unphased diploid genomes by introducing a **distinguished lineage**
-whose coalescence time is the hidden state in an HMM.  The remaining n-1
-undistinguished lineages form a demographic background that modifies the
-coalescence rate.
+SMC++ tracks the time to the most recent common ancestor (TMRCA) of a
+*distinguished pair* of haplotypes. Extra, undistinguished haplotypes enter
+through the conditioned sample-frequency spectrum (CSFS), not by changing the
+pair's coalescence hazard. The production program evaluates the CSFS with
+closed-form matrix identities and uses the continuous-time two-locus kernel of
+Hobolth and Jensen for transitions.
 
-The algorithm has four main components:
+This pedagogical module implements the same statistical objects in a form that
+is practical for small samples:
 
-1. **The Distinguished Lineage** -- one lineage is singled out and its
-   coalescence time T is tracked as a hidden variable.  The remaining n-1
-   lineages are interchangeable and tracked only by their count.
+* an exact partition-state calculation of the one-population CSFS;
+* the mutation transform used by ``src/conditioned_sfs.cpp``;
+* interval averaging over the distinguished-pair coalescence density;
+* the exact three-state two-locus kernel in ``src/transition.cpp``;
+* its constant-demography discretization and a scaled forward algorithm.
 
-2. **The ODE System** -- a system of ODEs tracks the probability p_j(t) that
-   j undistinguished lineages remain at time t.  The matrix exponential of the
-   rate matrix gives exact transition probabilities for piecewise-constant
-   population size.
-
-3. **The Continuous HMM** -- a modified transition matrix built from the ODE
-   rates, combined via composite likelihood across pairs of sites.  Gradient-
-   based optimization (L-BFGS-B) estimates the piecewise-constant population
-   size function lambda(t).
-
-4. **Population Splits** -- cross-population analysis via modified ODEs that
-   track lineage counts before and after a population split, enabling joint
-   estimation of population-specific size histories and split times.
+The partition state space grows as a Bell number, so this is deliberately not a
+replacement for the highly optimized SMC++ implementation.
 
 Reference
 ---------
 Terhorst, J., Kamm, J. A., & Song, Y. S. (2017). Robust and scalable
 inference of population history from hundreds of unphased whole genomes.
-*Nature Genetics*, 49(2), 303-309.
+Nature Genetics, 49(2), 303-309. https://doi.org/10.1038/ng.3748
 """
 
+from collections import deque
+from functools import cache
+from itertools import combinations, pairwise
+
 import numpy as np
-from scipy.linalg import expm
+from numpy.polynomial.laguerre import laggauss
+from numpy.polynomial.legendre import leggauss
 from scipy.integrate import quad
-from scipy.optimize import minimize
+from scipy.linalg import expm
 
-
-# ---------------------------------------------------------------------------
-# Overview (overview.rst)
-# ---------------------------------------------------------------------------
 
 def expected_first_coalescence(n, N):
-    """Expected time to first coalescence among n lineages in population N.
+    """Return the mean first-coalescence time for ``n`` haploid lineages.
 
-    With n lineages, the rate of coalescence (any pair finding a common ancestor)
-    is C(n,2) / N = n(n-1) / (2N). The expected waiting time is the inverse of
-    this rate.
-
-    Parameters
-    ----------
-    n : int
-        Number of haploid lineages (= 2 * number of diploid individuals).
-    N : int
-        Effective population size (diploid).
-
-    Returns
-    -------
-    float
-        Expected time to first coalescence, in generations.
+    ``N`` is the diploid effective size, so each pair coalesces at rate
+    ``1 / (2N)`` per generation. The total rate is therefore
+    ``binom(n, 2) / (2N)``.
     """
-    rate = n * (n - 1) / (2 * N)
-    return 1 / rate
+    if int(n) != n or n < 2:
+        raise ValueError("n must be an integer of at least two")
+    if not np.isfinite(N) or N <= 0:
+        raise ValueError("N must be finite and positive")
+    return 2.0 * N / (n * (n - 1) / 2.0)
 
 
-# ---------------------------------------------------------------------------
-# Distinguished Lineage (distinguished_lineage.rst)
-# ---------------------------------------------------------------------------
-
-def undistinguished_coalescence_rate(j, lam):
-    """Rate at which j undistinguished lineages coalesce among themselves.
-
-    Parameters
-    ----------
-    j : int
-        Number of undistinguished lineages currently present.
-    lam : float
-        Relative population size lambda(t) at current time.
-
-    Returns
-    -------
-    float
-        Coalescence rate C(j,2) / lambda.
-    """
-    return j * (j - 1) / (2 * lam)
+def _canonical_partition(blocks):
+    """Represent a set partition as a stable tuple of sorted tuples."""
+    return tuple(
+        sorted((tuple(sorted(block)) for block in blocks), key=lambda x: (x[0], x))
+    )
 
 
-def distinguished_coalescence_rate(j, lam):
-    """Rate at which the distinguished lineage coalesces with an undistinguished one.
-
-    Parameters
-    ----------
-    j : int
-        Number of undistinguished lineages currently present.
-    lam : float
-        Relative population size lambda(t) at current time.
-
-    Returns
-    -------
-    float
-        Rate j / lambda.
-    """
-    return j / lam
+def _merge_blocks(partition, i, j):
+    blocks = list(partition)
+    merged = tuple(sorted(blocks[i] + blocks[j]))
+    return _canonical_partition(
+        [block for k, block in enumerate(blocks) if k not in (i, j)] + [merged]
+    )
 
 
-def emission_unphased(genotype, t, theta):
-    """Emission probability for an unphased diploid genotype.
-
-    Parameters
-    ----------
-    genotype : int
-        Number of derived alleles: 0, 1, or 2.
-    t : float
-        Coalescence time of the distinguished lineage.
-    theta : float
-        Scaled mutation rate per bin.
-
-    Returns
-    -------
-    float
-        P(genotype | T = t).
-    """
-    # Each haplotype independently accumulates mutations with probability
-    # p = 1 - exp(-theta * t).  The diploid genotype follows a binomial.
-    p = 1 - np.exp(-theta * t)
-
-    if genotype == 0:
-        return (1 - p) ** 2          # No mutation on either branch
-    elif genotype == 1:
-        return 2 * p * (1 - p)       # Mutation on exactly one branch
-    else:  # genotype == 2
-        return p ** 2                 # Mutations on both branches
+def _distinguished_block_indices(partition):
+    i0 = next(i for i, block in enumerate(partition) if 0 in block)
+    i1 = next(i for i, block in enumerate(partition) if 1 in block)
+    return i0, i1
 
 
-def compute_h(t, p_j, lam):
-    """Compute the effective coalescence rate h(t) of the distinguished lineage.
-
-    Parameters
-    ----------
-    t : float
-        Time (used only for lambda evaluation).
-    p_j : ndarray of shape (n,)
-        p_j[j] = P(J(t) = j), for j = 0, 1, ..., n-1.
-    lam : float
-        Relative population size lambda(t).
-
-    Returns
-    -------
-    float
-        The effective coalescence rate h(t).
-    """
-    n_minus_1 = len(p_j) - 1
-    h = 0.0
-    for j in range(1, n_minus_1 + 1):
-        h += j / lam * p_j[j]
-    return h
+def _successors(partition, forbid_distinguished_merge):
+    i0, i1 = _distinguished_block_indices(partition)
+    for i, j in combinations(range(len(partition)), 2):
+        if forbid_distinguished_merge and {i, j} == {i0, i1}:
+            continue
+        yield _merge_blocks(partition, i, j)
 
 
-# ---------------------------------------------------------------------------
-# ODE System (ode_system.rst)
-# ---------------------------------------------------------------------------
+def _reachable_partitions(initial, forbid_distinguished_merge):
+    seen = set(initial)
+    queue = deque(initial)
+    while queue:
+        state = queue.popleft()
+        for nxt in _successors(state, forbid_distinguished_merge):
+            if nxt not in seen:
+                seen.add(nxt)
+                queue.append(nxt)
+    return tuple(sorted(seen, key=lambda p: (-len(p), p)))
 
-def build_rate_matrix(n_undist):
-    """Build the rate matrix Q for the undistinguished lineage count process.
 
-    Parameters
-    ----------
-    n_undist : int
-        Number of undistinguished lineages at time 0 (= n - 1).
-
-    Returns
-    -------
-    Q : ndarray of shape (n_undist, n_undist)
-        Rate matrix. States are indexed 1, 2, ..., n_undist, stored as
-        0-indexed array positions.
-    """
-    Q = np.zeros((n_undist, n_undist))
-    for j in range(1, n_undist + 1):
-        # j is the number of undistinguished lineages (1-indexed)
-        # Array index is j - 1
-        idx = j - 1
-        # Outflow: C(j,2) = j*(j-1)/2
-        Q[idx, idx] = -j * (j - 1) / 2
-        # Inflow from state j+1 (if it exists)
-        if j < n_undist:
-            Q[idx, idx + 1] = (j + 1) * j / 2
+def _partition_generator(states, forbid_distinguished_merge):
+    """Kingman generator with unit rate for each allowed pair of blocks."""
+    index = {state: i for i, state in enumerate(states)}
+    Q = np.zeros((len(states), len(states)))
+    for i, state in enumerate(states):
+        for nxt in _successors(state, forbid_distinguished_merge):
+            Q[i, index[nxt]] += 1.0
+            Q[i, i] -= 1.0
     return Q
 
 
-def solve_ode_piecewise(n_undist, time_breaks, lambdas):
-    """Solve the ODE system for piecewise-constant population size.
+def _branch_rewards(states, n_undistinguished):
+    """Count extant branches by descendant category ``(a, b)``."""
+    total = n_undistinguished + 2
+    rewards = np.zeros((len(states), 3 * (n_undistinguished + 1)))
+    for i, partition in enumerate(states):
+        if len(partition) == 1:
+            continue
+        for block in partition:
+            a = int(0 in block) + int(1 in block)
+            b = len(block) - a
+            if 0 < a + b < total:
+                rewards[i, a * (n_undistinguished + 1) + b] += 1.0
+    return rewards
 
-    Parameters
-    ----------
-    n_undist : int
-        Number of undistinguished lineages at time 0.
-    time_breaks : array-like
-        Time points [t_0, t_1, ..., t_K] defining intervals.
-    lambdas : array-like
-        Relative population sizes [lambda_0, ..., lambda_{K-1}] in each interval.
 
-    Returns
-    -------
-    p_at_breaks : ndarray of shape (K+1, n_undist)
-        p_at_breaks[k, j-1] = P(J(t_k) = j) for j = 1, ..., n_undist.
+def _finite_occupation(p0, Q, rewards, duration, coal_rate):
+    """Evolve a row distribution and integrate its branch rewards."""
+    if duration == 0:
+        return p0.copy(), np.zeros(rewards.shape[1])
+    n, r = rewards.shape
+    augmented = np.zeros((n + r, n + r))
+    augmented[:n, :n] = coal_rate * Q
+    augmented[:n, n:] = rewards
+    E = expm(duration * augmented)
+    return p0 @ E[:n, :n], p0 @ E[:n, n:]
+
+
+def _force_distinguished_coalescence(partition):
+    i0, i1 = _distinguished_block_indices(partition)
+    if i0 == i1:
+        return partition
+    return _merge_blocks(partition, i0, i1)
+
+
+@cache
+def _conditioned_state_system(n_undistinguished):
+    total = n_undistinguished + 2
+    initial = _canonical_partition([(i,) for i in range(total)])
+    below_states = _reachable_partitions((initial,), True)
+    below_Q = _partition_generator(below_states, True)
+    below_rewards = _branch_rewards(below_states, n_undistinguished)
+
+    forced = tuple({_force_distinguished_coalescence(s) for s in below_states})
+    above_states = _reachable_partitions(forced, False)
+    above_Q = _partition_generator(above_states, False)
+    above_rewards = _branch_rewards(above_states, n_undistinguished)
+    return (
+        initial,
+        below_states,
+        below_Q,
+        below_rewards,
+        above_states,
+        above_Q,
+        above_rewards,
+    )
+
+
+def conditioned_sfs(tau, n_undistinguished, relative_size=1.0):
+    """Expected branch lengths conditional on distinguished-pair TMRCA ``tau``.
+
+    The returned ``(3, n_undistinguished + 1)`` array is the CSFS. Entry
+    ``[a, b]`` is the expected total branch length subtending ``a`` of the two
+    distinguished haplotypes and ``b`` undistinguished haplotypes.
+
+    The calculation is exact for a constant population but exponential in
+    sample size. It is intended for small pedagogical examples (normally no
+    more than six undistinguished haplotypes).
     """
-    Q = build_rate_matrix(n_undist)
+    if not np.isfinite(tau) or tau < 0:
+        raise ValueError("tau must be finite and non-negative")
+    if int(n_undistinguished) != n_undistinguished or n_undistinguished < 0:
+        raise ValueError("n_undistinguished must be a non-negative integer")
+    if not np.isfinite(relative_size) or relative_size <= 0:
+        raise ValueError("relative_size must be finite and positive")
 
-    # Initial condition: all n_undist lineages present
-    p = np.zeros(n_undist)
-    p[-1] = 1.0  # p_{n_undist}(0) = 1
+    (
+        initial,
+        below_states,
+        below_Q,
+        below_rewards,
+        above_states,
+        above_Q,
+        above_rewards,
+    ) = _conditioned_state_system(int(n_undistinguished))
+    coal_rate = 1.0 / relative_size
+    p0 = np.zeros(len(below_states))
+    p0[below_states.index(initial)] = 1.0
+    p_tau, below_lengths = _finite_occupation(
+        p0, below_Q, below_rewards, tau, coal_rate
+    )
 
-    p_at_breaks = np.zeros((len(time_breaks), n_undist))
-    p_at_breaks[0] = p.copy()
+    above_index = {state: i for i, state in enumerate(above_states)}
+    p_above = np.zeros(len(above_states))
+    for probability, state in zip(p_tau, below_states):
+        p_above[above_index[_force_distinguished_coalescence(state)]] += probability
 
-    for k in range(len(time_breaks) - 1):
-        dt = time_breaks[k + 1] - time_breaks[k]
-        lam = lambdas[k]
-        # Matrix exponential: p(t + dt) = expm(dt/lam * Q) @ p(t)
-        M = expm(dt / lam * Q)
-        p = M @ p
-        p_at_breaks[k + 1] = p.copy()
-
-    return p_at_breaks
-
-
-def compute_h_values(time_breaks, p_history, lambdas):
-    """Compute h(t) at each time break.
-
-    Parameters
-    ----------
-    time_breaks : array-like
-        Time points.
-    p_history : ndarray of shape (K+1, n_undist)
-        Lineage count probabilities at each time.
-    lambdas : array-like
-        Population sizes in each interval.
-
-    Returns
-    -------
-    h : ndarray
-        h[k] = effective coalescence rate at time_breaks[k].
-    """
-    n_undist = p_history.shape[1]
-    h = np.zeros(len(time_breaks))
-    j_values = np.arange(1, n_undist + 1)
-
-    for k in range(len(time_breaks)):
-        lam = lambdas[min(k, len(lambdas) - 1)]
-        expected_j = np.dot(j_values, p_history[k])
-        h[k] = expected_j / lam
-
-    return h
-
-
-def eigendecompose_rate_matrix(n_undist):
-    """Compute eigendecomposition of the rate matrix Q.
-
-    Returns
-    -------
-    eigenvalues : ndarray of shape (n_undist,)
-    V : ndarray of shape (n_undist, n_undist)
-        Right eigenvectors as columns.
-    V_inv : ndarray of shape (n_undist, n_undist)
-        Inverse of V.
-    """
-    Q = build_rate_matrix(n_undist)
-
-    # Eigenvalues are the diagonal entries
-    eigenvalues = np.diag(Q)
-
-    # Compute eigenvectors by solving (Q - mu_j I) v_j = 0
-    # Since Q is upper triangular, this is a back-substitution
-    V = np.zeros((n_undist, n_undist))
-    for j in range(n_undist):
-        # Start with v[j] = 1, solve upward
-        v = np.zeros(n_undist)
-        v[j] = 1.0
-        for i in range(j - 1, -1, -1):
-            # Q[i, i] * v[i] + Q[i, j] * v[j] + ... = eigenvalues[j] * v[i]
-            # (eigenvalues[j] - Q[i,i]) * v[i] = sum of Q[i, k] * v[k] for k > i
-            rhs = sum(Q[i, k] * v[k] for k in range(i + 1, j + 1))
-            denom = eigenvalues[j] - Q[i, i]
-            if abs(denom) > 1e-15:
-                v[i] = rhs / denom
-        V[:, j] = v
-
-    V_inv = np.linalg.inv(V)
-    return eigenvalues, V, V_inv
-
-
-def fast_matrix_exp(eigenvalues, V, V_inv, t, lam):
-    """Compute exp(t/lam * Q) using precomputed eigendecomposition.
-
-    Parameters
-    ----------
-    eigenvalues, V, V_inv : from eigendecompose_rate_matrix
-    t : float
-        Time interval.
-    lam : float
-        Relative population size.
-
-    Returns
-    -------
-    M : ndarray
-        The matrix exponential.
-    """
-    D = np.diag(np.exp(eigenvalues * t / lam))
-    return V @ D @ V_inv
-
-
-# ---------------------------------------------------------------------------
-# Continuous HMM (continuous_hmm.rst)
-# ---------------------------------------------------------------------------
-
-def emission_probability(genotype, t, theta, allele_count, n_undist):
-    """Emission probability for unphased diploid data at the distinguished individual.
-
-    Parameters
-    ----------
-    genotype : int
-        0, 1, or 2 (count of derived alleles at the focal individual).
-    t : float
-        Coalescence time of the distinguished lineage.
-    theta : float
-        Scaled mutation rate per bin.
-    allele_count : int
-        Number of derived alleles observed in the undistinguished panel.
-    n_undist : int
-        Total number of undistinguished haplotypes.
-
-    Returns
-    -------
-    float
-        P(genotype, allele_count | T = t).
-    """
-    p_mut = 1 - np.exp(-theta * t)
-
-    # Distinguished lineage emission: binary mutation model
-    # P(g=0 | t) = exp(-theta*t), P(g=1 | t) = 1 - exp(-theta*t)
-    if genotype == 0:
-        return np.exp(-theta * t)
-    elif genotype == 1:
-        return 1 - np.exp(-theta * t)
+    transient = np.array([len(state) > 1 for state in above_states])
+    if np.any(transient):
+        Qtt = coal_rate * above_Q[np.ix_(transient, transient)]
+        expected_occupation = np.linalg.solve(-Qtt.T, p_above[transient]).T
+        above_lengths = expected_occupation @ above_rewards[transient]
     else:
-        return (1 - np.exp(-theta * t)) ** 2
+        above_lengths = np.zeros(above_rewards.shape[1])
+
+    csfs = (below_lengths + above_lengths).reshape(3, n_undistinguished + 1)
+    csfs[np.abs(csfs) < 1e-12] = 0.0
+    if np.min(csfs) < -1e-9:
+        raise RuntimeError("negative branch length from conditioned coalescent")
+    return np.maximum(csfs, 0.0)
 
 
-def compute_transition_matrix(time_breaks, lambdas, rho, n_undist):
-    """Build the SMC++ transition matrix.
+def incorporate_theta(csfs, theta):
+    """Convert CSFS branch lengths to the SMC++ emission distribution.
 
-    Parameters
-    ----------
-    time_breaks : array-like
-        K+1 time boundaries [t_0, ..., t_K].
-    lambdas : array-like
-        Relative population sizes in each time interval.
-    rho : float
-        Scaled recombination rate per bin.
-    n_undist : int
-        Number of undistinguished lineages.
-
-    Returns
-    -------
-    P : ndarray of shape (K, K)
-        Transition matrix.
+    This mirrors ``incorporate_theta`` in the original C++ source. The
+    probability of at least one mutation is ``1 - exp(-theta * L)`` where
+    ``L`` is total expected tree length; polymorphic outcomes are allocated in
+    proportion to their CSFS branch lengths. The remaining mass is assigned
+    to the monomorphic ancestral observation ``(0, 0)``.
     """
-    K = len(time_breaks) - 1
+    csfs = np.asarray(csfs, dtype=float)
+    if csfs.ndim != 2 or csfs.shape[0] != 3:
+        raise ValueError("csfs must have shape (3, n_undistinguished + 1)")
+    if np.any(~np.isfinite(csfs)) or np.any(csfs < -1e-12):
+        raise ValueError("csfs must contain finite non-negative branch lengths")
+    if not np.isfinite(theta) or theta <= 0:
+        raise ValueError("theta must be finite and positive")
+    lengths = np.maximum(csfs, 0.0).copy()
+    lengths[0, 0] = 0.0
+    lengths[2, -1] = 0.0
+    total_length = lengths.sum()
+    probabilities = np.zeros_like(lengths)
+    if total_length > 0:
+        probabilities = lengths * (-np.expm1(-theta * total_length) / total_length)
+    probabilities[0, 0] = 1.0 - probabilities.sum()
+    return probabilities
 
-    # First solve the ODE to get h(t) at each time break
-    Q_rate = build_rate_matrix(n_undist)
-    p0 = np.zeros(n_undist)
-    p0[-1] = 1.0
 
-    # Compute h(t) at midpoints of each interval
-    h = np.zeros(K)
-    p_current = p0.copy()
-    for k in range(K):
-        dt = time_breaks[k + 1] - time_breaks[k]
-        lam = lambdas[k]
-        # Expected undistinguished lineages at midpoint
-        M = expm(dt / (2 * lam) * Q_rate)
-        p_mid = M @ p_current
-        j_values = np.arange(1, n_undist + 1)
-        h[k] = np.dot(j_values, p_mid) / lam
-        # Advance to end of interval
-        M_full = expm(dt / lam * Q_rate)
-        p_current = M_full @ p_current
+def pair_interval_probabilities(time_breaks, relative_size=1.0):
+    """Stationary probabilities for discretized distinguished-pair TMRCA."""
+    breaks = np.asarray(time_breaks, dtype=float)
+    if breaks.ndim != 1 or len(breaks) < 2 or breaks[0] != 0:
+        raise ValueError("time_breaks must be a one-dimensional array starting at zero")
+    if np.any(np.diff(breaks) <= 0) or not np.isinf(breaks[-1]):
+        raise ValueError("time_breaks must increase strictly and end at infinity")
+    if not np.isfinite(relative_size) or relative_size <= 0:
+        raise ValueError("relative_size must be finite and positive")
+    survival = np.exp(-breaks / relative_size)
+    survival[-1] = 0.0
+    return survival[:-1] - survival[1:]
 
-    # Build transition matrix
+
+def interval_conditioned_sfs(
+    time_breaks,
+    n_undistinguished,
+    relative_size=1.0,
+    quadrature_order=12,
+):
+    """Average the CSFS within each hidden TMRCA interval."""
+    breaks = np.asarray(time_breaks, dtype=float)
+    pair_interval_probabilities(breaks, relative_size)
+    if int(n_undistinguished) != n_undistinguished or n_undistinguished < 0:
+        raise ValueError("n_undistinguished must be a non-negative integer")
+    n_undistinguished = int(n_undistinguished)
+    if int(quadrature_order) != quadrature_order or quadrature_order < 2:
+        raise ValueError("quadrature_order must be an integer of at least two")
+    leg_x, leg_w = leggauss(int(quadrature_order))
+    lag_x, lag_w = laggauss(int(quadrature_order))
+    result = []
+    rate = 1.0 / relative_size
+    for lo, hi in pairwise(breaks):
+        average = np.zeros((3, n_undistinguished + 1))
+        if np.isinf(hi):
+            # Conditional on T >= lo, memorylessness gives T = lo + Exp(rate).
+            for x, weight in zip(lag_x, lag_w):
+                average += weight * conditioned_sfs(
+                    lo + x / rate, n_undistinguished, relative_size
+                )
+        else:
+            midpoint = 0.5 * (lo + hi)
+            halfwidth = 0.5 * (hi - lo)
+            denom = np.exp(-rate * lo) - np.exp(-rate * hi)
+            for x, weight in zip(leg_x, leg_w):
+                tau = midpoint + halfwidth * x
+                density = rate * np.exp(-rate * tau) / denom
+                average += (
+                    halfwidth
+                    * weight
+                    * density
+                    * conditioned_sfs(tau, n_undistinguished, relative_size)
+                )
+        result.append(average)
+    return np.asarray(result)
+
+
+def emission_probabilities(
+    time_breaks,
+    n_undistinguished,
+    theta,
+    relative_size=1.0,
+    quadrature_order=12,
+):
+    """Return one CSFS emission table for every hidden TMRCA interval."""
+    averaged = interval_conditioned_sfs(
+        time_breaks,
+        n_undistinguished,
+        relative_size,
+        quadrature_order,
+    )
+    return np.asarray([incorporate_theta(csfs, theta) for csfs in averaged])
+
+
+def two_locus_kernel(duration, coal_rate, rho):
+    """Exact Hobolth-Jensen three-state continuous-time transition kernel.
+
+    The generator is the one used in ``src/transition.cpp`` of SMC++::
+
+        linked --rho--> floating --coal_rate--> linked
+                                --coal_rate--> absorbed
+
+    State ``absorbed`` means that both marginal genealogies have coalesced.
+    """
+    for name, value in (
+        ("duration", duration),
+        ("coal_rate", coal_rate),
+        ("rho", rho),
+    ):
+        if not np.isfinite(value) or value < 0:
+            raise ValueError(f"{name} must be finite and non-negative")
+    generator = np.array(
+        [
+            [-rho, rho, 0.0],
+            [coal_rate, -2.0 * coal_rate, coal_rate],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+    kernel = expm(duration * generator)
+    kernel[np.abs(kernel) < 1e-15] = 0.0
+    return kernel
+
+
+def _conditional_exponential_mean(lo, hi, rate):
+    if np.isinf(hi):
+        return lo + 1.0 / rate
+    width = hi - lo
+    return lo + 1.0 / rate - width / np.expm1(rate * width)
+
+
+def constant_csc_transition_matrix(time_breaks, relative_size, rho):
+    """Discretize SMC++'s continuous-time two-locus kernel.
+
+    This is a direct constant-demography specialization of ``HJTransition`` in
+    the original source. Like the production code, it represents each source
+    interval by its conditional mean coalescence time. Unlike production
+    SMC++, it does not add the tiny uniform numerical regularizer.
+    """
+    breaks = np.asarray(time_breaks, dtype=float)
+    pair_interval_probabilities(breaks, relative_size)
+    if not np.isfinite(rho) or rho < 0:
+        raise ValueError("rho must be finite and non-negative")
+    rate = 1.0 / relative_size
+    K = len(breaks) - 1
     P = np.zeros((K, K))
+    boundary_absorption = np.zeros(K + 1)
+    for i, boundary in enumerate(breaks):
+        boundary_absorption[i] = (
+            1.0 if np.isinf(boundary) else two_locus_kernel(boundary, rate, rho)[0, 2]
+        )
 
-    for k in range(K):
-        t_mid = (time_breaks[k] + time_breaks[k + 1]) / 2
+    for j in range(K):
+        if j > 0:
+            P[j, :j] = np.diff(boundary_absorption[: j + 1])
 
-        # Recombination probability: 1 - exp(-rho * t_mid)
-        r_k = 1 - np.exp(-rho * t_mid)
+        mean_t = _conditional_exponential_mean(breaks[j], breaks[j + 1], rate)
+        if not np.isinf(breaks[j + 1]):
+            floating = two_locus_kernel(mean_t, rate, rho)[0, 1]
+            # HJTransition's Rj is the cumulative coalescence hazard across
+            # the *entire source interval*, not merely from mean_t to its
+            # upper boundary (src/transition.cpp, p_float construction).
+            floating *= np.exp(-rate * (breaks[j + 1] - breaks[j]))
+            for k in range(j + 1, K):
+                survival = np.exp(-rate * (breaks[k] - breaks[j + 1]))
+                coal_in_interval = (
+                    1.0
+                    if np.isinf(breaks[k + 1])
+                    else -np.expm1(-rate * (breaks[k + 1] - breaks[k]))
+                )
+                P[j, k] = floating * survival * coal_in_interval
 
-        # No recombination: stay in same state
-        P[k, k] += 1 - r_k
+        P[j, j] = 1.0 - P[j].sum()
 
-        # With recombination: the breakpoint is uniform on [0, t_mid].
-        # New coalescence occurs from the breakpoint onward.
-        # For source state k, recombination at u ~ Uniform(0, t_mid),
-        # then re-coalescence from time u with rate h(t).
-        for l in range(K):
-            dt_l = time_breaks[l + 1] - time_breaks[l]
-            # Cumulative hazard up to interval l
-            cum_h = sum(
-                h[m] * (time_breaks[m + 1] - time_breaks[m])
-                for m in range(l)
-            )
-            # Conditional on recombination at some point before t_mid,
-            # the re-coalescence density at interval l depends on source state k.
-            # The survival from 0 to interval l is exp(-cum_h).
-            q_kl = h[l] * np.exp(-cum_h) * dt_l
-            P[k, l] += r_k * q_kl
-
-    # Normalize rows
-    P = P / P.sum(axis=1, keepdims=True)
+    if np.min(P) < -1e-10:
+        raise RuntimeError("negative discretized transition probability")
+    P = np.maximum(P, 0.0)
+    P /= P.sum(axis=1, keepdims=True)
     return P
 
 
-def composite_log_likelihood(data, time_breaks, lambdas, theta, rho):
-    """Compute the composite log-likelihood for SMC++.
+def forward_log_likelihood(observations, transitions, emissions, initial=None):
+    """Scaled HMM likelihood for CSFS observations ``(a, b)``.
 
-    Parameters
-    ----------
-    data : list of ndarray
-        data[i] is the observation sequence for the i-th distinguished sample.
-    time_breaks : array-like
-        Time interval boundaries.
-    lambdas : array-like
-        Piecewise-constant population sizes.
-    theta : float
-        Scaled mutation rate.
-    rho : float
-        Scaled recombination rate.
-
-    Returns
-    -------
-    float
-        Composite log-likelihood.
+    Missing observations may be encoded by a negative value in either column;
+    their emission probability is one in every hidden state.
     """
-    n_samples = len(data)
-    n_undist = 2 * n_samples - 1  # Haploid lineages minus the distinguished one
+    observations = np.asarray(observations, dtype=int)
+    transitions = np.asarray(transitions, dtype=float)
+    emissions = np.asarray(emissions, dtype=float)
+    if observations.ndim != 2 or observations.shape[1] != 2:
+        raise ValueError("observations must have shape (sites, 2)")
+    K = transitions.shape[0]
+    if transitions.shape != (K, K) or emissions.shape[0] != K:
+        raise ValueError("transition and emission state dimensions do not agree")
+    if initial is None:
+        initial = np.full(K, 1.0 / K)
+    initial = np.asarray(initial, dtype=float)
+    if (
+        initial.shape != (K,)
+        or np.any(initial < 0)
+        or not np.isclose(initial.sum(), 1.0)
+    ):
+        raise ValueError("initial must be a probability vector over hidden states")
+    if len(observations) == 0:
+        return 0.0
 
-    K = len(time_breaks) - 1
-    total_ll = 0.0
+    def emit(obs):
+        a, b = obs
+        if a < 0 or b < 0:
+            return np.ones(K)
+        if a >= emissions.shape[1] or b >= emissions.shape[2]:
+            raise ValueError("observation is outside the CSFS emission table")
+        return emissions[:, a, b]
 
-    for i in range(n_samples):
-        # Build HMM for this distinguished sample
-        P = compute_transition_matrix(time_breaks, lambdas, rho, n_undist)
-
-        # Initial distribution (stationary)
-        pi = np.ones(K) / K  # Simplified; true stationary from h(t)
-
-        # Forward algorithm
-        obs = data[i]
-        L = len(obs)
-        alpha = np.zeros((L, K))
-
-        # Initialize
-        for k in range(K):
-            t_mid = (time_breaks[k] + time_breaks[k + 1]) / 2
-            alpha[0, k] = pi[k] * emission_probability(obs[0], t_mid, theta, 0, n_undist)
-
-        # Scale for numerical stability
-        scale = np.zeros(L)
-        scale[0] = alpha[0].sum()
-        alpha[0] /= scale[0]
-
-        # Forward recursion
-        for a in range(1, L):
-            for l in range(K):
-                alpha[a, l] = sum(alpha[a - 1, k] * P[k, l] for k in range(K))
-                t_mid = (time_breaks[l] + time_breaks[l + 1]) / 2
-                alpha[a, l] *= emission_probability(obs[a], t_mid, theta, 0, n_undist)
-            scale[a] = alpha[a].sum()
-            if scale[a] > 0:
-                alpha[a] /= scale[a]
-
-        total_ll += np.sum(np.log(scale[scale > 0]))
-
-    return total_ll
+    alpha = initial * emit(observations[0])
+    scale = alpha.sum()
+    if scale <= 0:
+        return -np.inf
+    alpha /= scale
+    log_likelihood = np.log(scale)
+    for obs in observations[1:]:
+        alpha = (alpha @ transitions) * emit(obs)
+        scale = alpha.sum()
+        if scale <= 0:
+            return -np.inf
+        alpha /= scale
+        log_likelihood += np.log(scale)
+    return float(log_likelihood)
 
 
-def fit_smcpp(data, time_breaks, theta, rho, max_iter=100):
-    """Fit SMC++ model using L-BFGS-B optimization.
+def composite_log_likelihood(datasets, transitions, emissions, initial=None):
+    """Sum HMM log likelihoods for multiple distinguished-pair data sets.
 
-    Parameters
-    ----------
-    data : list of ndarray
-        Observation sequences for each distinguished sample.
-    time_breaks : array-like
-        Time interval boundaries.
-    theta : float
-        Scaled mutation rate (fixed).
-    rho : float
-        Scaled recombination rate (fixed).
-    max_iter : int
-        Maximum optimization iterations.
-
-    Returns
-    -------
-    lambdas : ndarray
-        Estimated piecewise-constant population sizes.
+    If the data sets reuse the same chromosome with different distinguished
+    pairs, this sum is a composite likelihood because those terms are not
+    independent.
     """
-    K = len(time_breaks) - 1
-
-    # Optimize in log-space for positivity
-    def objective(log_lambdas):
-        lambdas = np.exp(log_lambdas)
-        # Negative log-likelihood (minimize)
-        return -composite_log_likelihood(data, time_breaks, lambdas, theta, rho)
-
-    # Initial guess: constant population
-    x0 = np.zeros(K)
-
-    result = minimize(
-        objective,
-        x0,
-        method='L-BFGS-B',
-        options={'maxiter': max_iter, 'disp': False},
+    return sum(
+        forward_log_likelihood(data, transitions, emissions, initial)
+        for data in datasets
     )
 
-    return np.exp(result.x)
 
+def cross_population_survival(t, split_time, ancestral_rate):
+    """Survival of a TMRCA for a distinguished pair sampled apart.
 
-# ---------------------------------------------------------------------------
-# Population Splits (population_splits.rst)
-# ---------------------------------------------------------------------------
-
-def solve_split_ode(n_A, n_B, time_breaks, lambdas_A, lambdas_B,
-                    lambdas_anc, t_split):
-    """Solve the ODE system for a two-population split model.
-
-    Parameters
-    ----------
-    n_A : int
-        Number of undistinguished haploid lineages from population A.
-    n_B : int
-        Number of undistinguished haploid lineages from population B.
-    time_breaks : array-like
-        Time boundaries for piecewise-constant intervals.
-    lambdas_A, lambdas_B : array-like
-        Population sizes for A and B (pre-split intervals only).
-    lambdas_anc : array-like
-        Ancestral population sizes (post-split intervals only).
-    t_split : float
-        Split time in coalescent units.
-
-    Returns
-    -------
-    h_A : ndarray
-        Coalescence rate for a distinguished lineage from pop A.
-    h_B : ndarray
-        Coalescence rate for a distinguished lineage from pop B.
+    Under the clean-split model the two lineages cannot coalesce more recently
+    than ``split_time``. After the split (backwards in time), their survival is
+    governed by the ancestral pairwise coalescence rate. Production SMC++ also
+    computes a joint conditioned SFS; this helper represents only the TMRCA
+    support constraint.
     """
-    Q_A = build_rate_matrix(n_A)
-    Q_B = build_rate_matrix(n_B)
-
-    # Initialize: all lineages present
-    p_A = np.zeros(n_A)
-    p_A[-1] = 1.0
-    p_B = np.zeros(n_B)
-    p_B[-1] = 1.0
-
-    K = len(time_breaks) - 1
-    h_A_values = np.zeros(K)
-    h_B_values = np.zeros(K)
-
-    j_A_vals = np.arange(1, n_A + 1)
-    j_B_vals = np.arange(1, n_B + 1)
-
-    for k in range(K):
-        t_lo = time_breaks[k]
-        t_hi = time_breaks[k + 1]
-        dt = t_hi - t_lo
-
-        if t_hi <= t_split:
-            # Pre-split: populations evolve independently
-            lam_A = lambdas_A[k]
-            lam_B = lambdas_B[k]
-
-            M_A = expm(dt / lam_A * Q_A)
-            p_A = M_A @ p_A
-
-            M_B = expm(dt / lam_B * Q_B)
-            p_B = M_B @ p_B
-
-            # h for distinguished from A: only A lineages are partners
-            h_A_values[k] = np.dot(j_A_vals, p_A) / lam_A
-            # h for distinguished from B: only B lineages are partners
-            h_B_values[k] = np.dot(j_B_vals, p_B) / lam_B
-
-        else:
-            # Post-split: combined ancestral population
-            n_anc = n_A + n_B
-            lam_anc = lambdas_anc[k - len(lambdas_A)]
-
-            # Initialize p_anc only at the split boundary (first post-split interval)
-            if t_lo <= t_split or not hasattr(solve_split_ode, '_p_anc'):
-                Q_anc = build_rate_matrix(n_anc)
-                p_anc = np.zeros(n_anc)
-                # Initial condition: convolution of p_A and p_B
-                for ja in range(n_A):
-                    for jb in range(n_B):
-                        j_total = (ja + 1) + (jb + 1)  # 1-indexed counts
-                        if j_total <= n_anc:
-                            p_anc[j_total - 1] += p_A[ja] * p_B[jb]
-            else:
-                Q_anc = build_rate_matrix(n_anc)
-                p_anc = solve_split_ode._p_anc
-
-            M_anc = expm(dt / lam_anc * Q_anc)
-            p_anc = M_anc @ p_anc
-
-            # Store for next iteration
-            solve_split_ode._p_anc = p_anc.copy()
-
-            j_anc_vals = np.arange(1, n_anc + 1)
-            h_val = np.dot(j_anc_vals, p_anc) / lam_anc
-            h_A_values[k] = h_val
-            h_B_values[k] = h_val
-
-    return h_A_values, h_B_values
-
-
-def cross_population_survival(t, t_split, h_anc_func):
-    """Survival function for cross-population TMRCA.
-
-    Parameters
-    ----------
-    t : float
-        Time point.
-    t_split : float
-        Population split time.
-    h_anc_func : callable
-        Ancestral coalescence rate function.
-
-    Returns
-    -------
-    float
-        P(T_cross > t).
-    """
-    if t < t_split:
+    if not np.isfinite(t) or t < 0 or not np.isfinite(split_time) or split_time < 0:
+        raise ValueError("times must be finite and non-negative")
+    if t <= split_time:
         return 1.0
-    else:
-        # Numerical integration of h_anc from t_split to t
-        integral, _ = quad(h_anc_func, t_split, t)
-        return np.exp(-integral)
+    integral, _ = quad(ancestral_rate, split_time, t)
+    if integral < -1e-10:
+        raise ValueError("ancestral_rate must be non-negative")
+    return float(np.exp(-max(integral, 0.0)))
 
-
-def fit_split_model(data_A, data_B, time_breaks, theta, rho):
-    """Fit SMC++ split model to two-population data.
-
-    Parameters
-    ----------
-    data_A : list of ndarray
-        Observation sequences from population A samples.
-    data_B : list of ndarray
-        Observation sequences from population B samples.
-    time_breaks : array-like
-        Time interval boundaries.
-    theta, rho : float
-        Scaled mutation and recombination rates.
-
-    Returns
-    -------
-    dict
-        Estimated parameters: lambdas_A, lambdas_B, lambdas_anc, t_split.
-    """
-    K = len(time_breaks) - 1
-
-    def objective(params):
-        # Unpack parameters
-        log_lambdas_A = params[:K]
-        log_lambdas_B = params[K:2*K]
-        log_lambdas_anc = params[2*K:3*K]
-        log_t_split = params[3*K]
-
-        lambdas_A = np.exp(log_lambdas_A)
-        lambdas_B = np.exp(log_lambdas_B)
-        lambdas_anc = np.exp(log_lambdas_anc)
-        t_split = np.exp(log_t_split)
-
-        # Compute composite log-likelihood for both populations
-        ll = 0.0
-
-        # Distinguished from A, undistinguished from A + B
-        # (simplified: separate within-population terms)
-        for data_i in data_A:
-            # HMM forward with population-A-specific transitions
-            ll += forward_log_likelihood(data_i, time_breaks, lambdas_A, theta, rho)
-
-        for data_i in data_B:
-            ll += forward_log_likelihood(data_i, time_breaks, lambdas_B, theta, rho)
-
-        return -ll  # Minimize negative log-likelihood
-
-    # Initial guess
-    x0 = np.zeros(3 * K + 1)
-    x0[3*K] = np.log(0.5)  # Initial split time guess
-
-    result = minimize(objective, x0, method='L-BFGS-B')
-
-    return {
-        'lambdas_A': np.exp(result.x[:K]),
-        'lambdas_B': np.exp(result.x[K:2*K]),
-        'lambdas_anc': np.exp(result.x[2*K:3*K]),
-        't_split': np.exp(result.x[3*K]),
-    }
-
-
-def forward_log_likelihood(obs, time_breaks, lambdas, theta, rho):
-    """HMM forward algorithm log-likelihood (stub for split model)."""
-    # Same as in composite_log_likelihood but for a single sequence
-    return 0.0  # Placeholder
-
-
-# ---------------------------------------------------------------------------
-# Demo
-# ---------------------------------------------------------------------------
 
 def demo():
-    """Demonstrate the core SMC++ components."""
-
-    print("=" * 60)
-    print("SMC++ Mini Implementation Demo")
-    print("=" * 60)
-
-    # --- Overview: expected first coalescence ---
-    print("\n--- Expected First Coalescence ---")
-    # With just 2 lineages (PSMC):
-    print(f"n=2:  {expected_first_coalescence(2, 10000):.0f} generations")
-    # With 20 lineages (10 diploid samples, as in SMC++):
-    print(f"n=20: {expected_first_coalescence(20, 10000):.0f} generations")
-    # With 200 lineages (100 diploid samples):
-    print(f"n=200: {expected_first_coalescence(200, 10000):.1f} generations")
-
-    # --- Distinguished Lineage: coalescence rates ---
-    print("\n--- Coalescence Rates (j=9 undistinguished, lam=1) ---")
-    lam = 1.0
-    j = 9
-    print(f"Undistinguished coalescence rate (j={j}): "
-          f"{undistinguished_coalescence_rate(j, lam):.1f}")
-    print(f"Distinguished coalescence rate (j={j}):   "
-          f"{distinguished_coalescence_rate(j, lam):.1f}")
-    print(f"Total rate out of state j={j}:            "
-          f"{undistinguished_coalescence_rate(j, lam) + distinguished_coalescence_rate(j, lam):.1f}")
-
-    # --- ODE System: rate matrix ---
-    print("\n--- Rate Matrix Q (n_undist=4) ---")
-    Q = build_rate_matrix(4)
-    print("Rate matrix Q:")
-    print(Q)
-
-    # --- ODE System: solve piecewise ---
-    print("\n--- ODE Solution (n_undist=9, constant pop) ---")
-    n_undist = 9
-    time_breaks = np.linspace(0, 5, 51)
-    lambdas = np.ones(50)
-
-    p_history = solve_ode_piecewise(n_undist, time_breaks, lambdas)
-
-    print("Time  p_9    p_5    p_1")
-    for i in [0, 5, 10, 20, 50]:
-        t = time_breaks[i]
-        print(f"{t:.1f}   {p_history[i, 8]:.4f}  {p_history[i, 4]:.4f}  "
-              f"{p_history[i, 0]:.4f}")
-
-    # --- ODE System: h(t) values ---
-    h_values = compute_h_values(time_breaks, p_history, lambdas)
-
-    print("\nEffective coalescence rate h(t):")
-    print("Time  h(t)   E[J(t)]")
-    for i in [0, 5, 10, 20, 50]:
-        t = time_breaks[i]
-        ej = np.dot(np.arange(1, 10), p_history[i])
-        print(f"{t:.1f}   {h_values[i]:.3f}  {ej:.3f}")
-
-    print("\nDemo complete.")
+    """Run a small, deterministic SMC++ building-block demonstration."""
+    breaks = np.array([0.0, 0.25, 0.75, 2.0, np.inf])
+    n_undistinguished = 2
+    theta = 0.02
+    rho = 0.1
+    emissions = emission_probabilities(
+        breaks, n_undistinguished, theta, quadrature_order=8
+    )
+    transitions = constant_csc_transition_matrix(breaks, 1.0, rho)
+    initial = pair_interval_probabilities(breaks)
+    observations = np.array([[0, 0], [0, 0], [1, 0], [0, 1], [0, 0]])
+    ll = forward_log_likelihood(observations, transitions, emissions, initial)
+    print("Hidden-state probabilities:", initial)
+    print("Transition row sums:", transitions.sum(axis=1))
+    print("Emission row sums:", emissions.sum(axis=(1, 2)))
+    print("Log likelihood:", ll)
 
 
 if __name__ == "__main__":
