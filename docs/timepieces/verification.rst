@@ -34,10 +34,11 @@ The Timepieces are grouped by what they do, with verification status for each.
        discrete-site recurrent/back mutations checked against upstream source behavior.
    * - XVI
      - :ref:`SLiM <slim_timepiece>`
-     - 67
-     - --
-     - Forward-time simulation with natural selection. The forge that builds what the
-       coalescent cannot.
+     - 28
+     - 2026-09-01
+     - SLiM 5.2 WF mutation identity, default fitness, parent sampling, tick order,
+       and uniform-map recombination checked against source/manual semantics; three
+       current Eidos recipes execute with the tagged 5.2 binary.
    * - XVIII
      - :ref:`discoal <discoal_timepiece>`
      - 32
