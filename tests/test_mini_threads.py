@@ -10,16 +10,18 @@ All functions are imported from watchgen.mini_threads.
 """
 
 import numpy as np
+import pytest
+from scipy.integrate import quad
 
 from watchgen.mini_threads import (
-    mle_recombination_only,
-    mle_recombination_and_mutations,
-    bayesian_recombination_only,
     bayesian_full,
-    piecewise_constant_bayesian_recomb_only,
+    bayesian_recombination_only,
+    mle_recombination_and_mutations,
+    mle_recombination_only,
     piecewise_constant_bayesian_full,
+    piecewise_constant_bayesian_recomb_only,
+    threads_date_segment,
 )
-
 
 # ============================================================================
 # Tests for MLE estimators
@@ -250,7 +252,6 @@ class TestDatingMathProperties:
     def test_mle_vs_bayesian_numerator_shift(self):
         """Bayesian estimator has numerator m+2 vs MLE's m+1."""
         m = 5
-        rho, mu, gamma = 0.1, 0.01, 0.001
         mle_num = m + 1
         bayes_num = m + 2
         assert bayes_num == mle_num + 1
@@ -262,6 +263,7 @@ class TestDatingMathProperties:
         mle = (m + 1) / (rho + mu)
         bayes = (m + 2) / (rho + mu + gamma)
         # Both should be positive and the gamma contribution matters
+        assert mle > 0 and bayes > 0
         assert (rho + mu + gamma) > (rho + mu)
 
     def test_erlang_interpretation_recomb_only(self):
@@ -282,9 +284,10 @@ class TestDatingMathProperties:
         assert np.isclose(bayes, erlang_mean)
 
     def test_segment_length_exponential_rate(self):
-        """Under SMC, segment length is exponential with rate 1/(2t).
+        """In Morgans, segment length conditional on age has rate 2t.
 
-        The likelihood is 2t * exp(-t*rho), maximized at t = 1/rho.
+        With rho twice the observed length, the likelihood is proportional to
+        t * exp(-t*rho), maximized at t = 1/rho.
         """
         rho = 0.05
         t_hat = 1.0 / rho
@@ -301,3 +304,71 @@ class TestDatingMathProperties:
         t = 50
         expected_mutations = t * mu
         assert expected_mutations == 0.5
+
+
+class TestOfficialSourceParity:
+    """Fixtures and numerical oracles for ThreadsFastLS::date_segment."""
+
+    def test_official_threads_arg_021_fixture(self):
+        """Match heights emitted by the official wheel on a four-site path."""
+        first = threads_date_segment(
+            1, 0.666666, 666666, 1.25e-8, [0.0], [10000.0])
+        second = threads_date_segment(
+            0, 0.333334, 333334, 1.25e-8, [0.0], [10000.0])
+        assert first == pytest.approx(99.66787342312966, rel=2e-15)
+        assert second == pytest.approx(132.45006797999739, rel=2e-15)
+
+    def test_piecewise_full_matches_direct_quadrature(self):
+        rho, mu, m = 0.003, 0.002, 4
+        times = [0.0, 250.0, 4000.0]
+        rates = [1 / 20_000, 1 / 2_000, 1 / 50_000]
+
+        def prior(t):
+            k = np.searchsorted(times, t, side="right") - 1
+            hazard = sum(
+                (times[j + 1] - times[j]) * rates[j] for j in range(k))
+            hazard += (t - times[k]) * rates[k]
+            return rates[k] * np.exp(-hazard)
+
+        kernel = lambda t: prior(t) * t ** (m + 1) * np.exp(-(rho + mu) * t)
+        den = quad(kernel, 0, np.inf, points=None, epsabs=1e-11)[0]
+        num = quad(lambda t: t * kernel(t), 0, np.inf, points=None, epsabs=1e-9)[0]
+        observed = piecewise_constant_bayesian_full(rho, mu, m, times, rates)
+        assert observed == pytest.approx(num / den, rel=2e-10)
+
+    def test_upper_gamma_difference_remains_finite_in_old_tail(self):
+        result = piecewise_constant_bayesian_full(
+            0.01, 0.01, 2, [0.0, 5_000.0], [1 / 10_000, 1 / 2_000])
+        assert np.isfinite(result) and result > 0
+
+    def test_zero_mutation_measure_has_continuous_ratio(self):
+        at_zero = piecewise_constant_bayesian_full(
+            0.02, 0.0, 3, [0.0, 500.0], [1 / 10_000, 1 / 2_000])
+        near_zero = piecewise_constant_bayesian_full(
+            0.02, 1e-100, 3, [0.0, 500.0], [1 / 10_000, 1 / 2_000])
+        assert at_zero == pytest.approx(near_zero, rel=1e-12)
+
+    def test_high_mutation_count_uses_production_shortcut(self):
+        value = threads_date_segment(
+            16, 1.0, 1_000_000, 1.25e-8,
+            [0.0, 500.0], [20_000.0, 2_000.0])
+        std_boundary = 500.0 / 20_000.0
+        source_expected_time = 500.0 + (1.0 - std_boundary) * 2_000.0
+        expected = bayesian_full(
+            16, 0.02, 0.025, 1.0 / source_expected_time)
+        assert value == pytest.approx(expected)
+
+    @pytest.mark.parametrize(
+        "call",
+        [
+            lambda: mle_recombination_only(0),
+            lambda: bayesian_full(-1, 0.1, 0.1, 0.001),
+            lambda: piecewise_constant_bayesian_full(
+                0.1, 0.1, 1, [1.0], [0.001]),
+            lambda: threads_date_segment(
+                1, -1.0, 1000.0, 1e-8, [0.0], [10_000.0]),
+        ],
+    )
+    def test_invalid_inputs_rejected(self, call):
+        with pytest.raises(ValueError):
+            call()

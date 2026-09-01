@@ -167,7 +167,7 @@ segments are created only at inferred recombination events, which are rare.
 
 .. code-block:: python
 
-   def branch_step(active_segments, query_allele, ref_alleles,
+   def branch_step(active_segments, site, query_allele, ref_alleles,
                    rho_penalty, rho_c_penalty, mismatch_penalty):
        """Perform the branch step at one site.
 
@@ -178,6 +178,8 @@ segments are created only at inferred recombination events, which are rare.
        ----------
        active_segments : list of Segment
            One active segment per reference haplotype.
+       site : int
+           Genomic site being processed; segment starts use this coordinate.
        query_allele : int
            Query haplotype's allele at this site (0 or 1).
        ref_alleles : ndarray, shape (N,)
@@ -199,8 +201,6 @@ segments are created only at inferred recombination events, which are rare.
        N = len(active_segments)
        # Find the best current path (minimum penalty)
        best = min(active_segments, key=lambda s: s.penalty)
-       site = active_segments[0].start + 1  # next site
-
        new_active = []
        n_new = 0
        for n in range(N):
@@ -242,7 +242,7 @@ segments are created only at inferred recombination events, which are rare.
    total_new = 0
    for site in range(1, len(query)):
        active, n_new = branch_step(
-           active, query[site], ref[:, site],
+           active, site, query[site], ref[:, site],
            rho_penalty=5.0, rho_c_penalty=0.01, mismatch_penalty=3.0
        )
        total_new += n_new

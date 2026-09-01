@@ -43,8 +43,9 @@ for the complete ARG -- each of :math:`N` samples must search through all
 previously threaded samples. Threads achieves scalability through two
 innovations:
 
-1. **PBWT pre-filtering** reduces the reference panel from :math:`N` to
-   :math:`L` candidates per sample (:math:`L \ll N`), cutting the per-sample
+1. **PBWT pre-filtering** reduces the reference panel from :math:`N` to a
+   small, locally selected candidate set (write its typical size as
+   :math:`L \ll N`), cutting the per-sample
    Viterbi cost from :math:`O(MN)` to :math:`O(ML)`.
 
 2. **Branch-and-bound Viterbi** replaces the classical :math:`O(NM)` memory
@@ -73,7 +74,7 @@ fundamentally different approaches:
      - Deterministic (Viterbi -- single best path)
      - Bayesian (MCMC -- posterior samples)
    * - Output
-     - One ARG (maximum likelihood threading)
+     - One ARG (filtered Viterbi paths plus point-estimated dates)
      - Multiple ARG samples from the posterior
    * - Scalability
      - Biobank-scale (:math:`N > 10^5`)
@@ -104,8 +105,9 @@ Terminology
    * - Term
      - Definition
    * - **Threading target**
-     - The closest genealogical relative (closest cousin) of sample :math:`n`
-       at a given site, chosen from among samples :math:`1, \ldots, n-1`
+     - The Li--Stephens copying target used as a proxy for the closest
+       genealogical relative of sample :math:`n`, chosen from samples
+       :math:`1, \ldots, n-1`
    * - **Threading instructions**
      - For each sample, a map from genomic positions to (coalescence time,
        threading target) pairs -- the complete output of Threads

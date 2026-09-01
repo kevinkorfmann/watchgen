@@ -9,16 +9,17 @@ relative) and a coalescence time.
 The Threads pipeline has three stages:
 
 1. PBWT Haplotype Matching: Uses the positional Burrows-Wheeler transform to
-   identify a small set of candidate haplotype matches for each sample, reducing
-   the search space from O(N) to O(L) candidates per sample (L << N).
+   identify a sparse, locally selected candidate panel for each sample, reducing
+   the practical Li--Stephens state space far below the full panel.
 
 2. Memory-Efficient Viterbi: A branch-and-bound implementation of the Viterbi
    algorithm under the Li-Stephens model that finds the optimal threading path
    in O(NM) time and O(N) average memory.
 
 3. Segment Dating: Assigns coalescence times to each Viterbi segment using
-   likelihood-based and Bayesian estimators that model segments as pairwise IBD
-   regions.
+   Bayesian estimators that model segments as pairwise IBD regions.  The MLEs
+   below are useful derivations from the paper, but production Threads uses the
+   Bayesian piecewise-demographic estimator (and a high-mutation shortcut).
 
 This module implements the mathematical estimators from the Segment Dating step,
 covering both maximum likelihood and Bayesian approaches under constant and
@@ -26,12 +27,32 @@ piecewise-constant demographic models.
 
 References
 ----------
-Brandt, Chiang, Guo et al. (2024). Threads: Threading Instructions for
-Ancestral Recombination Graphs.
+Gunnarsson, Zhu, Zhang et al. (2024). A scalable approach for genome-wide
+inference of ancestral recombination graphs.
 """
 
 import numpy as np
-from scipy.special import gammainc  # regularized lower incomplete gamma
+from scipy.special import gammaincc  # regularized upper incomplete gamma
+
+
+def _validate_count(m):
+    if (isinstance(m, bool) or not np.isscalar(m) or not np.isfinite(m) or
+            int(m) != m or m < 0):
+        raise ValueError("m must be a non-negative integer")
+    return int(m)
+
+
+def _validate_piecewise(time_boundaries, coal_rates):
+    """Return validated one-boundary-per-epoch arrays."""
+    times = np.asarray(time_boundaries, dtype=float)
+    rates = np.asarray(coal_rates, dtype=float)
+    if times.ndim != 1 or rates.ndim != 1 or len(times) != len(rates):
+        raise ValueError("time_boundaries and coal_rates must be equal-length 1D arrays")
+    if len(times) == 0 or times[0] != 0 or np.any(np.diff(times) <= 0):
+        raise ValueError("time_boundaries must start at 0 and be strictly increasing")
+    if np.any(~np.isfinite(times)) or np.any(~np.isfinite(rates)) or np.any(rates <= 0):
+        raise ValueError("boundaries must be finite and coalescence rates positive")
+    return times, rates
 
 
 # ============================================================================
@@ -41,8 +62,9 @@ from scipy.special import gammainc  # regularized lower incomplete gamma
 def mle_recombination_only(rho):
     """Maximum likelihood estimator of coalescence time from recombination only.
 
-    Under the SMC model, the length of an IBD segment follows an exponential
-    distribution with rate 1/(2t). The MLE is obtained by differentiating the
+    Conditional on age ``t``, genetic length in Morgans has exponential rate
+    ``2t``.  With ``rho`` equal to twice the observed genetic length, the
+    likelihood is proportional to ``t * exp(-t*rho)``. The MLE follows by differentiating the
     log-likelihood log(2t) - t*rho and setting to zero:
 
         t_hat = 1 / rho
@@ -57,6 +79,8 @@ def mle_recombination_only(rho):
     float
         Maximum likelihood age estimate (in generations).
     """
+    if not np.isfinite(rho) or rho <= 0:
+        raise ValueError("rho must be finite and positive")
     return 1.0 / rho
 
 
@@ -86,6 +110,9 @@ def mle_recombination_and_mutations(m, rho, mu):
     float
         Maximum likelihood age estimate (in generations).
     """
+    m = _validate_count(m)
+    if not np.isfinite(rho) or not np.isfinite(mu) or rho < 0 or mu < 0 or rho + mu <= 0:
+        raise ValueError("rho and mu must be finite, non-negative, and not both zero")
     return (m + 1) / (rho + mu)
 
 
@@ -114,6 +141,9 @@ def bayesian_recombination_only(rho, gamma):
     float
         Posterior mean age estimate (in generations).
     """
+    if (not np.isfinite(rho) or not np.isfinite(gamma) or
+            rho < 0 or gamma <= 0):
+        raise ValueError("rho must be non-negative and gamma must be positive")
     return 2.0 / (rho + gamma)
 
 
@@ -144,6 +174,10 @@ def bayesian_full(m, rho, mu, gamma):
     float
         Posterior mean age estimate (in generations).
     """
+    m = _validate_count(m)
+    if (not np.isfinite(rho) or not np.isfinite(mu) or not np.isfinite(gamma) or
+            rho < 0 or mu < 0 or gamma <= 0):
+        raise ValueError("rho and mu must be non-negative and gamma must be positive")
     return (m + 2) / (rho + mu + gamma)
 
 
@@ -172,8 +206,10 @@ def piecewise_constant_bayesian_recomb_only(rho, time_boundaries, coal_rates):
     float
         E[t | rho] under the piecewise-constant model.
     """
+    T, coal_rates = _validate_piecewise(time_boundaries, coal_rates)
+    if not np.isfinite(rho) or rho < 0:
+        raise ValueError("rho must be finite and non-negative")
     K = len(coal_rates)
-    T = list(time_boundaries)
 
     numerator = 0.0
     denominator = 0.0
@@ -196,17 +232,16 @@ def piecewise_constant_bayesian_recomb_only(rho, time_boundaries, coal_rates):
         else:
             T_upper = np.inf
 
-        # Regularized lower incomplete gamma
+        # Threads C++ uses differences of the regularized upper incomplete
+        # gamma.  This is also stable when both lower-CDF values round to one.
         z_upper = lambda_k * T_upper if not np.isinf(T_upper) else np.inf
         z_lower = lambda_k * T[k]
 
-        P3_upper = gammainc(3, z_upper) if not np.isinf(z_upper) else 1.0
-        P3_lower = gammainc(3, z_lower)
-        P2_upper = gammainc(2, z_upper) if not np.isinf(z_upper) else 1.0
-        P2_lower = gammainc(2, z_lower)
+        q3 = gammaincc(3, z_lower) - (0.0 if np.isinf(z_upper) else gammaincc(3, z_upper))
+        q2 = gammaincc(2, z_lower) - (0.0 if np.isinf(z_upper) else gammaincc(2, z_upper))
 
-        numerator += prefactor * (2.0 / lambda_k**3) * (P3_upper - P3_lower)
-        denominator += prefactor * (1.0 / lambda_k**2) * (P2_upper - P2_lower)
+        numerator += prefactor * (2.0 / lambda_k**3) * q3
+        denominator += prefactor * (1.0 / lambda_k**2) * q2
 
     if denominator == 0:
         return np.inf
@@ -238,8 +273,11 @@ def piecewise_constant_bayesian_full(rho, mu, m, time_boundaries, coal_rates):
     float
         E[t | rho, m] under the piecewise-constant model.
     """
+    m = _validate_count(m)
+    T, coal_rates = _validate_piecewise(time_boundaries, coal_rates)
+    if (not np.isfinite(rho) or not np.isfinite(mu) or rho < 0 or mu < 0):
+        raise ValueError("rho and mu must be finite and non-negative")
     K = len(coal_rates)
-    T = list(time_boundaries)
 
     numerator = 0.0
     denominator = 0.0
@@ -266,18 +304,60 @@ def piecewise_constant_bayesian_full(rho, mu, m, time_boundaries, coal_rates):
         a_num = m + 3
         a_den = m + 2
 
-        P_num_upper = gammainc(a_num, z_upper) if not np.isinf(z_upper) else 1.0
-        P_num_lower = gammainc(a_num, z_lower)
-        P_den_upper = gammainc(a_den, z_upper) if not np.isinf(z_upper) else 1.0
-        P_den_lower = gammainc(a_den, z_lower)
+        q_num = gammaincc(a_num, z_lower) - (
+            0.0 if np.isinf(z_upper) else gammaincc(a_num, z_upper))
+        q_den = gammaincc(a_den, z_lower) - (
+            0.0 if np.isinf(z_upper) else gammaincc(a_den, z_upper))
 
-        mu_m = mu**m
-        numerator += prefactor * mu_m * (m + 2) / lambda_k**(m + 3) * (P_num_upper - P_num_lower)
-        denominator += prefactor * mu_m / lambda_k**(m + 2) * (P_den_upper - P_den_lower)
+        # mu**m is common to every epoch and cancels from this ratio.  Omitting
+        # it avoids 0/0 and underflow without changing positive-mu results.
+        numerator += prefactor * (m + 2) / lambda_k**(m + 3) * q_num
+        denominator += prefactor / lambda_k**(m + 2) * q_den
 
     if denominator == 0:
         return np.inf
     return numerator / denominator
+
+
+def threads_date_segment(m, cm_size, bp_size, mutation_rate,
+                         time_boundaries, population_sizes, sparse=False):
+    """Mirror the production ``ThreadsFastLS::date_segment`` decision logic.
+
+    The official implementation uses the mutation-free piecewise estimator for
+    sparse data.  For sequence data with at most 15 differences it uses the full
+    piecewise estimator.  Above 15 it switches to a constant-rate approximation
+    based on ``Demography::std_to_gen(1)``.
+    """
+    m = _validate_count(m)
+    times = np.asarray(time_boundaries, dtype=float)
+    sizes = np.asarray(population_sizes, dtype=float)
+    if times.ndim != 1 or sizes.ndim != 1 or len(times) != len(sizes):
+        raise ValueError("time_boundaries and population_sizes must be equal-length")
+    if len(times) == 0 or times[0] != 0 or np.any(np.diff(times) <= 0):
+        raise ValueError("time_boundaries must start at 0 and be strictly increasing")
+    if np.any(~np.isfinite(times)) or np.any(~np.isfinite(sizes)) or np.any(sizes <= 0):
+        raise ValueError("times must be finite and population sizes positive")
+    if (not np.isfinite(cm_size) or not np.isfinite(bp_size) or
+            not np.isfinite(mutation_rate) or cm_size < 0 or bp_size < 0 or
+            mutation_rate < 0):
+        raise ValueError("segment sizes and mutation_rate must be finite and non-negative")
+
+    rho = 2.0 * 0.01 * cm_size
+    rates = 1.0 / sizes
+    if sparse:
+        return piecewise_constant_bayesian_recomb_only(rho, times, rates)
+
+    mu = 2.0 * mutation_rate * bp_size
+    if m <= 15:
+        return piecewise_constant_bayesian_full(rho, mu, m, times, rates)
+
+    std_times = np.zeros(len(times))
+    if len(times) > 1:
+        std_times[1:] = np.cumsum(np.diff(times) / sizes[:-1])
+    epoch = np.searchsorted(std_times, 1.0, side="right") - 1
+    expected_time = times[epoch] + (1.0 - std_times[epoch]) * sizes[epoch]
+    gamma = 1.0 / expected_time
+    return bayesian_full(m, rho, mu, gamma)
 
 
 # ============================================================================

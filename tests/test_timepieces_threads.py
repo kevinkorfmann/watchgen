@@ -14,7 +14,7 @@ the key mathematical estimators described in the dating.rst chapter.
 """
 
 import numpy as np
-from scipy.special import gammainc  # regularized lower incomplete gamma
+from scipy.special import gammaincc  # regularized upper incomplete gamma
 
 
 # ============================================================================
@@ -105,13 +105,13 @@ def piecewise_constant_bayesian_recomb_only(rho, time_boundaries, coal_rates):
         z_upper = lambda_k * T_upper if not np.isinf(T_upper) else np.inf
         z_lower = lambda_k * T[k]
 
-        P3_upper = gammainc(3, z_upper) if not np.isinf(z_upper) else 1.0
-        P3_lower = gammainc(3, z_lower)
-        P2_upper = gammainc(2, z_upper) if not np.isinf(z_upper) else 1.0
-        P2_lower = gammainc(2, z_lower)
+        P3_diff = gammaincc(3, z_lower) - (
+            0.0 if np.isinf(z_upper) else gammaincc(3, z_upper))
+        P2_diff = gammaincc(2, z_lower) - (
+            0.0 if np.isinf(z_upper) else gammaincc(2, z_upper))
 
-        numerator += prefactor * (2.0 / lambda_k**3) * (P3_upper - P3_lower)
-        denominator += prefactor * (1.0 / lambda_k**2) * (P2_upper - P2_lower)
+        numerator += prefactor * (2.0 / lambda_k**3) * P3_diff
+        denominator += prefactor * (1.0 / lambda_k**2) * P2_diff
 
     if denominator == 0:
         return np.inf
@@ -167,14 +167,13 @@ def piecewise_constant_bayesian_full(rho, mu, m, time_boundaries, coal_rates):
         a_num = m + 3
         a_den = m + 2
 
-        P_num_upper = gammainc(a_num, z_upper) if not np.isinf(z_upper) else 1.0
-        P_num_lower = gammainc(a_num, z_lower)
-        P_den_upper = gammainc(a_den, z_upper) if not np.isinf(z_upper) else 1.0
-        P_den_lower = gammainc(a_den, z_lower)
+        P_num_diff = gammaincc(a_num, z_lower) - (
+            0.0 if np.isinf(z_upper) else gammaincc(a_num, z_upper))
+        P_den_diff = gammaincc(a_den, z_lower) - (
+            0.0 if np.isinf(z_upper) else gammaincc(a_den, z_upper))
 
-        mu_m = mu**m
-        numerator += prefactor * mu_m * (m + 2) / lambda_k**(m + 3) * (P_num_upper - P_num_lower)
-        denominator += prefactor * mu_m / lambda_k**(m + 2) * (P_den_upper - P_den_lower)
+        numerator += prefactor * (m + 2) / lambda_k**(m + 3) * P_num_diff
+        denominator += prefactor / lambda_k**(m + 2) * P_den_diff
 
     if denominator == 0:
         return np.inf
@@ -442,7 +441,7 @@ class TestDatingMathProperties:
         assert np.isclose(bayes, erlang_mean)
 
     def test_segment_length_exponential_rate(self):
-        """Under SMC, segment length is exponential with rate 1/(2t).
+        """In Morgans, segment length conditional on age has rate 2t.
 
         The likelihood is 2t * exp(-t*rho), maximized at t = 1/rho.
         """

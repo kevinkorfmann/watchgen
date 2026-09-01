@@ -51,8 +51,9 @@ Maximum Likelihood Estimators
 We first derive estimators that ignore the coalescent prior, using only the
 recombination and mutation likelihoods.
 
-**From recombination only.** Under the SMC model, the length of an IBD segment
-follows an exponential distribution with rate :math:`1/(2t)`. The likelihood is:
+**From recombination only.** Conditional on age :math:`t`, IBD length in
+Morgans follows an exponential distribution with rate :math:`2t`. With
+:math:`\rho` defined as twice the observed genetic length, the likelihood is:
 
 .. math::
 
@@ -287,83 +288,40 @@ whole-genome sequencing data. The piecewise-constant demographic model is
 specified as a ``.demo`` file listing the time boundaries and effective
 population sizes.
 
+.. note:: Production decision rule
+
+   Current ``ThreadsFastLS::date_segment`` uses the recombination-only
+   piecewise formula for sparse-array mode. For sequence mode it evaluates the
+   full piecewise formula through :math:`m=15`, then uses a constant-rate
+   shortcut for larger mutation counts. The teaching function
+   :func:`watchgen.mini_threads.threads_date_segment` mirrors that dispatch;
+   the standalone MLEs above are derivations, not production defaults.
+
 .. code-block:: python
 
-   from scipy.special import gammainc  # regularized lower incomplete gamma
+   from watchgen.mini_threads import bayesian_full, threads_date_segment
 
-   def bayes_age_piecewise(rho, mu, m, T_bounds, N_e_values):
-       """Bayesian posterior mean age under a piecewise-constant demography.
-
-       Parameters
-       ----------
-       rho : float
-           Recombination measure.
-       mu : float
-           Mutation measure.
-       m : int
-           Number of heterozygous sites.
-       T_bounds : list of float
-           Time interval boundaries [T_0, T_1, ..., T_K].
-       N_e_values : list of float
-           Effective population sizes [N_e^(0), ..., N_e^(K-1)].
-
-       Returns
-       -------
-       t_hat : float
-           Posterior mean age.
-       """
-       K = len(N_e_values)
-       gamma_k = [1.0 / N for N in N_e_values]
-       lam_k = [rho + mu + g for g in gamma_k]
-
-       # Cumulative coalescent hazard up to each boundary
-       cum_hazard = [0.0]
-       for k in range(K):
-           delta = T_bounds[k+1] - T_bounds[k]
-           cum_hazard.append(cum_hazard[-1] + delta * gamma_k[k])
-
-       numerator = 0.0
-       denominator = 0.0
-
-       for k in range(K):
-           g_k = gamma_k[k]
-           l_k = lam_k[k]
-           # Weight: gamma_k * exp(-cum_hazard_k + T_k * gamma_k)
-           log_weight = (np.log(g_k) - cum_hazard[k]
-                         + T_bounds[k] * g_k)
-           weight = np.exp(log_weight)
-
-           # Regularized incomplete gamma differences
-           a_num = m + 3
-           a_den = m + 2
-           z_lo = l_k * T_bounds[k]
-           z_hi = l_k * T_bounds[k+1]
-           # P(a, z) = gammainc(a, z) (scipy uses regularized form)
-           P_num = gammainc(a_num, z_hi) - gammainc(a_num, z_lo)
-           P_den = gammainc(a_den, z_hi) - gammainc(a_den, z_lo)
-
-           numerator += weight * (m + 2) / l_k**(m+3) * P_num
-           denominator += weight / l_k**(m+2) * P_den
-
-       if denominator == 0:
-           return bayes_age_full(rho, mu, m, gamma_k[0])
-
-       return numerator / denominator
+   l_cM = 1.0
+   l_bp = 1_000_000
+   c = 1.25e-8
+   rho = 2 * 0.01 * l_cM
+   mu = 2 * c * l_bp
 
    # Demonstrate with a bottleneck demography
    # Recent: N_e=10000 (0-1000 gen), Bottleneck: N_e=1000 (1000-2000),
    # Ancient: N_e=20000 (2000+)
-   T_bounds = [0, 1000, 2000, 1e8]
+   T_bounds = [0, 1000, 2000]  # final epoch extends to infinity
    N_e_values = [10000, 1000, 20000]
 
    print("\nPiecewise-constant demography:")
    for k in range(len(N_e_values)):
-       print(f"  [{T_bounds[k]:.0f}, {T_bounds[k+1]:.0f}): "
-             f"N_e = {N_e_values[k]}")
+       upper = T_bounds[k + 1] if k + 1 < len(T_bounds) else float("inf")
+       print(f"  [{T_bounds[k]:.0f}, {upper}): N_e = {N_e_values[k]}")
 
    print(f"\nSegment: {l_cM} cM, {m} hets")
    for m in [0, 1, 5]:
-       t_const = bayes_age_full(rho, mu, m, 1.0/10000)
-       t_pw = bayes_age_piecewise(rho, mu, m, T_bounds, N_e_values)
+       t_const = bayesian_full(m, rho, mu, 1.0/10000)
+       t_pw = threads_date_segment(
+           m, l_cM, l_bp, c, T_bounds, N_e_values, sparse=False)
        print(f"  m={m}: constant N_e -> {t_const:.0f}, "
              f"piecewise -> {t_pw:.0f} generations")

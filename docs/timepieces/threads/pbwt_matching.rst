@@ -21,8 +21,8 @@ resulting in :math:`O(MN^2)` time for the whole inference. For biobank data
 with :math:`N > 10^5` samples and :math:`M > 10^6` sites, this is
 computationally infeasible.
 
-Threads reduces the per-sample search space from :math:`n - 1` to :math:`L`
-candidates (:math:`L \ll N`) by exploiting the structure of the PBWT: sequences
+Threads reduces the per-sample search space from :math:`n - 1` to a sparse,
+locally selected candidate panel by exploiting the structure of the PBWT: sequences
 that are neighbours in the prefix array tend to share long identical-by-state
 (IBS) tracts. This heuristic, also employed by modern phasing and imputation
 algorithms like IMPUTE5, allows Threads to identify close matches without
@@ -127,8 +127,9 @@ they were threaded before sample :math:`n`).
 
 If fewer than :math:`L/2` qualifying neighbours exist on one side, the search
 window expands in the opposite direction until :math:`L` total matches are found
-or all sequences have been considered. The default neighbourhood size is
-:math:`L = 4`.
+or all sequences have been considered. The default query neighbourhood size is
+:math:`L = 4`. This is the number examined at one query, not a guarantee that
+exactly four distinct candidates survive across an entire chunk.
 
 The querying is implemented by sequentially inserting each sequence's prefix
 array index into a **red-black tree** (C++ ``std::set``) and querying the

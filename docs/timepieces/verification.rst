@@ -147,9 +147,12 @@ The Timepieces are grouped by what they do, with verification status for each.
        teaching code explicitly bounded below full ARG-sampler parity.
    * - VIII
      - :ref:`Threads <threads_timepiece>`
-     - 56
-     - --
-     - Deterministic ARG inference at biobank scale with PBWT pre-filtering.
+     - 65
+     - 2026-09-01
+     - Dating equations, production dispatch, PBWT/Viterbi boundaries, and
+       numerical tail stability checked against the thesis/paper and official
+       source (``25c6c0d``); ``threads-arg`` 0.2.1 completed its 500-haplotype
+       example with 55,765 finite, positive dated segments.
    * - XVII
      - :ref:`Relate <relate_timepiece>`
      - 37

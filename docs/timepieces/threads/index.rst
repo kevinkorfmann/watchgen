@@ -11,7 +11,7 @@ Timepiece VIII: Threads
    "Threads takes as input a set of phased genotypes and outputs a set of
    threading instructions for each sample."
 
-   -- Brandt, Chiang, Guo *et al.* (2024)
+   -- Gunnarsson *et al.* (2024)
 
 The Mechanism at a Glance
 ==========================
@@ -19,9 +19,16 @@ The Mechanism at a Glance
 Threads is a **deterministic** method for inferring Ancestral Recombination
 Graphs from phased genotype data. Where SINGER (:ref:`singer_timepiece`)
 samples ARGs from a posterior distribution using Bayesian MCMC, Threads finds
-the single most likely threading path for each haplotype using a three-step
+a Li--Stephens Viterbi path for each haplotype within a PBWT-filtered candidate
+panel using a three-step
 pipeline: pre-filter candidate matches, run a memory-efficient Viterbi
 algorithm, and date the resulting segments.
+
+.. important::
+
+   This is not a maximum-likelihood optimizer over complete ARGs. The candidate
+   filter and IBD-based dating model are deliberate approximations, and the
+   independently optimal Viterbi paths are assembled into one deterministic ARG.
 
 .. admonition:: Primary Reference
 

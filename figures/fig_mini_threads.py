@@ -5,14 +5,14 @@ Shows how MLE and Bayesian age estimators respond to recombination distance,
 mutation count, and demographic history (bottleneck vs constant population).
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 from watchgen.mini_threads import (
-    mle_recombination_only,
-    mle_recombination_and_mutations,
-    bayesian_recombination_only,
     bayesian_full,
-    piecewise_constant_bayesian_recomb_only,
+    bayesian_recombination_only,
+    mle_recombination_and_mutations,
+    mle_recombination_only,
     piecewise_constant_bayesian_full,
 )
 
