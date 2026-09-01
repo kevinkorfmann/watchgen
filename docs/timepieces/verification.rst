@@ -141,8 +141,8 @@ The Timepieces are grouped by what they do, with verification status for each.
      - Deterministic ARG inference at biobank scale with PBWT pre-filtering.
    * - XVII
      - :ref:`Relate <relate_timepiece>`
-     - 66
-     - --
+     - 37
+     - 2026-09-01
      - Genome-wide genealogy estimation via asymmetric painting + MCMC branch lengths.
 
 **Dating and selection** -- calibrating genealogies and detecting selection

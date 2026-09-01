@@ -1,119 +1,64 @@
-"""
-Demo: Relate genealogy inference on msprime-simulated haplotype data.
+"""Generate independently checkable mini-Relate exercises."""
 
-Simulates haplotypes with msprime, runs Relate's asymmetric painting
-for a focal SNP, computes pairwise distances, and compares to truth.
-"""
+from pathlib import Path
 
-import numpy as np
 import matplotlib.pyplot as plt
-import msprime
+import numpy as np
 
-from watchgen.mini_relate import (
-    forward_backward_relate,
-    compute_distance_matrix,
-    build_tree,
-)
+from watchgen import mini_relate as relate
 
-plt.rcParams.update({
-    "font.size": 10, "axes.titlesize": 11, "axes.labelsize": 10,
-    "figure.dpi": 150, "font.family": "sans-serif",
-})
 
-np.random.seed(2024)
+OUT = Path(__file__).parent
 
-# ── Simulate with msprime ───────────────────────────────────────
-Ne = 10_000
-mu = 1.25e-8
-rho = 1e-8
-n_haps = 20
 
-ts = msprime.simulate(
-    sample_size=n_haps, Ne=Ne, length=500_000,
-    recombination_rate=rho, mutation_rate=mu,
-    random_seed=2024,
-)
+def balanced_tree():
+    left = relate.TreeNode(4, relate.TreeNode(0), relate.TreeNode(1))
+    right = relate.TreeNode(5, relate.TreeNode(2), relate.TreeNode(3))
+    return relate.TreeNode(6, left, right)
 
-# Extract haplotype matrix
-G = ts.genotype_matrix()  # sites x samples
-positions = np.array([v.position for v in ts.variants()])
-n_sites, n = G.shape
 
-# ── Run Relate painting for a focal SNP ─────────────────────────
-focal_snp = n_sites // 2  # middle of the region
-D_mat = compute_distance_matrix(G.T, positions, recomb_rate=rho, mu=mu,
-                                focal_snp=focal_snp)
+def main():
+    target = np.array([1, 1, 0, 1, 0, 1])
+    panel = np.array(
+        [[1, 0, 1], [1, 0, 1], [0, 1, 0], [0, 1, 1], [0, 0, 1], [1, 0, 1]]
+    )
+    posterior = relate.copying_posterior(target, panel, [0, 0.05, 0.05, 0.4, 0.05, 0.05])
 
-# Build tree from distance matrix
-tree_result = build_tree(D_mat, n_haps)
+    root = balanced_tree()
+    exposure = {branch: 1.0 for branch in relate.branch_lengths(
+        root, relate.node_times_from_intervals(root, [4, 5, 6], [0.2, 0.3, 0.5])
+    )}
+    draws, acceptance = relate.sample_ranked_branch_lengths(
+        root, [4, 5, 6], {0: 1, 1: 1, 2: 1}, exposure, theta=1.0,
+        iterations=3_000, burn_in=500, seed=19,
+    )
+    rates, events, times = relate.piecewise_coalescence_rate_mle(
+        [0.2, 0.4, 1.2, 1.8], [0.0, 0.5, 1.0, 2.0]
+    )
 
-# ── True pairwise TMRCA at focal SNP ──────────────────────────
-focal_pos = positions[focal_snp]
-focal_tree = ts.at(focal_pos)
-true_div = np.zeros((n, n))
-for i in range(n):
-    for j in range(i + 1, n):
-        t = focal_tree.time(focal_tree.mrca(i, j))
-        true_div[i, j] = t
-        true_div[j, i] = t
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.6), constrained_layout=True)
+    for reference in range(panel.shape[1]):
+        axes[0].plot(np.arange(target.size), posterior[:, reference], marker="o", label=f"reference {reference}")
+    axes[0].set(xlabel="site", ylabel="copying posterior", ylim=(0, 1), title="A  Directional painting")
+    axes[0].legend(frameon=False, fontsize=8)
 
-# ── Figure ──────────────────────────────────────────────────────
-fig, axes = plt.subplots(2, 2, figsize=(11, 8.5))
-fig.suptitle(
-    f"Demo: Relate on msprime Data ({n_haps} haplotypes, {n_sites} sites, 500 kb)",
-    fontsize=13, fontweight="bold", y=0.98,
-)
+    root_ages = draws.sum(axis=1)
+    axes[1].hist(root_ages, bins=35, color="#6a4c93", alpha=0.8)
+    axes[1].axvline(root_ages.mean(), color="black", ls="--", lw=1)
+    axes[1].set(xlabel="root age (coalescent units)", ylabel="draws", title=f"B  Fixed-order MCMC\nacceptance={acceptance:.2f}")
 
-# Panel A: Input haplotype matrix
-ax = axes[0, 0]
-show_sites = min(80, n_sites)
-im = ax.imshow(G[:show_sites].T, aspect="auto", cmap="YlOrRd",
-               interpolation="nearest")
-ax.axvline(min(focal_snp, show_sites - 1), color="#1B7837", lw=2, ls="--",
-           label=f"Focal SNP ({focal_snp})")
-ax.set_xlabel(f"Variant site (first {show_sites} of {n_sites})")
-ax.set_ylabel("Haplotype")
-ax.set_title("A. Input haplotypes from VCF")
-ax.legend(fontsize=7)
-plt.colorbar(im, ax=ax, label="Allele", shrink=0.8, ticks=[0, 1])
+    epochs = np.arange(3)
+    width = 0.25
+    axes[2].bar(epochs - width, events, width, label="events", color="#1982c4")
+    axes[2].bar(epochs, times, width, label="exposure", color="#8ac926")
+    axes[2].bar(epochs + width, rates, width, label="rate", color="#ff595e")
+    axes[2].set(xticks=epochs, xticklabels=["0-.5", ".5-1", "1-2"], xlabel="time epoch", title="C  Events / exposure")
+    axes[2].legend(frameon=False, fontsize=8)
 
-# Panel B: Inferred distance matrix
-ax = axes[0, 1]
-im = ax.imshow(D_mat, aspect="auto", cmap="viridis", interpolation="nearest")
-ax.set_xlabel("Haplotype")
-ax.set_ylabel("Haplotype")
-ax.set_title("B. Relate-inferred pairwise distances")
-plt.colorbar(im, ax=ax, label="Distance", shrink=0.8)
+    for suffix in ("png", "pdf"):
+        fig.savefig(OUT / f"fig_demo_relate.{suffix}", dpi=180)
+    plt.close(fig)
 
-# Panel C: True divergence matrix
-ax = axes[1, 0]
-im = ax.imshow(true_div, aspect="auto", cmap="viridis", interpolation="nearest")
-ax.set_xlabel("Haplotype")
-ax.set_ylabel("Haplotype")
-ax.set_title("C. True pairwise TMRCA at focal SNP")
-plt.colorbar(im, ax=ax, label="TMRCA (gen)", shrink=0.8)
 
-# Panel D: True vs inferred distance scatter
-ax = axes[1, 1]
-true_flat = true_div[np.triu_indices(n, k=1)]
-inf_flat = D_mat[np.triu_indices(n, k=1)]
-
-true_norm = (true_flat - true_flat.min()) / (true_flat.max() - true_flat.min() + 1e-10)
-inf_norm = (inf_flat - inf_flat.min()) / (inf_flat.max() - inf_flat.min() + 1e-10)
-
-ax.scatter(true_norm, inf_norm, s=40, alpha=0.6, color="#2166AC",
-           edgecolors="white", linewidths=0.3)
-ax.plot([0, 1], [0, 1], "k--", lw=1, alpha=0.4, label="$y = x$")
-ax.set_xlabel("True divergence (normalized)")
-ax.set_ylabel("Inferred distance (normalized)")
-ax.set_title("D. True vs inferred distances")
-corr = np.corrcoef(true_norm, inf_norm)[0, 1]
-ax.text(0.02, 0.95, f"$r$ = {corr:.3f}",
-        transform=ax.transAxes, fontsize=9, va="top",
-        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8))
-ax.legend(fontsize=8)
-
-plt.tight_layout(rect=[0, 0, 1, 0.96])
-plt.savefig("figures/fig_demo_relate.png", dpi=150, bbox_inches="tight")
-plt.savefig("figures/fig_demo_relate.pdf", bbox_inches="tight")
-print("Saved figures/fig_demo_relate.png")
+if __name__ == "__main__":
+    main()
