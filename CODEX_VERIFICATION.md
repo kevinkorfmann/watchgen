@@ -48,7 +48,7 @@ chapter review evidence, not necessarily the repository-wide total.
 | IV | msprime | `FOLLOW-UP` | `60025dc` | Review commit exists. Later mini review fixed gap recombination and per-site/recurrent mutation-state handling in the shared worktree; those fixes need a dedicated pushed commit and final focused validation. |
 | V | ARGweaver | `NOT STARTED` | — | Requires original ARGweaver source/paper parity audit and chapter-scoped validation. |
 | VI | tsinfer | `NOT STARTED` | — | Requires upstream `tsinfer` parity fixtures and chapter-scoped validation. |
-| VII | SINGER | `IN PROGRESS` | task `Review watchgen chapters backward` | Active audit against the original SINGER source and paper; teaching code is being bounded explicitly against the production C++ ARG engine. |
+| VII | SINGER | `VERIFIED` | `3c37ea7` | 35 focused equation/invariant tests; official C++ source at `eb8e39b` compiled and its CLI validation ran; corrected figures were rendered and inspected; strict 135-page Sphinx build passed. |
 | VIII | Threads | `NOT STARTED` | — | Requires paper/software parity audit and chapter-scoped validation. |
 | IX | tsdate | `NOT STARTED` | — | Requires upstream `tsdate` parity, dating-prior checks, and chapter-scoped validation. |
 | X | moments | `NOT STARTED` | — | Requires original software/paper parity and SFS moment-equation fixtures. |
