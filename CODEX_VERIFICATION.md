@@ -1,7 +1,7 @@
 # Codex verification ledger
 
 Last reconciled: 2026-09-01  
-Baseline: GitHub `main` at `c198881`  
+Baseline: GitHub `main` at `86a00ad`
 Scope: the current source-grounded, chapter-by-chapter Codex review campaign
 
 This ledger records **Codex verification**, not independent expert review or a
@@ -42,7 +42,7 @@ chapter review evidence, not necessarily the repository-wide total.
 
 | # | Chapter | Status | Commit / owner | Evidence or remaining closure |
 |---:|---|---|---|---|
-| I | PSMC | `FOLLOW-UP` | `e7336e0` | Review commit exists. A later mini audit corrected infinite-tail normalization in the shared worktree; the fix and focused PSMC suite still need a dedicated pushed commit and clean completion. |
+| I | PSMC | `VERIFIED` | `e7336e0`, `f6f2afd` | Review plus infinite-tail closure; 205 focused tests, analytic `C_pi`/`C_sigma` slow-tail oracles, published-code parity, and strict Sphinx build passed. |
 | II | SMC++ | `VERIFIED` | `49a01f0` | 37 focused tests; upstream C++ CSFS parity within `2e-12`, transition parity within `2.4e-16`; 2,475-test broad run and strict Sphinx build passed. |
 | III | Li & Stephens HMM | `VERIFIED` | `c198881` | Appendix A/PAC audit; haploid `lshmm` 0.0.8 parity within `3.6e-15`; optimized stochastic diploid recursion matched direct `O(k^4)` enumeration; 162 Python and 17 Rust tests, strict Sphinx build, and rendered-PDF review passed. |
 | IV | msprime | `VERIFIED` | `60025dc`, `dc10c1c` | Review plus parity closure; 209 focused tests covered source-matched gap recombination, per-site state independence, default discrete-genome recurrent/back mutations, genotype reconstruction, strict Sphinx build, and rendered-PDF review. |
@@ -63,12 +63,10 @@ chapter review evidence, not necessarily the repository-wide total.
 
 ## Remaining campaign gates
 
-1. Push and validate the post-review PSMC and msprime mini fixes.
-2. Finish and push the active SINGER review.
-3. Review the eleven `NOT STARTED` Timepieces one chapter at a time.
-4. Reconcile `docs/timepieces/verification.rst` from this ledger after each pushed
+1. Review the eleven `NOT STARTED` Timepieces one chapter at a time.
+2. Reconcile `docs/timepieces/verification.rst` from this ledger after each pushed
    chapter, while preserving its independent-domain-expert disclaimer.
-5. After all chapters are closed, run the entire repository test suite, execute all
+3. After all chapters are closed, run the entire repository test suite, execute all
    published examples, build HTML and PDF with warnings as errors, and perform a
    final cross-chapter terminology/equation/citation audit.
 

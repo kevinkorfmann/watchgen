@@ -1,10 +1,12 @@
 # watchgen
 
-[![Unit tests](https://img.shields.io/badge/tests-2672%20passed-brightgreen)](https://github.com/kevinkorfmann/watchgen/actions) [![CI](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml/badge.svg)](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml) [![Read the Docs](https://img.shields.io/readthedocs/watchgen)](https://watchgen.readthedocs.io) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Unit tests](https://img.shields.io/badge/tests-2672%20passed-brightgreen)](https://github.com/kevinkorfmann/watchgen/actions) [![Codex verification](https://img.shields.io/badge/Codex%20verification-58%25-yellowgreen)](CODEX_VERIFICATION.md) [![CI](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml/badge.svg)](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml) [![Read the Docs](https://img.shields.io/readthedocs/watchgen)](https://watchgen.readthedocs.io) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **The Watchmaker's Guide to Population Genetics** — a build-it-yourself book on the algorithms behind modern population genetics. Every concept is derived from first principles, every method reimplemented from scratch in Python. No black boxes.
 
 **Read online:** https://watchgen.readthedocs.io &nbsp;|&nbsp; **Download PDF:** https://watchgen.readthedocs.io/_/downloads/en/latest/pdf/
+
+**Codex verification progress: 58% — 15 of 26 prerequisite and Timepiece chapters verified.** See the [verification ledger](CODEX_VERIFICATION.md) for chapter-level evidence and remaining work.
 
 > **Note:** A citable version number will be assigned in the coming days. Until then, please cite by URL and access date.
 
