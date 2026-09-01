@@ -16,8 +16,9 @@ tree. The five key components are:
    finite while concentrating resolution near the present.
 2. Transition Probabilities -- The HMM transition matrix encoding
    recombination and re-coalescence under the discrete SMC.
-3. Emission Probabilities -- A parsimony-based likelihood that scores how
-   well each state explains the observed data.
+3. Emission Probabilities -- Jukes-Cantor partial likelihoods that score how
+   well each state explains the observed data. Parsimony is used only by
+   optional infinite-sites compatibility checks and optimizations.
 4. MCMC Sampling -- Subtree re-threading with Gibbs updates: remove one
    chromosome, re-sample its path through the ARG using forward-backward.
 5. Switch Transitions -- Special transition matrices at recombination
@@ -343,7 +344,7 @@ def recoal_distribution(nbranches_const, Ne, times):
         t_lo = times[j]
         t_hi = times[j + 1]
         A = (t_hi - t_lo) * nbr
-        coal_prob = 1.0 - exp(-A / Ne)
+        coal_prob = 1.0 - exp(-A / (2.0 * Ne))
         pmf.append(exp(cum_log_surv) * coal_prob)
         cum_log_surv += log(1.0 - coal_prob) if coal_prob < 1.0 else -1e20
 
@@ -353,12 +354,12 @@ def recoal_distribution(nbranches_const, Ne, times):
 def build_simple_transition_matrix(ntimes, nbranches, ncoals,
                                    popsizes, rho, treelen, times):
     """
-    Build the normal transition matrix for a simplified model
-    where all states share the same lineage counts.
+    Build a deliberately state-independent transition approximation.
 
-    Returns a matrix indexed by time index (ignoring branch identity
-    for simplicity, since all branches at the same time contribute
-    equally in the rank-1 structure).
+    This helper ignores branch identity and the source state's added branch
+    length. It is useful for illustrating stochastic-matrix bookkeeping, but
+    it is *not* ARGweaver's production transition kernel: the real kernel is
+    source-state dependent and uses a richer compressed representation.
 
     Parameters
     ----------
@@ -410,14 +411,20 @@ def build_simple_transition_matrix(ntimes, nbranches, ncoals,
                 A = (coal_times_list[2*m+1] - coal_times_list[2*m]) * nbranches[m]
                 if m > k:
                     A += (coal_times_list[2*m] - coal_times_list[2*m-1]) * nbranches[max(m-1, 0)]
-                surv *= exp(-A / popsizes[m])
+                surv *= exp(-A / (2.0 * popsizes[m]))
             A = (coal_times_list[2*j+1] - coal_times_list[2*j]) * nbranches[j]
             if j > k:
                 A += (coal_times_list[2*j] - coal_times_list[2*j-1]) * nbranches[max(j-1, 0)]
-            cp = 1.0 - exp(-A / popsizes[j])
+            cp = 1.0 - exp(-A / (2.0 * popsizes[j]))
             total += recomb_p * surv * cp / max(ncoals[j], 1)
         q[s_idx] = total
 
+    # The finite grid truncates some re-coalescence mass. Condition the toy
+    # recombination component on re-coalescing within the represented grid so
+    # every row remains a valid probability distribution.
+    q_total = q.sum()
+    if q_total > 0:
+        q *= (1.0 - no_recomb) / q_total
     T = np.outer(np.ones(nstates), q) + no_recomb * np.eye(nstates)
     return T
 
@@ -451,14 +458,26 @@ def felsenstein_pruning(tree_children, tree_parent, leaf_bases,
     dict
         Maps base -> log-likelihood at root.
     """
+    if mu < 0:
+        raise ValueError("mu must be non-negative")
     bases = ['A', 'C', 'G', 'T']
     L = {}
 
+    nodes = set(tree_children) | set(tree_parent) | set(leaf_bases)
+    roots = nodes - set(tree_parent)
+    if len(roots) != 1:
+        raise ValueError("tree must have exactly one root")
+    root = next(iter(roots))
+
     def compute(node):
         if node in leaf_bases:
+            observed = leaf_bases[node].upper()
+            if observed not in bases + ['N']:
+                raise ValueError(f"unsupported observed base: {observed}")
             L[node] = {}
             for b in bases:
-                L[node][b] = 0.0 if b == leaf_bases[node] else -float('inf')
+                L[node][b] = (0.0 if observed in (b, 'N')
+                              else -float('inf'))
             return
 
         for child in tree_children[node]:
@@ -469,12 +488,15 @@ def felsenstein_pruning(tree_children, tree_parent, leaf_bases,
             ll = 0.0
             for child in tree_children[node]:
                 blen = branch_lengths[child]
-                p_no_mut = exp(-mu * blen)
-                p_mut = (1.0 - exp(-mu * blen)) / 3.0
+                if blen < 0:
+                    raise ValueError("branch lengths must be non-negative")
+                decay = exp(-4.0 * mu * blen / 3.0)
+                p_no_mut = 0.25 * (1.0 + 3.0 * decay)
+                p_mut = 0.25 * (1.0 - decay)
                 child_vals = []
                 for cb in bases:
                     p_trans = p_no_mut if cb == b else p_mut
-                    if L[child][cb] > -float('inf'):
+                    if p_trans > 0 and L[child][cb] > -float('inf'):
                         child_vals.append(log(p_trans) + L[child][cb])
                 if child_vals:
                     mx = max(child_vals)
@@ -483,8 +505,8 @@ def felsenstein_pruning(tree_children, tree_parent, leaf_bases,
                     ll += -float('inf')
             L[node][b] = ll
 
-    compute('root')
-    return L['root']
+    compute(root)
+    return L[root]
 
 
 # ============================================================================
@@ -522,7 +544,9 @@ def sample_tree(k, popsizes, times):
     k2 = k
 
     while k2 > 1:
-        coal_rate = (k2 * (k2 - 1) / 2) / float(n)
+        # ARGweaver's ``popsizes`` are diploid effective sizes, so each pair
+        # coalesces at rate 1 / (2N).
+        coal_rate = (k2 * (k2 - 1) / 2) / (2.0 * float(n))
         t2 = random.expovariate(coal_rate)
 
         if timei < ntimes - 2 and t + t2 > times[timei + 1]:
@@ -557,7 +581,11 @@ def sample_next_recomb(treelen, rho):
     float
         Distance in base pairs to the next recombination.
     """
-    rate = max(treelen * rho, rho)
+    if treelen <= 0:
+        raise ValueError("treelen must be positive")
+    if rho <= 0:
+        raise ValueError("rho must be positive")
+    rate = treelen * rho
     return random.expovariate(rate)
 
 
@@ -600,11 +628,11 @@ def simplified_mcmc(n_haps=4, n_sites=100, n_iters=1000,
                     Ne=10000, mu=1.4e-8, rho=1e-8,
                     ntimes=20, maxtime=160000, delta=0.01):
     """
-    Simplified ARGweaver MCMC loop for demonstration.
+    Toy tree-length perturbation loop for demonstration.
 
-    This implementation tracks only the total tree length at a
-    fixed site across iterations, omitting the full ARG data
-    structure for clarity.
+    This implementation is not an ARGweaver posterior sampler: it has no
+    sequence likelihood, threading HMM, or ARG state. It tracks only a toy
+    tree-length statistic and is retained solely for visualization.
 
     Parameters
     ----------

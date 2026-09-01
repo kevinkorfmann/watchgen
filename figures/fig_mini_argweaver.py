@@ -3,7 +3,7 @@ Figure: ARGweaver algorithm core components.
 
 Four-panel overview of the Discrete SMC machinery underpinning ARGweaver:
 time discretization, transition probabilities, re-coalescence distributions,
-and MCMC tree sampling behaviour.
+and coalescent-prior tree-height behaviour.
 """
 
 import numpy as np
@@ -118,7 +118,7 @@ cbar.set_label("Transition probability", fontsize=8)
 cbar.ax.tick_params(labelsize=7)
 ax.set_xlabel("Destination time index $j'$")
 ax.set_ylabel("Source time index $j$")
-ax.set_title("B. Transition matrix $T(j \\to j')$")
+ax.set_title("B. Bounded transition approximation")
 
 # ============================================================================
 # Panel C: Re-coalescence Distribution
@@ -148,7 +148,7 @@ ax.legend(fontsize=8, title="Branches", title_fontsize=8)
 ax.set_xlim(-0.5, ntimes_c - 1)
 
 # ============================================================================
-# Panel D: MCMC Tree Sampling -- Distribution of Root Times
+# Panel D: Coalescent-prior distribution of root times
 # ============================================================================
 ax = axes[1, 1]
 
@@ -177,14 +177,14 @@ for idx, k in enumerate(k_vals):
         color=colours_d[idx], label=f"$k={k}$ (sampled)",
     )
 
-    # Theoretical expected TMRCA = 2*Ne*(1 - 1/k) for standard coalescent
-    E_tmrca = 2 * Ne_d * (1 - 1.0 / k)
+    # With pairwise rate 1/(2Ne), E[TMRCA] = 4Ne(1 - 1/k).
+    E_tmrca = 4 * Ne_d * (1 - 1.0 / k)
     ax.axvline(E_tmrca, color=colours_d[idx], ls="--", lw=2,
                label=f"$k={k}$: $E[T_{{MRCA}}]={E_tmrca:.0f}$")
 
 ax.set_xlabel("Tree height (TMRCA, generations)")
 ax.set_ylabel("Density")
-ax.set_title("D. MCMC tree heights vs coalescent expectation")
+ax.set_title("D. Coalescent-prior TMRCA check")
 ax.legend(fontsize=7, ncol=2, loc="upper right")
 
 # ============================================================================

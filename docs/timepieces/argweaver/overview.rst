@@ -16,7 +16,8 @@ Overview of ARGweaver
    a finite grid, transition probabilities between time intervals at
    recombination breakpoints, re-coalescence distributions governing where
    a detached lineage re-attaches, and MCMC tree sampling behaviour showing
-   convergence of the Gibbs sampler.
+   coalescent-prior tree-height behaviour. The transition heat map is the bounded
+   teaching approximation, not the production compressed kernel.
 
 If PSMC (see :ref:`coalescent_theory`) is an analog wristwatch --- elegant, continuous,
 but limited to reading the time for a single pair of chromosomes --- then ARGweaver is
@@ -54,8 +55,7 @@ From these posterior samples, you can compute:
 
 - **Pairwise coalescence times** between any two samples at any genomic position
 - **Allele ages** --- when mutations first arose
-- **Local effective population size** :math:`N_e(t)` through time
-- **Recombination rate estimates** across the genome
+- **Posterior summaries of local tree length and recombination events**
 - **Signatures of natural selection** via distortions in the local genealogies
 
 .. admonition:: Probability Aside --- What is a posterior distribution?
@@ -116,7 +116,7 @@ creates a Markov chain of local trees along the genome.
            # Build the single HMM:
            #   States: (node, time_index) pairs at each genomic position
            #   Transitions: DSMC recombination + re-coalescence
-           #   Emissions: parsimony-based mutation likelihood
+           #   Emissions: Jukes-Cantor partial likelihoods
            hmm = build_hmm(partial_arg, haplotypes[i], times, Ne, rho, mu)
 
            # Run forward algorithm, then stochastic traceback
@@ -162,9 +162,10 @@ and :math:`t_{\text{top}(b)}` is the age of the parent node.
    Continuous-time models (like SINGER's) require separate treatment of topology
    and timing, or adaptive quadrature over the time axis. Discretization makes
    everything finite: the transition matrix has a fixed size per tree, and the
-   forward--backward algorithm runs in :math:`O(S^2)` per site, where :math:`S`
-   is the number of states. The cost is a small approximation error controlled by
-   the number of time points.
+   forward--backward algorithm becomes a finite computation. The implementation
+   uses a compressed, time-grouped transition representation rather than a generic
+   dense :math:`S\times S` multiplication. The cost is a time-grid approximation
+   controlled by the number and placement of time points.
 
 .. admonition:: Calculus Aside --- Why does discretization make the problem finite?
 
@@ -232,8 +233,8 @@ time discretization makes the joint state space finite.
 - **Observations**: allelic states (A/C/G/T) at each genomic position
 - **Transitions**: probability of moving from state :math:`(b, i)` at position :math:`s`
   to state :math:`(b', j)` at position :math:`s+1`, determined by the DSMC
-- **Emissions**: probability of the observed base given that the new lineage joins
-  at state :math:`(b, i)`, computed using parsimony
+- **Emissions**: probability of the observed bases after attaching the new lineage
+  at state :math:`(b, i)`, computed with Jukes--Cantor partial likelihoods
 
 At each position, the number of states is:
 
@@ -245,23 +246,20 @@ For :math:`k` lineages and :math:`n_t` time points, this is roughly :math:`O(k \
 
 .. admonition:: One HMM vs. two HMMs
 
-   ARGweaver's single-HMM approach is **exact** given the DSMC model (no decoupling
-   approximation), but requires :math:`O(S^2)` work per site for transitions.
-   SINGER's two-HMM approach is an approximation but scales better to large sample
-   sizes because each HMM has fewer states. The tradeoff: ARGweaver is more accurate
-   for small :math:`n`, SINGER scales to thousands of haplotypes.
+   ARGweaver's single-HMM threading update is exact conditional on its DSMC model and
+   time grid. Its production transition object groups states by time and applies
+   same-branch corrections, so it should not be described as either a generic dense
+   multiplication or a rank-one update. SINGER uses a different continuous-time
+   factorization and targets a different scaling regime.
 
-.. admonition:: Probability Aside --- Why does a joint state space need :math:`O(S^2)` per site?
+.. admonition:: Probability Aside --- Why exploit transition structure?
 
-   The forward algorithm at each position computes
-   :math:`\alpha_s(j) = \sum_i \alpha_{s-1}(i) \cdot T(i,j)` for every destination
-   state :math:`j`. If there are :math:`S` states, this is a matrix--vector product
-   costing :math:`O(S^2)`. Splitting the state into two independent HMMs (as SINGER
-   does) reduces each HMM's state count: if one has :math:`S_1` states and the other
-   :math:`S_2`, the cost is :math:`O(S_1^2 + S_2^2)` instead of
-   :math:`O((S_1 \cdot S_2)^2)`. The catch is that the two HMMs are not truly
-   independent, so the split introduces an approximation. ARGweaver avoids this
-   approximation at the cost of a larger state space.
+   A generic dense HMM step computes
+   :math:`\alpha_s(j) = \sum_i \alpha_{s-1}(i)T(i,j)` and costs
+   :math:`O(S^2)`. ARGweaver avoids that generic multiplication by summing forward
+   mass by source time, applying a time-by-time kernel, and then adding corrections
+   for states on the same branch. See :ref:`argweaver_transitions` for the bounded
+   source-level description.
 
 .. admonition:: Switch transitions
 
@@ -340,7 +338,7 @@ Here is a detailed view of how the pieces connect during one MCMC iteration:
    |    States: (branch, time)|
    |    Transition: DSMC      |
    |      (normal or switch)  |
-   |    Emission: parsimony   |
+   |    Emission: JC partial  |
    |      likelihood          |
    +--------------------------+
            |
@@ -394,6 +392,10 @@ Here is a detailed view of how the pieces connect during one MCMC iteration:
    configuration that is a valid sample from the posterior. Repeating this process
    many times yields a collection of posterior samples. For more on Gibbs sampling
    and why it converges to the correct distribution, see :ref:`argweaver_mcmc`.
+
+   This automatic-acceptance statement is specific to external chromosome
+   full-conditional updates. ARGweaver's general internal-subtree proposals use a
+   Metropolis--Hastings correction.
 
 Ready to Build
 ===============

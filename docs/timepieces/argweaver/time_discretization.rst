@@ -545,18 +545,11 @@ point :math:`t_{n_t - 1}` (excluding the final sentinel time).
 
 .. admonition:: Probability Aside --- Why the state space determines computational cost
 
-   The forward algorithm (see :ref:`hmms`) computes one vector of length :math:`S`
-   (the number of states) at each genomic position, using a matrix--vector product
-   that costs :math:`O(S^2)`. For a genome of length :math:`L`, the total cost is
-   :math:`O(L \cdot S^2)`. With :math:`S \sim k \cdot n_t`, this becomes
-   :math:`O(L \cdot k^2 \cdot n_t^2)`. Compare this with SINGER, where the two-HMM
-   approach achieves :math:`O(L \cdot k)` per site --- the scaling advantage of
-   SINGER for large :math:`k` is dramatic.
-
-   However, ARGweaver's :math:`O(S^2)` cost can be reduced to :math:`O(S)` per site
-   by exploiting the rank-1 structure of the transition matrix (see
-   :ref:`argweaver_transitions`). This is a key optimization that makes ARGweaver
-   practical even with hundreds of states.
+   A generic dense transition would cost :math:`O(S^2)` per position. ARGweaver
+   instead groups states by time and evaluates a compressed time kernel plus
+   same-branch corrections. This retains explicit work in both the state count and
+   the number of time points; it is not a rank-one :math:`O(S)` update. See
+   :ref:`argweaver_transitions` for the source-matched structure.
 
 Lineage Counting
 ==================

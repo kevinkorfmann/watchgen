@@ -297,10 +297,18 @@ class TestRecoalDistribution:
         for p in pmf:
             assert p >= 0
 
+    def test_two_ne_hazard_matches_closed_form(self):
+        times = [0.0, 100.0, 300.0]
+        pmf = recoal_distribution(3, 1000.0, times)
+        first = 1.0 - np.exp(-3.0 * 100.0 / 2000.0)
+        second = np.exp(-3.0 * 100.0 / 2000.0) * (
+            1.0 - np.exp(-3.0 * 200.0 / 2000.0))
+        assert np.allclose(pmf, [first, second])
+
 
 class TestBuildSimpleTransitionMatrix:
-    def test_rows_sum_to_approximately_one(self):
-        """Rows of transition matrix should sum to approximately 1."""
+    def test_rows_sum_to_one(self):
+        """The bounded toy approximation must still be stochastic."""
         times = get_time_points(ntimes=10, maxtime=100000, delta=0.01)
         ntimes_val = len(times) - 1
         Ne = 10000
@@ -315,7 +323,7 @@ class TestBuildSimpleTransitionMatrix:
             ntimes_val, nbranches, ncoals, popsizes, rho, treelen, times)
 
         row_sums = T.sum(axis=1)
-        assert np.allclose(row_sums, 1.0, atol=0.05)
+        assert np.allclose(row_sums, 1.0, atol=1e-12)
 
     def test_non_negative_entries(self):
         """All entries should be non-negative."""
@@ -473,11 +481,10 @@ class TestSampleNextRecomb:
         sample_mean = sum(samples) / len(samples)
         assert abs(sample_mean - expected_mean) / expected_mean < 0.1
 
-    def test_guards_against_zero_treelen(self):
-        """Should not crash with zero tree length."""
-        random.seed(42)
-        d = sample_next_recomb(0.0, 1e-8)
-        assert d > 0
+    def test_rejects_zero_treelen(self):
+        """A zero-length genealogy cannot generate recombination."""
+        with pytest.raises(ValueError, match="treelen"):
+            sample_next_recomb(0.0, 1e-8)
 
 
 class TestSampleRecombTime:
@@ -575,6 +582,13 @@ class TestSampleTree:
 
         assert np.mean(small_tmrca) < np.mean(large_tmrca)
 
+    def test_pairwise_mean_is_two_ne(self):
+        random.seed(91)
+        Ne = 500.0
+        times = [0.0, 1e9]
+        samples = [sample_tree(2, [Ne], times)[0] for _ in range(10000)]
+        assert np.isclose(np.mean(samples), 2.0 * Ne, rtol=0.04)
+
 
 class TestSimplifiedMcmc:
     def test_returns_correct_length(self):
@@ -647,6 +661,58 @@ class TestFelsensteinPruning:
                                      leaf_bases, mu, branch_lengths)
         # T should still be favored (two leaves vs one)
         assert result['T'] > result['A']
+
+    def test_single_leaf_matches_exact_jukes_cantor(self):
+        tree_children = {'root': ['A']}
+        tree_parent = {'A': 'root'}
+        branch_lengths = {'A': 2.5}
+        mu = 0.2
+
+        result = felsenstein_pruning(
+            tree_children, tree_parent, {'A': 'A'}, mu, branch_lengths)
+        decay = np.exp(-4.0 * mu * branch_lengths['A'] / 3.0)
+        assert np.isclose(np.exp(result['A']), 0.25 * (1 + 3 * decay))
+        assert np.isclose(np.exp(result['C']), 0.25 * (1 - decay))
+
+    def test_matches_direct_internal_state_enumeration(self):
+        tree_children = {'r': ['i', 'C'], 'i': ['A', 'B']}
+        tree_parent = {'i': 'r', 'C': 'r', 'A': 'i', 'B': 'i'}
+        observations = {'A': 'A', 'B': 'G', 'C': 'A'}
+        lengths = {'i': 0.7, 'C': 1.1, 'A': 0.3, 'B': 0.5}
+        mu = 0.4
+        bases = 'ACGT'
+
+        def jc(parent, child, length):
+            decay = np.exp(-4 * mu * length / 3)
+            return ((1 + 3 * decay) / 4 if parent == child
+                    else (1 - decay) / 4)
+
+        expected = {}
+        for root_base in bases:
+            expected[root_base] = sum(
+                jc(root_base, inner_base, lengths['i'])
+                * jc(inner_base, observations['A'], lengths['A'])
+                * jc(inner_base, observations['B'], lengths['B'])
+                * jc(root_base, observations['C'], lengths['C'])
+                for inner_base in bases
+            )
+
+        observed = felsenstein_pruning(
+            tree_children, tree_parent, observations, mu, lengths)
+        assert np.allclose(
+            [np.exp(observed[base]) for base in bases],
+            [expected[base] for base in bases],
+        )
+
+    def test_missing_base_is_uninformative(self):
+        observed = felsenstein_pruning(
+            {'ancestor': ['sample']},
+            {'sample': 'ancestor'},
+            {'sample': 'N'},
+            0.2,
+            {'sample': 5.0},
+        )
+        assert np.allclose([np.exp(value) for value in observed.values()], 1.0)
 
 
 # ============================================================

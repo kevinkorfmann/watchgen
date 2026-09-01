@@ -123,9 +123,12 @@ The Timepieces are grouped by what they do, with verification status for each.
        and brute-force haploid and diploid recursions.
    * - V
      - :ref:`ARGweaver <argweaver_timepiece>`
-     - 120
-     - --
-     - Bayesian ARG sampling with discretized time. SINGER's predecessor.
+     - 125
+     - 2026-09-01
+     - Exact Jukes--Cantor emissions, diploid coalescent scaling, discretized
+       recoalescence, and bounded teaching approximations checked against the
+       primary paper and official C++ source (``fee3d32``); the upstream
+       executable was built and completed a finite two-iteration sampling run.
    * - VI
      - :ref:`tsinfer <tsinfer_timepiece>`
      - 21

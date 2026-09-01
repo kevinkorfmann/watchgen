@@ -42,13 +42,13 @@ The five gears of ARGweaver:
    recombination and re-coalescence under the discrete SMC. This is where the
    :ref:`SMC approximation <smc>` becomes a concrete computation.
 
-3. **Emission Probabilities** (the mainspring) -- A parsimony-based likelihood that
-   scores how well each state explains the observed data. Simpler than a full
-   probabilistic model, but effective.
+3. **Emission Probabilities** (the mainspring) -- Jukes--Cantor inner and outer
+   partial likelihoods that sum over ancestral states. Parsimony supports an
+   optional infinite-sites compatibility filter.
 
-4. **MCMC Sampling** (the winding mechanism) -- Subtree re-threading with Gibbs
-   updates: remove one chromosome, re-sample its path through the ARG using
-   forward-backward, repeat. No Metropolis-Hastings acceptance step needed.
+4. **MCMC Sampling** (the winding mechanism) -- External chromosome threading is
+   a Gibbs update, while broader internal-subtree moves use a
+   Metropolis--Hastings correction.
 
 5. **Switch Transitions** -- Special transition matrices at recombination breakpoints
    in the partial ARG, where the local tree topology changes. These handle the
