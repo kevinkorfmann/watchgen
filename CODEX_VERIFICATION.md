@@ -57,7 +57,7 @@ chapter review evidence, not necessarily the repository-wide total.
 | XIII | Gamma-SMC | `NOT STARTED` | — | Requires paper/software parity and gamma-posterior numerical fixtures. |
 | XIV | PHLASH | `NOT STARTED` | — | Requires original implementation/paper parity, composite-likelihood and SVGD checks. |
 | XV | CLUES | `NOT STARTED` | — | Requires original implementation/paper parity and selection-likelihood fixtures. |
-| XVI | SLiM | `NOT STARTED` | — | Requires upstream SLiM behavior/recipe parity and forward-simulation validation. |
+| XVI | SLiM | `VERIFIED` | `7ac1c01` | Tagged SLiM 5.2 source `f11de0d` built locally; its diagnostic suite reported 36,853 successes; 28 focused tests including three warning-free current Eidos recipes, Ruff, smoke test, and strict 135-source Sphinx build passed. |
 | XVII | Relate | `VERIFIED` | `d0d99a3` | 37 focused checks, source-guided teaching kernels, official Relate build/example execution, output-structure validation, strict Sphinx build. |
 | XVIII | discoal | `VERIFIED` | `0a00529` | 32 focused checks, primary sweep/structured-coalescent audit, regenerated figures, strict build. |
 
