@@ -12,7 +12,7 @@ The Big Idea
 In the :ref:`coalescent_theory` chapter, we built the Wright-Fisher model: a
 discrete population of :math:`2N` gene copies, evolving in discrete generations,
 where allele frequencies jump around in integer multiples of :math:`1/(2N)`. This
-model is exact, but when :math:`N` is large, the jumps are tiny, the generations
+model is an exactly specified idealization, but when :math:`N` is large, the jumps are tiny, the generations
 are many, and keeping track of individual ticks becomes both unnecessary and
 computationally expensive.
 
@@ -38,7 +38,10 @@ Wright-Fisher model you already know, derive the continuous limit, and arrive at
 the **Fokker-Planck equation** -- the PDE at the heart of tools like
 :ref:`dadi <dadi_timepiece>`. We then solve it numerically, connect it to the site
 frequency spectrum, and preview how :ref:`moments <moments_timepiece>` sidesteps
-the PDE entirely.
+the PDE entirely. The continuous Wright--Fisher model goes back to Kimura's
+diffusion treatment :cite:`kimura1955`; the software-specific claims below are
+checked against the original ``dadi`` and ``moments`` papers and implementations
+:cite:`dadi,moments`.
 
 
 From Wright-Fisher to Continuous Frequency
@@ -111,9 +114,20 @@ accumulated frequency change is:
 
    \text{Var}\left(\sum_{i=1}^{2N} \Delta x_i\right) \approx 2N \cdot \frac{x(1-x)}{2N} = x(1-x)
 
-The factor of :math:`2N` from summing independent increments cancels the
-:math:`1/(2N)` in each increment's variance, leaving a variance of order 1 in
-diffusion time -- exactly what we need for a nontrivial continuous limit.
+The factor of :math:`2N` cancels the per-generation scale, leaving variance of
+order 1 and hence a nontrivial limit. The displayed sum is only a local
+heuristic: Wright--Fisher increments are not independent because their
+variance changes with the current frequency. In fact, after :math:`g`
+generations the exact neutral variance is
+
+.. math::
+
+   \operatorname{Var}(X_g)
+   =x_0(1-x_0)\left[1-\left(1-\frac{1}{2N}\right)^g\right].
+
+For :math:`g/(2N)\to\tau`, this converges to
+:math:`x_0(1-x_0)(1-e^{-\tau})`, not :math:`x_0(1-x_0)`. The difference is the
+effect of state-dependent variance and eventual absorption.
 
 Code: WF trajectories converging to SDE paths
 ------------------------------------------------
@@ -142,6 +156,14 @@ trajectories increasingly resemble continuous diffusion paths.
        freqs : ndarray of shape (n_generations + 1,)
            Allele frequency at each generation.
        """
+       if (
+           not isinstance(two_N, (int, np.integer))
+           or two_N <= 0
+           or not 0 <= x0 <= 1
+           or not isinstance(n_generations, (int, np.integer))
+           or n_generations < 0
+       ):
+           raise ValueError("require integer two_N > 0, 0 <= x0 <= 1, and integer generations >= 0")
        freqs = np.zeros(n_generations + 1)
        freqs[0] = x0
        for g in range(n_generations):
@@ -166,17 +188,23 @@ trajectories increasingly resemble continuous diffusion paths.
              f"step size={step_size:.6f}, "
              f"num steps={n_gen}")
 
-   # Verification: variance of frequency change per diffusion time unit
-   # should approach x(1-x)
-   two_N = 10000
-   n_replicates = 20000
-   changes = np.zeros(n_replicates)
-   for rep in range(n_replicates):
-       traj = wright_fisher_trajectory(two_N, x0, two_N)
-       changes[rep] = traj[-1] - traj[0]
-   print(f"\nVariance of Delta x over 1 diffusion time unit:")
-   print(f"  Simulated: {changes.var():.4f}")
-   print(f"  Theory x(1-x) = {x0 * (1 - x0):.4f}")
+   # Vectorized endpoints check the exact finite-population moment.
+   two_N = 1000
+   tau = 0.2
+   n_generations = round(tau * two_N)
+   n_replicates = 20_000
+   counts = np.full(n_replicates, round(x0 * two_N), dtype=int)
+   for _ in range(n_generations):
+       counts = np.random.binomial(two_N, counts / two_N)
+   endpoints = counts / two_N
+   exact_variance = x0 * (1 - x0) * (
+       1 - (1 - 1 / two_N) ** n_generations
+   )
+   diffusion_limit = x0 * (1 - x0) * (1 - np.exp(-tau))
+   print("\nEndpoint variance:")
+   print(f"  Simulated Wright-Fisher: {endpoints.var():.4f}")
+   print(f"  Exact finite-N moment:   {exact_variance:.4f}")
+   print(f"  Diffusion limit:         {diffusion_limit:.4f}")
 
 
 Stochastic Differential Equations
@@ -226,15 +254,16 @@ where the **drift coefficient** :math:`\mu(x)` and **diffusion coefficient**
 
 .. math::
 
-   \mu(x) &= \underbrace{\frac{s}{2} x(1-x)}_{\text{selection}} +
+   \mu(x) &= \underbrace{\gamma x(1-x)}_{\text{genic selection}} +
               \underbrace{\frac{\theta_1}{2}(1-x) - \frac{\theta_2}{2} x}_{\text{mutation}} +
               \underbrace{m(x_{\text{source}} - x)}_{\text{migration}} \\
    \sigma(x) &= \sqrt{x(1-x)}
 
-Here :math:`s` is the selection coefficient (positive favors the derived allele),
-:math:`\theta_1` and :math:`\theta_2` are forward and backward mutation rates
-scaled by :math:`4N` (i.e., :math:`\theta = 4N\mu`), :math:`m` is the migration rate, and :math:`x_{\text{source}}`
-is the frequency in the source population. The diffusion coefficient
+Here :math:`\gamma=2Ns_{\mathrm{gen}}` is the scaled genic selection coefficient
+(positive favors the derived allele), while :math:`\theta_1=4Nu` and
+:math:`\theta_2=4Nv` are scaled forward and backward mutation rates. The
+migration coefficient must likewise be expressed per unit of diffusion time.
+The diffusion coefficient
 :math:`\sigma^2(x) = x(1-x)` captures **genetic drift** and is always the same
 regardless of selection or mutation.
 
@@ -276,6 +305,8 @@ variables.
        x : ndarray of shape (n_steps + 1,)
            Simulated trajectory.
        """
+       if not 0 <= x0 <= 1 or T < 0 or n_steps <= 0:
+           raise ValueError("require 0 <= x0 <= 1, T >= 0, and n_steps > 0")
        dt = T / n_steps
        sqrt_dt = np.sqrt(dt)
        times = np.linspace(0, T, n_steps + 1)
@@ -286,7 +317,7 @@ variables.
            # np.random.randn() draws one sample from Normal(0, 1)
            Z = np.random.randn()
            x[n + 1] = x[n] + mu_func(x[n]) * dt + sigma_func(x[n]) * sqrt_dt * Z
-           # Reflect at boundaries to keep x in [0, 1]
+           # Project an overshoot to the nearest absorbing boundary.
            x[n + 1] = np.clip(x[n + 1], 0.0, 1.0)
 
        return times, x
@@ -295,9 +326,9 @@ variables.
    mu_neutral = lambda x: 0.0
    sigma_drift = lambda x: np.sqrt(max(x * (1 - x), 0.0))
 
-   # Selection: mu(x) = (s/2)*x*(1-x), sigma(x) = sqrt(x(1-x))
-   s_coeff = 5.0  # strong positive selection (scaled by 2N)
-   mu_selection = lambda x: (s_coeff / 2) * x * (1 - x)
+   # Genic selection: mu(x) = gamma*x*(1-x), gamma = 2*N*s_gen
+   gamma = 2.5
+   mu_selection = lambda x: gamma * x * (1 - x)
 
    np.random.seed(42)
 
@@ -309,7 +340,13 @@ variables.
 
    print(f"Neutral:  start={0.1:.2f}, end={x_neutral[-1]:.4f}")
    print(f"Selected: start={0.1:.2f}, end={x_selected[-1]:.4f}")
-   print(f"(Selection pushes frequency upward)")
+   print("(These are individual random paths, not a comparison of means.)")
+
+Clipping is a projection, not a reflection, and Euler--Maruyama is not an exact
+Wright--Fisher simulator. Near the degenerate boundaries it can introduce
+step-size bias. Use it for intuition, check convergence as :math:`\Delta t`
+decreases, and use the discrete Wright--Fisher model or specialized diffusion
+methods when boundary behavior is inferentially important.
 
 
 From SDEs to PDEs: The Fokker-Planck Equation
@@ -414,15 +451,15 @@ For the neutral Wright-Fisher diffusion with :math:`\mu(x) = 0` and
    \frac{\partial \phi}{\partial t} =
    \frac{1}{2}\frac{\partial^2}{\partial x^2}\left[x(1-x)\phi\right]
 
-With selection (:math:`\mu(x) = \frac{s}{2}x(1-x)`) and reversible mutation
-(:math:`\mu(x) = \frac{\theta_1}{2}(1-x) - \frac{\theta_2}{2}x + \frac{s}{2}x(1-x)`):
+With genic selection and reversible mutation
+(:math:`\mu(x) = \frac{\theta_1}{2}(1-x) - \frac{\theta_2}{2}x + \gamma x(1-x)`):
 
 .. math::
 
    \frac{\partial \phi}{\partial t} =
    \frac{1}{2}\frac{\partial^2}{\partial x^2}\left[x(1-x)\phi\right]
    - \frac{\partial}{\partial x}\left[\left(\frac{\theta_1}{2}(1-x)
-   - \frac{\theta_2}{2}x + \frac{s}{2}x(1-x)\right)\phi\right]
+   - \frac{\theta_2}{2}x + \gamma x(1-x)\right)\phi\right]
 
 Each evolutionary force is a separate, additive term in the PDE. This modularity
 is one of the great strengths of the diffusion framework: to add a new force,
@@ -445,16 +482,13 @@ has replaced all ancestral copies. In the standard Wright-Fisher model (without
 mutation), both boundaries are **absorbing**: once frequency reaches 0 or 1, it
 stays there forever.
 
-Mathematically, absorbing boundaries mean:
-
-.. math::
-
-   \phi(0, t) = 0 \quad \text{and} \quad \phi(1, t) = 0
-
-No probability density sits at the boundaries -- any probability that reaches
-a boundary is permanently removed from the interior. Over time, all probability
-mass eventually reaches one boundary or the other: the allele is either lost or
-fixed.
+Absorption is a statement about the process, not just the numerical values of an
+interior density. Its law is generally a **mixed measure**: a density on
+:math:`(0,1)` plus point masses at 0 and 1. Probability that reaches a boundary
+leaves the interior density and accumulates in the corresponding atom. Therefore
+the interior integral alone decreases, while interior mass plus the two boundary
+masses remains one. Writing only :math:`\phi(0,t)=\phi(1,t)=0` misses those atoms
+and is not a complete probability accounting.
 
 Why :math:`x(1-x)` vanishes at boundaries
 -------------------------------------------
@@ -495,11 +529,11 @@ removed from the system. The total probability in the interior
 Reflecting boundaries and mutation
 ------------------------------------
 
-With mutation (:math:`\theta_1, \theta_2 > 0`), the boundaries become
-**reflecting** rather than absorbing. Mutation at rate :math:`\theta_1` creates new
-derived copies even when :math:`x = 0`, and back-mutation at rate :math:`\theta_2`
-creates ancestral copies even when :math:`x = 1`. Probability flux is returned to
-the interior, and the density reaches a nondegenerate stationary distribution.
+With two-way mutation (:math:`\theta_1, \theta_2 > 0`), neither monomorphic state
+is absorbing: mutation produces copies of the absent allele. The precise boundary
+classification depends on the scaled mutation parameters, but the stationary
+finite-sites model has zero net boundary flux and a proper interior Beta-type
+density.
 
 In the **infinite-sites model** -- the standard framework for tools like
 :ref:`dadi <dadi_timepiece>` and :ref:`moments <moments_timepiece>` -- each new
@@ -526,31 +560,25 @@ PDE into an ODE (because the :math:`t` dependence disappears):
 This is a second-order ODE in :math:`x` alone, which is much easier to solve than
 the full PDE.
 
-The neutral case
------------------
+Neutrality: two different objects
+----------------------------------
 
-With no selection and no mutation (:math:`\mu(x) = 0`), the ODE becomes:
-
-.. math::
-
-   \frac{d^2}{dx^2}\left[x(1-x)\phi(x)\right] = 0
-
-Integrating twice gives :math:`x(1-x)\phi(x) = C_1 x + C_0`, so:
+With no mutation, a single neutral allele has no proper stationary *interior*
+probability density: its mass is eventually absorbed at 0 or 1. This must not be
+confused with the equilibrium **expected density of segregating sites** in the
+infinite-sites model, where new derived mutations continuously enter near zero.
+For a constant population that expected density is
 
 .. math::
 
-   \phi(x) = \frac{C_1 x + C_0}{x(1-x)}
+   \phi_{\mathrm{SFS}}(x)=\frac{\theta}{x}, \qquad 0<x<1.
 
-For the infinite-sites model, where new mutations enter near :math:`x = 0` and
-we consider the density of segregating sites, the stationary solution is:
-
-.. math::
-
-   \phi(x) \propto \frac{1}{x(1-x)}
-
-This density is **not normalizable** -- it blows up at both boundaries, reflecting
-the fact that under pure drift, sites are constantly being lost and fixed, and
-the steady-state density of segregating sites is concentrated near the boundaries.
+It is an intensity (expected sites per frequency interval), not a normalized
+probability density. The more general zero-time-derivative solution
+:math:`(C_1x+C_0)/[x(1-x)]` is fixed by the mutation input and absorbing-fixation
+boundary flux; choosing an arbitrary symmetric numerator gives the wrong unfolded
+SFS. In particular, ``dadi.PhiManip.phi_1D_snm`` implements the
+:math:`\theta/x` standard-neutral density :cite:`dadi`.
 
 .. admonition:: Probability Aside -- The neutral SFS connection
 
@@ -558,9 +586,9 @@ the steady-state density of segregating sites is concentrated near the boundarie
    has the well-known form :math:`\mathbb{E}[\xi_j] = \theta / j` for
    :math:`j = 1, 2, \ldots, n-1`, where :math:`\xi_j` is the number of sites
    with :math:`j` derived alleles. The :math:`1/j` pattern is a direct
-   consequence of the :math:`1/(x(1-x))` stationary density: when you sample
+   consequence of the :math:`\theta/x` expected site density: when you sample
    :math:`n` individuals from a population with allele frequency density
-   :math:`\propto 1/x`, the probability of seeing :math:`j` derived alleles
+   :math:`\theta/x`, the expected number with :math:`j` derived alleles
    in a sample of :math:`n` is proportional to :math:`\int_0^1 \binom{n}{j}
    x^j(1-x)^{n-j} \cdot \frac{1}{x} dx`, which evaluates to :math:`1/j`.
    We make this connection precise in the section on the site frequency
@@ -587,22 +615,22 @@ perfectly balances drift.
 With selection: exponential tilting
 -------------------------------------
 
-Adding genic selection :math:`\mu(x) = \frac{s}{2}x(1-x) + \frac{\theta_1}{2}(1-x)
-- \frac{\theta_2}{2}x`, the stationary distribution becomes:
+Adding genic selection :math:`\mu(x) = \gamma x(1-x) + \frac{\theta_1}{2}(1-x)
+- \frac{\theta_2}{2}x`, the reversible finite-sites stationary distribution becomes:
 
 .. math::
 
-   \phi(x) \propto x^{\theta_1 - 1}(1-x)^{\theta_2 - 1} e^{sx}
+   p(x) \propto x^{\theta_1 - 1}(1-x)^{\theta_2 - 1} e^{2\gamma x}
 
-The exponential factor :math:`e^{sx}` **tilts** the neutral distribution: positive
-selection (:math:`s > 0`) upweights high frequencies, shifting probability mass
-toward fixation. Negative selection (:math:`s < 0`) upweights low frequencies,
+The exponential factor :math:`e^{2\gamma x}` **tilts** the mutation--drift
+distribution: positive selection (:math:`\gamma > 0`) upweights high frequencies,
+while negative selection (:math:`\gamma < 0`) upweights low frequencies,
 keeping deleterious alleles rare.
 
 .. code-block:: python
 
-   def stationary_density(x, theta1, theta2, s=0.0):
-       """Compute the stationary density of the diffusion (unnormalized).
+   def stationary_density(x, theta1, theta2, gamma=0.0):
+       """Unnormalized reversible finite-sites stationary density.
 
        Parameters
        ----------
@@ -612,8 +640,8 @@ keeping deleterious alleles rare.
            Forward mutation rate (scaled by 2N).
        theta2 : float
            Backward mutation rate (scaled by 2N).
-       s : float
-           Selection coefficient (scaled by 2N). Positive favors derived.
+       gamma : float
+           Genic selection coefficient 2*N*s_gen. Positive favors derived.
 
        Returns
        -------
@@ -621,8 +649,14 @@ keeping deleterious alleles rare.
            Unnormalized stationary density at each x.
        """
        x = np.asarray(x, dtype=float)
+       if theta1 <= 0 or theta2 <= 0 or np.any((x <= 0) | (x >= 1)):
+           raise ValueError("require theta1, theta2 > 0 and 0 < x < 1")
        # Beta distribution kernel times exponential tilting for selection
-       log_density = (theta1 - 1) * np.log(x) + (theta2 - 1) * np.log(1 - x) + s * x
+       log_density = (
+           (theta1 - 1) * np.log(x)
+           + (theta2 - 1) * np.log1p(-x)
+           + 2 * gamma * x
+       )
        return np.exp(log_density)
 
    # Evaluate and normalize over a grid
@@ -630,19 +664,19 @@ keeping deleterious alleles rare.
 
    # Case 1: Neutral with symmetric mutation
    phi_neutral = stationary_density(x_grid, theta1=0.5, theta2=0.5)
-   phi_neutral /= np.trapz(phi_neutral, x_grid)  # normalize
+   phi_neutral /= np.trapezoid(phi_neutral, x_grid)  # normalize
 
    # Case 2: With positive selection
-   phi_selected = stationary_density(x_grid, theta1=0.5, theta2=0.5, s=10.0)
-   phi_selected /= np.trapz(phi_selected, x_grid)
+   phi_selected = stationary_density(x_grid, theta1=0.5, theta2=0.5, gamma=5.0)
+   phi_selected /= np.trapezoid(phi_selected, x_grid)
 
    # Verification: the density should integrate to 1
-   print(f"Integral (neutral):  {np.trapz(phi_neutral, x_grid):.6f}")
-   print(f"Integral (selected): {np.trapz(phi_selected, x_grid):.6f}")
+   print(f"Integral (neutral):  {np.trapezoid(phi_neutral, x_grid):.6f}")
+   print(f"Integral (selected): {np.trapezoid(phi_selected, x_grid):.6f}")
 
    # Verification: mean frequency should be higher under positive selection
-   mean_neutral = np.trapz(x_grid * phi_neutral, x_grid)
-   mean_selected = np.trapz(x_grid * phi_selected, x_grid)
+   mean_neutral = np.trapezoid(x_grid * phi_neutral, x_grid)
+   mean_selected = np.trapezoid(x_grid * phi_selected, x_grid)
    print(f"Mean frequency (neutral):  {mean_neutral:.4f}")
    print(f"Mean frequency (selected): {mean_selected:.4f}")
    print(f"Selection shifts mean upward: {mean_selected > mean_neutral}")
@@ -651,10 +685,10 @@ keeping deleterious alleles rare.
 Numerical Solutions: Finite Differences for PDEs
 ==================================================
 
-Exact solutions to the Fokker-Planck equation exist only in special cases
-(stationary distributions, constant coefficients). For realistic demographic
-models -- bottlenecks, exponential growth, population splits -- we must solve
-the PDE numerically. This is the heart of :ref:`dadi <dadi_timepiece>`.
+Closed-form solutions to the Fokker--Planck equation are limited. For realistic
+demographic models -- bottlenecks, exponential growth, population splits --
+numerical evolution is standard. This is the heart of
+:ref:`dadi <dadi_timepiece>`.
 
 Discretizing :math:`x` on a grid
 ----------------------------------
@@ -707,23 +741,22 @@ called the **method of lines**: we discretize in space (the :math:`x` direction)
 but leave time continuous, converting a PDE into a system of coupled ODEs that
 can be solved with standard ODE integrators.
 
-Crank-Nicolson time stepping
--------------------------------
+Implicit finite-volume time stepping in ``dadi``
+-------------------------------------------------
 
-For time integration, :ref:`dadi <dadi_timepiece>` uses the **Crank-Nicolson**
-scheme, which averages the explicit (forward Euler) and implicit (backward Euler)
-methods:
+The original ``dadi`` implementation does **not** use the Crank--Nicolson formula
+formerly shown here. Its ``Integration.one_pop`` path injects new mutations near
+zero, constructs finite-volume flux coefficients (with optional Chang--Cooper
+weights), and calls an implicit tridiagonal update. ``Integration._compute_dt``
+still limits the time step for accuracy. This distinction matters: an explicit
+predictor--corrector plus non-negativity clipping is neither Crank--Nicolson nor
+the production ``dadi`` algorithm :cite:`dadi`.
 
-.. math::
-
-   \frac{\phi^{n+1}_i - \phi^n_i}{\Delta t} =
-   \frac{1}{2}\left[F_i(\phi^n) + F_i(\phi^{n+1})\right]
-
-This scheme is **unconditionally stable** (no restriction on the time step
-:math:`\Delta t` relative to :math:`\Delta x`) and **second-order accurate** in
-both space and time. The price is that each time step requires solving a linear
-system, but the system is **tridiagonal** (each equation involves only three
-unknowns), so it can be solved in :math:`O(P)` time using the Thomas algorithm.
+The transparent teaching solver below uses a different, explicitly identified
+approximation: a nearest-neighbor continuous-time Markov chain whose generator
+matches :math:`\tfrac12x(1-x)f''(x)`. A step-size bound makes every update a
+stochastic matrix, so probability cannot become negative and boundary atoms are
+retained rather than clipped away.
 
 The curse of dimensionality
 -----------------------------
@@ -744,20 +777,17 @@ alternative that avoids the frequency grid entirely.
 Code: 1D diffusion solver
 ----------------------------
 
-Let us implement a simple 1D diffusion solver using the method of lines with
-Crank-Nicolson time stepping. We will evolve a neutral population through a
-bottleneck and extract the SFS.
+We now approximate the law of one neutral allele. Grid endpoints are genuine
+probability atoms, while interior entries are cell probabilities; therefore the
+returned vector sums to one without numerical integration.
 
 .. code-block:: python
 
-   def solve_diffusion_1d(P, T, n_time_steps, theta, s=0.0, N_func=None):
-       """Solve the 1D Wright-Fisher diffusion equation numerically.
+   def solve_neutral_diffusion(P, T, x0, cfl=0.9):
+       """Approximate a neutral Wright-Fisher diffusion on a uniform grid.
 
-       Uses the method of lines with Crank-Nicolson time stepping.
-       The PDE is:
-           dphi/dt = (1/(2*N(t))) * (1/2) d^2/dx^2 [x(1-x)*phi]
-                     - d/dx [mu(x)*phi]
-       where the population size N(t) can change over time.
+       The nearest-neighbor chain matches the backward generator
+       Lf = x(1-x) f'' / 2. Endpoints are absorbing states.
 
        Parameters
        ----------
@@ -765,120 +795,61 @@ bottleneck and extract the SFS.
            Number of grid points (including boundaries).
        T : float
            Total time to integrate (in units of 2*N_ref generations).
-       n_time_steps : int
-           Number of Crank-Nicolson steps.
-       theta : float
-           Population-scaled mutation rate 4*N_ref*mu.
-       s : float
-           Population-scaled selection coefficient 2*N_ref*s.
-       N_func : callable or None
-           N_func(t) returns N(t)/N_ref at time t. If None, constant size 1.
+       x0 : float
+           Initial allele frequency.
+       cfl : float
+           Maximum total jump probability per explicit step; must be in (0, 1].
 
        Returns
        -------
        x_grid : ndarray of shape (P,)
            Frequency grid points.
-       phi : ndarray of shape (P,)
-           Final density at each grid point.
+       probability : ndarray of shape (P,)
+           Probability mass at grid states. Entries 0 and -1 are boundary atoms.
        """
-       if N_func is None:
-           N_func = lambda t: 1.0
-
+       if P < 3 or T < 0 or not 0 <= x0 <= 1 or not 0 < cfl <= 1:
+           raise ValueError("require P >= 3, T >= 0, 0 <= x0 <= 1, 0 < cfl <= 1")
        dx = 1.0 / (P - 1)
-       dt = T / n_time_steps
        x_grid = np.linspace(0, 1, P)
+       rates = 0.5 * x_grid * (1 - x_grid) / dx**2
+       max_total_rate = 2 * rates.max()
+       n_steps = max(1, int(np.ceil(T * max_total_rate / cfl)))
+       dt = T / n_steps
+       jump = dt * rates
 
-       # Initialize with the neutral stationary distribution (1/x scaled)
-       # Avoid boundary singularities by starting just inside
-       phi = np.zeros(P)
-       for i in range(1, P - 1):
-           x = x_grid[i]
-           phi[i] = theta / (x * (1 - x))
+       # Linear interpolation places x0 on the grid while preserving its mean.
+       p = np.zeros(P)
+       coordinate = x0 / dx
+       lower = min(int(np.floor(coordinate)), P - 1)
+       upper = min(lower + 1, P - 1)
+       fraction = coordinate - lower
+       p[lower] += 1 - fraction
+       p[upper] += fraction
 
-       # Normalize so total mass = theta * L (number of segregating sites)
-       # For simplicity, normalize to unit mass
-       phi /= np.trapz(phi, x_grid)
+       for _ in range(n_steps):
+           updated = p * (1 - 2 * jump)
+           updated[:-1] += p[1:] * jump[1:]   # jumps toward zero
+           updated[1:] += p[:-1] * jump[:-1]  # jumps toward one
+           p = updated
+       return x_grid, p
 
-       # Time-stepping loop
-       for step in range(n_time_steps):
-           t = step * dt
-           N_rel = N_func(t)
-
-           # Build the tridiagonal matrix for Crank-Nicolson
-           # We use a simplified version: explicit half-step + implicit half-step
-
-           # Compute the right-hand side F(phi) at interior points
-           def rhs(phi_in):
-               """Compute the spatial operator F(phi) at interior points."""
-               F = np.zeros(P)
-               for i in range(1, P - 1):
-                   x = x_grid[i]
-
-                   # Diffusion term: (1/2) d^2/dx^2 [x(1-x)*phi]
-                   # We compute g(x) = x(1-x)*phi first, then differentiate
-                   g_im1 = x_grid[i-1] * (1 - x_grid[i-1]) * phi_in[i-1]
-                   g_i   = x * (1 - x) * phi_in[i]
-                   g_ip1 = x_grid[i+1] * (1 - x_grid[i+1]) * phi_in[i+1]
-                   diffusion = 0.5 * (g_ip1 - 2*g_i + g_im1) / (dx**2)
-
-                   # Advection term: -d/dx[mu(x)*phi]
-                   # mu(x) = (s/2)*x*(1-x)  (selection only for simplicity)
-                   mu_im1 = (s / 2) * x_grid[i-1] * (1 - x_grid[i-1])
-                   mu_ip1 = (s / 2) * x_grid[i+1] * (1 - x_grid[i+1])
-                   h_im1 = mu_im1 * phi_in[i-1]
-                   h_ip1 = mu_ip1 * phi_in[i+1]
-                   advection = -(h_ip1 - h_im1) / (2 * dx)
-
-                   # Scale by 1/N_rel (drift is inversely proportional to N)
-                   F[i] = diffusion / N_rel + advection
-               return F
-
-           # Crank-Nicolson: phi^{n+1} = phi^n + dt/2 * [F(phi^n) + F(phi^{n+1})]
-           # Approximate with two half-steps (predictor-corrector)
-           F_n = rhs(phi)
-           phi_pred = phi + dt * F_n         # explicit predictor
-           phi_pred[0] = 0.0                  # absorbing boundary
-           phi_pred[-1] = 0.0
-           phi_pred = np.maximum(phi_pred, 0) # enforce non-negativity
-
-           F_pred = rhs(phi_pred)
-           phi = phi + 0.5 * dt * (F_n + F_pred)  # corrector
-           phi[0] = 0.0
-           phi[-1] = 0.0
-           phi = np.maximum(phi, 0)
-
-       return x_grid, phi
-
-   # Solve for a constant-size population
-   P = 201            # 201 grid points
-   T = 0.5            # integrate for 0.5 diffusion time units
-   n_steps_t = 2000   # 2000 time steps
-   theta = 1.0        # mutation rate
-
-   x_grid, phi_const = solve_diffusion_1d(P, T, n_steps_t, theta)
-
-   # Solve through a bottleneck: N drops to 0.1 for the middle period
-   def bottleneck(t):
-       """Population size function: bottleneck from t=0.1 to t=0.3."""
-       if 0.1 <= t <= 0.3:
-           return 0.1  # 10x reduction
-       return 1.0
-
-   _, phi_bottle = solve_diffusion_1d(P, T, n_steps_t, theta, N_func=bottleneck)
-
-   # Verification: total probability should be positive
-   mass_const = np.trapz(phi_const, x_grid)
-   mass_bottle = np.trapz(phi_bottle, x_grid)
-   print(f"Total mass (constant N): {mass_const:.4f}")
-   print(f"Total mass (bottleneck): {mass_bottle:.4f}")
-   print(f"Bottleneck reduces diversity: {mass_bottle < mass_const}")
+   x_grid, probability = solve_neutral_diffusion(P=101, T=0.5, x0=0.3)
+   mean = np.dot(x_grid, probability)
+   variance = np.dot((x_grid - mean) ** 2, probability)
+   expected_variance = 0.3 * 0.7 * (1 - np.exp(-0.5))
+   print(f"Total probability: {probability.sum():.12f}")
+   print(f"Mean (martingale): {mean:.6f}")
+   print(f"Boundary mass:     {probability[0] + probability[-1]:.6f}")
+   print(f"Variance:          {variance:.6f}")
+   print(f"Diffusion moment:  {expected_variance:.6f}")
 
 
 Connection to the Site Frequency Spectrum
 ==========================================
 
-The diffusion density :math:`\phi(x, t)` describes the continuous allele frequency
-distribution. But what we observe in practice is a **sample** of :math:`n`
+Let :math:`\phi(x,t)dx` now denote the **expected number of sites** with
+population frequency in :math:`[x,x+dx]`; this is not the normalized single-
+allele law used in the preceding solver. What we observe is a **sample** of :math:`n`
 individuals, which gives us integer allele counts. The connection between the
 continuous density and the discrete **site frequency spectrum** (SFS) is the
 **binomial sampling formula**.
@@ -891,12 +862,13 @@ sampled chromosomes carry the derived allele is:
 
 .. math::
 
-   \phi_j = \theta L \int_0^1 \binom{n}{j} x^j (1-x)^{n-j} \phi(x, t) \, dx
+   \mathbb{E}[\xi_j] = \int_0^1 \binom{n}{j} x^j (1-x)^{n-j} \phi(x, t) \, dx
 
-where :math:`L` is the number of independent loci, :math:`\theta` is the
-per-site mutation rate, and :math:`\binom{n}{j} x^j (1-x)^{n-j}` is the
-binomial probability of sampling :math:`j` derived alleles from a population
-with allele frequency :math:`x`.
+The mutation rate and sequence length are already contained in the expected-site
+density :math:`\phi`. If instead :math:`p(x,t)` is a normalized probability
+density across :math:`L` independent sites, the prefactor is :math:`L`.
+Multiplying again by :math:`\theta L` when :math:`\phi=\theta L/x` would
+double-count the scale.
 
 .. admonition:: Probability Aside -- Why binomial sampling?
 
@@ -915,7 +887,7 @@ can be compared to the observed SFS.
 
 .. code-block:: python
 
-   from scipy.special import comb
+   from math import comb
 
    def density_to_sfs(x_grid, phi, n_samples):
        """Convert a diffusion density to a site frequency spectrum.
@@ -937,37 +909,35 @@ can be compared to the observed SFS.
        sfs : ndarray of shape (n_samples - 1,)
            Expected SFS entries for j = 1, ..., n_samples - 1.
        """
+       x_grid = np.asarray(x_grid, dtype=float)
+       phi = np.asarray(phi, dtype=float)
+       if (
+           x_grid.ndim != 1
+           or phi.shape != x_grid.shape
+           or n_samples < 2
+           or np.any(np.diff(x_grid) <= 0)
+           or x_grid[0] < 0
+           or x_grid[-1] > 1
+           or np.any(phi < 0)
+       ):
+           raise ValueError("invalid grid, density, or sample size")
        sfs = np.zeros(n_samples - 1)
        for j in range(1, n_samples):
            # Binomial probability at each grid point
            # comb(n, j) computes the binomial coefficient "n choose j"
            binom_probs = comb(n_samples, j) * x_grid**j * (1 - x_grid)**(n_samples - j)
            # Integrate phi(x) * Binom(n, j, x) over x using the trapezoidal rule
-           sfs[j - 1] = np.trapz(binom_probs * phi, x_grid)
+           sfs[j - 1] = np.trapezoid(binom_probs * phi, x_grid)
        return sfs
 
-   # Extract SFS from our solved densities
+   # The standard-neutral infinite-sites density is theta/x.
    n_samples = 20  # sample 20 chromosomes
-
-   sfs_const = density_to_sfs(x_grid, phi_const, n_samples)
-   sfs_bottle = density_to_sfs(x_grid, phi_bottle, n_samples)
-
-   # Verification: neutral SFS should follow the 1/j pattern
-   expected_neutral = np.array([1.0 / j for j in range(1, n_samples)])
-   # Normalize both to compare shapes
-   sfs_const_norm = sfs_const / sfs_const.sum()
-   expected_norm = expected_neutral / expected_neutral.sum()
-
-   print("SFS comparison (constant N vs 1/j theory):")
-   print(f"  {'j':>3s}  {'Simulated':>10s}  {'Theory 1/j':>10s}  {'Ratio':>8s}")
-   for j in range(min(8, n_samples - 1)):
-       ratio = sfs_const_norm[j] / expected_norm[j] if expected_norm[j] > 0 else 0
-       print(f"  {j+1:3d}  {sfs_const_norm[j]:10.4f}  {expected_norm[j]:10.4f}  {ratio:8.4f}")
-
-   # The bottleneck SFS should show excess rare and common variants
-   print(f"\nBottleneck effect on singletons (j=1):")
-   print(f"  Constant N: {sfs_const[0]:.4f}")
-   print(f"  Bottleneck: {sfs_bottle[0]:.4f}")
+   theta = 1.0
+   sfs_grid = np.linspace(1e-6, 1.0, 100_001)
+   neutral_site_density = theta / sfs_grid
+   sfs_neutral = density_to_sfs(sfs_grid, neutral_site_density, n_samples)
+   expected_neutral = theta / np.arange(1, n_samples)
+   print("Maximum error from theta/j:", np.max(np.abs(sfs_neutral - expected_neutral)))
 
 How dadi and moments differ
 -----------------------------
@@ -976,12 +946,12 @@ The diffusion-to-SFS conversion above is precisely what :ref:`dadi <dadi_timepie
 does: it solves the PDE for :math:`\phi(x, t)`, then integrates against binomial
 weights to extract the expected SFS.
 
-:ref:`moments <moments_timepiece>` takes a fundamentally different approach. Instead
-of solving for the full density :math:`\phi(x, t)` and then sampling it, ``moments``
-derives ODEs that govern the SFS entries :math:`\phi_j` **directly**. These ODEs
-are obtained by applying the binomial sampling formula to both sides of the
-Fokker-Planck equation and integrating. The result is a system of ODEs -- one per
-SFS entry -- that skips the frequency grid entirely.
+:ref:`moments <moments_timepiece>` takes a different approach. Instead of solving
+for the full density and then sampling it, ``moments`` evolves sample-frequency
+moments **directly**. Drift and mutation close on the sampled spectrum; terms
+that require higher-order moments, notably selection, use a jackknife closure.
+Thus it skips the population-frequency grid but is not merely an exact algebraic
+extraction of the same numerical density :cite:`moments`.
 
 The trade-off:
 
@@ -991,13 +961,14 @@ The trade-off:
   fixation probabilities, frequency densities under selection). Multi-population
   models require :math:`O(P^d)` grid points.
 
-- **moments**: Solves ODEs directly for the SFS entries. No grid artifacts, but
-  no access to the full frequency density. Multi-population models require
+- **moments**: Solves ODEs directly for the SFS entries. It avoids a population-
+  frequency grid but can introduce moment-closure error, and it does not provide
+  the full frequency density. Multi-population models require
   :math:`O(\prod n_i)` SFS entries, which can be more efficient than
   :math:`O(P^d)` for large :math:`P`.
 
-Both approaches are built on the same diffusion approximation -- they differ only
-in how they extract the SFS from it.
+Both approaches are built on the diffusion approximation, but their numerical
+representations and approximation errors differ.
 
 
 Summary
@@ -1017,18 +988,18 @@ Summary
      - :math:`dx = \mu(x)dt + \sqrt{x(1-x)}\,dW`
    * - Fokker-Planck / Kolmogorov forward
      - :math:`\partial\phi/\partial t = \tfrac{1}{2}\partial^2_{xx}[\sigma^2\phi] - \partial_x[\mu\phi]`
-   * - Neutral stationary density
-     - :math:`\phi(x) \propto 1/[x(1-x)]`, gives :math:`\xi_j \propto 1/j` SFS
+   * - Neutral infinite-sites density
+     - Expected-site intensity :math:`\phi(x)=\theta/x`, giving :math:`\mathbb{E}[\xi_j]=\theta/j`
    * - With mutation
      - :math:`\phi(x) \propto x^{\theta_1-1}(1-x)^{\theta_2-1}` (Beta distribution)
-   * - With selection
-     - :math:`\phi(x) \propto x^{\theta_1-1}(1-x)^{\theta_2-1}e^{sx}` (exponential tilting)
-   * - Finite-difference PDE solver
-     - Discretize :math:`x` on :math:`P` points, method of lines + Crank-Nicolson
+   * - With reversible mutation and selection
+     - :math:`p(x) \propto x^{\theta_1-1}(1-x)^{\theta_2-1}e^{2\gamma x}`
+   * - Numerical diffusion solver
+     - Discretize :math:`x`; preserve non-negativity, total mass, and boundary atoms
    * - Multi-population scaling
      - :math:`O(P^d)` grid points -- the curse of dimensionality
    * - Diffusion density to SFS
-     - :math:`\phi_j = \theta L \int \binom{n}{j}x^j(1-x)^{n-j}\phi(x)dx`
+     - :math:`\mathbb{E}[\xi_j] = \int \binom{n}{j}x^j(1-x)^{n-j}\phi(x)dx`
 
 These are the gears that connect the discrete ticking of the Wright-Fisher model
 to the smooth sweep of continuous frequency evolution. The diffusion approximation
