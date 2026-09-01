@@ -1,114 +1,62 @@
 .. _tsinfer_timepiece:
 
-====================================
+=====================
 Timepiece VI: tsinfer
-====================================
+=====================
 
-   *Tree Sequence Inference from Genetic Variation Data*
+*Scalable tree-sequence inference from phased genetic variation*
 
-The Mechanism at a Glance
-==========================
+tsinfer infers a tree sequence by first constructing putative ancestral
+haplotypes, then matching younger ancestors against older ones, and finally
+matching the observed samples. Its output is a compact genealogical hypothesis,
+not a posterior distribution of ARGs. :cite:`tsinfer`
 
-**tsinfer** infers a tree sequence from observed genetic variation data. Unlike
-MCMC-based methods (such as SINGER and ARGweaver), tsinfer is a *deterministic
-algorithm* that scales to biobank-sized datasets -- hundreds of thousands of samples
-and millions of sites -- in hours rather than weeks.
+The important qualification is that the values used to order inferred ancestors
+are a **time proxy**, not generations. In the paper release, larger derived-allele
+counts normally implied older ordering ranks. Frequency is noisy under drift,
+selection, recurrent mutation, ancestral-state error, and genotype error, so the
+ordering must not be interpreted as a molecular clock.
 
-The core idea is breathtakingly simple: every sample's genome is a **mosaic** of
-ancestral haplotypes, glued together by recombination. If we can figure out *what*
-those ancestral pieces are and *how* they were assembled, we've reconstructed the
-genealogy.
+.. admonition:: Scope of this chapter
 
-If SINGER and ARGweaver are precision mechanical watches -- statistically optimal but
-complex and slow -- tsinfer is a quartz movement: simpler, faster, and designed for
-scale. What it sacrifices in statistical sophistication (no Bayesian posterior, no
-uncertainty quantification), it gains in raw throughput. And like a good quartz
-movement, it's remarkably accurate for most practical purposes.
+   The executable module reproduces small mechanisms from the paper-era 0.1.4
+   reference implementation and probability transforms from stable release 0.4.1.
+   It is **not a replacement** for production tsinfer. Production code stores and
+   matches partial ancestors on tree sequences, supports missing and multiallelic
+   data in version-dependent ways, compresses shared paths, and delegates general
+   table operations to tskit.
 
-.. admonition:: Primary Reference
-
-   :cite:`tsinfer`
-
-The four gears of tsinfer:
-
-1. **Ancestor Generation** (the escapement) -- Infer putative ancestral haplotypes from
-   the patterns of derived alleles in the data. Older ancestors carry
-   higher-frequency derived alleles. This is where the biological signal is first
-   extracted.
-
-2. **The Copying Model** (the gear train) -- A Li & Stephens HMM engine (from
-   :ref:`Timepiece III <lshmm_timepiece>`) that finds the best way to express one
-   haplotype as a mosaic of others. This is the workhorse shared by both the ancestor
-   matching and sample matching phases.
-
-3. **Ancestor Matching** (the first assembly) -- Match each ancestor against older
-   ancestors using the copying model, building a tree sequence of ancestors from the
-   root down. Like assembling the base caliber of a movement.
-
-4. **Sample Matching** (the final assembly) -- Thread each sample through the ancestor
-   tree using the same copying model, then post-process to produce the final tree
-   sequence. Like fitting the dial and hands onto the finished movement.
-
-These gears mesh together into a three-phase pipeline:
+The audited ground truth was the primary paper, official tag 0.1.4
+(``efbafff``), stable package 0.4.1, and official development source
+``9242074`` (30 June 2026). The current development interface uses VCF-Zarr and
+TOML pipeline configuration and is under active development; consult the docs for
+the version you install rather than copying an old command line from this book.
 
 .. code-block:: text
 
-   Variant data D (n samples x m sites)
-               |
-               v
-   +----------------------------+
-   |   PHASE 1: Generate        |
-   |   Ancestral Haplotypes     |
-   |                            |
-   |   For each frequency tier: |
-   |     Build consensus from   |
-   |     samples carrying the   |
-   |     derived allele         |
-   +----------------------------+
-               |
-               | A putative ancestors
-               v
-   +----------------------------+
-   |   PHASE 2: Match Ancestors |
-   |                            |
-   |   For each ancestor        |
-   |   (oldest first):          |
-   |     Express it as a mosaic |
-   |     of older ancestors     |
-   |     (Li & Stephens HMM)    |
-   |                            |
-   |   -> Build ancestor tree   |
-   +----------------------------+
-               |
-               | Ancestor tree sequence
-               v
-   +----------------------------+
-   |   PHASE 3: Match Samples   |
-   |                            |
-   |   For each sample:         |
-   |     Express it as a mosaic |
-   |     of ancestors           |
-   |     (Li & Stephens HMM)    |
-   |                            |
-   |   -> Post-processing:      |
-   |     - Parsimony mutations  |
-   |     - Simplification       |
-   +----------------------------+
-               |
-               v
-       Final tree sequence T
-       (tskit TreeSequence)
+   phased variants
+         |
+         v
+   choose inference sites --> generate partial ancestors
+                                  |
+                                  v
+                          match older to younger
+                                  |
+                                  v
+                          match observed samples
+                                  |
+                                  v
+                     place remaining mutations by parsimony
+                                  |
+                                  v
+                   post-process and simplify with tskit
 
-.. admonition:: Prerequisites for this Timepiece
+.. admonition:: Primary sources
 
-   - :ref:`Coalescent Theory <coalescent_theory>` -- the biological framework
-   - :ref:`Ancestral Recombination Graphs <args>` -- tree sequences and marginal trees
-   - :ref:`Hidden Markov Models <hmms>` -- the forward algorithm and the
-     Li-Stephens :math:`O(K)` trick
-   - :ref:`Li & Stephens HMM <lshmm_timepiece>` -- the copying model (Timepiece III)
-
-Chapters
-========
+   - Kelleher et al. (2019), `doi:10.1038/s41588-019-0483-y
+     <https://doi.org/10.1038/s41588-019-0483-y>`_.
+   - `Official tsinfer documentation <https://tskit.dev/tsinfer/docs/latest/>`_.
+   - `Official source repository <https://github.com/tskit-dev/tsinfer>`_.
 
 .. toctree::
    :maxdepth: 2
@@ -119,7 +67,3 @@ Chapters
    ancestor_matching
    sample_matching
    demo
-
-Each chapter derives the math, explains the intuition, implements the code,
-and verifies it works. By the end, you'll have built a complete tree sequence
-inference engine from scratch -- and you'll understand every gear that makes it tick.

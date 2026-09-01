@@ -128,9 +128,13 @@ The Timepieces are grouped by what they do, with verification status for each.
      - Bayesian ARG sampling with discretized time. SINGER's predecessor.
    * - VI
      - :ref:`tsinfer <tsinfer_timepiece>`
-     - 142
-     - --
-     - Deterministic tree sequence inference at biobank scale.
+     - 21
+     - 2026-09-01
+     - Ancestor grouping, carrier-filtered extension, two-root construction,
+       probability transforms, dense Viterbi, path coordinates, compression
+       eligibility, parsimony, and flank handling checked against the primary
+       paper and official 0.1.4/0.4.1 Python implementations; the teaching code
+       is explicitly bounded below production tree-sequence inference.
    * - VII
      - :ref:`SINGER <singer_timepiece>`
      - 35
