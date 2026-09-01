@@ -10,27 +10,28 @@ Covers all functions extracted from the momi2 RST documentation:
 """
 
 import numpy as np
+from scipy.integrate import quad
+from scipy.stats import hypergeom
 
 from watchgen.mini_momi2 import (
-    w_matrix,
+    admixture_tensor,
+    compute_joint_sfs,
+    convolve_populations,
     etjj_constant,
     etjj_exponential,
-    compute_joint_sfs,
-    moran_rate_matrix,
-    moran_eigensystem,
-    moran_transition,
-    moran_action,
-    convolve_populations,
-    admixture_tensor,
+    f2_weights,
+    f3_weights,
     hypergeom_quasi_inverse,
+    inverse_transform,
+    moran_action,
+    moran_eigensystem,
+    moran_rate_matrix,
+    moran_transition,
     multinomial_log_likelihood,
     poisson_log_likelihood,
     transform_params,
-    inverse_transform,
-    f2_weights,
-    f3_weights,
+    w_matrix,
 )
-
 
 # ============================================================================
 # Tests for coalescent_sfs: w_matrix
@@ -62,6 +63,14 @@ class TestWMatrix:
         E_Tjj_neutral = 2.0 / (j_vals * (j_vals - 1))
         expected_sfs = W @ E_Tjj_neutral
         assert expected_sfs[0] > expected_sfs[-1]
+
+    def test_neutral_sfs_is_exactly_inverse_frequency(self):
+        """The official recurrence maps neutral sojourn times to 1 / b."""
+        n = 30
+        j = np.arange(2, n + 1)
+        observed = w_matrix(n) @ (2.0 / (j * (j - 1)))
+        ratio = observed / (1.0 / np.arange(1, n))
+        assert np.allclose(ratio, ratio[0], rtol=1e-12, atol=1e-12)
 
     def test_first_column_constant(self):
         """The first column W[:, 0] should be 6/(n+1)."""
@@ -99,8 +108,7 @@ class TestEtjjConstant:
         N = 1000
         result = etjj_constant(n, tau_large, N)
         j = np.arange(2, n + 1)
-        rate = j * (j - 1) / 2.0
-        expected = 1.0 / rate
+        expected = N / (j * (j - 1))
         assert np.allclose(result, expected, rtol=1e-6)
 
     def test_zero_epoch(self):
@@ -157,6 +165,30 @@ class TestEtjjExponential:
         result = etjj_exponential(n, 100, 0.01, 1000)
         assert np.all(np.isfinite(result))
         assert np.all(result > 0)
+
+    def test_matches_survival_integral(self):
+        """Closed form agrees with direct integration of survival probability."""
+        n, tau, growth_rate, N_bottom = 6, 100, 1e-3, 1000
+        observed = etjj_exponential(n, tau, growth_rate, N_bottom)
+        expected = []
+        for j in range(2, n + 1):
+            coal_rate = j * (j - 1) / 2
+            expected.append(quad(
+                lambda t, rate=coal_rate: np.exp(
+                    -rate * 2 * np.expm1(growth_rate * t)
+                    / (N_bottom * growth_rate)
+                ),
+                0,
+                tau,
+            )[0])
+        assert np.allclose(observed, expected, rtol=1e-11, atol=1e-11)
+
+    def test_small_nonzero_growth_is_stable(self):
+        """The Ei representation must not overflow close to zero growth."""
+        observed = etjj_exponential(8, 500, 1e-9, 1000)
+        constant = etjj_constant(8, 500, 1000)
+        assert np.all(np.isfinite(observed))
+        assert np.allclose(observed, constant, rtol=1e-6)
 
 
 # ============================================================================
@@ -266,7 +298,7 @@ class TestMoranEigensystem:
     def test_eigenvalues_non_positive(self):
         """All eigenvalues should be non-positive."""
         for n in [5, 10]:
-            V, eigs, V_inv = moran_eigensystem(n)
+            _V, eigs, _V_inv = moran_eigensystem(n)
             assert np.all(eigs <= 1e-10), \
                 f"Found positive eigenvalue for n={n}: {eigs[eigs > 1e-10]}"
 
@@ -281,7 +313,7 @@ class TestMoranEigensystem:
     def test_has_zero_eigenvalue(self):
         """There should be at least one zero eigenvalue."""
         n = 10
-        V, eigs, V_inv = moran_eigensystem(n)
+        _V, eigs, _V_inv = moran_eigensystem(n)
         num_zeros = np.sum(np.abs(eigs) < 1e-8)
         assert num_zeros >= 1
 
@@ -420,37 +452,36 @@ class TestAdmixtureTensor:
         assert T.shape == (n + 1, n + 1, n + 1)
 
     def test_no_admixture(self):
-        """When f=0, no lineages move."""
+        """At f=0 the child copies are inherited entirely from parent 1."""
         n = 5
         T = admixture_tensor(n, 0.0)
-        for k in range(n + 1):
-            assert np.isclose(T[k, 0, k], 1.0)
-            for j in range(1, k + 1):
-                assert np.isclose(T[k - j, j, k], 0.0)
+        for a in range(n + 1):
+            for b in range(n + 1):
+                assert np.isclose(T[a, b, a], 1.0)
 
     def test_full_admixture(self):
-        """When f=1, all lineages move."""
+        """At f=1 the child copies are inherited entirely from parent 2."""
         n = 5
         T = admixture_tensor(n, 1.0)
-        for k in range(n + 1):
-            assert np.isclose(T[0, k, k], 1.0)
+        for a in range(n + 1):
+            for b in range(n + 1):
+                assert np.isclose(T[a, b, b], 1.0)
 
     def test_probability_sums_to_one(self):
-        """For each k, the probabilities over (i,j) with i+j=k should sum to 1."""
+        """Each pair of parental configurations defines a child distribution."""
         n = 5
         f = 0.3
         T = admixture_tensor(n, f)
-        for k in range(n + 1):
-            total = sum(T[k - j, j, k] for j in range(k + 1))
-            assert np.isclose(total, 1.0), f"Sum not 1 for k={k}: {total}"
+        assert np.allclose(T.sum(axis=2), 1.0)
 
-    def test_expected_moving_lineages(self):
-        """Expected number of lineages moving should be n*f."""
+    def test_expected_child_derived_count(self):
+        """The child's mean count is the ancestry-weighted parental mean."""
         n = 10
-        f = 0.5
+        f = 0.3
         T = admixture_tensor(n, f)
-        expected_j = sum(j * T[n - j, j, n] for j in range(n + 1))
-        assert np.isclose(expected_j, n * f, atol=1e-10)
+        a, b = 2, 8
+        expected_k = sum(k * T[a, b, k] for k in range(n + 1))
+        assert np.isclose(expected_k, (1 - f) * a + f * b, atol=1e-10)
 
     def test_non_negative(self):
         """All tensor entries should be non-negative."""
@@ -472,33 +503,28 @@ class TestHypergeomQuasiInverse:
         M = hypergeom_quasi_inverse(N, n)
         assert M.shape == (N + 1, n + 1)
 
-    def test_rows_sum_to_one(self):
-        """Each row should be a valid probability distribution."""
+    def test_is_right_inverse_of_projection(self):
+        """The projection times its pseudoinverse is the identity."""
         N, n = 10, 5
         M = hypergeom_quasi_inverse(N, n)
-        for i in range(N + 1):
-            assert np.isclose(M[i, :].sum(), 1.0, atol=1e-10), \
-                f"Row {i} sums to {M[i, :].sum()}"
+        H = np.array([
+            [hypergeom.pmf(j, N, i, n) for i in range(N + 1)]
+            for j in range(n + 1)
+        ])
+        assert np.allclose(H @ M, np.eye(n + 1), atol=1e-12)
 
-    def test_non_negative(self):
-        """All entries should be non-negative."""
-        N, n = 8, 4
-        M = hypergeom_quasi_inverse(N, n)
-        assert np.all(M >= -1e-15)
-
-    def test_boundary_zero(self):
-        """When i=0 in population of N, j must be 0 when sampling n."""
+    def test_is_not_a_probability_matrix(self):
+        """A quasi-inverse may contain negative linear-combination weights."""
         N, n = 10, 5
         M = hypergeom_quasi_inverse(N, n)
-        assert np.isclose(M[0, 0], 1.0)
-        assert np.allclose(M[0, 1:], 0.0, atol=1e-15)
+        assert np.any(M < 0)
 
-    def test_boundary_N(self):
-        """When i=N, j must be n."""
-        N, n = 10, 5
+    def test_square_case_is_identity(self):
+        """No size change gives the identity operator."""
+        N = 6
+        n = N
         M = hypergeom_quasi_inverse(N, n)
-        assert np.isclose(M[N, n], 1.0)
-        assert np.allclose(M[N, :n], 0.0, atol=1e-15)
+        assert np.allclose(M, np.eye(N + 1), atol=1e-12)
 
 
 # ============================================================================
@@ -613,6 +639,11 @@ class TestTransformParams:
         transformed = transform_params(params, types)
         assert np.allclose(transformed, [1.0])
 
+    def test_integer_input_does_not_truncate(self):
+        transformed = transform_params(np.array([2], dtype=int), ["log"])
+        assert transformed.dtype.kind == "f"
+        assert np.allclose(transformed, [np.log(2)])
+
     def test_logit_midpoint(self):
         """Logit of 0.5 should be 0."""
         params = np.array([0.5])
@@ -633,17 +664,24 @@ class TestF2Weights:
         W = f2_weights(5, 10)
         assert W.shape == (6, 11)
 
-    def test_non_negative(self):
-        """f2 weights are squared differences, so non-negative."""
-        W = f2_weights(10, 10)
-        assert np.all(W >= 0)
-
-    def test_zero_on_diagonal_same_n(self):
-        """When n_A == n_B and i == j, f2 weight should be zero."""
+    def test_fixed_equal_populations_are_zero(self):
+        """Equal fixed parental frequencies have zero f2 weight."""
         n = 5
         W = f2_weights(n, n)
-        for i in range(n + 1):
-            assert np.isclose(W[i, i], 0.0)
+        assert np.isclose(W[0, 0], 0.0)
+        assert np.isclose(W[n, n], 0.0)
+
+    def test_uses_distinct_within_population_draws(self):
+        """The finite-sample correction differs from plug-in squared counts."""
+        n = 6
+        W = f2_weights(n, n)
+        i, j = 2, 4
+        expected = (
+            i * (i - 1) / (n * (n - 1))
+            + j * (j - 1) / (n * (n - 1))
+            - 2 * i * j / n**2
+        )
+        assert np.isclose(W[i, j], expected)
 
     def test_symmetry(self):
         """f2(A, B) weights should satisfy W[i,j] = W_transpose[j,i]."""

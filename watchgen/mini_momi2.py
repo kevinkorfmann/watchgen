@@ -37,16 +37,19 @@ The four gears of momi2:
 
 References
 ----------
-Kamm, Terhorst, Song, and Durbin (2017). Efficient computation of the joint
-sample frequency spectra for multiple populations.
+Kamm, Terhorst, and Song (2017). Efficient computation of the joint sample
+frequency spectra for multiple populations.
+Kamm, Terhorst, Durbin, and Song (2020). Efficiently inferring the demographic
+history of many populations with allele count data.
 Polanski and Kimmel (2003). New explicit expressions for relative frequencies
 of single-nucleotide polymorphisms.
 """
 
 import numpy as np
+from scipy.integrate import quad
+from scipy.linalg import pinv
 from scipy.special import comb, expi
 from scipy.stats import hypergeom as hypergeom_dist
-
 
 # ============================================================================
 # Chapter 1: The Coalescent SFS
@@ -58,6 +61,9 @@ def w_matrix(n):
     Returns W of shape (n-1, n-1), where W[b-1, j-2] gives the
     coefficient for SFS entry b from expected time with j lineages.
     """
+    if not isinstance(n, (int, np.integer)) or n < 2:
+        raise ValueError("n must be an integer >= 2")
+
     W = np.zeros((n - 1, n - 1))
     bb = np.arange(1, n)  # SFS entries 1..n-1
 
@@ -65,12 +71,16 @@ def w_matrix(n):
     if n > 2:
         W[:, 1] = 30.0 * (n - 2 * bb) / ((n + 1) * (n + 2))
 
+    # ``col`` is the zero-based recurrence index used by momi2's Cython
+    # implementation.  The corresponding lineage count is col + 2, but the
+    # Polanski--Kimmel recurrence itself is parameterized by ``col``.
     for col in range(2, n - 1):
-        j = col + 2  # number of lineages
+        j = col
         W[:, col] = (
-            W[:, col - 1] * (2 * j - 1) * (n - 2 * bb) / ((j - 1) * (n + j))
-            - W[:, col - 2] * j * (2 * j - 3) * (n - j + 1)
-              / ((j - 1) * (2 * j + 1) * (n + j))
+            W[:, col - 1] * (2 * j + 3) * (n - 2 * bb)
+            / (j * (n + j + 1))
+            - W[:, col - 2] * (j + 1) * (2 * j + 3) * (n - j)
+            / (j * (2 * j - 1) * (n + j + 1))
         )
     return W
 
@@ -83,11 +93,16 @@ def etjj_constant(n, tau, N):
 
     Returns array of length n-1, indexed by j = 2, ..., n.
     """
+    if tau < 0:
+        raise ValueError("tau must be non-negative")
+    if N <= 0:
+        raise ValueError("N must be positive")
+
     j = np.arange(2, n + 1)
-    rate = j * (j - 1) / 2.0  # coalescence rate with j lineages
-    scaled_time = 2.0 * tau / N  # time in coalescent units
-    # expected time with j lineages, accounting for finite epoch duration
-    return (1.0 - np.exp(-rate * scaled_time)) / rate
+    rate = j * (j - 1) / N
+    # Integral of the survival probability over the epoch.  The result is in
+    # the same time units as tau, matching momi2's ConstantHistory.etjj.
+    return -np.expm1(-rate * tau) / rate
 
 
 def etjj_exponential(n, tau, growth_rate, N_bottom):
@@ -99,27 +114,38 @@ def etjj_exponential(n, tau, growth_rate, N_bottom):
     """
     j = np.arange(2, n + 1)
     rate = j * (j - 1) / 2.0
-    N_top = N_bottom * np.exp(-tau * growth_rate)
-
     if abs(growth_rate) < 1e-10:
         return etjj_constant(n, tau, N_bottom)
 
-    # Scaled time for the epoch
-    total_growth = tau * growth_rate
-    scaled_time = (np.expm1(total_growth) / total_growth) * tau * 2.0 / N_bottom
+    if tau < 0:
+        raise ValueError("tau must be non-negative")
+    if N_bottom <= 0:
+        raise ValueError("N_bottom must be positive")
 
-    # Expected coalescence times via exponential integral
-    # Derivation: etjj = (2/N_bottom) * integral_0^tau exp(-c*(exp(g*s)-1)) ds
-    # where c = rate * 2 / (N_bottom * g).
-    # Substituting u = c*exp(g*s): etjj = (1/rate)*c*exp(c)*(Ei(-c*exp(g*tau)) - Ei(-c))
+    total_growth = tau * growth_rate
     a = rate * 2.0 / (N_bottom * growth_rate)
-    result = np.zeros_like(rate)
-    for idx in range(len(rate)):
-        c = a[idx]
-        result[idx] = (
-            (1.0 / rate[idx]) * c * np.exp(c)
-            * (expi(-c * np.exp(total_growth)) - expi(-c))
-        )
+    # Integral_0^tau exp[-a * (exp(g*t) - 1)] dt.  momi2 evaluates an
+    # algebraically equivalent, stabilized transformed-expi expression so it
+    # remains differentiable under autograd.
+    result = np.empty_like(rate)
+    for idx, c in enumerate(a):
+        if abs(c) > 100:
+            # The closed form is finite here but its separate exp/Ei factors
+            # overflow.  Direct quadrature is a stable educational fallback;
+            # production momi2 instead uses transformed_expi.
+            result[idx] = quad(
+                lambda t, coefficient=c: np.exp(
+                    -coefficient * np.expm1(growth_rate * t)
+                ),
+                0,
+                tau,
+            )[0]
+        else:
+            result[idx] = (
+                np.exp(c)
+                * (expi(-c * np.exp(total_growth)) - expi(-c))
+                / growth_rate
+            )
     return result
 
 
@@ -254,33 +280,60 @@ def convolve_populations(L1, L2, n1, n2):
 def admixture_tensor(n, f):
     """Compute the admixture 3-tensor for a pulse event.
 
-    n: number of lineages in the receiving population
-    f: fraction of ancestry from the source population
+    n: virtual Moran sample size on the child and each parent axis
+    f: fraction of child ancestry inherited from parent 2
 
-    Returns T of shape (n+1, n+1, n+1):
-    T[i, j, k] = probability that k lineages split into i staying and j moving
+    Returns T of shape (n+1, n+1, n+1). T[a, b, k] is the probability
+    of k derived copies in the child conditional on a and b derived copies in
+    parent 1 and parent 2.  It marginalizes over the binomially distributed
+    number of child lineages assigned to each parent and the hypergeometric
+    sampling of derived copies within each parent.
     """
-    from scipy.special import comb as binom
+    if not 0 <= f <= 1:
+        raise ValueError("f must lie in [0, 1]")
+
     T = np.zeros((n + 1, n + 1, n + 1))
-    for k in range(n + 1):
-        for j in range(k + 1):
-            i = k - j
-            T[i, j, k] = binom(k, j) * f**j * (1 - f)**(k - j)
+    draws = {
+        (derived, sample_size): hypergeom_dist.pmf(
+            np.arange(sample_size + 1), n, derived, sample_size
+        )
+        for derived in range(n + 1)
+        for sample_size in range(n + 1)
+    }
+    for a in range(n + 1):
+        for b in range(n + 1):
+            for n_parent1 in range(n + 1):
+                assign_prob = (
+                    comb(n, n_parent1)
+                    * (1 - f) ** n_parent1
+                    * f ** (n - n_parent1)
+                )
+                if assign_prob == 0:
+                    continue
+                n_parent2 = n - n_parent1
+                T[a, b] += assign_prob * np.convolve(
+                    draws[a, n_parent1], draws[b, n_parent2]
+                )
     return T
 
 
 def hypergeom_quasi_inverse(N, n):
     """Compute the quasi-inverse for reducing lineage count from N to n.
 
-    Returns a (N+1) x (n+1) matrix M such that applying M to a likelihood
-    vector of length N+1 produces a valid likelihood vector of length n+1,
-    preserving the expected SFS.
+    Returns the (N+1) x (n+1) Moore--Penrose pseudoinverse of the
+    hypergeometric projection from N to n copies.  Unlike the projection
+    itself, this quasi-inverse is a linear-algebra operator, not a probability
+    matrix, and may contain negative entries.
     """
-    M = np.zeros((N + 1, n + 1))
-    for i in range(N + 1):
-        for j in range(n + 1):
-            M[i, j] = hypergeom_dist.pmf(j, N, i, n)
-    return M
+    if not 0 <= n <= N:
+        raise ValueError("sample sizes must satisfy 0 <= n <= N")
+    projection = np.zeros((n + 1, N + 1))
+    for derived_sample in range(n + 1):
+        for derived_population in range(N + 1):
+            projection[derived_sample, derived_population] = hypergeom_dist.pmf(
+                derived_sample, N, derived_population, n
+            )
+    return pinv(projection)
 
 
 # ============================================================================
@@ -321,6 +374,7 @@ def transform_params(params, param_types):
 
     param_types: list of 'log' (positive), 'logit' (0-1), or 'none'
     """
+    params = np.asarray(params, dtype=float)
     transformed = np.zeros_like(params)
     for i, (p, ptype) in enumerate(zip(params, param_types)):
         if ptype == 'log':
@@ -334,6 +388,7 @@ def transform_params(params, param_types):
 
 def inverse_transform(transformed, param_types):
     """Transform back to natural parameter space."""
+    transformed = np.asarray(transformed, dtype=float)
     params = np.zeros_like(transformed)
     for i, (t, ptype) in enumerate(zip(transformed, param_types)):
         if ptype == 'log':
@@ -348,13 +403,17 @@ def inverse_transform(transformed, param_types):
 def f2_weights(n_A, n_B):
     """Weight vector for f2(A, B) = E[(p_A - p_B)^2].
 
-    Returns a (n_A+1) x (n_B+1) weight matrix.
+    Uses two draws without replacement within each population, as momi2's
+    ordered-probability definition does.  This removes finite-sample binomial
+    variance from the plug-in squared frequency difference.
     """
+    if n_A < 2 or n_B < 2:
+        raise ValueError("f2 requires at least two sampled copies per population")
     p_A = np.arange(n_A + 1) / n_A
     p_B = np.arange(n_B + 1) / n_B
-    # f2 = E[(p_A - p_B)^2] = sum over configs of (i/n_A - j/n_B)^2 * SFS[i,j]
-    W = np.outer(p_A, np.ones(n_B + 1)) - np.outer(np.ones(n_A + 1), p_B)
-    return W**2
+    p_A2 = np.arange(n_A + 1) * (np.arange(n_A + 1) - 1) / (n_A * (n_A - 1))
+    p_B2 = np.arange(n_B + 1) * (np.arange(n_B + 1) - 1) / (n_B * (n_B - 1))
+    return p_A2[:, None] + p_B2[None, :] - 2 * p_A[:, None] * p_B[None, :]
 
 
 def f3_weights(n_C, n_A, n_B):
@@ -362,15 +421,23 @@ def f3_weights(n_C, n_A, n_B):
 
     Negative f3 indicates admixture of C from A and B.
     """
+    if n_C < 2 or n_A < 1 or n_B < 1:
+        raise ValueError("f3 requires two C copies and one copy from A and B")
     p_C = np.arange(n_C + 1) / n_C
     p_A = np.arange(n_A + 1) / n_A
     p_B = np.arange(n_B + 1) / n_B
+    p_C2 = np.arange(n_C + 1) * (np.arange(n_C + 1) - 1) / (n_C * (n_C - 1))
     # 3-way outer product
     W = np.zeros((n_C + 1, n_A + 1, n_B + 1))
     for ic in range(n_C + 1):
         for ia in range(n_A + 1):
             for ib in range(n_B + 1):
-                W[ic, ia, ib] = (p_C[ic] - p_A[ia]) * (p_C[ic] - p_B[ib])
+                W[ic, ia, ib] = (
+                    p_C2[ic]
+                    - p_C[ic] * p_A[ia]
+                    - p_C[ic] * p_B[ib]
+                    + p_A[ia] * p_B[ib]
+                )
     return W
 
 
@@ -401,7 +468,7 @@ def demo():
     expected_sfs = W @ E_Tjj_neutral
     assert np.all(expected_sfs > 0), "Expected SFS should be positive"
     assert expected_sfs[0] > expected_sfs[-1], "SFS[1] > SFS[n-1] under neutrality"
-    print(f"  Neutral SFS positive and decreasing: OK")
+    print("  Neutral SFS positive and decreasing: OK")
     print(f"  SFS entries (first 5): {expected_sfs[:5]}")
 
     # Constant vs exponential growth coalescence times
@@ -409,7 +476,7 @@ def demo():
     etjj_c = etjj_constant(n, tau, N)
     etjj_e = etjj_exponential(n, tau, 0.0, N)
     assert np.allclose(etjj_c, etjj_e, rtol=1e-6), "Zero growth should equal constant"
-    print(f"  etjj_constant == etjj_exponential(growth=0): OK")
+    print("  etjj_constant == etjj_exponential(growth=0): OK")
 
     # Joint SFS demo
     np.random.seed(42)
@@ -434,7 +501,7 @@ def demo():
     print(f"Rate matrix (n={n_m}): absorbing states at 0 and n -- OK")
 
     # Verify eigenvalues match theoretical formula
-    V, eigs, V_inv = moran_eigensystem(n_m)
+    _V, eigs, _V_inv = moran_eigensystem(n_m)
     j = np.arange(n_m + 1)
     theoretical_eigs = -j * (j - 1) / 2.0
     assert np.allclose(np.sort(eigs), np.sort(theoretical_eigs), atol=1e-10)
@@ -443,14 +510,14 @@ def demo():
     # Verify P(0) = identity
     P0 = moran_transition(0, n_m)
     assert np.allclose(P0, np.eye(n_m + 1), atol=1e-10)
-    print(f"P(0) = identity -- OK")
+    print("P(0) = identity -- OK")
 
     # Verify Chapman-Kolmogorov
     P_s = moran_transition(0.5, n_m)
     P_t = moran_transition(0.3, n_m)
     P_st = moran_transition(0.8, n_m)
     assert np.allclose(P_s @ P_t, P_st, atol=1e-8)
-    print(f"Chapman-Kolmogorov P(0.5)*P(0.3) = P(0.8) -- OK")
+    print("Chapman-Kolmogorov P(0.5)*P(0.3) = P(0.8) -- OK")
 
     # Fixation probability check
     t_large = 100.0
@@ -481,18 +548,24 @@ def demo():
     f_adm = 0.5
     T = admixture_tensor(n_adm, f_adm)
     print(f"\nAdmixture tensor (n={n_adm}, f={f_adm}):")
-    for k in range(n_adm + 1):
-        total = sum(T[k - jj, jj, k] for jj in range(k + 1))
-        E_j = sum(jj * T[k - jj, jj, k] for jj in range(k + 1))
-        print(f"  k={k}: sum={total:.6f}, E[j]={E_j:.4f}, expected={k * f_adm:.4f}")
+    a, b = 1, 3
+    total = T[a, b].sum()
+    expected_child = np.dot(np.arange(n_adm + 1), T[a, b])
+    theoretical_child = (1 - f_adm) * a + f_adm * b
+    print(f"  parents ({a}, {b}): sum={total:.6f}, "
+          f"E[child]={expected_child:.4f}, expected={theoretical_child:.4f}")
 
     # Hypergeometric quasi-inverse
     N_hyp, n_hyp = 10, 5
     M = hypergeom_quasi_inverse(N_hyp, n_hyp)
     print(f"\nHypergeometric quasi-inverse ({N_hyp} -> {n_hyp}):")
-    print(f"  Row sums: {M.sum(axis=1)}")
-    print(f"  M[0, 0] = {M[0, 0]:.4f} (expected 1.0)")
-    print(f"  M[{N_hyp}, {n_hyp}] = {M[N_hyp, n_hyp]:.4f} (expected 1.0)")
+    projection = np.array([
+        [hypergeom_dist.pmf(jj, N_hyp, ii, n_hyp)
+         for ii in range(N_hyp + 1)]
+        for jj in range(n_hyp + 1)
+    ])
+    print(f"  max |H H+ - I|: "
+          f"{np.max(np.abs(projection @ M - np.eye(n_hyp + 1))):.3e}")
 
     # --- Inference ---
     print("\n--- Chapter 4: Inference ---\n")
@@ -514,7 +587,8 @@ def demo():
     # f2 weights
     W_f2 = f2_weights(5, 5)
     print(f"\nf2 weights shape: {W_f2.shape}")
-    print(f"f2 diagonal (same freq): {[W_f2[i, i] for i in range(6)]}")
+    print("f2 diagonal (signed finite-sample corrections): "
+          f"{[W_f2[i, i] for i in range(6)]}")
 
     # f3 weights
     W_f3 = f3_weights(5, 5, 5)

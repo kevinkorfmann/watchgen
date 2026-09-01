@@ -4,21 +4,21 @@ Figure: momi2 algorithm -- four-panel overview.
 Panel A: W-matrix structure -- Polanski-Kimmel coefficients as a heatmap.
 Panel B: Moran model transition -- how a delta distribution at frequency k
          spreads over time via the Moran transition matrix.
-Panel C: Admixture tensor -- expected number of migrating lineages as a
-         function of admixture fraction f, for different starting counts k.
+Panel C: Admixture tensor -- expected child derived count as a function of
+         admixture fraction f for different parental configurations.
 Panel D: Expected time with j lineages -- branch-length contributions under
          constant-size epochs with different population sizes N.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.colors import TwoSlopeNorm
 
 from watchgen.mini_momi2 import (
-    w_matrix,
-    moran_transition,
     admixture_tensor,
     etjj_constant,
+    moran_transition,
+    w_matrix,
 )
 
 # -- Style ---------------------------------------------------------------
@@ -71,8 +71,8 @@ ax.annotate(
     "col 0: $\\frac{6}{n+1}$",
     xy=(0, n_w // 2 - 1), xytext=(5, n_w - 4),
     fontsize=8, color=C_BLUE,
-    arrowprops=dict(arrowstyle="->", color=C_BLUE, lw=1.2),
-    bbox=dict(boxstyle="round,pad=0.2", fc="white", ec=C_BLUE, alpha=0.85),
+    arrowprops={"arrowstyle": "->", "color": C_BLUE, "lw": 1.2},
+    bbox={"boxstyle": "round,pad=0.2", "fc": "white", "ec": C_BLUE, "alpha": 0.85},
 )
 
 # =================================================================
@@ -94,7 +94,7 @@ for t_val, color in zip(times, colors_b):
             label=f"$t = {t_val}$")
 
 ax.set_xlabel("Derived allele count $j$")
-ax.set_ylabel("$P(X(t) = j \\mid X(0) = %d)$" % k_start)
+ax.set_ylabel(f"$P(X(t) = j \\mid X(0) = {k_start})$")
 ax.set_title(f"B.  Moran transition from $k = {k_start}$  ($n = {n_m}$)")
 ax.legend(fontsize=7.5, ncol=2, loc="upper left", framealpha=0.9)
 ax.set_xlim(-0.5, n_m + 0.5)
@@ -105,58 +105,59 @@ ax.annotate(
     "absorbing\nstates",
     xy=(0, P[k_start, 0]), xytext=(2.0, 0.45),
     fontsize=7.5, color=C_GREY,
-    arrowprops=dict(arrowstyle="->", color=C_GREY, lw=1),
+    arrowprops={"arrowstyle": "->", "color": C_GREY, "lw": 1},
 )
 ax.annotate(
     "",
     xy=(n_m, P[k_start, n_m]), xytext=(n_m - 2, 0.45),
-    arrowprops=dict(arrowstyle="->", color=C_GREY, lw=1),
+    arrowprops={"arrowstyle": "->", "color": C_GREY, "lw": 1},
 )
 
 # =================================================================
-# Panel C -- Admixture tensor: E[j migrating] vs f
+# Panel C -- Admixture tensor: expected child count vs f
 # =================================================================
 ax = axes[1, 0]
 
 n_adm = 12
 f_vals = np.linspace(0.0, 1.0, 100)
 
-k_values = [3, 6, 9, 12]
+parent1_count = 2
+parent2_counts = [0, 4, 8, 12]
 colors_c = [C_BLUE, C_GREEN, C_ORANGE, C_RED]
 
-for k_val, color in zip(k_values, colors_c):
-    E_j = np.zeros(len(f_vals))
-    Var_j = np.zeros(len(f_vals))
+for parent2_count, color in zip(parent2_counts, colors_c):
+    mean_child = np.zeros(len(f_vals))
+    var_child = np.zeros(len(f_vals))
     for idx, f in enumerate(f_vals):
         T = admixture_tensor(n_adm, f)
-        # E[j | k] = sum_j j * T[k-j, j, k]
-        for j in range(k_val + 1):
-            E_j[idx] += j * T[k_val - j, j, k_val]
-            Var_j[idx] += j**2 * T[k_val - j, j, k_val]
-        Var_j[idx] -= E_j[idx]**2
+        probs = T[parent1_count, parent2_count]
+        mean_child[idx] = np.dot(np.arange(n_adm + 1), probs)
+        var_child[idx] = np.dot(np.arange(n_adm + 1) ** 2, probs) - mean_child[idx] ** 2
 
-    ax.plot(f_vals, E_j, color=color, lw=2, label=f"$k = {k_val}$")
+    ax.plot(f_vals, mean_child, color=color, lw=2,
+            label=f"parent 2: $b = {parent2_count}$")
     # Show +/- 1 standard deviation band
-    sd = np.sqrt(np.maximum(Var_j, 0))
-    ax.fill_between(f_vals, E_j - sd, E_j + sd, color=color, alpha=0.10)
+    sd = np.sqrt(np.maximum(var_child, 0))
+    ax.fill_between(f_vals, mean_child - sd, mean_child + sd,
+                    color=color, alpha=0.10)
 
-# Overlay the theoretical line E[j] = k*f as dashed reference
-for k_val, color in zip(k_values, colors_c):
-    ax.plot(f_vals, k_val * f_vals, color=color, ls="--", lw=1, alpha=0.5)
+# Overlay E[k] = (1-f)a + fb as dashed references.
+for parent2_count, color in zip(parent2_counts, colors_c):
+    ax.plot(f_vals, (1 - f_vals) * parent1_count + f_vals * parent2_count,
+            color=color, ls="--", lw=1, alpha=0.5)
 
 ax.set_xlabel("Admixture fraction $f$")
-ax.set_ylabel("$E[j \\mid k]$ (migrating lineages)")
-ax.set_title(f"C.  Admixture tensor: lineage splitting ($n = {n_adm}$)")
-ax.legend(fontsize=8, loc="upper left", framealpha=0.9, title="Lineages $k$",
-          title_fontsize=8)
+ax.set_ylabel("Expected child derived count")
+ax.set_title(f"C.  Pulse operator (parent 1: $a={parent1_count}$, $n={n_adm}$)")
+ax.legend(fontsize=8, loc="upper left", framealpha=0.9)
 ax.set_xlim(0, 1)
 ax.set_ylim(0, n_adm + 0.5)
 
 ax.text(
     0.72, 2.5,
-    "dashed: $E[j] = kf$\nband: $\\pm 1\\,\\sigma$",
+    "dashed: $(1-f)a+fb$\nband: $\\pm 1\\,\\sigma$",
     fontsize=7.5,
-    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=C_GREY, alpha=0.8),
+    bbox={"boxstyle": "round,pad=0.3", "fc": "white", "ec": C_GREY, "alpha": 0.8},
 )
 
 # =================================================================
@@ -176,23 +177,18 @@ for N_val, color in zip(pop_sizes, colors_d):
     ax.plot(j_vals, etjj, "s-", color=color, lw=1.8, ms=4, alpha=0.85,
             label=f"$N = {N_val}$")
 
-# Also show the infinite-epoch limit: 1/rate = 2/(j(j-1))
-etjj_inf = 2.0 / (j_vals * (j_vals - 1))
-ax.plot(j_vals, etjj_inf, "k--", lw=1.5, alpha=0.5,
-        label=r"$\tau \to \infty$: $2/\binom{j}{2}$")
-
 ax.set_xlabel("Number of lineages $j$")
-ax.set_ylabel("$E[T_{jj}]$ (expected sojourn time)")
+ax.set_ylabel("$E[T_{jj}]$ (generations)")
 ax.set_title(f"D.  Expected time with $j$ lineages ($\\tau = {tau}$ gen)")
 ax.legend(fontsize=7.5, loc="upper right", framealpha=0.9)
 ax.set_xlim(1.5, n_e + 0.5)
 ax.set_yscale("log")
 
 ax.text(
-    n_e * 0.55, etjj_inf[0] * 0.5,
+    n_e * 0.55, 7,
     "larger $N$ $\\Rightarrow$ slower\ncoalescence",
     fontsize=8,
-    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=C_GREY, alpha=0.8),
+    bbox={"boxstyle": "round,pad=0.3", "fc": "white", "ec": C_GREY, "alpha": 0.8},
 )
 
 # -- Save ---------------------------------------------------------------

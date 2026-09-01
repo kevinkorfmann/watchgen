@@ -5,14 +5,14 @@ Simulates data with msprime, computes the observed SFS, and uses
 momi2's W-matrix and Moran model machinery to predict it.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
 import msprime
+import numpy as np
 
 from watchgen.mini_momi2 import (
-    w_matrix,
     etjj_constant,
     moran_transition,
+    w_matrix,
 )
 
 plt.rcParams.update({
@@ -53,7 +53,9 @@ for i in range(n_samples - 1):
     for j in range(2, n_int + 1):
         if j - 2 < W.shape[1] and i < W.shape[0]:
             predicted_sfs[i] += W[i, j - 2] * e_tjj[j]
-predicted_sfs *= theta
+# This W convention returns twice the standard coalescent branch length, so
+# the mutation factor in the Polanski--Kimmel formula is theta / 2.
+predicted_sfs *= theta / 2
 
 # ── Figure ──────────────────────────────────────────────────────
 fig, axes = plt.subplots(2, 2, figsize=(11, 8.5))
@@ -91,13 +93,14 @@ ax = axes[1, 0]
 j_vals = np.arange(2, n_samples + 1)
 etjj_vals = [2.0 / (j * (j - 1)) for j in j_vals]
 
-# etjj_constant expects tau in generations; convert from coalescent units (1 cu = 2Ne gen)
+# momi2's internal population-size convention is N=4*Ne for diploids, so its
+# pairwise rate 2/N equals the standard coalescent rate 1/(2*Ne).
 tau_vals_coal = [0.1, 0.5, 1.0, 2.0]
 colors_c = ["#2166AC", "#B2182B", "#1B7837", "#E08214"]
 for tau_coal, color in zip(tau_vals_coal, colors_c):
     tau_gen = tau_coal * 2 * Ne  # convert to generations
-    sojourn = etjj_constant(n_samples, tau_gen, Ne)  # array length n_samples-1, index j-2
-    etjj_tau = [float(sojourn[j - 2]) for j in j_vals]
+    sojourn_gen = etjj_constant(n_samples, tau_gen, 4 * Ne)
+    etjj_tau = [float(sojourn_gen[j - 2] / (2 * Ne)) for j in j_vals]
     ax.plot(j_vals, etjj_tau, "o-", color=color, ms=3, lw=1.5,
             label=f"$\\tau$ = {tau_coal}")
 

@@ -6,12 +6,6 @@ The Coalescent SFS
 
    *The dial face of the watch: reading expected allele frequencies from the shape of the genealogy.*
 
-.. epigraph::
-
-   "The expected SFS is a linear function of the expected coalescence times."
-
-   -- Polanski and Kimmel (2003)
-
 Step 1: From Genealogies to the SFS
 =====================================
 
@@ -28,9 +22,8 @@ samples that descend from that branch. So the SFS is determined by the
 where:
 
 - :math:`\theta = 4 N_e \mu` is the population-scaled mutation rate
-- :math:`T_{jj}` is the total time during which there are exactly :math:`j`
-  lineages, each descending from exactly :math:`j` of the :math:`n` sampled
-  chromosomes
+- :math:`T_{jj}` is the time during which the genealogy has exactly
+  :math:`j` ancestral lineages
 - :math:`W_{b,j}` are combinatorial coefficients (the **W-matrix** of Polanski
   and Kimmel) that convert expected coalescence times into expected SFS entries
 
@@ -60,24 +53,19 @@ SFS entry :math:`b \in \{1, \ldots, n-1\}` and columns indexed by epoch
 
 .. math::
 
-   W_{b,1} &= \frac{6}{n+1}
+   W_{b,0} &= \frac{6}{n+1}
 
-   W_{b,2} &= \frac{30(n - 2b)}{(n+1)(n+2)}
+   W_{b,1} &= \frac{30(n - 2b)}{(n+1)(n+2)}
 
-   W_{b,j} &= \frac{(2j+1)(n - 2b)}{j(n + j + 1)} W_{b,j-1}
-              - \frac{(j+1)(2j+3)(n-j)}{j(2j-1)(n+j+1)} W_{b,j-2}
+   W_{b,r} &= \frac{(2r+3)(n - 2b)}{r(n + r + 1)} W_{b,r-1}
+              - \frac{(r+1)(2r+3)(n-r)}{r(2r-1)(n+r+1)} W_{b,r-2},
+              \qquad r=2,\ldots,n-2.
 
 **Why these specific coefficients?** The W-matrix entries are derived from the
 hypergeometric distribution. When there are :math:`j` ancestral lineages
 partitioning :math:`n` samples, the probability that a random lineage has
-exactly :math:`b` descendants involves Hahn polynomials -- a family of
-orthogonal polynomials on discrete sets. The three-term recurrence above is the
-recurrence relation for these polynomials. Notice two features:
-
-- The factor :math:`(n - 2b)` appears in both :math:`W_{b,2}` and the
-  recursion. When :math:`b = n/2` (the folded midpoint), this factor is zero,
-  which reflects the symmetry of the neutral SFS: singletons and
-  :math:`(n-1)`-tons have the same expectation under exchangeability.
+exactly :math:`b` descendants leads to a stable three-term recurrence. Notice
+one useful computational feature:
 
 - The recursion is **three-term** (each :math:`W_{b,j}` depends on the two
   previous columns), which is characteristic of orthogonal polynomial
@@ -101,11 +89,12 @@ recurrence relation for these polynomials. Notice two features:
        if n > 2:
            W[:, 1] = 30.0 * (n - 2 * bb) / ((n + 1) * (n + 2))
 
-       for col in range(2, n - 1):
-           j = col + 2  # number of lineages
-           W[:, col] = (
-               W[:, col - 1] * (2 * j + 1) * (n - 2 * bb) / (j * (n + j + 1))
-               - W[:, col - 2] * (j + 1) * (2 * j + 3) * (n - j)
+       # ``j`` here is the zero-based recurrence index used by momi2.
+       # The associated number of lineages is j + 2.
+       for j in range(2, n - 1):
+           W[:, j] = (
+               W[:, j - 1] * (2 * j + 3) * (n - 2 * bb) / (j * (n + j + 1))
+               - W[:, j - 2] * (j + 1) * (2 * j + 3) * (n - j)
                  / (j * (2 * j - 1) * (n + j + 1))
            )
        return W
@@ -135,8 +124,9 @@ rate of coalescence when there are :math:`j` lineages is
 
    E[T_{jj}] = \frac{1}{\binom{j}{2}} = \frac{2}{j(j-1)}
 
-(in units of :math:`2N` generations). Plugging this into the W-matrix formula
-recovers the classic neutral SFS: :math:`E[\text{SFS}[b]] \propto 1/b`.
+in standard coalescent time, where the pairwise rate is one. Plugging this into
+the W-matrix formula recovers the classic neutral SFS:
+:math:`E[\text{SFS}[b]] \propto 1/b`.
 
 But what if population size changes through time? This is where ``momi2``'s
 machinery becomes essential.
@@ -152,10 +142,16 @@ machinery becomes essential.
        Returns array of length n-1, indexed by j = 2, ..., n.
        """
        j = np.arange(2, n + 1)
-       rate = j * (j - 1) / 2.0  # coalescence rate with j lineages
-       scaled_time = 2.0 * tau / N  # time in coalescent units
-       # expected time with j lineages, accounting for finite epoch duration
-       return (1.0 - np.exp(-rate * scaled_time)) / rate
+       rate = j * (j - 1) / N
+       # Integrate the probability that j lineages survive to time t.
+       # The output has the same time units as tau.
+       return -np.expm1(-rate * tau) / rate
+
+The infinite-epoch limit is :math:`N/[j(j-1)]` in these time units. Dividing
+by :math:`N/2` converts it to the coalescent-unit expression
+:math:`2/[j(j-1)]` used in the neutral check above. The earlier distinction is
+important: multiplying a coalescent-unit answer by a finite-epoch mutation
+rate does not recover a duration in generations.
 
 Step 4: How Demographic Events Modify Expected Branch Lengths
 ===============================================================
@@ -205,24 +201,20 @@ a binomial distribution, implemented as a 3-tensor contraction.
 
        j = np.arange(2, n + 1)
        rate = j * (j - 1) / 2.0
-       N_top = N_bottom * np.exp(-tau * growth_rate)
-
        if abs(growth_rate) < 1e-10:
            return etjj_constant(n, tau, N_bottom)
 
-       # Scaled time for the epoch
        total_growth = tau * growth_rate
-       scaled_time = (np.expm1(total_growth) / total_growth) * tau * 2.0 / N_bottom
-
-       # Expected coalescence times via exponential integral
        a = rate * 2.0 / (N_bottom * growth_rate)
-       result = np.zeros_like(rate)
-       for idx in range(len(rate)):
-           c = a[idx]
-           result[idx] = (
-               np.exp(-c) * (-expi(c) + expi(c * np.exp(total_growth)))
-           )
-       return result
+       return (
+           np.exp(a)
+           * (expi(-a * np.exp(total_growth)) - expi(-a))
+           / growth_rate
+       )
+
+The production package evaluates an algebraically equivalent transformed
+exponential-integral expression for numerical stability and compatibility
+with ``autograd``.
 
 Step 5: The Multi-Population SFS
 =================================
@@ -282,13 +274,14 @@ be expressed as an inner product with the likelihood tensor. This includes:
 
 - **f-statistics** (:math:`f_2`, :math:`f_3`, :math:`f_4`): linear combinations
   of SFS entries that measure shared drift between populations
-- **Patterson's D statistic** (ABBA-BABA): a test for admixture
+- **ABBA and BABA counts** used to form Patterson's D
 - **Nucleotide diversity** (:math:`\pi`): a weighted sum of SFS entries
-- **Tajima's D**: a ratio of SFS-derived estimators
+- **The linear estimators entering Tajima's D**
 
-``momi2`` computes these by passing appropriate **weight vectors** through the
-same tensor machinery used for the SFS. The same autograd gradients apply,
-so you can optimize demographic models to fit any of these statistics.
+``momi2`` computes the linear components by passing appropriate **weight
+vectors** through the same tensor machinery used for the SFS. Ratio statistics
+such as Patterson's D and Tajima's D are formed afterward from those linear
+expectations; a ratio itself is not a linear function of the SFS.
 
 .. admonition:: Probability Aside -- Why linear statistics are free
 

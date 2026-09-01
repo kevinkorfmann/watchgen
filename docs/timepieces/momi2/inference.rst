@@ -6,13 +6,6 @@ Automatic Differentiation & Inference
 
    *The mainspring of the watch: autograd-powered optimization turns the expected SFS into inferred history.*
 
-.. epigraph::
-
-   "Automatic differentiation provides exact gradients through the entire
-   computation, enabling efficient optimization of complex demographic models."
-
-   -- Kamm, Terhorst, Song, and Durbin (2017)
-
 .. admonition:: Biology Aside -- What demographic inference asks
 
    Demographic inference is the process of reconstructing a population's
@@ -76,6 +69,8 @@ total number of SNPs:
            observed_sfs[mask] * np.log(expected_sfs[mask])
            - expected_sfs[mask]
        )
+       # Zero-count bins still contribute -M_c.
+       ll -= np.sum(expected_sfs[~mask])
        return ll
 
 .. admonition:: Probability Aside -- Multinomial vs. Poisson likelihood
@@ -84,9 +79,9 @@ total number of SNPs:
    :math:`S = \sum_c D_c`, making it insensitive to the overall mutation
    rate :math:`\theta`. This is useful when :math:`\theta` is a nuisance
    parameter. The Poisson likelihood fits :math:`S` as well, providing
-   information about the absolute scale. In ``momi2``, the default is
-   multinomial (``normalized=True``), but the Poisson option is available
-   for joint estimation of :math:`\theta`.
+   information about the absolute scale. In ``momi2``, omitting the mutation
+   rate selects the multinomial model; supplying a mutation rate adds the
+   Poisson mutation-count factor.
 
 Step 2: Automatic Differentiation with autograd
 =================================================
@@ -222,9 +217,9 @@ this with autograd-computed gradients:
 
 The two recommended methods:
 
-- **TNC** (Truncated Newton Conjugate-gradient): Uses Hessian-vector products
-  (which autograd can also compute) for second-order convergence. Good for
-  problems with 10--50 parameters.
+- **TNC** (Truncated Newton Conjugate-gradient): A bounded truncated-Newton
+  method. momi2 supplies its autograd gradient to SciPy; it does not pass an
+  explicit autograd Hessian-vector product to TNC.
 - **L-BFGS-B**: A quasi-Newton method that approximates the Hessian from
   gradient history. Good for larger parameter spaces. Supports box constraints.
 
@@ -320,6 +315,7 @@ respect the temporal ordering of events.
 
        param_types: list of 'log' (positive), 'logit' (0-1), or 'none'
        """
+       params = np.asarray(params, dtype=float)
        transformed = np.zeros_like(params)
        for i, (p, ptype) in enumerate(zip(params, param_types)):
            if ptype == 'log':
@@ -332,6 +328,7 @@ respect the temporal ordering of events.
 
    def inverse_transform(transformed, param_types):
        """Transform back to natural parameter space."""
+       transformed = np.asarray(transformed, dtype=float)
        params = np.zeros_like(transformed)
        for i, (t, ptype) in enumerate(zip(transformed, param_types)):
            if ptype == 'log':
@@ -441,26 +438,26 @@ summary statistics to assess model fit.
      - :math:`E[(p_A - p_B)(p_C - p_D)]`
      - Shared drift / treeness test
    * - Patterson's D
-     - :math:`\frac{\text{ABBA} - \text{BABA}}{\text{ABBA} + \text{BABA}}`
+     - :math:`\frac{\text{BABA} - \text{ABBA}}{\text{BABA} + \text{ABBA}}`
      - Gene flow between non-sister taxa
 
-These are all **linear functions** of the SFS (see :ref:`coalescent_sfs`,
-Step 6), so ``momi2`` computes them by passing the appropriate weight vectors
-through the tensor machinery. Autograd gradients are available, enabling
-optimization of demographic models to fit these statistics.
+The :math:`f`-statistics and the ABBA/BABA components are **linear functions**
+of the SFS (see :ref:`coalescent_sfs`, Step 6), so ``momi2`` computes them by
+passing appropriate weight vectors through the tensor machinery. Patterson's
+D is then formed as a ratio of two such linear expectations.
 
 .. code-block:: python
 
    def f2_weights(n_A, n_B):
        """Weight vector for f2(A, B) = E[(p_A - p_B)^2].
 
-       Returns a (n_A+1) x (n_B+1) weight matrix.
+       Uses distinct draws without replacement within A and within B.
        """
        p_A = np.arange(n_A + 1) / n_A
        p_B = np.arange(n_B + 1) / n_B
-       # f2 = E[(p_A - p_B)^2] = sum over configs of (i/n_A - j/n_B)^2 * SFS[i,j]
-       W = np.outer(p_A, np.ones(n_B + 1)) - np.outer(np.ones(n_A + 1), p_B)
-       return W**2
+       p_A2 = np.arange(n_A + 1) * (np.arange(n_A + 1) - 1) / (n_A * (n_A - 1))
+       p_B2 = np.arange(n_B + 1) * (np.arange(n_B + 1) - 1) / (n_B * (n_B - 1))
+       return p_A2[:, None] + p_B2[None, :] - 2 * p_A[:, None] * p_B[None, :]
 
    def f3_weights(n_C, n_A, n_B):
        """Weight vector for f3(C; A, B) = E[(p_C - p_A)(p_C - p_B)].
@@ -470,13 +467,20 @@ optimization of demographic models to fit these statistics.
        p_C = np.arange(n_C + 1) / n_C
        p_A = np.arange(n_A + 1) / n_A
        p_B = np.arange(n_B + 1) / n_B
-       # 3-way outer product
+       p_C2 = np.arange(n_C + 1) * (np.arange(n_C + 1) - 1) / (n_C * (n_C - 1))
        W = np.zeros((n_C + 1, n_A + 1, n_B + 1))
        for ic in range(n_C + 1):
            for ia in range(n_A + 1):
                for ib in range(n_B + 1):
-                   W[ic, ia, ib] = (p_C[ic] - p_A[ia]) * (p_C[ic] - p_B[ib])
+                   W[ic, ia, ib] = (
+                       p_C2[ic] - p_C[ic] * p_A[ia]
+                       - p_C[ic] * p_B[ib] + p_A[ia] * p_B[ib]
+                   )
        return W
+
+The without-replacement terms are essential finite-sample corrections. Squaring
+the observed sample-frequency difference directly adds sampling variance and
+does not reproduce momi2's ``ordered_prob`` definition of these statistics.
 
 Step 8: The Complete Inference Pipeline
 =========================================
@@ -660,10 +664,9 @@ Solutions
       param_diff = np.abs(res_tnc.x - res_lbfgsb.x) / res_tnc.x
       print(f"Relative parameter difference: {param_diff}")
 
-   Both optimizers should converge to the same MLE (within tolerance). TNC
-   typically uses fewer function evaluations for small parameter spaces
-   (it exploits Hessian-vector products), while L-BFGS-B may be faster
-   per iteration. If they converge to different optima, this indicates
+   Both optimizers should converge to the same MLE (within tolerance), although
+   neither is guaranteed to use fewer evaluations on every problem. If they
+   converge to different optima, this can indicate
    multiple local maxima -- run from additional starting points.
 
 .. admonition:: Solution 3: Uncertainty calibration

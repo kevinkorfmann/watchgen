@@ -10,9 +10,10 @@ Covers:
 """
 
 import numpy as np
+from scipy.integrate import quad
+from scipy.linalg import pinv
 from scipy.special import comb, expi
 from scipy.stats import hypergeom as hypergeom_dist
-
 
 # ============================================================================
 # Functions from coalescent_sfs.rst
@@ -40,31 +41,24 @@ def w_matrix(n):
 def etjj_constant(n, tau, N):
     """Expected time with j lineages in an epoch of duration tau and size N."""
     j = np.arange(2, n + 1)
-    rate = j * (j - 1) / 2.0
-    scaled_time = 2.0 * tau / N
-    return (1.0 - np.exp(-rate * scaled_time)) / rate
+    rate = j * (j - 1) / N
+    return -np.expm1(-rate * tau) / rate
 
 
 def etjj_exponential(n, tau, growth_rate, N_bottom):
     """Expected time with j lineages under exponential growth."""
     j = np.arange(2, n + 1)
     rate = j * (j - 1) / 2.0
-    N_top = N_bottom * np.exp(-tau * growth_rate)
-
     if abs(growth_rate) < 1e-10:
         return etjj_constant(n, tau, N_bottom)
 
     total_growth = tau * growth_rate
-    scaled_time = (np.expm1(total_growth) / total_growth) * tau * 2.0 / N_bottom
-
     a = rate * 2.0 / (N_bottom * growth_rate)
-    result = np.zeros_like(rate)
-    for idx in range(len(rate)):
-        c = a[idx]
-        result[idx] = (
-            np.exp(-c) * (-expi(c) + expi(c * np.exp(total_growth)))
-        )
-    return result
+    return (
+        np.exp(a)
+        * (expi(-a * np.exp(total_growth)) - expi(-a))
+        / growth_rate
+    )
 
 
 def compute_joint_sfs(genotype_matrix, pop_assignments, pop_names):
@@ -106,11 +100,13 @@ def poisson_log_likelihood(observed_sfs, expected_sfs):
         observed_sfs[mask] * np.log(expected_sfs[mask])
         - expected_sfs[mask]
     )
+    ll -= np.sum(expected_sfs[~mask])
     return ll
 
 
 def transform_params(params, param_types):
     """Transform parameters to unconstrained space."""
+    params = np.asarray(params, dtype=float)
     transformed = np.zeros_like(params)
     for i, (p, ptype) in enumerate(zip(params, param_types)):
         if ptype == 'log':
@@ -124,6 +120,7 @@ def transform_params(params, param_types):
 
 def inverse_transform(transformed, param_types):
     """Transform back to natural parameter space."""
+    transformed = np.asarray(transformed, dtype=float)
     params = np.zeros_like(transformed)
     for i, (t, ptype) in enumerate(zip(transformed, param_types)):
         if ptype == 'log':
@@ -139,8 +136,9 @@ def f2_weights(n_A, n_B):
     """Weight vector for f2(A, B) = E[(p_A - p_B)^2]."""
     p_A = np.arange(n_A + 1) / n_A
     p_B = np.arange(n_B + 1) / n_B
-    W = np.outer(p_A, np.ones(n_B + 1)) - np.outer(np.ones(n_A + 1), p_B)
-    return W**2
+    p_A2 = np.arange(n_A + 1) * (np.arange(n_A + 1) - 1) / (n_A * (n_A - 1))
+    p_B2 = np.arange(n_B + 1) * (np.arange(n_B + 1) - 1) / (n_B * (n_B - 1))
+    return p_A2[:, None] + p_B2[None, :] - 2 * p_A[:, None] * p_B[None, :]
 
 
 def f3_weights(n_C, n_A, n_B):
@@ -148,11 +146,17 @@ def f3_weights(n_C, n_A, n_B):
     p_C = np.arange(n_C + 1) / n_C
     p_A = np.arange(n_A + 1) / n_A
     p_B = np.arange(n_B + 1) / n_B
+    p_C2 = np.arange(n_C + 1) * (np.arange(n_C + 1) - 1) / (n_C * (n_C - 1))
     W = np.zeros((n_C + 1, n_A + 1, n_B + 1))
     for ic in range(n_C + 1):
         for ia in range(n_A + 1):
             for ib in range(n_B + 1):
-                W[ic, ia, ib] = (p_C[ic] - p_A[ia]) * (p_C[ic] - p_B[ib])
+                W[ic, ia, ib] = (
+                    p_C2[ic]
+                    - p_C[ic] * p_A[ia]
+                    - p_C[ic] * p_B[ib]
+                    + p_A[ia] * p_B[ib]
+                )
     return W
 
 
@@ -196,7 +200,10 @@ def moran_action(t, tensor, axis):
     """Apply Moran transition matrix to a tensor along a given axis."""
     n = tensor.shape[axis] - 1
     P = moran_transition(t, n)
-    return np.tensordot(tensor, P.T, axes=([axis], [0]))
+    result = np.tensordot(tensor, P.T, axes=([axis], [0]))
+    if axis != result.ndim - 1:
+        result = np.moveaxis(result, -1, axis)
+    return result
 
 
 # ============================================================================
@@ -221,22 +228,36 @@ def convolve_populations(L1, L2, n1, n2):
 
 def admixture_tensor(n, f):
     """Compute the admixture 3-tensor for a pulse event."""
-    from scipy.special import comb as binom
     T = np.zeros((n + 1, n + 1, n + 1))
-    for k in range(n + 1):
-        for j in range(k + 1):
-            i = k - j
-            T[i, j, k] = binom(k, j) * f**j * (1 - f)**(k - j)
+    draws = {
+        (derived, sample_size): hypergeom_dist.pmf(
+            np.arange(sample_size + 1), n, derived, sample_size
+        )
+        for derived in range(n + 1)
+        for sample_size in range(n + 1)
+    }
+    for a in range(n + 1):
+        for b in range(n + 1):
+            for n_parent1 in range(n + 1):
+                assign_prob = (
+                    comb(n, n_parent1)
+                    * (1 - f) ** n_parent1
+                    * f ** (n - n_parent1)
+                )
+                n_parent2 = n - n_parent1
+                T[a, b] += assign_prob * np.convolve(
+                    draws[a, n_parent1], draws[b, n_parent2]
+                )
     return T
 
 
 def hypergeom_quasi_inverse(N, n):
     """Compute the quasi-inverse for reducing lineage count from N to n."""
-    M = np.zeros((N + 1, n + 1))
-    for i in range(N + 1):
-        for j in range(n + 1):
-            M[i, j] = hypergeom_dist.pmf(j, N, i, n)
-    return M
+    projection = np.array([
+        [hypergeom_dist.pmf(j, N, i, n) for i in range(N + 1)]
+        for j in range(n + 1)
+    ])
+    return pinv(projection)
 
 
 # ============================================================================
@@ -303,8 +324,7 @@ class TestEtjjConstant:
         N = 1000
         result = etjj_constant(n, tau_large, N)
         j = np.arange(2, n + 1)
-        rate = j * (j - 1) / 2.0
-        expected = 1.0 / rate  # limit as tau -> infinity
+        expected = N / (j * (j - 1))
         assert np.allclose(result, expected, rtol=1e-6)
 
     def test_zero_epoch(self):
@@ -357,6 +377,22 @@ class TestEtjjExponential:
         result = etjj_exponential(n, 100, 0.01, 1000)
         assert np.all(np.isfinite(result))
         assert np.all(result > 0)
+
+    def test_matches_survival_integral(self):
+        n, tau, growth_rate, N_bottom = 6, 100, 1e-3, 1000
+        observed = etjj_exponential(n, tau, growth_rate, N_bottom)
+        expected = []
+        for j in range(2, n + 1):
+            coal_rate = j * (j - 1) / 2
+            expected.append(quad(
+                lambda t, rate=coal_rate: np.exp(
+                    -rate * 2 * np.expm1(growth_rate * t)
+                    / (N_bottom * growth_rate)
+                ),
+                0,
+                tau,
+            )[0])
+        assert np.allclose(observed, expected, rtol=1e-11, atol=1e-11)
 
 
 class TestComputeJointSFS:
@@ -523,17 +559,22 @@ class TestF2Weights:
         W = f2_weights(5, 10)
         assert W.shape == (6, 11)
 
-    def test_non_negative(self):
-        """f2 weights are squared differences, so non-negative."""
-        W = f2_weights(10, 10)
-        assert np.all(W >= 0)
-
-    def test_zero_on_diagonal_same_n(self):
-        """When n_A == n_B and i == j, f2 weight should be zero."""
+    def test_fixed_equal_populations_are_zero(self):
         n = 5
         W = f2_weights(n, n)
-        for i in range(n + 1):
-            assert np.isclose(W[i, i], 0.0)
+        assert np.isclose(W[0, 0], 0.0)
+        assert np.isclose(W[n, n], 0.0)
+
+    def test_uses_distinct_within_population_draws(self):
+        n = 6
+        W = f2_weights(n, n)
+        i, j = 2, 4
+        expected = (
+            i * (i - 1) / (n * (n - 1))
+            + j * (j - 1) / (n * (n - 1))
+            - 2 * i * j / n**2
+        )
+        assert np.isclose(W[i, j], expected)
 
     def test_symmetry(self):
         """f2(A, B) weights should satisfy W[i,j] = W_transpose[j,i]
@@ -622,7 +663,7 @@ class TestMoranEigensystem:
     def test_eigenvalues_non_positive(self):
         """All eigenvalues should be non-positive (rate matrix property)."""
         for n in [5, 10]:
-            V, eigs, V_inv = moran_eigensystem(n)
+            _V, eigs, _V_inv = moran_eigensystem(n)
             assert np.all(eigs <= 1e-10), \
                 f"Found positive eigenvalue for n={n}: {eigs[eigs > 1e-10]}"
 
@@ -637,7 +678,7 @@ class TestMoranEigensystem:
     def test_has_zero_eigenvalue(self):
         """There should be at least one zero eigenvalue (absorbing state)."""
         n = 10
-        V, eigs, V_inv = moran_eigensystem(n)
+        _V, eigs, _V_inv = moran_eigensystem(n)
         num_zeros = np.sum(np.abs(eigs) < 1e-8)
         assert num_zeros >= 1
 
@@ -767,39 +808,36 @@ class TestAdmixtureTensor:
         assert T.shape == (n + 1, n + 1, n + 1)
 
     def test_no_admixture(self):
-        """When f=0, no lineages move. T[k, 0, k] = 1 for all k."""
+        """At f=0 the child is inherited entirely from parent 1."""
         n = 5
         T = admixture_tensor(n, 0.0)
-        for k in range(n + 1):
-            assert np.isclose(T[k, 0, k], 1.0)
-            # All other j entries for this k should be 0
-            for j in range(1, k + 1):
-                assert np.isclose(T[k - j, j, k], 0.0)
+        for a in range(n + 1):
+            for b in range(n + 1):
+                assert np.isclose(T[a, b, a], 1.0)
 
     def test_full_admixture(self):
-        """When f=1, all lineages move. T[0, k, k] = 1 for all k."""
+        """At f=1 the child is inherited entirely from parent 2."""
         n = 5
         T = admixture_tensor(n, 1.0)
-        for k in range(n + 1):
-            assert np.isclose(T[0, k, k], 1.0)
+        for a in range(n + 1):
+            for b in range(n + 1):
+                assert np.isclose(T[a, b, b], 1.0)
 
     def test_probability_sums_to_one(self):
-        """For each k, the probabilities over (i,j) with i+j=k should sum to 1."""
+        """Every parental configuration defines a child distribution."""
         n = 5
         f = 0.3
         T = admixture_tensor(n, f)
-        for k in range(n + 1):
-            total = sum(T[k - j, j, k] for j in range(k + 1))
-            assert np.isclose(total, 1.0), f"Sum not 1 for k={k}: {total}"
+        assert np.allclose(T.sum(axis=2), 1.0)
 
-    def test_expected_moving_lineages(self):
-        """Expected number of lineages moving should be n*f."""
+    def test_expected_child_derived_count(self):
+        """Child mean is the ancestry-weighted parental count."""
         n = 10
-        f = 0.5
+        f = 0.3
         T = admixture_tensor(n, f)
-        # E[j | k=n] = sum j * T[n-j, j, n]
-        expected_j = sum(j * T[n - j, j, n] for j in range(n + 1))
-        assert np.isclose(expected_j, n * f, atol=1e-10)
+        a, b = 2, 8
+        expected_k = sum(k * T[a, b, k] for k in range(n + 1))
+        assert np.isclose(expected_k, (1 - f) * a + f * b, atol=1e-10)
 
     def test_non_negative(self):
         """All tensor entries should be non-negative."""
@@ -817,30 +855,24 @@ class TestHypergeomQuasiInverse:
         M = hypergeom_quasi_inverse(N, n)
         assert M.shape == (N + 1, n + 1)
 
-    def test_rows_sum_to_one(self):
-        """Each row should be a valid probability distribution (sums to 1)."""
+    def test_is_right_inverse_of_projection(self):
+        """Projection times quasi-inverse is identity."""
         N, n = 10, 5
         M = hypergeom_quasi_inverse(N, n)
-        for i in range(N + 1):
-            assert np.isclose(M[i, :].sum(), 1.0, atol=1e-10), \
-                f"Row {i} sums to {M[i, :].sum()}"
+        projection = np.array([
+            [hypergeom_dist.pmf(j, N, i, n) for i in range(N + 1)]
+            for j in range(n + 1)
+        ])
+        assert np.allclose(projection @ M, np.eye(n + 1), atol=1e-12)
 
-    def test_non_negative(self):
-        """All entries should be non-negative."""
-        N, n = 8, 4
-        M = hypergeom_quasi_inverse(N, n)
-        assert np.all(M >= -1e-15)
-
-    def test_boundary_zero(self):
-        """When i=0 in population of N, j must be 0 when sampling n."""
+    def test_has_negative_weights(self):
+        """The pseudoinverse is not a probability matrix."""
         N, n = 10, 5
         M = hypergeom_quasi_inverse(N, n)
-        assert np.isclose(M[0, 0], 1.0)
-        assert np.allclose(M[0, 1:], 0.0, atol=1e-15)
+        assert np.any(M < 0)
 
-    def test_boundary_N(self):
-        """When i=N, j must be n (all derived in the subsample)."""
-        N, n = 10, 5
+    def test_square_case_is_identity(self):
+        N = 6
+        n = N
         M = hypergeom_quasi_inverse(N, n)
-        assert np.isclose(M[N, n], 1.0)
-        assert np.allclose(M[N, :n], 0.0, atol=1e-15)
+        assert np.allclose(M, np.eye(N + 1), atol=1e-12)

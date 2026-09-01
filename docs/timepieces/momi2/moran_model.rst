@@ -6,13 +6,6 @@ The Moran Model
 
    *The escapement of the watch: a discrete population model whose eigendecomposition lets us tell time exactly.*
 
-.. epigraph::
-
-   "The Moran model provides a tractable Markov chain whose eigensystem is
-   known in closed form."
-
-   -- Kamm, Terhorst, Song, and Durbin (2017)
-
 .. admonition:: Biology Aside -- Why a population model?
 
    The central question of demographic inference is: *given DNA from living
@@ -30,8 +23,8 @@ The Moran Model
 Step 1: The Moran Model as a Continuous-Time Markov Chain
 ==========================================================
 
-The **Moran model** describes how allele frequencies change in a finite
-population of size :math:`n`. Unlike the Wright-Fisher model (which has
+The **Moran model** used here describes how allele counts change in a virtual
+sample of size :math:`n`. Unlike the Wright-Fisher model (which has
 discrete, non-overlapping generations), the Moran model operates in continuous
 time: at rate proportional to :math:`n`, one individual is chosen to reproduce
 and one to die.
@@ -47,8 +40,9 @@ The state of the system is the number of derived alleles :math:`i \in \{0, 1,
 
    q(i, i) &= -i(n-i) \quad \text{(total departure rate)}
 
-The factor :math:`i(n-i)/2` counts the number of ways to pick one derived and
-one ancestral individual (divided by 2 because either could be the parent).
+The factor :math:`1/2` fixes the time convention so that the nonzero decay
+rates match the coalescent rates :math:`\binom{j}{2}`. Other presentations of
+the Moran chain differ by an overall time-scaling constant.
 
 .. admonition:: Biology Aside -- Derived and ancestral alleles
 
@@ -134,14 +128,14 @@ is no further change.
    row_sums = Q.sum(axis=1)
    assert np.allclose(row_sums, 0), f"Row sums: {row_sums}"
 
-   # Verification: Q is symmetric (detailed balance for the Moran model)
-   assert np.allclose(Q, Q.T), "Rate matrix should be symmetric"
+   # With absorbing boundary rows, Q is not symmetric.
+   assert not np.allclose(Q, Q.T)
 
 Step 3: Eigendecomposition
 ===========================
 
-Because :math:`Q` is a real symmetric tridiagonal matrix, it has a complete set
-of real eigenvalues and orthogonal eigenvectors:
+Although the absorbing-boundary generator :math:`Q` is not symmetric, it is
+diagonalizable and has real eigenvalues:
 
 .. math::
 
@@ -215,7 +209,9 @@ Concretely:
        Returns (V, eigenvalues, V_inv) where Q = V @ diag(eigenvalues) @ V_inv.
        """
        Q = moran_rate_matrix(n)
-       eigenvalues, V = np.linalg.eigh(Q)  # eigh for symmetric matrices
+       eigenvalues, V = np.linalg.eig(Q)
+       eigenvalues = eigenvalues.real
+       V = V.real
        V_inv = np.linalg.inv(V)
        return V, eigenvalues, V_inv
 

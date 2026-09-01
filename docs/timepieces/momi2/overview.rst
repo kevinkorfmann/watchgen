@@ -14,9 +14,10 @@ Overview of momi2
    as a heatmap -- the combinatorial bridge between sample configurations and
    expected branch lengths. Panel B: Moran model transition dynamics showing how
    a delta distribution at frequency :math:`k` spreads over time. Panel C:
-   Admixture tensor -- expected migrating lineage counts as a function of
-   admixture fraction. Panel D: Expected time spent with :math:`j` lineages under
-   constant-size epochs with different population sizes :math:`N`.
+   Admixture tensor -- the expected child derived count for several parental
+   configurations as the pulse fraction changes. Panel D: Expected time spent
+   with :math:`j` lineages under constant-size epochs with different population
+   sizes :math:`N`.
 
 What Does momi2 Do?
 =====================

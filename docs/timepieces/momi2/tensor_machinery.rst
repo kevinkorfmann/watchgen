@@ -6,13 +6,6 @@ Tensor Machinery
 
    *The gear train of the watch: assembling the expected SFS from a product of tensors, one demographic event at a time.*
 
-.. epigraph::
-
-   "The expected SFS can be written as a tensor product over the events in the
-   demographic history."
-
-   -- Kamm, Terhorst, Song, and Durbin (2017)
-
 .. admonition:: Biology Aside -- From populations to tensors
 
    Imagine you have sequenced individuals from three human populations --
@@ -333,46 +326,44 @@ in time).
    chooses one of two ancestral populations with probability :math:`f` or
    :math:`1 - f`.
 
-If population :math:`A` has :math:`n` lineages, the number that move to
-:math:`B` follows a binomial distribution. This is encoded as a **3-tensor**
-:math:`T` of shape :math:`(n+1) \times (n+1) \times (n+1)`:
+If the virtual child sample has size :math:`n`, the number assigned to parent
+1 is binomial. Conditional on that number, the derived copies inherited from
+each parent are hypergeometric draws. Thus momi2's **3-tensor** has shape
+:math:`(n+1) \times (n+1) \times (n+1)` and entries
 
 .. math::
 
-   T_{i, j, k} = \binom{n}{k} \binom{k}{j} f^j (1-f)^{k-j} \cdot \mathbf{1}[i + j = k]
+   T_{a,b,k} = \sum_{r=0}^{n} \Pr(R=r)
+      \sum_{x} \Pr(X=x\mid a,r)\Pr(Y=k-x\mid b,n-r),
 
-where :math:`k` is the original count in :math:`A`, :math:`j` lineages move to
-:math:`B`, and :math:`i = k - j` remain in :math:`A`.
+where :math:`a` and :math:`b` are the derived counts in the two virtual parent
+samples, :math:`k` is the child derived count,
+:math:`R\sim\operatorname{Binomial}(n,1-f)`, and :math:`X` and :math:`Y` are
+hypergeometric draws from the parent configurations. A tensor that merely
+splits the :math:`k` derived copies binomially is insufficient: ancestry is
+assigned to ancestral and derived child copies alike.
 
 .. code-block:: python
 
-   from scipy.special import comb as binom
+   from scipy.special import comb
+   from scipy.stats import hypergeom
 
    def admixture_tensor(n, f):
        """Compute the admixture 3-tensor for a pulse event.
 
-       n: number of lineages in the receiving population
-       f: fraction of ancestry from the source population
-
-       Returns T of shape (n+1, n+1, n+1):
-       T[i, j, k] = probability that k lineages split into i staying and j moving
+       T[a, b, k] is P(child count k | parent counts a and b).
        """
        T = np.zeros((n + 1, n + 1, n + 1))
-       for k in range(n + 1):
-           for j in range(k + 1):
-               i = k - j
-               T[i, j, k] = binom(k, j) * f**j * (1 - f)**(k - j)
+       for a in range(n + 1):
+           for b in range(n + 1):
+               for r in range(n + 1):
+                   p_r = comb(n, r) * (1 - f)**r * f**(n-r)
+                   for x in range(max(0, r-(n-a)), min(a, r) + 1):
+                       p_x = hypergeom.pmf(x, n, a, r)
+                       s = n - r
+                       for y in range(max(0, s-(n-b)), min(b, s) + 1):
+                           T[a, b, x+y] += p_r * p_x * hypergeom.pmf(y, n, b, s)
        return T
-
-   def apply_admixture(L_A, L_B, n_A, n_B, f):
-       """Apply an admixture pulse: fraction f of A's ancestry comes from B.
-
-       Returns updated likelihood tensors for both populations.
-       """
-       T = admixture_tensor(n_A, f)
-       # contract: new_L[i_A, i_B] = sum_k sum_j L_A[k] * L_B[i_B + j] * T[i_A, j, k]
-       # (simplified -- actual implementation handles multi-dimensional tensors)
-       return new_L_A, new_L_B
 
 .. admonition:: Probability Aside -- Why admixture requires a 3-tensor
 
@@ -390,39 +381,37 @@ As we move backward in time, the number of lineages in a population can only
 decrease (due to coalescence). After a merge event, the ancestral population has
 :math:`n_1 + n_2` lineages, which may be larger than needed for the computation.
 
-``momi2`` can optionally reduce the lineage count via the **hypergeometric
-quasi-inverse**: a matrix that projects from :math:`N` lineages down to
-:math:`n < N` lineages in a way that preserves the expected SFS. This is the
-reverse of the projection (downsampling) operation used in SFS analysis.
+``momi2`` reduces an oversized tensor axis using the **hypergeometric
+quasi-inverse**. If :math:`H` is the ordinary hypergeometric downsampling
+matrix from :math:`N` copies to :math:`n < N`, the quasi-inverse is the
+Moore--Penrose pseudoinverse :math:`H^+`. It is a linear operator, not a
+probability transition matrix; its entries need not be nonnegative or sum to
+one.
 
 .. admonition:: Plain-language summary -- Reducing lineage counts
 
    After two populations merge, the ancestral population suddenly has
    :math:`n_1 + n_2` lineages -- which may be more than needed and would
    make subsequent computations expensive. The hypergeometric quasi-inverse
-   is a principled way to "thin" the lineages down to a manageable number
-   without distorting the expected SFS. Think of it as subsampling the
-   ancestral chromosomes in a way that preserves the statistical properties
-   we care about. The hypergeometric distribution appears here because it
-   describes sampling without replacement from a finite pool -- the same
-   distribution that governs how allele counts change when you subsample a
-   dataset.
+   is the algebraic reverse of hypergeometric downsampling on the subspace
+   retained by that projection. It lets a likelihood tensor be contracted to
+   a smaller axis. Calling its rows probability distributions would be wrong:
+   pseudoinverses generally use signed weights.
 
 .. code-block:: python
 
    def hypergeom_quasi_inverse(N, n):
        """Compute the quasi-inverse for reducing lineage count from N to n.
 
-       Returns a (N+1) x (n+1) matrix M such that applying M to a likelihood
-       vector of length N+1 produces a valid likelihood vector of length n+1,
-       preserving the expected SFS.
+       Returns the (N+1) x (n+1) pseudoinverse of downsampling N to n.
        """
+       from scipy.linalg import pinv
        from scipy.stats import hypergeom
-       M = np.zeros((N + 1, n + 1))
-       for i in range(N + 1):
-           for j in range(n + 1):
-               M[i, j] = hypergeom.pmf(j, N, i, n)
-       return M
+       H = np.array([
+           [hypergeom.pmf(j, N, i, n) for i in range(N + 1)]
+           for j in range(n + 1)
+       ])
+       return pinv(H)
 
 Step 6: Putting It All Together -- A Two-Population Example
 =============================================================
@@ -670,54 +659,33 @@ Solutions
 
 .. admonition:: Solution 3: Admixture effects
 
-   For :math:`f = 0.5` and :math:`n = 4`, each lineage independently moves to
-   the source with probability 0.5.
+   For :math:`f = 0.5` and :math:`n = 4`, consider parent configurations with
+   :math:`a=1` and :math:`b=3` derived copies.
 
    .. code-block:: python
 
       import numpy as np
-      from scipy.special import comb as binom
-
       n = 4
       f = 0.5
       T = admixture_tensor(n, f)
 
       print(f"Admixture tensor shape: {T.shape}")
-      print(f"T[i, j, k] = Pr(i stay, j move | k original)")
-      print()
+      assert np.allclose(T.sum(axis=2), 1.0)
 
-      # Verify: for each k, the tensor should be a valid probability distribution
-      for k in range(n + 1):
-          total = 0.0
-          for j in range(k + 1):
-              i = k - j
-              total += T[i, j, k]
-              if T[i, j, k] > 1e-10:
-                  print(f"  k={k}: i={i}, j={j}, T={T[i, j, k]:.4f}")
-          assert abs(total - 1.0) < 1e-10, f"k={k}: total = {total}"
-          print(f"  k={k}: total = {total:.6f}")
-          print()
+      a, b = 1, 3
+      child_counts = np.arange(n + 1)
+      expected_child = child_counts @ T[a, b]
+      assert np.isclose(expected_child, (1-f) * a + f * b)
 
-      # Expected number of lineages moving to source, starting from k lineages
-      for k in range(n + 1):
-          E_j = sum(j * T[k - j, j, k] for j in range(k + 1))
-          print(f"  k={k}: E[j] = {E_j:.4f}, expected = {k * f:.4f}")
-          assert abs(E_j - k * f) < 1e-10
-
-   For :math:`k = n = 4` lineages, the expected number moving to the source is
-   :math:`n \cdot f = 4 \times 0.5 = 2`. The distribution of :math:`j` (number
-   moving) is :math:`\text{Binomial}(k, f)`:
+   The expected child count is therefore
 
    .. math::
 
-      E[j \mid k] = k \cdot f = 4 \times 0.5 = 2
+      E[K\mid a,b] = (1-f)a + fb = 2.
 
-      \text{Var}(j \mid k) = k \cdot f(1-f) = 4 \times 0.25 = 1
-
-   So with :math:`f = 0.5`, we get maximum variance in the splitting -- any
-   outcome from 0 to 4 lineages moving is possible, with the binomial
-   :math:`\binom{4}{j} (0.5)^4` giving probabilities 1/16, 4/16, 6/16, 4/16,
-   1/16.
+   The full distribution is not simply a binomial split of the derived copies;
+   it also integrates hypergeometric sampling of ancestral and derived copies
+   from both virtual parent configurations.
 
 .. admonition:: Solution 4: Scaling with populations
 
