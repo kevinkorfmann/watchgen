@@ -80,12 +80,11 @@ The Watchmaker's Guide to Population Genetics
    with its explicit derivations and reference implementations, is designed to serve
    as the foundation for exactly that kind of effort.
 
-   *On versioning.* This is version 0.1 -- an unverified draft. No chapter has yet
-   been reviewed by a domain expert, and I make no claim that any derivation is free
-   of error. Future versions will name the individuals who have verified each chapter,
-   and contributors who substantially improve the content -- whether by correcting
-   proofs, rewriting sections, or adding new chapters -- will be invited as co-authors.
-   Science is a collective enterprise; this book should be too.
+   *On versioning.* This is a living draft under chapter-by-chapter technical audit.
+   The :ref:`verification table <verification_status>` records completed source,
+   implementation, and automated-test reviews. These reviews are not a substitute
+   for independent domain-expert review, and no derivation should be treated as
+   error-free. Substantial contributors will be credited as the project develops.
 
    | Kevin Korfmann
    | Philadelphia, 2026

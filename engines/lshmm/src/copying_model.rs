@@ -48,7 +48,9 @@ pub fn emission_prob(query: i8, reference: i8, mu: f64, num_alleles: usize) -> f
 /// Estimate mutation probability from the number of haplotypes (Li & Stephens A2-A3).
 pub fn estimate_mutation_probability(n: usize) -> f64 {
     assert!(n >= 3, "Need at least 3 haplotypes");
-    let theta_tilde: f64 = 1.0 / (1..n).map(|k| 1.0 / k as f64).sum::<f64>();
+    // Match lshmm.core.estimate_mutation_probability: the argument is the
+    // reference-panel size, and the upper endpoint is excluded.
+    let theta_tilde: f64 = 1.0 / (1..n - 1).map(|k| 1.0 / k as f64).sum::<f64>();
     0.5 * theta_tilde / (n as f64 + theta_tilde)
 }
 

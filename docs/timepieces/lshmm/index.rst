@@ -4,46 +4,27 @@
 Timepiece III: The Li & Stephens HMM
 ====================================
 
-   *Your genome is a mosaic. This model finds the seams.*
+The Li and Stephens model is a tractable approximation to the coalescent with
+recombination. It represents one haplotype as an imperfect mosaic of a panel
+of other haplotypes and evaluates that conditional model with a hidden Markov
+model (HMM). The hidden copying path is a statistical device: a change of state
+is not proof of a particular historical recombination, and a mismatch is not
+proof of a mutation.
 
-The Mechanism at a Glance
-==========================
+The original paper introduced a product of approximate conditionals (PAC) for
+a sample of haplotypes and used it to estimate recombination rates and identify
+hotspots :cite:`lshmm`. Later imputation, phasing, and genealogy methods reuse
+the copying-model structure for different inferential tasks.
 
-The **Li & Stephens Hidden Markov Model** (Li and Stephens, 2003) is one of the
-most influential models in population genetics. It answers a deceptively simple
-question: given a panel of reference haplotypes, how was a new haplotype
-assembled from pieces of them?
+.. admonition:: Sources and scope
 
-The answer turns out to be a Hidden Markov Model where the hidden states are
-"which reference haplotype am I copying right now?" and the transitions are
-recombination events that switch the copying source. This simple idea underpins
-modern haplotype imputation, phasing, ancestry inference, and -- as we saw in
-the prerequisite on :ref:`HMMs <hmms>` -- even full ARG inference.
-
-Think of it this way: every genome is a mosaic, assembled from fragments of
-ancestral genomes by generations of recombination. The Li & Stephens model is the
-mechanism that detects where the seams are -- where one ancestral fragment ends and
-another begins. Like a jeweler's loupe that reveals the individual facets of a
-gemstone, this model reveals the hidden structure of how genomes were assembled.
-
-The Li & Stephens HMM is also a **versatile gear** -- a mechanism that appears
-inside many of the other Timepieces in this collection. SINGER uses it for branch
-transitions. tsinfer uses it for ancestor and sample matching. Understanding this
-Timepiece will pay dividends throughout the rest of the book.
-
-.. admonition:: Primary Reference
-
-   :cite:`lshmm`
-
-.. admonition:: Prerequisites for this Timepiece
-
-   - :ref:`Hidden Markov Models <hmms>` -- the forward algorithm, stochastic
-     traceback, and especially the Li-Stephens :math:`O(K)` trick
-   - :ref:`Coalescent Theory <coalescent_theory>` -- for understanding why
-     haplotypes are mosaics of ancestral sequences
-
-Chapters
-========
+   The equations here are checked against Li and Stephens (2003), especially
+   Appendix A. Executable haploid results are checked against the modern
+   `lshmm reference implementation <https://github.com/astheeggeggs/lshmm>`_
+   (release 0.0.8). That package is a later research implementation, not the
+   historical Hotspotter program described by the paper. The diploid section
+   derives a commonly used product-of-two-copying-processes extension; it is
+   not part of the 2003 derivation.
 
 .. toctree::
    :maxdepth: 2
@@ -53,7 +34,3 @@ Chapters
    haploid_algorithms
    diploid
    demo
-
-Each chapter derives the math, explains the intuition, implements the code,
-and verifies it works. By the end, you'll have built a complete LS HMM library
-from scratch -- and you'll understand every gear that makes it tick.

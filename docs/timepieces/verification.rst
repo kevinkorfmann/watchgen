@@ -6,8 +6,9 @@ Verification Status
 
 .. admonition:: Disclaimer
 
-   The code examples in each Timepiece are verified by automated unit tests that
-   re-implement the documented functions and check their mathematical properties.
+   The code examples in each Timepiece are checked by chapter-specific automated
+   tests, including mathematical invariants and upstream numerical fixtures where
+   available.
    **No Timepiece has been independently verified by a domain expert.** If you find
    an error -- mathematical, pedagogical, or computational -- please open an issue.
    The table below shows the current verification status.
@@ -115,10 +116,10 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - III
      - :ref:`Li & Stephens HMM <lshmm_timepiece>`
-     - 158
-     - --
-     - The copying model: a haplotype as a mosaic of references. A gear inside many
-       Timepieces.
+     - 179
+     - 2026-09-01
+     - PAC likelihood and copying HMM, checked against Appendix A, lshmm 0.0.8,
+       and brute-force haploid and diploid recursions.
    * - V
      - :ref:`ARGweaver <argweaver_timepiece>`
      - 120

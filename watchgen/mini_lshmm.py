@@ -200,9 +200,12 @@ def emission_prob_with_specials(ref_allele, query_allele, site, emission_matrix)
 
 
 def estimate_mutation_probability(n):
-    """Estimate mutation probability from the number of haplotypes.
+    """Return the mutation probability used by the reference ``lshmm`` code.
 
-    Based on Li & Stephens (2003), equations A2 and A3.
+    This follows ``lshmm.core.estimate_mutation_probability`` exactly.  Its
+    argument is the number of reference haplotypes.  Li and Stephens' Appendix
+    A instead writes the harmonic sum in terms of the total PAC sample size;
+    the two conventions must not be silently interchanged.
 
     Parameters
     ----------
@@ -216,7 +219,7 @@ def estimate_mutation_probability(n):
     """
     if n < 3:
         raise ValueError("Need at least 3 haplotypes.")
-    theta_tilde = 1.0 / sum(1.0 / k for k in range(1, n))
+    theta_tilde = 1.0 / sum(1.0 / k for k in range(1, n - 1))
     mu = 0.5 * theta_tilde / (n + theta_tilde)
     return mu
 
@@ -736,23 +739,14 @@ def forward_diploid(n, m, G, s, emission_matrix, r, norm=True):
         F[0, :, :] /= c[0]
 
         for l in range(1, m):
-            F_no_change = np.zeros((n, n))
-            F_j1_change = np.zeros(n)  # j2 stays, j1 switches
-            F_j2_change = np.zeros(n)  # j1 stays, j2 switches
-
-            for j1 in range(n):
-                for j2 in range(n):
-                    F_no_change[j1, j2] = (1 - r[l])**2 * F[l-1, j1, j2]
-                    F_j2_change[j1] += (1 - r[l]) * r_n[l] * F[l-1, j1, j2]
-                    F_j1_change[j2] += (1 - r[l]) * r_n[l] * F[l-1, j1, j2]
-
-            F[l, :, :] = r_n[l]**2
-
-            for j1 in range(n):
-                F[l, j1, :] += F_j2_change[j1]  # j1 fixed, j2 switches
-                F[l, :, j1] += F_j1_change[j1]  # j2 fixed, j1 switches
-                for j2 in range(n):
-                    F[l, j1, j2] += F_no_change[j1, j2]
+            previous = F[l - 1]
+            one_change = (1 - r[l]) * r_n[l]
+            F[l] = (
+                (1 - r[l]) ** 2 * previous
+                + r_n[l] ** 2
+                + one_change
+                * (previous.sum(axis=1)[:, None] + previous.sum(axis=0)[None, :])
+            )
 
             for j1 in range(n):
                 for j2 in range(n):
@@ -767,24 +761,14 @@ def forward_diploid(n, m, G, s, emission_matrix, r, norm=True):
 
     else:
         for l in range(1, m):
-            F_no_change = np.zeros((n, n))
-            F_j1_change = np.zeros(n)
-            F_j2_change = np.zeros(n)
-            F_both_change = 0.0
-
-            for j1 in range(n):
-                for j2 in range(n):
-                    F_no_change[j1, j2] = (1-r[l])**2 * F[l-1, j1, j2]
-                    F_j1_change[j1] += (1-r[l]) * r_n[l] * F[l-1, j2, j1]
-                    F_j2_change[j1] += (1-r[l]) * r_n[l] * F[l-1, j1, j2]
-                    F_both_change += r_n[l]**2 * F[l-1, j1, j2]
-
-            F[l, :, :] = F_both_change
-            for j1 in range(n):
-                F[l, j1, :] += F_j2_change
-                F[l, :, j1] += F_j1_change
-                for j2 in range(n):
-                    F[l, j1, j2] += F_no_change[j1, j2]
+            previous = F[l - 1]
+            one_change = (1 - r[l]) * r_n[l]
+            F[l] = (
+                (1 - r[l]) ** 2 * previous
+                + r_n[l] ** 2 * previous.sum()
+                + one_change
+                * (previous.sum(axis=1)[:, None] + previous.sum(axis=0)[None, :])
+            )
 
             for j1 in range(n):
                 for j2 in range(n):

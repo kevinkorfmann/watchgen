@@ -228,6 +228,12 @@ class TestEstimateMutationProbability:
             mu = estimate_mutation_probability(n)
             assert mu < 0.5
 
+    def test_matches_lshmm_0_0_8_fixture(self):
+        # lshmm.core.estimate_mutation_probability(5), release 0.0.8.
+        assert estimate_mutation_probability(5) == pytest.approx(
+            0.049180327868852465, rel=0, abs=1e-16
+        )
+
 
 class TestForwardSteps:
     """Test that naive and fast forward steps agree."""
@@ -729,6 +735,37 @@ class TestForwardBackwardIntegration:
 
         assert ll_viterbi >= ll_true - 1e-10
 
+    def test_reference_lshmm_0_0_8_forward_backward_fixture(self):
+        """Pin the canonical haploid implementation's numerical output."""
+        H = np.array([[0, 1, 0], [1, 1, 0], [0, 1, 1], [1, 0, 1]])
+        s = np.array([[0, 1, 1, 0]])
+        emission = np.array([[0.08, 0.92]] * 4)
+        r = np.array([0.0, 0.11, 0.03, 0.2])
+        expected_f = np.array([
+            [0.4791666666666667, 0.04166666666666667, 0.4791666666666667],
+            [0.8024389095531804, 0.12778379396393427, 0.06977729648288526],
+            [0.2446699773290012, 0.47807320621110844, 0.27725681645989025],
+            [0.04590817786154159, 0.9036227073651966, 0.05046911477326188],
+        ])
+        expected_c = np.array([
+            0.6399999999999999,
+            0.5309750000000001,
+            0.25777277649606856,
+            0.4572651945738649,
+        ])
+        expected_b = np.array([
+            [0.6630253619190216, 9.958382287924506, 0.5579848739136303],
+            [0.16413943195393357, 6.191987677906257, 1.1042625528822774],
+            [0.29742040639402106, 1.7670271203409489, 0.29742040639402106],
+            [1.0, 1.0, 1.0],
+        ])
+        F, c, ll = forwards_ls_hap(3, 4, H, s, emission, r, norm=True)
+        B = backwards_ls_hap(3, 4, H, s, emission, c, r)
+        assert np.allclose(F, expected_f, rtol=0, atol=2e-15)
+        assert np.allclose(c, expected_c, rtol=0, atol=2e-15)
+        assert ll == pytest.approx(-1.3973407573675978, abs=2e-15)
+        assert np.allclose(B, expected_b, rtol=0, atol=2e-14)
+
 
 class TestDiploidForwardAlgorithm:
     """Test the diploid forward algorithm."""
@@ -773,6 +810,50 @@ class TestDiploidForwardAlgorithm:
         _, _, ll_norm = forward_diploid(n, m, G, query_gt, e_dip, r, norm=True)
         _, _, ll_raw = forward_diploid(n, m, G, query_gt, e_dip, r, norm=False)
         assert np.isclose(ll_norm, ll_raw, rtol=1e-4)
+
+    @staticmethod
+    def _brute_force(n, m, G, s, emission, r):
+        """Reference O(m n^4) recursion using the stated transition law."""
+        F = np.zeros((m, n, n))
+        for j1 in range(n):
+            for j2 in range(n):
+                idx = genotype_comparison_index(G[0, j1, j2], s[0, 0])
+                F[0, j1, j2] = emission[0, idx] / n**2
+        for site in range(1, m):
+            for k1 in range(n):
+                for k2 in range(n):
+                    incoming = 0.0
+                    for j1 in range(n):
+                        for j2 in range(n):
+                            incoming += F[site - 1, j1, j2] * diploid_transition_prob(
+                                j1, j2, k1, k2, r[site], n
+                            )
+                    idx = genotype_comparison_index(G[site, k1, k2], s[0, site])
+                    F[site, k1, k2] = incoming * emission[site, idx]
+        return F
+
+    def test_fast_unscaled_matches_brute_force(self):
+        """Regression test for the former vector-broadcasting error."""
+        H = np.array([[0, 1, 0], [1, 0, 1], [0, 0, 1]], dtype=np.int8)
+        G = build_genotype_matrix(H)
+        s = np.array([[1, 1, 0]], dtype=np.int8)
+        r = np.array([0.0, 0.17, 0.08])
+        emission = emission_matrix_diploid(0.03, 3, np.full(3, 2))
+        expected = self._brute_force(3, 3, G, s, emission, r)
+        observed, _, ll = forward_diploid(3, 3, G, s, emission, r, norm=False)
+        assert np.allclose(observed, expected, rtol=1e-13, atol=1e-15)
+        assert np.isclose(ll, np.log10(expected[-1].sum()))
+
+    def test_fast_scaled_matches_brute_force_conditionals(self):
+        H = np.array([[0, 1, 1], [1, 0, 1], [0, 1, 0]], dtype=np.int8)
+        G = build_genotype_matrix(H)
+        s = np.array([[2, 1, 0]], dtype=np.int8)
+        r = np.array([0.0, 0.04, 0.21])
+        emission = emission_matrix_diploid(0.07, 3, np.full(3, 2))
+        raw = self._brute_force(3, 3, G, s, emission, r)
+        observed, _, _ = forward_diploid(3, 3, G, s, emission, r, norm=True)
+        expected = raw / raw.sum(axis=(1, 2), keepdims=True)
+        assert np.allclose(observed, expected, rtol=1e-13, atol=1e-15)
 
 
 class TestDiploidViterbi:
