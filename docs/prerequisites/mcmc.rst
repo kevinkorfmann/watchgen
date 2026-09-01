@@ -10,8 +10,8 @@ A master watchmaker, confronted with a broken mechanism of unknown design, canno
 simply enumerate every possible gear arrangement to find the one that matches the
 symptoms. The space of possibilities is too vast. Instead, the watchmaker makes an
 educated guess, tries a small modification, checks whether the watch runs better, and
-repeats. Over time, the modifications converge on the true mechanism -- not by
-exhaustive search, but by guided exploration.
+repeats. The analogy is useful for exploration, but MCMC targets a distribution;
+it does not generally converge on one "true" mechanism.
 
 Markov Chain Monte Carlo (MCMC) is the mathematical formalization of this strategy.
 In population genetics, we face exactly the same challenge: given observed sequence
@@ -53,8 +53,8 @@ genomic positions, and continuous coalescence times, this integral is intractabl
 MCMC sidesteps this problem entirely. Instead of computing the posterior, it
 **samples** from it. The algorithm constructs a Markov chain -- a sequence of
 states :math:`G^{(0)}, G^{(1)}, G^{(2)}, \ldots` -- that converges to the posterior
-distribution. After enough steps, the states visited by the chain are (approximately)
-independent draws from :math:`P(G \mid D)`. We can then use these samples to estimate
+distribution. After warmup, states are still generally **correlated**, but ergodic
+averages can estimate posterior expectations. We can use the samples to estimate
 any quantity of interest: posterior means, credible intervals, marginal distributions.
 
 Like a blind watchmaker exploring the space of possible mechanisms -- unable to see
@@ -118,7 +118,6 @@ inference), no conjugate form exists, and we must resort to MCMC.
 .. code-block:: python
 
    import numpy as np
-   from scipy import stats
 
    def beta_binomial_demo():
        """Demonstrate exact Bayesian inference with a conjugate model.
@@ -153,11 +152,6 @@ inference), no conjugate form exists, and we must resort to MCMC.
        print(f"Posterior: Beta({alpha_post}, {beta_post})")
        print(f"Posterior mean: {post_mean:.4f}")
        print(f"Posterior std:  {np.sqrt(post_var):.4f}")
-
-       # Verify: the posterior should integrate to 1
-       from scipy.special import beta as beta_fn
-       integral = beta_fn(alpha_post, beta_post)
-       print(f"Beta function B({alpha_post},{beta_post}) = {integral:.6f} (normalization constant)")
 
        return alpha_post, beta_post
 
@@ -199,17 +193,18 @@ the chain if it is unchanged by one step of the transition:
 In matrix notation: :math:`\pi T = \pi`. If the chain starts in distribution
 :math:`\pi`, it stays in distribution :math:`\pi` forever.
 
-**Ergodicity** is the property that guarantees the chain converges to :math:`\pi`
-regardless of the starting state. A chain is ergodic if it is:
+For the finite chains considered here, irreducibility and aperiodicity guarantee
+convergence to the unique stationary distribution regardless of the starting state:
 
 - **Irreducible**: every state can be reached from every other state (eventually).
 - **Aperiodic**: the chain does not get trapped in deterministic cycles.
 
-For an ergodic chain, no matter where we start, the distribution of :math:`X_t`
+For such a finite chain, no matter where we start, the distribution of :math:`X_t`
 converges to :math:`\pi` as :math:`t \to \infty`. This is the fundamental theorem
 that makes MCMC work: if we design a chain whose stationary distribution is our
 target posterior, then running the chain long enough produces samples from that
-posterior.
+posterior. General state spaces require additional recurrence and regularity
+conditions; irreducibility and aperiodicity alone are not a universal theorem.
 
 .. admonition:: Probability Aside -- Detailed balance
 
@@ -249,35 +244,32 @@ finite-state Markov chain.
        We define a 3-state chain, run it for many steps, and compare the
        empirical state frequencies to the theoretical stationary distribution.
        """
-       # Transition matrix for a 3-state chain
-       # T[i, j] = P(X_{t+1} = j | X_t = i)
+       # A reversible 3-state chain with known stationary distribution.
+       # T[i, j] = P(X_{t+1} = j | X_t = i).
+       pi = np.array([0.2, 0.3, 0.5])
        T = np.array([
-           [0.7, 0.2, 0.1],   # from state 0
-           [0.1, 0.6, 0.3],   # from state 1
-           [0.3, 0.3, 0.4],   # from state 2
+           [0.50, 0.20, 0.30],
+           [2/15, 17/30, 0.30],
+           [0.12, 0.18, 0.70],
        ])
 
-       # Verify rows sum to 1
+       # Verify the defining identities, not just the simulation output.
        assert np.allclose(T.sum(axis=1), 1.0), "Rows must sum to 1"
-
-       # Find the stationary distribution by solving pi * T = pi
-       # This is equivalent to finding the left eigenvector with eigenvalue 1.
-       eigenvalues, eigenvectors = np.linalg.eig(T.T)
-       # Find the eigenvector corresponding to eigenvalue 1
-       idx = np.argmin(np.abs(eigenvalues - 1.0))
-       pi = np.real(eigenvectors[:, idx])
-       pi = pi / pi.sum()   # normalize to a probability distribution
+       assert np.allclose(pi @ T, pi), "pi must be stationary"
+       flow = pi[:, None] * T
+       assert np.allclose(flow, flow.T), "detailed balance must hold"
        print(f"Stationary distribution (theory): {pi}")
 
        # Simulate the chain for 100,000 steps starting from state 0
        n_steps = 100_000
+       rng = np.random.default_rng(42)
        state = 0
        counts = np.zeros(3)
 
        for _ in range(n_steps):
            # np.random.choice(3, p=T[state]) draws the next state
            # according to the transition probabilities from 'state'.
-           state = np.random.choice(3, p=T[state])
+           state = rng.choice(3, p=T[state])
            counts[state] += 1
 
        # Empirical frequencies should match the stationary distribution
@@ -285,22 +277,14 @@ finite-state Markov chain.
        print(f"Empirical frequencies:             {empirical}")
        print(f"Max absolute error:                {np.max(np.abs(pi - empirical)):.4f}")
 
-       # Verify detailed balance: pi[i]*T[i,j] should equal pi[j]*T[j,i]
-       for i in range(3):
-           for j in range(i+1, 3):
-               lhs = pi[i] * T[i, j]
-               rhs = pi[j] * T[j, i]
-               print(f"  pi[{i}]*T[{i},{j}] = {lhs:.4f}, pi[{j}]*T[{j},{i}] = {rhs:.4f}, "
-                     f"ratio = {lhs/rhs:.4f}")
-
-   np.random.seed(42)
    markov_chain_convergence()
 
 
 The Metropolis-Hastings Algorithm
 ====================================
 
-The **Metropolis-Hastings (MH)** algorithm is the workhorse of MCMC. It constructs
+The **Metropolis-Hastings (MH)** algorithm is the workhorse of MCMC
+:cite:p:`metropolis1953,hastings1970`. It constructs
 an ergodic Markov chain whose stationary distribution is any target distribution
 :math:`\pi(x)` that we can evaluate up to a normalizing constant.
 
@@ -316,9 +300,12 @@ The algorithm is remarkably simple:
 
 3. **Accept** :math:`x'` with probability :math:`\alpha`; otherwise stay at :math:`x`.
 
-That is the entire algorithm. The magic is in the acceptance ratio: it automatically
-adjusts for the proposal distribution, ensuring that the chain's stationary
-distribution is :math:`\pi(x)` regardless of the choice of :math:`q`.
+The acceptance ratio corrects for proposal asymmetry and makes :math:`\pi` invariant
+when the forward and reverse proposal densities required by the ratio are defined.
+Convergence from an arbitrary starting point additionally requires an ergodic chain:
+the proposal must let the chain reach every relevant part of the target and must not
+force a deterministic cycle. A poor proposal can therefore be formally valid yet
+practically unusable.
 
 .. admonition:: Probability Aside -- Why the MH ratio works
 
@@ -367,156 +354,64 @@ with probability equal to the density ratio. This allows the chain to explore
 regions of lower density (important for characterizing uncertainty) while spending
 most of its time in high-density regions.
 
-Let us implement MH and use it to sample from a mixture of Gaussians -- a
-distribution with multiple modes that tests whether the chain can explore the full
-landscape.
+Let us implement reusable random-walk MH and test it on the Beta posterior derived
+above. This is deliberately a problem with an analytic answer: agreement with exact
+posterior moments is a stronger correctness check than a visually plausible trace.
 
 .. code-block:: python
 
    import numpy as np
 
-   def metropolis_hastings_mixture():
-       """MH sampling from a mixture of two Gaussians.
+   def random_walk_metropolis(log_target, initial, proposal_scale,
+                              n_samples, rng):
+       """Sample a one-dimensional target with a symmetric Normal proposal."""
+       if n_samples < 2 or proposal_scale <= 0 or not np.isfinite(initial):
+           raise ValueError("invalid sampler arguments")
+       current_logp = float(log_target(initial))
+       if not np.isfinite(current_logp):
+           raise ValueError("initial state must have finite target density")
 
-       Target: 0.3 * N(-2, 0.5^2) + 0.7 * N(3, 1^2)
-       This tests whether the chain can jump between modes.
-       """
-       def log_target(x):
-           """Log of the (unnormalized) target density.
-
-           A mixture of two Gaussians. We work in log space to avoid
-           underflow when the density is very small.
-           """
-           # scipy.special.logsumexp would be more numerically stable,
-           # but for clarity we use the direct computation.
-           comp1 = 0.3 * np.exp(-0.5 * ((x + 2) / 0.5)**2) / (0.5 * np.sqrt(2 * np.pi))
-           comp2 = 0.7 * np.exp(-0.5 * ((x - 3) / 1.0)**2) / (1.0 * np.sqrt(2 * np.pi))
-           return np.log(comp1 + comp2 + 1e-300)  # small constant prevents log(0)
-
-       # MH parameters
-       n_samples = 50_000
-       sigma = 1.5          # proposal standard deviation (step size)
-       samples = np.zeros(n_samples)
-       samples[0] = 0.0     # starting point
-       n_accepted = 0
-
+       samples = np.empty(n_samples)
+       samples[0] = initial
+       accepted = 0
        for t in range(1, n_samples):
-           # Propose: symmetric random walk
-           x_current = samples[t - 1]
-           x_proposed = x_current + np.random.normal(0, sigma)
-
-           # Acceptance ratio (in log space to avoid overflow/underflow)
-           log_alpha = log_target(x_proposed) - log_target(x_current)
-
-           # Accept or reject
-           # np.log(np.random.uniform()) gives a uniform draw in log space
-           if np.log(np.random.uniform()) < log_alpha:
-               samples[t] = x_proposed
-               n_accepted += 1
+           proposal = samples[t - 1] + rng.normal(scale=proposal_scale)
+           proposal_logp = float(log_target(proposal))
+           log_ratio = proposal_logp - current_logp
+           if np.log(rng.random()) < min(0.0, log_ratio):
+               samples[t] = proposal
+               current_logp = proposal_logp
+               accepted += 1
            else:
-               samples[t] = x_current
+               samples[t] = samples[t - 1]
+       return samples, accepted / (n_samples - 1)
 
-       acceptance_rate = n_accepted / (n_samples - 1)
+   def beta_log_kernel(theta, alpha, beta):
+       """Unnormalized log density of Beta(alpha, beta)."""
+       if not 0.0 < theta < 1.0:
+           return -np.inf
+       return (alpha - 1) * np.log(theta) + (beta - 1) * np.log1p(-theta)
 
-       # Discard burn-in (first 5000 samples)
-       burn_in = 5000
-       post_burnin = samples[burn_in:]
+   alpha_post, beta_post = 9, 15
+   rng = np.random.default_rng(42)
+   chain, acceptance = random_walk_metropolis(
+       lambda x: beta_log_kernel(x, alpha_post, beta_post),
+       initial=0.5, proposal_scale=0.15, n_samples=50_000, rng=rng,
+   )
+   posterior = chain[5_000:]
 
-       print(f"Acceptance rate: {acceptance_rate:.3f}")
-       print(f"Sample mean: {post_burnin.mean():.3f}")
-       print(f"Sample std:  {post_burnin.std():.3f}")
+   exact_mean = alpha_post / (alpha_post + beta_post)
+   exact_var = (alpha_post * beta_post) / (
+       (alpha_post + beta_post)**2 * (alpha_post + beta_post + 1)
+   )
+   print(f"Acceptance rate: {acceptance:.3f}")
+   print(f"Mean: {posterior.mean():.4f} (exact {exact_mean:.4f})")
+   print(f"Variance: {posterior.var():.5f} (exact {exact_var:.5f})")
 
-       # Check: samples near each mode
-       near_mode1 = np.sum(post_burnin < 0) / len(post_burnin)
-       near_mode2 = np.sum(post_burnin >= 0) / len(post_burnin)
-       print(f"Fraction near mode 1 (x<0): {near_mode1:.3f} (expected ~0.3)")
-       print(f"Fraction near mode 2 (x>=0): {near_mode2:.3f} (expected ~0.7)")
-
-       return samples
-
-   np.random.seed(42)
-   samples_mixture = metropolis_hastings_mixture()
-
-Now let us apply MH to a problem closer to population genetics: inferring the
-mutation rate parameter :math:`\theta` from an observed site frequency spectrum
-(SFS).
-
-.. code-block:: python
-
-   import numpy as np
-
-   def mh_sfs_inference():
-       """MH for inferring theta from an observed site frequency spectrum.
-
-       Under the standard neutral coalescent with n samples, the expected
-       number of SNPs with i derived alleles (out of n) is:
-           E[SFS_i] = theta / i   for i = 1, ..., n-1
-
-       We observe an SFS and infer theta using MCMC.
-       """
-       # Simulated "observed" SFS for n=10 samples with true theta=5
-       n = 10
-       theta_true = 5.0
-       # Expected SFS: theta/i for i = 1, ..., n-1
-       expected_sfs = theta_true / np.arange(1, n)
-       # Observed SFS: Poisson draws around the expected values
-       np.random.seed(123)
-       observed_sfs = np.random.poisson(expected_sfs)
-       print(f"Observed SFS: {observed_sfs}")
-
-       def log_likelihood(theta, sfs):
-           """Poisson log-likelihood for the SFS given theta.
-
-           Each SFS entry sfs[i] is Poisson with mean theta/(i+1).
-           The log-likelihood is sum of Poisson log-PMFs.
-           """
-           if theta <= 0:
-               return -np.inf
-           ll = 0.0
-           for i in range(len(sfs)):
-               lam = theta / (i + 1)        # expected count for frequency class i+1
-               # Poisson log-PMF: k*log(lam) - lam - log(k!)
-               ll += sfs[i] * np.log(lam) - lam
-           return ll
-
-       def log_prior(theta):
-           """Log of an exponential prior with mean 10."""
-           if theta <= 0:
-               return -np.inf
-           return -theta / 10.0  # Exp(rate=0.1), ignoring the constant
-
-       # Run MH
-       n_samples = 30_000
-       sigma = 0.5
-       chain = np.zeros(n_samples)
-       chain[0] = 1.0   # start far from the true value
-       n_accepted = 0
-
-       for t in range(1, n_samples):
-           theta_current = chain[t - 1]
-           theta_proposed = theta_current + np.random.normal(0, sigma)
-
-           log_alpha = (log_likelihood(theta_proposed, observed_sfs) + log_prior(theta_proposed)
-                        - log_likelihood(theta_current, observed_sfs) - log_prior(theta_current))
-
-           if np.log(np.random.uniform()) < log_alpha:
-               chain[t] = theta_proposed
-               n_accepted += 1
-           else:
-               chain[t] = theta_current
-
-       burn_in = 5000
-       post_burnin = chain[burn_in:]
-
-       print(f"True theta: {theta_true}")
-       print(f"Posterior mean: {post_burnin.mean():.3f}")
-       print(f"Posterior std:  {post_burnin.std():.3f}")
-       print(f"95% CI: ({np.percentile(post_burnin, 2.5):.3f}, "
-             f"{np.percentile(post_burnin, 97.5):.3f})")
-       print(f"Acceptance rate: {n_accepted / (n_samples - 1):.3f}")
-
-   np.random.seed(42)
-   mh_sfs_inference()
+The Normal random walk proposes values outside :math:`(0,1)`, which are correctly
+rejected because their target density is zero. A transformed proposal on the logit
+scale can be more efficient, but then its Jacobian or the corresponding asymmetric
+Hastings correction must be included.
 
 
 Gibbs Sampling
@@ -548,16 +443,18 @@ Using the identity :math:`\pi(x_k, x_{-k}) = \pi(x_k \mid x_{-k}) \cdot \pi(x_{-
 
    \alpha &= \min\left(1, \frac{\pi(x_k' \mid x_{-k}) \, \pi(x_{-k}) \cdot \pi(x_k \mid x_{-k})}{\pi(x_k \mid x_{-k}) \, \pi(x_{-k}) \cdot \pi(x_k' \mid x_{-k})}\right) = \min(1, 1) = 1
 
-Every Gibbs proposal is accepted. This is enormously efficient -- no samples are
-wasted on rejected proposals. The price is that we must be able to sample from the
-full conditional :math:`P(x_k \mid x_{-k})` exactly, which is not always possible.
+Every Gibbs proposal is accepted, but acceptance is not the same as efficiency:
+strongly coupled variables can still produce a highly autocorrelated Gibbs chain.
+The other requirement is that we can sample from the full conditional
+:math:`P(x_k \mid x_{-k})` exactly, which is not always possible.
 
 **Connection to ARGweaver.** ARGweaver (see :ref:`argweaver_mcmc`) uses Gibbs
 sampling to update its ARG. At each iteration, one haplotype's "thread" through
 the ARG is removed, and a new thread is sampled from the conditional posterior
 :math:`P(\text{thread}_k \mid \text{ARG}_{-k}, D)`. Because the time-discretized
 HMM allows exact computation of this conditional via the forward algorithm and
-stochastic traceback, the Gibbs update is exact and the acceptance rate is 1. This
+stochastic traceback, the Gibbs update is exact **within ARGweaver's
+time-discretized model** and the acceptance rate is 1 :cite:p:`argweaver`. This
 is precisely the strategy described in the :ref:`HMM chapter <hmms>`: the forward
 algorithm computes state probabilities, and stochastic traceback samples a path.
 
@@ -626,17 +523,18 @@ Running an MCMC chain is only half the battle. How do we know the chain has
 converged to the target distribution? How many samples are actually useful? These
 questions are addressed by **convergence diagnostics**.
 
-**Burn-in.** The initial samples from an MCMC chain are influenced by the starting
-point, not by the target distribution. The period before the chain has "forgotten"
-its starting point is called the **burn-in**. These samples should be discarded.
-There is no universal formula for how long the burn-in should be -- it depends on
-the problem, the proposal, and the starting point. A common heuristic is to discard
-the first 10--50% of the chain.
+**Warmup and initial transients.** Early draws can retain substantial dependence on
+the starting point. Warmup is also the usual phase for adapting proposal parameters;
+for ordinary MCMC, adaptation is then frozen before collecting draws. Discarding a
+fixed fraction does not make a chain converge. Run multiple chains from dispersed
+initial values and extend them until diagnostics and quantities of interest are
+stable; persistent disagreement calls for a better parameterization or sampler,
+not merely a larger discarded fraction.
 
 **Trace plots.** A trace plot shows the sampled values as a function of iteration
-number. A well-mixed chain looks like a "hairy caterpillar" -- rapidly fluctuating
-around a stable mean, with no long-term trends or flat regions. A poorly mixed chain
-shows slow drifts, long periods stuck at one value, or clear trends.
+number. A poorly mixed chain can show slow drifts, long repeated stretches, or
+different regions in different chains. A plausible-looking trace is useful evidence
+but cannot prove convergence.
 
 **Autocorrelation.** Consecutive MCMC samples are correlated (each sample is a small
 perturbation of the previous one). The **autocorrelation function** (ACF) at lag
@@ -651,10 +549,9 @@ it remains positive for many lags, meaning consecutive samples carry redundant
 information.
 
 **Thinning.** To reduce autocorrelation, we can keep only every :math:`m`-th sample.
-If the ACF drops to near zero at lag :math:`m`, thinning by :math:`m` produces
-approximately independent samples. However, thinning discards information and is
-often unnecessary -- it is usually better to keep all samples and account for
-autocorrelation through ESS.
+Thinning can reduce storage costs, but it usually discards useful information and
+does not repair poor mixing. It is generally better to retain draws and quantify
+their autocorrelation through ESS.
 
 .. admonition:: Probability Aside -- Effective sample size
 
@@ -681,11 +578,11 @@ autocorrelation through ESS.
    central diagnostic of MCMC efficiency: a well-tuned algorithm has small
    :math:`\tau` and large ESS.
 
-**Gelman-Rubin** :math:`\hat{R}`. When running multiple chains from different
-starting points, the :math:`\hat{R}` statistic compares the variance within each
-chain to the variance between chains. If :math:`\hat{R} \approx 1`, the chains have
-converged to the same distribution. Values significantly above 1 (say,
-:math:`\hat{R} > 1.1`) indicate that the chains have not yet converged.
+**Rank-normalized split** :math:`\hat{R}`. Modern :math:`\hat{R}` compares split,
+rank-normalized chains and is paired with bulk and tail ESS
+:cite:p:`vehtari2021`. Values near 1 are necessary but not sufficient evidence of
+mixing; :math:`\hat{R} > 1.01` is a useful warning threshold, not a proof-producing
+pass/fail rule. Always inspect several chains and the estimands that matter.
 
 .. code-block:: python
 
@@ -708,10 +605,15 @@ converged to the same distribution. Values significantly above 1 (say,
        ess : float
            Estimated effective sample size.
        """
+       chain = np.asarray(chain, dtype=float)
+       if chain.ndim != 1 or len(chain) < 4 or not np.all(np.isfinite(chain)):
+           raise ValueError("chain must be a finite one-dimensional array")
        N = len(chain)
-       mean = chain.mean()
-       var = chain.var()
-
+       max_lag = min(int(max_lag), N - 1)
+       if max_lag < 2:
+           raise ValueError("max_lag must allow at least one lag pair")
+       centered = chain - chain.mean()
+       var = np.dot(centered, centered) / N
        if var == 0:
            return np.ones(max_lag + 1), 1.0
 
@@ -725,34 +627,36 @@ converged to the same distribution. Values significantly above 1 (say,
            else:
                # chain[:-k] is the series shifted by 0 (first N-k elements)
                # chain[k:] is the series shifted by k (last N-k elements)
-               acf[k] = np.mean((chain[:-k] - mean) * (chain[k:] - mean)) / var
+               acf[k] = np.dot(centered[:-k], centered[k:]) / ((N - k) * var)
 
-       # Compute ESS using the initial monotone sequence estimator:
-       # sum autocorrelations until they become negative (conservative cutoff)
-       iat = 1.0  # integrated autocorrelation time, starts at 1 (lag 0)
-       for k in range(1, max_lag + 1):
-           if acf[k] < 0:
+       # Geyer's paired initial-positive sequence, made non-increasing.
+       # Pair rho(1)+rho(2), rho(3)+rho(4), ... to stabilize the cutoff.
+       paired_sum = 0.0
+       previous_pair = np.inf
+       for k in range(1, max_lag, 2):
+           pair = acf[k] + acf[k + 1]
+           if pair <= 0:
                break
-           iat += 2 * acf[k]
+           pair = min(pair, previous_pair)
+           paired_sum += pair
+           previous_pair = pair
 
-       ess = N / iat
+       iat = max(1.0, 1.0 + 2.0 * paired_sum)
+       ess = min(float(N), N / iat)
 
        return acf, ess
 
-   # Demonstrate with the MH chain from the SFS inference example
-   # First, regenerate the chain
-   np.random.seed(42)
-
    # Simple MH chain targeting N(0,1) with different step sizes
-   def run_mh_chain(sigma, n_samples=20000):
+   def run_mh_chain(sigma, n_samples=20_000, seed=42):
        """Run MH targeting standard Normal with step size sigma."""
+       rng = np.random.default_rng(seed)
        chain = np.zeros(n_samples)
        chain[0] = 5.0  # start far from the mode
        n_acc = 0
        for t in range(1, n_samples):
-           proposal = chain[t-1] + np.random.normal(0, sigma)
+           proposal = chain[t-1] + rng.normal(0, sigma)
            log_alpha = -0.5 * proposal**2 + 0.5 * chain[t-1]**2
-           if np.log(np.random.uniform()) < log_alpha:
+           if np.log(rng.random()) < min(0.0, log_alpha):
                chain[t] = proposal
                n_acc += 1
            else:
@@ -793,10 +697,11 @@ size** :math:`\sigma`. This is the standard deviation of the Normal perturbation
   ESS is low.
 
 - **Just right**: There is a sweet spot where the chain makes reasonably large moves
-  that are accepted often enough to explore efficiently. For random walk MH on a
-  :math:`d`-dimensional target, the optimal acceptance rate is approximately
-  **23.4%** (Roberts et al., 1997). This theoretical result, while derived for
-  specific conditions, provides a useful practical guideline.
+  that are accepted often enough to explore efficiently. The famous **23.4%** limit
+  applies asymptotically to a particular high-dimensional random-walk scaling regime
+  for product-like targets :cite:p:`roberts1997`; the corresponding one-dimensional
+  limit is about 44%. These are tuning clues, not universal targets. Efficiency is
+  better assessed using ESS per unit of computation.
 
 .. code-block:: python
 
@@ -809,7 +714,8 @@ size** :math:`\sigma`. This is the standard deviation of the Normal perturbation
        step sizes and compare acceptance rates and ESS.
        """
        d = 5          # dimensionality
-       n_samples = 50_000
+       n_samples = 20_000
+       rng = np.random.default_rng(42)
 
        def log_target(x):
            """Log density of a d-dimensional standard Normal."""
@@ -822,9 +728,9 @@ size** :math:`\sigma`. This is the standard deviation of the Normal perturbation
            n_accepted = 0
 
            for t in range(1, n_samples):
-               proposal = chain[t-1] + np.random.normal(0, sigma, size=d)
+               proposal = chain[t-1] + rng.normal(0, sigma, size=d)
                log_alpha = log_target(proposal) - log_target(chain[t-1])
-               if np.log(np.random.uniform()) < log_alpha:
+               if np.log(rng.random()) < min(0.0, log_alpha):
                    chain[t] = proposal
                    n_accepted += 1
                else:
@@ -833,31 +739,16 @@ size** :math:`\sigma`. This is the standard deviation of the Normal perturbation
            acc_rate = n_accepted / (n_samples - 1)
 
            # Compute ESS for the first component
-           burn_in = 5000
+           burn_in = 2_000
            first_coord = chain[burn_in:, 0]
-           N = len(first_coord)
-           mean = first_coord.mean()
-           var = first_coord.var()
-
-           iat = 1.0
-           for k in range(1, 500):
-               if k >= N:
-                   break
-               rho_k = np.mean((first_coord[:-k] - mean) * (first_coord[k:] - mean)) / var
-               if rho_k < 0:
-                   break
-               iat += 2 * rho_k
-
-           ess = N / iat
+           _, ess = compute_acf_and_ess(first_coord, max_lag=400)
            results.append((sigma, acc_rate, ess))
            print(f"sigma={sigma:.3f}: acceptance={acc_rate:.3f}, ESS={ess:.0f}")
 
-       # Find the step size closest to 23.4% acceptance
-       best = min(results, key=lambda r: abs(r[1] - 0.234))
-       print(f"\nClosest to optimal (23.4%): sigma={best[0]:.3f} "
-             f"with acceptance={best[1]:.3f} and ESS={best[2]:.0f}")
+       best = max(results, key=lambda r: r[2])
+       print(f"\nLargest estimated ESS: sigma={best[0]:.3f}, "
+             f"acceptance={best[1]:.3f}, ESS={best[2]:.0f}")
 
-   np.random.seed(42)
    proposal_tuning_demo()
 
 Data-Informed Proposals
@@ -874,10 +765,10 @@ algorithm and stochastic traceback from the :ref:`HMM chapter <hmms>`. This
 proposal incorporates the observed sequence data directly: the HMM "listens" to
 the data and proposes a new thread that is already likely under the posterior.
 
-The result is dramatically higher acceptance rates -- approaching 1.0 for large
-sample sizes -- compared to the random walk proposals that earlier ARG sampling
-methods used. This is the difference between a blind watchmaker making random
-adjustments and one who carefully examines the mechanism before each modification.
+The proposal is designed to achieve high acceptance and efficient movement in the
+settings evaluated by SINGER :cite:p:`singer`. The realized acceptance rate is
+model- and data-dependent; neither an HMM-informed proposal nor a rate near one by
+itself guarantees good global mixing.
 
 Parallel Tempering
 --------------------
@@ -906,13 +797,14 @@ high-dimensional population size history.
 
 Instead of MCMC, PHLASH uses **Stein Variational Gradient Descent (SVGD)** -- a
 deterministic optimization method that maintains a collection of "particles" and
-moves them to approximate the posterior. SVGD is faster than MCMC for
-high-dimensional problems because it uses gradient information (the slope of the
-log-posterior) to guide all particles simultaneously, rather than making random
-proposals one at a time.
+moves them to approximate the posterior. In PHLASH's reported experiments, this
+gradient-based particle approximation gives favorable speed and accuracy for
+population-size inference :cite:p:`phlash`. That empirical result should not be
+generalized into a theorem that SVGD is always faster than MCMC in high dimensions.
 
 The trade-off: SVGD is an approximation (it may not converge to the exact
-posterior), while MCMC is exact in the limit of infinite samples. For the
+posterior), while an invariant, ergodic, correctly implemented MCMC chain is
+asymptotically exact for its specified target. For the
 specific problem PHLASH solves -- inferring piecewise-constant population size
 histories -- the speed advantage of SVGD outweighs the loss in exactness.
 
@@ -935,14 +827,14 @@ posterior :math:`P(\text{thread}_k \mid \text{ARG}_{-k}, D)`.
 This is possible because ARGweaver discretizes time (see
 :ref:`argweaver_time_discretization`), reducing the continuous coalescent to a
 finite-state HMM. The forward algorithm (from :ref:`hmms`) computes the conditional
-posterior exactly, and stochastic traceback draws a sample. Because the sample comes
-from the exact conditional, the Gibbs acceptance rate is 1 -- no proposals are
-wasted.
+posterior exactly within that discretized model, and stochastic traceback draws a
+sample. Because the draw comes from the full conditional, its Gibbs acceptance rate
+is 1; successive ARG states can nevertheless remain strongly correlated
+:cite:p:`argweaver`.
 
 The cost of this elegance is the time discretization itself: it introduces an
 approximation, and the number of HMM states grows with the number of time points
-and samples. But the guarantee of 100% acceptance makes the approach efficient
-despite these limitations.
+and samples. An acceptance rate of 100% does not remove the need to assess mixing.
 
 SINGER: MH with Data-Informed Proposals
 ------------------------------------------
@@ -954,7 +846,7 @@ branch sampling and time sampling HMMs.
 
 Because the proposal distribution is constructed from the data (via the HMM forward
 algorithm), it closely approximates the posterior. The Metropolis-Hastings acceptance
-ratio is therefore close to 1, though not exactly 1 as in Gibbs sampling. The key
+ratio can therefore be high, though it is not identically 1 as in Gibbs sampling. The key
 formula (derived in :ref:`sgpr`) compares the probability of the old thread under
 the new proposal to the probability of the new thread under the old proposal,
 combined with the prior ratio.
@@ -979,9 +871,9 @@ computational efficiency) makes exact Gibbs updates unavailable.
 SVGD maintains a collection of particles and iteratively moves them to minimize a
 divergence from the posterior. Each particle update uses the gradient of the
 log-posterior (the "score function," see :ref:`phlash_score_function`), making the
-exploration much more directed than random walk MCMC. The result is fast convergence
-to an approximate posterior, at the cost of giving up the exactness guarantees of
-MCMC.
+exploration more directed than random walk MCMC. The method produced fast inference
+in the experiments reported for PHLASH, while targeting an approximation rather
+than supplying MCMC's asymptotic invariance guarantee :cite:p:`phlash`.
 
 
 Summary
@@ -1005,7 +897,7 @@ Summary
    * - Metropolis-Hastings
      - Propose, then accept/reject with ratio
        :math:`\min(1, \frac{\pi(x')q(x|x')}{\pi(x)q(x'|x)})`;
-       works for any proposal :math:`q`
+       requires valid forward/reverse support and an ergodic chain
    * - Gibbs sampling
      - Propose from the full conditional; always accepted;
        requires tractable conditionals
@@ -1013,11 +905,11 @@ Summary
      - ESS = :math:`N / (1 + 2\sum_k \rho(k))`;
        measures how many independent samples the chain yields
    * - Proposal tuning
-     - Optimal acceptance rate :math:`\approx 23\%` for random walk MH;
-       too narrow or too wide proposals reduce ESS
+     - The :math:`23.4\%` limit is specific to high-dimensional product-target
+       asymptotics; tune using ESS per unit of computation
    * - Data-informed proposals
      - SINGER's SGPR uses HMM-based proposals that incorporate the data,
-       achieving near-perfect acceptance rates
+       often yielding high acceptance in reported applications
    * - When MCMC fails
      - High-dimensional or complex posteriors may require alternatives
        like SVGD (used by PHLASH)
