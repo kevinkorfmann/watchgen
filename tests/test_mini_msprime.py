@@ -940,6 +940,34 @@ class TestCoalescentIntegration:
 
 
 class TestMinimalSimulatorOutput:
+    def test_recombination_in_segment_gap_splits_lineage(self, monkeypatch):
+        sim = MinimalSimulator(
+            n=1,
+            sequence_length=10,
+            recombination_rate=1,
+            pop_size=1,
+        )
+        lineage = sim.lineages[0]
+        first = lineage.head
+        first.right = 2
+        second = sim._alloc_segment(5, 10, first.node)
+        first.next = second
+        second.prev = first
+        lineage.tail = second
+        sim._register_lineage(lineage)
+
+        # Total mass is 10; mass 4 maps to bp=4 in the gap [2, 5).
+        monkeypatch.setattr(np.random, "uniform", lambda *_args: 4.0)
+        sim._recombination_event()
+
+        assert len(sim.lineages) == 2
+        spans = [
+            [(segment.left, segment.right)
+             for segment in sim._segments_in(result)]
+            for result in sim.lineages
+        ]
+        assert spans == [[(0, 2)], [(5, 10)]]
+
     def test_emits_valid_tree_sequence_with_recombination(self):
         """The pedagogical simulator must satisfy tskit's edge invariants."""
         tskit = pytest.importorskip("tskit")
@@ -1006,6 +1034,79 @@ class TestTreeMutationHelpers:
         ]
         # Two unit-length branches x 100 sites x rate 0.01 => mean 2.
         assert np.isclose(np.mean(counts), 2.0, atol=0.15)
+
+    def test_each_genomic_position_has_independent_state(self):
+        tree = {
+            0: (2, 0.0, []),
+            1: (2, 0.0, []),
+            2: (None, 1.0, [0, 1]),
+        }
+        np.random.seed(41)
+        mutations, leaf_states = place_mutations_on_tree(
+            tree, 0.2, self.binary_model(), 100,
+            discrete_genome=False)
+
+        assert len(mutations) > 2
+        assert all(ancestral == '0' and derived == '1'
+                   for _, _, _, ancestral, derived, _ in mutations)
+        assert all(isinstance(states, dict) for states in leaf_states.values())
+
+    def test_discrete_genome_allows_recurrent_and_back_mutations(self):
+        tree = {
+            0: (1, 0.0, []),
+            1: (None, 4.0, [0]),
+        }
+        np.random.seed(13)
+        mutations, leaf_states = place_mutations_on_tree(
+            tree, 2.0, self.binary_model(), sequence_length=1)
+
+        # Every event lands at the only discrete site. The alternating model
+        # must therefore evolve that site repeatedly.
+        assert len(mutations) > 2
+        assert {mutation[0] for mutation in mutations} == {0.0}
+        assert all(
+            older[4] == younger[3]
+            for older, younger in zip(mutations, mutations[1:])
+        )
+        assert leaf_states[0][0.0] == len(mutations) % 2
+
+    def test_continuous_genome_uses_noninteger_positions(self):
+        tree = {
+            0: (1, 0.0, []),
+            1: (None, 2.0, [0]),
+        }
+        np.random.seed(17)
+        mutations, _ = place_mutations_on_tree(
+            tree, 1.0, self.binary_model(), 10,
+            discrete_genome=False)
+
+        assert mutations
+        assert any(not position.is_integer()
+                   for position, *_ in mutations)
+
+    def test_genotypes_respect_silent_and_back_mutations(self):
+        class FakeTree:
+            descendants = {2: [0, 1], 0: [0]}
+
+            def samples(self, node):
+                return self.descendants[node]
+
+        class FakeTreeSequence:
+            def at(self, _position):
+                return FakeTree()
+
+        mutations = [
+            # A silent event must leave both samples ancestral.
+            (1.0, 2, 3, 'A', 'A', 2.0),
+            # At the second site both samples become C, then sample 0 reverts.
+            (2.0, 2, 3, 'A', 'C', 2.0),
+            (2.0, 0, 2, 'C', 'A', 1.0),
+        ]
+        genotypes, positions = build_genotype_matrix(
+            mutations, FakeTreeSequence(), n_samples=2)
+
+        assert positions.tolist() == [1.0, 2.0]
+        assert genotypes.tolist() == [[0, 0], [0, 1]]
 
     def test_get_descendants_uses_marginal_tree(self):
         msprime = pytest.importorskip("msprime")

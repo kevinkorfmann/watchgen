@@ -724,7 +724,12 @@ class MinimalSimulator:
         mass_from_right = cum_mass - random_mass
         bp = y.right - mass_from_right / self.recomb_rate
 
-        if bp <= y.left or bp >= y.right:
+        # ``get_recomb_mass`` includes the gap between this segment and its
+        # predecessor.  A breakpoint in that gap is still a real event: it
+        # separates the two segment chains even though it does not cut either
+        # segment.  Only the (measure-zero) right endpoint is outside the
+        # selectable interval.
+        if bp >= y.right:
             return
 
         old_lin = y.lineage
@@ -1314,7 +1319,8 @@ def find_root(tree):
     raise ValueError("No root found")
 
 
-def place_mutations_on_tree(tree, mu, model, sequence_length):
+def place_mutations_on_tree(
+        tree, mu, model, sequence_length, discrete_genome=True):
     """Place mutations on a single marginal tree.
 
     Parameters
@@ -1325,52 +1331,79 @@ def place_mutations_on_tree(tree, mu, model, sequence_length):
         Per-site, per-generation mutation rate.
     model : MatrixMutationModel
     sequence_length : float
+    discrete_genome : bool, optional
+        If True (the msprime default), place events at integer-valued sites so
+        recurrent and back mutations can occur. If False, use continuous
+        positions, corresponding to msprime's infinite-sites spatial model.
 
     Returns
     -------
-    mutations : list of (position, node, parent_node, derived_state, time)
-    leaf_states : dict of {leaf: allele_index}
+    mutations : list of
+        ``(position, node, parent_node, ancestral_state, derived_state, time)``.
+    leaf_states : dict
+        ``{leaf: {position: allele_index}}``.  States are tracked separately
+        at every mutated position.
     """
-    mutations = []
     root = find_root(tree)
 
-    root_state = model.draw_root_state()
-    node_states = {root: root_state}
+    if sequence_length <= 0:
+        raise ValueError("sequence_length must be positive")
+    if discrete_genome and not float(sequence_length).is_integer():
+        raise ValueError(
+            "sequence_length must be an integer when discrete_genome is True")
 
-    stack = [root]
-    while stack:
-        node = stack.pop()
-        current_state = node_states[node]
-        parent, time, children = tree[node]
-
+    # First place events without assigning states.  State evolution is then
+    # resolved independently at each genomic position; carrying one scalar
+    # state across positions would make a mutation at x alter the allele at y.
+    events_by_position = {}
+    for parent_node, (_, parent_time, children) in tree.items():
         for child in children:
             _, child_time, _ = tree[child]
-            branch_length = time - child_time
+            branch_length = parent_time - child_time
+            if branch_length < 0:
+                raise ValueError("parent time must not be younger than child time")
+            n_muts = np.random.poisson(mu * sequence_length * branch_length)
+            for mut_time in np.random.uniform(child_time, parent_time, size=n_muts):
+                if discrete_genome:
+                    position = float(np.random.randint(0, int(sequence_length)))
+                else:
+                    position = np.random.uniform(0, sequence_length)
+                events_by_position.setdefault(position, {}).setdefault(
+                    child, []).append((mut_time, parent_node))
 
-            n_muts = np.random.poisson(
-                mu * sequence_length * branch_length
-            )
+    leaves = [node for node, (_, _, children) in tree.items() if not children]
+    leaf_states = {leaf: {} for leaf in leaves}
+    mutations = []
 
-            state = current_state
-            # Traverse from the older parent toward the younger child so the
-            # recorded sequence of states follows ancestry forward in time.
-            mutation_times = np.sort(
-                np.random.uniform(child_time, time, size=n_muts)
-            )[::-1]
-            for mut_time in mutation_times:
-                new_state = model.mutate(state)
-                position = np.random.uniform(0, sequence_length)
-                mutations.append((position, child, node,
-                                  model.alleles[new_state], mut_time))
-                state = new_state
+    for position, branch_events in events_by_position.items():
+        node_states = {root: model.draw_root_state()}
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            current_state = node_states[node]
+            _, _, children = tree[node]
+            for child in children:
+                state = current_state
+                # Older mutations occur first when moving from parent to child.
+                for mut_time, parent_node in sorted(
+                        branch_events.get(child, []), reverse=True):
+                    new_state = model.mutate(state)
+                    mutations.append((
+                        position,
+                        child,
+                        parent_node,
+                        model.alleles[state],
+                        model.alleles[new_state],
+                        mut_time,
+                    ))
+                    state = new_state
+                node_states[child] = state
+                stack.append(child)
 
-            node_states[child] = state
-            stack.append(child)
+        for leaf in leaves:
+            leaf_states[leaf][position] = node_states[leaf]
 
-    leaf_states = {node: node_states[node]
-                   for node in tree
-                   if not tree[node][2]}
-
+    mutations.sort(key=lambda mutation: (mutation[0], -mutation[-1]))
     return mutations, leaf_states
 
 
@@ -1388,16 +1421,39 @@ def build_genotype_matrix(mutations, tree_sequence, n_samples):
     genotypes : ndarray of shape (n_sites, n_samples)
     positions : ndarray of shape (n_sites,)
     """
-    n_sites = len(mutations)
-    genotypes = np.zeros((n_sites, n_samples), dtype=int)
-    positions = np.zeros(n_sites)
+    # Normalize the two mutation record formats produced by this module:
+    # infinite-sites records are (pos, node, time, ancestral, derived), while
+    # finite-sites records additionally contain parent_node.
+    normalized = []
+    for mutation in mutations:
+        if len(mutation) == 6:
+            pos, node, _parent, ancestral, derived, time = mutation
+        elif len(mutation) == 5:
+            pos, node, time, ancestral, derived = mutation
+        else:
+            raise ValueError("unrecognized mutation record")
+        normalized.append((pos, node, time, ancestral, derived))
 
-    for i, (pos, node, *_) in enumerate(mutations):
-        positions[i] = pos
-        descendants = get_descendants(tree_sequence, node, pos)
-        for sample in descendants:
-            if sample < n_samples:
-                genotypes[i, sample] = 1
+    sites = {}
+    for mutation in normalized:
+        sites.setdefault(mutation[0], []).append(mutation)
+
+    positions_sorted = sorted(sites)
+    n_sites = len(positions_sorted)
+    genotypes = np.zeros((n_sites, n_samples), dtype=int)
+    positions = np.asarray(positions_sorted, dtype=float)
+
+    for site_index, pos in enumerate(positions_sorted):
+        site_mutations = sorted(sites[pos], key=lambda mutation: mutation[2],
+                                reverse=True)
+        # Before the oldest event, all samples carry its ancestral state.
+        root_state = site_mutations[0][3]
+        sample_states = [root_state] * n_samples
+        for _, node, _time, _ancestral, derived in site_mutations:
+            for sample in get_descendants(tree_sequence, node, pos):
+                if sample < n_samples:
+                    sample_states[sample] = derived
+        genotypes[site_index] = [state != root_state for state in sample_states]
 
     return genotypes, positions
 

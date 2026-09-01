@@ -28,9 +28,10 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - IV
      - :ref:`msprime <msprime_timepiece>`
-     - 190
-     - --
-     - Neutral coalescent with recombination. The clockwork that generates ground truth.
+     - 209
+     - 2026-09-01
+     - Hudson simulation and mutation generation, including gap recombination and
+       discrete-site recurrent/back mutations checked against upstream source behavior.
    * - XVI
      - :ref:`SLiM <slim_timepiece>`
      - 67

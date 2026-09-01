@@ -454,84 +454,19 @@ The mutation placement algorithm integrates over each marginal tree's genomic
 span. For a branch of length :math:`t` covering an interval of length
 :math:`\ell`, it draws a Poisson count with mean :math:`\mu\ell t`, assigns
 positions and times to those events, and then applies them in temporal order
-from the ancestral end of the branch toward the child. The allele at each leaf
-is the final state after all mutations on its root-to-leaf path.
+from the ancestral end of the branch toward the child. Allelic state is local
+to a genomic site: a mutation at position :math:`x` must not change the state
+inherited at position :math:`y`. The helper therefore groups events by position,
+draws an ancestral state for each site, and traverses the tree separately for
+each group. This mirrors the parent-mutation logic in ``msprime``'s mutation
+generator. The helper also follows msprime's default discrete-genome behavior,
+placing events at integer-valued sites so recurrent and back mutations are
+possible; pass ``discrete_genome=False`` for continuous positions. It omits
+msprime's table, existing-mutation, metadata, and provenance machinery.
 
-.. code-block:: python
-
-   def place_mutations_on_tree(tree, mu, model, sequence_length):
-       """Place mutations on a single marginal tree.
-
-       This walks from root to leaves, drawing Poisson-distributed
-       mutations on each branch and tracking allelic state changes.
-
-       Parameters
-       ----------
-       tree : dict
-           Tree as {node: (parent, time, children)}.
-       mu : float
-           Per-site, per-generation mutation rate.
-       model : MatrixMutationModel
-       sequence_length : float
-           Genomic span of this tree.
-
-       Returns
-       -------
-       mutations : list of (position, node, parent_node, derived_state, time)
-       leaf_states : dict of {leaf: allele_index}
-       """
-       mutations = []
-       root = find_root(tree)
-
-       # Draw root state from the model's stationary distribution
-       root_state = model.draw_root_state()
-       node_states = {root: root_state}
-
-       # DFS traversal: root to leaves, propagating allelic state
-       stack = [root]
-       while stack:
-           node = stack.pop()
-           current_state = node_states[node]
-           parent, time, children = tree[node]
-
-           for child in children:
-               _, child_time, _ = tree[child]
-               branch_length = time - child_time  # time in generations
-
-               # Number of mutations across this span: Poisson(mu * L * t)
-               n_muts = np.random.poisson(
-                   mu * sequence_length * branch_length
-               )
-
-               state = current_state
-               mutation_times = np.sort(
-                   np.random.uniform(child_time, time, size=n_muts)
-               )[::-1]
-               for mut_time in mutation_times:
-                   new_state = model.mutate(state)  # apply transition matrix
-                   # Random position within the tree's span
-                   position = np.random.uniform(0, sequence_length)
-                   mutations.append((position, child, node,
-                                      model.alleles[new_state], mut_time))
-                   state = new_state
-
-               # Child inherits the final state after all mutations
-               node_states[child] = state
-               stack.append(child)
-
-       # Collect leaf states (leaves have no children)
-       leaf_states = {node: node_states[node]
-                      for node in tree
-                      if not tree[node][2]}  # no children = leaf
-
-       return mutations, leaf_states
-
-   def find_root(tree):
-       """Find the root of a tree (node with no parent)."""
-       for node, (parent, time, children) in tree.items():
-           if parent is None:
-               return node
-       raise ValueError("No root found")
+.. literalinclude:: ../../../watchgen/mini_msprime.py
+   :language: python
+   :pyobject: place_mutations_on_tree
 
 
 Step 6: The Mutation Rate Map
@@ -601,54 +536,14 @@ converting mutations into observable genotype data.
 Step 7: From Mutations to Genotype Matrix
 ============================================
 
-The final output is a **genotype matrix**: for each variant site, the allele
-carried by each sample.
+The final output is a **genotype matrix**: one row per site, not one row per
+mutation. Multiple events at the same position must be applied from older to
+younger. This preserves silent mutations and allows a younger event to overwrite
+or reverse the state inherited from an older event.
 
-.. code-block:: python
-
-   def build_genotype_matrix(mutations, tree_sequence, n_samples):
-       """Convert mutations to a genotype matrix.
-
-       For each mutation, determine which samples carry the derived allele
-       by checking if they descend from the mutated node in the marginal
-       tree at the mutation's position.
-
-       Parameters
-       ----------
-       mutations : list of (position, node, ...)
-       tree_sequence : object
-           The tree sequence (for determining descendant sets).
-       n_samples : int
-
-       Returns
-       -------
-       genotypes : ndarray of shape (n_sites, n_samples)
-           0 = ancestral, 1 = derived (for biallelic sites).
-       positions : ndarray of shape (n_sites,)
-       """
-       n_sites = len(mutations)
-       genotypes = np.zeros((n_sites, n_samples), dtype=int)
-       positions = np.zeros(n_sites)
-
-       for i, (pos, node, *_) in enumerate(mutations):
-           positions[i] = pos
-           # Find all samples descending from 'node' at position 'pos'
-           # This requires looking up the marginal tree at that position
-           descendants = get_descendants(tree_sequence, node, pos)
-           for sample in descendants:
-               if sample < n_samples:
-                   genotypes[i, sample] = 1  # mark as carrying derived allele
-
-       return genotypes, positions
-
-   def get_descendants(tree_sequence, node, position):
-       """Get all leaf descendants of a node at a genomic position.
-
-       This requires finding the marginal tree at 'position' and
-       traversing below 'node'.
-       """
-       tree = tree_sequence.at(position)
-       return list(tree.samples(node))
+.. literalinclude:: ../../../watchgen/mini_msprime.py
+   :language: python
+   :pyobject: build_genotype_matrix
 
 
 Putting It All Together
