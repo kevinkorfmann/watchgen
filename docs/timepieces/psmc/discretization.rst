@@ -1020,8 +1020,10 @@ log-spacing: put resolution where the information is.
    The rule of thumb from Li and Durbin: each free parameter should span at
    least ~10 expected recombination events. You can check this with
    :math:`C_\sigma \pi_k` -- if this is less than ~20 for the intervals in a
-   group, you should merge them into a larger group. The default pattern
-   ``4+25*2+4+6`` has been validated for human whole-genome data.
+   group, you should merge them into a larger group. The widely used
+   ``4+25*2+4+6`` setting has been used for human whole-genome data. The
+   original program's compiled-in default is the coarser ``4+5*3+4``; many
+   published command lines override it with ``-p``.
 
    In practice, you rarely need to change the pattern unless you are working
    with organisms that have very different genome sizes or recombination rates.
@@ -1170,7 +1172,7 @@ Exercises
 .. admonition:: Exercise 3: The effect of pattern choice
 
    Using the same data, run PSMC with patterns ``"64*1"`` (all free),
-   ``"4+25*2+4+6"`` (default), and ``"32*2"`` (simple). Compare the inferred
+   ``"4+25*2+4+6"`` (widely used), and ``"32*2"`` (simple). Compare the inferred
    :math:`\lambda_k` curves. Which shows overfitting? Which is too smooth?
 
 Next: :ref:`psmc_hmm` -- the EM algorithm that makes the parameters talk to the data.
@@ -1336,7 +1338,7 @@ Solutions
       # Three patterns to compare
       patterns = {
           "64*1 (all free)":    "64*1",      # 64 free parameters
-          "4+25*2+4+6 (default)": "4+25*2+4+6",  # 28 free parameters
+          "4+25*2+4+6 (widely used)": "4+25*2+4+6",  # 28 free parameters
           "32*2 (simple)":      "32*2",      # 32 free parameters
       }
 
@@ -1357,7 +1359,7 @@ Solutions
      flexibility to fit noise in the data. The symptom is a jagged curve that
      changes dramatically between bootstrap replicates.
 
-   - **"4+25*2+4+6" (default):** With 28 free parameters, the recent and ancient
+   - **"4+25*2+4+6" (widely used):** With 28 free parameters, the recent and ancient
      intervals are grouped (reducing noise), while the intermediate past retains
      fine resolution. The bottleneck should be clearly visible as a smooth dip.
      This is the **sweet spot** chosen by Li and Durbin for human data.

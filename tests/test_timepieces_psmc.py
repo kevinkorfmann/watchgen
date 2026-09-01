@@ -8,6 +8,7 @@ and tests its mathematical properties.
 import numpy as np
 from math import exp, log
 from scipy.integrate import quad
+from scipy.optimize import brentq
 import pytest
 
 
@@ -78,9 +79,13 @@ def compute_C_pi(lambda_func, t_max=20):
 
 
 def estimate_theta_initial(seq):
-    """Estimate theta_0 from the observed fraction of het sites."""
-    frac_het = np.mean(seq)
-    return -np.log(1 - frac_het)
+    """Return the original PSMC initialization for theta_0."""
+    seq = np.asarray(seq)
+    observed = seq[seq < 2]
+    if observed.size == 0:
+        raise ValueError("sequence contains no callable bins")
+    frac_het = np.mean(observed)
+    return -np.log1p(-frac_het)
 
 
 # ============================================================
@@ -283,7 +288,9 @@ def scale_mutation_free(theta_0, lambdas, t_boundaries, s=100):
 
 def correct_for_coverage(theta_0, fnr):
     """Correct theta_0 for false negative rate on heterozygotes."""
-    return theta_0 / (1 - fnr)
+    p_observed = -np.expm1(-theta_0)
+    p_true = p_observed / (1 - fnr)
+    return -np.log1p(-p_true)
 
 
 def split_sequence(seq, segment_length=50000):
@@ -303,9 +310,9 @@ def bootstrap_resample(segments, total_length):
     return replicate[:total_length]
 
 
-def check_overfitting(sigma_k, C_sigma, threshold=20):
+def check_overfitting(pi_k, C_sigma, threshold=20):
     """Check which intervals have too few expected segments."""
-    expected_segments = C_sigma * sigma_k
+    expected_segments = C_sigma * pi_k
     warnings = []
     for k, exp_seg in enumerate(expected_segments):
         if exp_seg < threshold:
@@ -337,7 +344,18 @@ def simulate_psmc_input(L, theta, rho, lambda_func, n_bins=None):
     seq = np.zeros(L, dtype=int)
     coal_times = np.zeros(L)
 
-    t = np.random.exponential(1.0)
+    def sample_coalescence_time(t_start=0.0):
+        target = np.random.exponential(1.0)
+
+        def hazard(t):
+            return quad(lambda u: 1.0 / lambda_func(u), t_start, t)[0]
+
+        upper = t_start + max(float(lambda_func(t_start)) * target, 1e-12)
+        while hazard(upper) < target:
+            upper = t_start + 2 * (upper - t_start)
+        return brentq(lambda t: hazard(t) - target, t_start, upper)
+
+    t = sample_coalescence_time()
     coal_times[0] = t
 
     for a in range(L):
@@ -348,7 +366,7 @@ def simulate_psmc_input(L, theta, rho, lambda_func, n_bins=None):
         if a < L - 1:
             if np.random.random() < 1 - np.exp(-rho * t):
                 u = np.random.uniform(0, t)
-                t = u + np.random.exponential(1.0)
+                t = sample_coalescence_time(u)
 
     return seq, coal_times
 
@@ -958,17 +976,18 @@ class TestCorrectForCoverage:
         assert theta_corr > 0.001
 
     def test_exact_correction(self):
-        """theta_corrected = theta / (1 - FNR)."""
+        """Correction operates on heterozygous-bin probabilities."""
         theta = 0.001
         fnr = 0.2
-        expected = 0.001 / 0.8
+        expected = -np.log1p(-(-np.expm1(-theta) / (1 - fnr)))
         assert abs(correct_for_coverage(theta, fnr) - expected) < 1e-10
 
     def test_high_fnr(self):
         """High FNR should produce large correction."""
         theta = 0.001
         theta_corr = correct_for_coverage(theta, 0.5)
-        assert abs(theta_corr - 0.002) < 1e-10
+        expected = -np.log1p(-(-np.expm1(-theta) / 0.5))
+        assert theta_corr == pytest.approx(expected)
 
 
 class TestSplitSequence:
@@ -1008,23 +1027,23 @@ class TestBootstrapResample:
 
 class TestCheckOverfitting:
     def test_all_sufficient(self):
-        sigma_k = np.ones(10) / 10
+        pi_k = np.ones(10) / 10
         C_sigma = 1000.0
-        warnings, expected = check_overfitting(sigma_k, C_sigma)
+        warnings, expected = check_overfitting(pi_k, C_sigma)
         # Expected segments = 1000 * 0.1 = 100 for each, all > 20
         assert len(warnings) == 0
 
     def test_some_insufficient(self):
-        sigma_k = np.array([0.001, 0.999])
+        pi_k = np.array([0.001, 0.999])
         C_sigma = 100.0
-        warnings, expected = check_overfitting(sigma_k, C_sigma)
+        warnings, expected = check_overfitting(pi_k, C_sigma)
         # First: 100 * 0.001 = 0.1 < 20, should be warned
         assert 0 in warnings
 
     def test_expected_segments_values(self):
-        sigma_k = np.array([0.5, 0.5])
+        pi_k = np.array([0.5, 0.5])
         C_sigma = 100.0
-        warnings, expected = check_overfitting(sigma_k, C_sigma)
+        warnings, expected = check_overfitting(pi_k, C_sigma)
         assert abs(expected[0] - 50.0) < 1e-10
         assert abs(expected[1] - 50.0) < 1e-10
 

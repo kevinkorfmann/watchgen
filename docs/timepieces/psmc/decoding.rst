@@ -389,17 +389,11 @@ If the model fits well, :math:`\sigma_k \approx \hat{\sigma}_k`. The
 .. admonition:: Interpreting the KL divergence
 
    The KL divergence :math:`G^\sigma` is always non-negative and equals zero if
-   and only if the two distributions are identical. In practice:
-
-   - :math:`G^\sigma < 10^{-4}`: excellent fit
-   - :math:`G^\sigma \sim 10^{-3}`: acceptable fit
-   - :math:`G^\sigma > 10^{-2}`: the model may be misspecified (wrong number of
-     intervals, not enough EM iterations, or the data violates PSMC assumptions)
-
-   If you see a large :math:`G^\sigma`, try running more EM iterations or
-   adjusting the number of free intervals. If the value remains high, the data
-   may not be well-suited for PSMC (e.g., too much missing data or strong
-   population structure).
+   and only if the two distributions are identical. Li's mathematical notes
+   propose it as a diagnostic but do not supply universal numerical cutoffs.
+   Its magnitude depends on sequence length, discretization, missingness, and
+   parameter fitting, so it should be compared across fitted alternatives or
+   calibrated by simulation rather than classified by fixed thresholds.
 
 .. code-block:: python
 
@@ -442,9 +436,11 @@ If the model fits well, :math:`\sigma_k \approx \hat{\sigma}_k`. The
        for pos in range(len(seq)):
            # gamma[k] = P(state=k at position pos | entire sequence)
            gamma = alpha_hat[pos] * beta_hat[pos]
+           # Each backward row has an arbitrary scale, so normalize gamma at
+           # each position before accumulating it.
+           gamma /= gamma.sum()
            sigma_data += gamma
-       # Normalize to get a proper distribution
-       sigma_data /= sigma_data.sum()
+       sigma_data /= len(seq)
 
        # KL divergence: D(model || data)
        G_sigma = 0.0
@@ -718,39 +714,28 @@ time axis to the right.
 
 .. math::
 
-   \theta_{\text{apparent}} = \theta_{\text{true}} \cdot (1 - \text{FNR})
+   p_{\text{observed}} = p_{\text{true}}(1 - \text{FNR})
 
-**Correction:** If you know the FNR, divide :math:`\hat{\theta}_0` by
-:math:`(1 - \text{FNR})` before scaling:
+At the bin level :math:`p=1-e^{-\theta}`. Therefore the exact inverse correction
+for this simplified observation model is:
 
 .. math::
 
-   \theta_{\text{corrected}} = \frac{\hat{\theta}_0}{1 - \text{FNR}}
+   \theta_{\text{corrected}}
+   = -\log\left(1-\frac{1-e^{-\hat\theta_0}}{1-\text{FNR}}\right).
+
+The familiar division by :math:`1-\text{FNR}` is its small-:math:`\theta`
+approximation. Real callability errors can depend on depth, genotype, and local
+sequence context; a single scalar correction is consequently a sensitivity
+analysis, not a replacement for the input masking and filtering used by PSMC.
+
+.. literalinclude:: ../../../watchgen/mini_psmc.py
+   :language: python
+   :pyobject: correct_for_coverage
 
 .. code-block:: python
 
-   def correct_for_coverage(theta_0, fnr):
-       """Correct theta_0 for false negative rate on heterozygotes.
-
-       Apply this correction BEFORE scaling to real units. The FNR
-       can be estimated by comparing variant calls at different coverage
-       depths, or by using simulations.
-
-       Parameters
-       ----------
-       theta_0 : float
-           Observed theta (from EM on low-coverage data).
-       fnr : float
-           Fraction of heterozygotes missed (0 to 1).
-           Typical values: 0.05 at 30x, 0.15 at 15x, 0.30 at 8x.
-
-       Returns
-       -------
-       theta_corrected : float
-       """
-       return theta_0 / (1 - fnr)
-
-   # Example: 20% of hets missed (roughly corresponding to ~10x coverage)
+   # Example sensitivity analysis: assume 20% of heterozygous bins were missed
    theta_obs = 0.00069
    theta_corr = correct_for_coverage(theta_obs, 0.2)
    print(f"Observed theta: {theta_obs:.6f}")
@@ -765,47 +750,21 @@ expected recombination events. The symptom is a jagged, noisy :math:`N(t)` curve
 with biologically implausible spikes and dips -- the watch appears to be ticking
 erratically rather than smoothly.
 
-**How to check:** Compute :math:`C_\sigma \sigma_k` for each interval -- this is
-the expected number of genomic segments whose coalescence time falls in interval
-:math:`k`. If this number is less than ~20, the :math:`\lambda_k` estimate is
-unreliable and should be grouped with adjacent intervals. This is why the
-default PSMC pattern ``"4+25*2+4+6"`` groups intervals in the very recent and
+**How to check:** The mathematical notes distributed with PSMC use
+:math:`C_\sigma \pi_k` for each interval, where :math:`\pi_k` is the stationary
+mass of the recombination-event chain. It is not :math:`C_\sigma\sigma_k`;
+:math:`\sigma_k` is the occupancy distribution of the full genomic chain.
+Small support warns that the corresponding :math:`\lambda_k` should be grouped
+with adjacent intervals. In an actual run, the software README recommends the
+more directly interpretable check that roughly 10 or more recombinations are
+inferred for every free-parameter span after about 20 iterations. This is why the
+widely used human-data pattern ``"4+25*2+4+6"`` groups intervals in the very recent and
 very ancient past, where data is sparse, while allowing finer resolution in the
 intermediate past where signal is strongest.
 
-.. code-block:: python
-
-   def check_overfitting(sigma_k, C_sigma, threshold=20):
-       """Check which intervals have too few expected segments.
-
-       Intervals with fewer than ~20 expected segments cannot reliably
-       support an independent lambda estimate. These should be grouped
-       with neighboring intervals using the pattern string.
-
-       Parameters
-       ----------
-       sigma_k : ndarray
-           Stationary distribution over time intervals.
-       C_sigma : float
-           Total number of independent segments (approximately
-           total_sequence_length * rho, where rho is the recombination rate).
-       threshold : float
-           Minimum expected segments for reliable estimation.
-
-       Returns
-       -------
-       warnings : list of int
-           Indices of intervals that may overfit.
-       expected_segments : ndarray
-           Expected segment count per interval.
-       """
-       # Expected number of segments coalescing in each interval
-       expected_segments = C_sigma * sigma_k
-       warnings = []
-       for k, exp_seg in enumerate(expected_segments):
-           if exp_seg < threshold:
-               warnings.append(k)
-       return warnings, expected_segments
+.. literalinclude:: ../../../watchgen/mini_psmc.py
+   :language: python
+   :pyobject: check_overfitting
 
 **Pitfall 3: Interpreting the recent past**
 
@@ -1210,12 +1169,11 @@ Solutions
       print(f"Expected correction factor: {1/(1-fnr):.4f}")
       print(f"Actual N_0 ratio (corr/uncorr): {N0_corr/N0_uncorr:.4f}")
 
-   **What happens:** Without correction, the inferred :math:`\hat{\theta}` is
-   reduced by a factor of :math:`(1 - \text{FNR}) = 0.8`, which means
-   :math:`N_0` is underestimated by 20%. This shifts the entire population size
-   curve downward and stretches the time axis. The bottleneck appears less
-   severe (because :math:`N_0` is smaller, the relative depth of the dip changes)
-   and appears to occur at a different time.
+   **What happens:** A 20% false-negative rate reduces the probability of a
+   heterozygous bin by a factor of 0.8. For small :math:`\theta` this also makes
+   :math:`\hat\theta` and :math:`N_0` about 20% too small; the equality is only
+   approximate because :math:`p=1-e^{-\theta}` is nonlinear. This shifts the
+   population-size and time scales.
 
    After applying ``correct_for_coverage``, the corrected :math:`N_0` should
    closely match the full-data estimate, restoring the correct scaling on both
@@ -1268,31 +1226,30 @@ Solutions
       #                 "/tmp/test.psmcfa"])
       # time_c = time.time() - t_start
 
-      # Step 4: Parse C PSMC output and compare
-      # (a) Log-likelihoods should agree to within ~1%
-      # (b) Final lambda_k values should agree to within ~5%
-      # (c) Python will be ~100-1000x slower than C
+      # Step 4: Parse C PSMC output and compare. First compare HMM quantities
+      # at identical fixed parameters; optimizer trajectories are a separate test.
 
       print(f"Python PSMC time: {time_python:.1f} seconds")
       print(f"Final Python LL: {results_py[-1]['log_likelihood']:.2f}")
 
    **Expected comparison:**
 
-   **(a) Log-likelihoods:** Should agree to within ~1% at each iteration. Small
-   differences arise from different numerical optimization strategies (the C
-   implementation uses Hooke-Jeeves while our Python version uses Nelder-Mead)
-   and floating-point differences.
+   **(a) Fixed-parameter likelihoods:** With the same time grid and parameter
+   vector, transition probabilities, emissions, and sequence log-likelihoods
+   should agree to floating-point tolerance. This is the appropriate parity
+   test for the HMM implementation.
 
-   **(b) Final parameters:** The inferred :math:`\lambda_k` curves should be
-   visually indistinguishable. Quantitatively, individual :math:`\lambda_k`
-   values may differ by up to ~5%, but the overall shape of the population
-   history should match.
+   **(b) Optimization:** The C implementation uses Hooke--Jeeves direct search,
+   while this teaching implementation uses Nelder--Mead. Their iteration paths,
+   stopping points, and even selected local optima need not match. Therefore a
+   fixed 1% likelihood or 5% parameter promise would be unjustified; record the
+   tolerances and convergence criteria used in an actual comparison.
 
-   **(c) Running time:** The Python implementation will be approximately
-   100--1000x slower than the C implementation. The C version uses optimized
-   matrix operations and avoids the overhead of Python loops in the
-   forward-backward algorithm. For production use, always prefer the C
-   implementation; the Python version is for understanding the algorithm.
+   **(c) Running time:** The loop-based Python implementation is expected to be
+   substantially slower than the original C program, but the factor depends on
+   hardware, compiler flags, sequence length, and parameterization. Benchmark it
+   instead of assuming a universal multiplier. For production use, prefer the
+   maintained C implementation; the Python version is for understanding.
 
 .. admonition:: Solution 4: Bootstrap confidence intervals
 

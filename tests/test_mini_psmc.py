@@ -17,6 +17,9 @@ from watchgen.mini_psmc import (
     psmc_transition_density_general,
     stationary_distribution,
     compute_C_pi,
+    full_transition_density,
+    full_stationary,
+    compute_C_sigma,
     estimate_theta_initial,
     compute_time_intervals,
     compute_helpers,
@@ -24,6 +27,9 @@ from watchgen.mini_psmc import (
     compute_transition_matrix,
     compute_avg_times,
     build_psmc_hmm,
+    PSMC_HMM,
+    compute_expected_counts,
+    goodness_of_fit_sigma,
     parse_pattern,
     scale_psmc_output,
     scale_mutation_free,
@@ -247,6 +253,33 @@ class TestEstimateThetaInitial:
         theta_est = estimate_theta_initial(seq)
         assert theta_est > 1.0
 
+    def test_missing_bins_are_excluded(self):
+        seq = np.array([0, 1, 2, 2])
+        assert estimate_theta_initial(seq) == pytest.approx(-np.log(0.5))
+
+    def test_all_missing_raises(self):
+        with pytest.raises(ValueError, match="no callable bins"):
+            estimate_theta_initial(np.array([2, 2, 2]))
+
+
+class TestFullContinuousChain:
+    def test_zero_time_is_a_pure_no_recombination_point_mass(self):
+        continuous, point_mass = full_transition_density(
+            0.0, 0.0, 0.001, lambda t: 1.0)
+        assert continuous == 0.0
+        assert point_mass == 1.0
+
+    def test_stationary_density_has_finite_zero_limit(self):
+        rho = 0.01
+        C_pi = compute_C_pi(lambda t: 1.0)
+        C_sigma = compute_C_sigma(lambda t: 1.0, rho, C_pi)
+        at_zero = full_stationary(
+            0.0, lambda t: 1.0, rho, C_pi=C_pi, C_sigma=C_sigma)
+        near_zero = full_stationary(
+            1e-9, lambda t: 1.0, rho, C_pi=C_pi, C_sigma=C_sigma)
+        assert np.isfinite(at_zero)
+        assert at_zero == pytest.approx(near_zero, rel=1e-7)
+
 
 # ============================================================
 # Tests: Discretization
@@ -274,6 +307,11 @@ class TestComputeTimeIntervals:
         n = 63
         t = compute_time_intervals(n, 15.0)
         assert len(t) == n + 2
+
+    @pytest.mark.parametrize("n,t_max,alpha", [(0, 15.0, 0.1), (10, 0, 0.1), (10, 15, 0)])
+    def test_invalid_configuration_raises(self, n, t_max, alpha):
+        with pytest.raises(ValueError):
+            compute_time_intervals(n, t_max, alpha)
 
     def test_log_spacing(self):
         """Later intervals should be wider than earlier ones."""
@@ -559,6 +597,11 @@ class TestParsePattern:
         # Next 2 intervals should share parameter 1
         assert par_map[4] == par_map[5] == 1
 
+    @pytest.mark.parametrize("pattern", ["", "0", "2*0", "0*2", "-1"])
+    def test_invalid_pattern_raises(self, pattern):
+        with pytest.raises(ValueError):
+            parse_pattern(pattern)
+
 
 # ============================================================
 # Tests: Decoding / Scaling
@@ -641,17 +684,23 @@ class TestCorrectForCoverage:
         assert theta_corr > 0.001
 
     def test_exact_correction(self):
-        """theta_corrected = theta / (1 - FNR)."""
+        """Correction operates on heterozygous-bin probabilities."""
         theta = 0.001
         fnr = 0.2
-        expected = 0.001 / 0.8
+        expected = -np.log1p(-(-np.expm1(-theta) / (1 - fnr)))
         assert abs(correct_for_coverage(theta, fnr) - expected) < 1e-10
 
     def test_high_fnr(self):
         """High FNR should produce large correction."""
         theta = 0.001
         theta_corr = correct_for_coverage(theta, 0.5)
-        assert abs(theta_corr - 0.002) < 1e-10
+        expected = -np.log1p(-(-np.expm1(-theta) / 0.5))
+        assert theta_corr == pytest.approx(expected)
+
+    @pytest.mark.parametrize("fnr", [-0.1, 1.0])
+    def test_invalid_fnr_raises(self, fnr):
+        with pytest.raises(ValueError):
+            correct_for_coverage(0.001, fnr)
 
 
 class TestSplitSequence:
@@ -691,23 +740,23 @@ class TestBootstrapResample:
 
 class TestCheckOverfitting:
     def test_all_sufficient(self):
-        sigma_k = np.ones(10) / 10
+        pi_k = np.ones(10) / 10
         C_sigma = 1000.0
-        warnings, expected = check_overfitting(sigma_k, C_sigma)
+        warnings, expected = check_overfitting(pi_k, C_sigma)
         # Expected segments = 1000 * 0.1 = 100 for each, all > 20
         assert len(warnings) == 0
 
     def test_some_insufficient(self):
-        sigma_k = np.array([0.001, 0.999])
+        pi_k = np.array([0.001, 0.999])
         C_sigma = 100.0
-        warnings, expected = check_overfitting(sigma_k, C_sigma)
+        warnings, expected = check_overfitting(pi_k, C_sigma)
         # First: 100 * 0.001 = 0.1 < 20, should be warned
         assert 0 in warnings
 
     def test_expected_segments_values(self):
-        sigma_k = np.array([0.5, 0.5])
+        pi_k = np.array([0.5, 0.5])
         C_sigma = 100.0
-        warnings, expected = check_overfitting(sigma_k, C_sigma)
+        warnings, expected = check_overfitting(pi_k, C_sigma)
         assert abs(expected[0] - 50.0) < 1e-10
         assert abs(expected[1] - 50.0) < 1e-10
 
@@ -776,6 +825,48 @@ class TestSimulatePsmcInput:
         seq_high, _ = simulate_psmc_input(10000, 0.005, 0.0005,
                                            lambda t: 1.0)
         assert np.mean(seq_high) > np.mean(seq_low)
+
+    def test_variable_population_uses_integrated_hazard(self):
+        """A post-change epoch must use its own coalescence rate."""
+        np.random.seed(7)
+
+        def size_history(t):
+            return 0.5 if t < 1.0 else 2.0
+
+        # rho=0 makes every element share the initial draw, so collect one
+        # independent initial coalescence time from each simulation.
+        samples = np.array([
+            simulate_psmc_input(1, 0.0, 0.0, size_history)[1][0]
+            for _ in range(2500)
+        ])
+        tail = samples[samples > 1.0] - 1.0
+        # Conditional on surviving to t=1, the remaining wait is Exp(scale=2).
+        assert len(tail) > 250
+        assert np.mean(tail) == pytest.approx(2.0, abs=0.3)
+
+
+class TestExpectedCounts:
+    def test_counts_normalize_at_each_position(self):
+        hmm = PSMC_HMM(
+            n=3,
+            theta=0.01,
+            rho=0.002,
+            lambdas=np.ones(4),
+            t_max=5.0,
+        )
+        seq = np.array([0, 1, 2, 0, 1, 0])
+        gamma, xi, emissions, ll = compute_expected_counts(hmm, seq)
+        assert gamma.sum() == pytest.approx(len(seq))
+        assert xi.sum() == pytest.approx(len(seq) - 1)
+        assert emissions.sum() == pytest.approx(np.count_nonzero(seq < 2))
+        assert np.isfinite(ll)
+
+    def test_gof_uses_position_normalized_posteriors(self):
+        hmm = PSMC_HMM(3, 0.01, 0.002, np.ones(4), t_max=5.0)
+        seq = np.array([0, 1, 2, 0, 1, 0])
+        gamma, _, _, _ = compute_expected_counts(hmm, seq)
+        _, _, sigma_data = goodness_of_fit_sigma(hmm, seq)
+        assert sigma_data == pytest.approx(gamma / len(seq))
 
 
 # ============================================================

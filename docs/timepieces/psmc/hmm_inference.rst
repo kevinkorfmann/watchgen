@@ -521,6 +521,7 @@ needs to update the parameters:
        xi_sum = np.zeros((N, N))
        for pos in range(L - 1):         # for each adjacent pair
            obs_next = seq[pos + 1]      # observation at the next position
+           xi_pos = np.zeros((N, N))    # one normalized distribution per pair
            for k in range(N):           # source state
                for l in range(N):       # destination state
                    if obs_next >= 2:    # missing data at next position
@@ -529,15 +530,16 @@ needs to update the parameters:
                        e = hmm.emissions[obs_next, l]
 
                    # Unnormalized xi: forward(a,k) * trans(k,l) * emit(l) * backward(a+1,l)
-                   xi_sum[k, l] += (alpha_hat[pos, k] *
-                                     hmm.transitions[k, l] *
-                                     e * beta_hat[pos + 1, l])
+                   xi_pos[k, l] = (alpha_hat[pos, k] *
+                                    hmm.transitions[k, l] *
+                                    e * beta_hat[pos + 1, l])
 
-       # Normalize xi so the total sums to L-1 (one transition per adjacent pair)
-       total_xi = xi_sum.sum()
-       if total_xi > 0:
-           xi_sum /= total_xi
-           xi_sum *= (L - 1)  # scale to expected number of transitions
+           # Forward and backward vectors are independently scaled at each
+           # position, so normalize every adjacent pair before accumulating.
+           # A single global normalization would mix incompatible scale factors.
+           total_xi = xi_pos.sum()
+           if total_xi > 0:
+               xi_sum += xi_pos / total_xi
 
        return gamma_sum, xi_sum, emission_counts, ll
 
@@ -565,10 +567,11 @@ alternates between two steps:
    parameters that maximize the expected log-likelihood. "Given what we learned
    about gear usage, cut new gears that would make the watch keep better time."
 
-The algorithm repeats these two steps until convergence. Each iteration is
-guaranteed (by EM theory) to increase the log-likelihood of the data -- or at
-least never decrease it. The watch gets more accurate with every iteration,
-converging to a (local) optimum.
+The algorithm repeats these two steps until convergence. Exact EM is
+non-decreasing when the M-step really maximizes the same complete-data
+objective. PSMC uses a numerical direct search and omits the negligible
+initial-state term, so monotonicity is a diagnostic to check rather than an
+unconditional software guarantee.
 
 .. admonition:: Probability Aside: the Expectation step
 
@@ -778,12 +781,11 @@ available in scipy) for clarity.
            # Evaluate Q = sum of (expected count * log parameter)
            Q = 0.0
 
-           # Term 1: initial state contribution
-           for k in range(N):
-               if initial[k] > 0:
-                   Q += gamma_sum[k] * np.log(initial[k] + 1e-300) / len(seq)
+           # Like the original PSMC hmm_Q implementation, this objective
+           # optimizes transition and emission terms. Average occupancy
+           # gamma_sum / L is not a valid initial-state sufficient statistic.
 
-           # Term 2: transition contribution
+           # Term 1: transition contribution
            # Each expected transition count xi_sum[k,l] is weighted by
            # log of the transition probability under the candidate parameters
            for k in range(N):
@@ -791,7 +793,7 @@ available in scipy) for clarity.
                    if transitions[k, l] > 0 and xi_sum[k, l] > 0:
                        Q += xi_sum[k, l] * np.log(transitions[k, l] + 1e-300)
 
-           # Term 3: emission contribution
+           # Term 2: emission contribution
            # Each expected emission count is weighted by log of the emission
            # probability under the candidate parameters
            for b in range(2):  # b = 0 (hom) or 1 (het)
@@ -837,8 +839,9 @@ available in scipy) for clarity.
 **Recap.** One EM iteration works as follows: (1) Run forward-backward with the
 current parameters to get expected counts. (2) Numerically optimize the Q
 function over the population-genetic parameters, using the expected counts as
-fixed inputs. (3) Rebuild the HMM with the new parameters. The log-likelihood
-is guaranteed not to decrease. Now let's see the full loop.
+fixed inputs. (3) Rebuild the HMM with the new parameters. A successful M-step
+should not decrease the log-likelihood; numerical optimization tolerances make
+that a condition to verify. Now let's see the full loop.
 
 
 Step 4: The Full EM Loop
@@ -857,7 +860,7 @@ until the watch keeps accurate time.
    **1. Log-likelihood plateau.** The most common criterion: stop when the
    change in log-likelihood between iterations falls below a threshold
    (e.g., :math:`|\Delta \text{LL}| < 0.01`). The log-likelihood is a
-   non-decreasing sequence (guaranteed by EM theory), so when it stops
+   ideally non-decreasing sequence, so when it stops
    increasing, we have found a (local) optimum.
 
    **2. Parameter stability.** Stop when the parameters themselves stop
@@ -871,7 +874,7 @@ until the watch keeps accurate time.
    whole-genome data. This has the advantage of predictable running time.
 
    In practice, PSMC uses approach (3) but monitors the log-likelihood for
-   debugging. If the log-likelihood ever *decreases*, something is wrong --
+   debugging. A material decrease indicates a failed or inconsistent M-step --
    either a bug in the implementation or a numerical issue in the optimizer.
 
 .. code-block:: python
@@ -961,10 +964,11 @@ until the watch keeps accurate time.
 
 .. admonition:: Convergence in practice
 
-   PSMC typically converges within 20--25 iterations. The log-likelihood should
-   increase monotonically -- this is guaranteed by EM theory, as we explained
-   in the Probability Aside above. If it doesn't, there's a bug in the
-   implementation.
+   Published workflows commonly request about 20--25 iterations, but that is a
+   run length rather than a convergence guarantee. The log-likelihood should be
+   checked for near-monotonic increase and a plateau. A material decrease means
+   the numerical M-step did not improve the intended objective and should be
+   investigated.
 
    You can verify convergence by plotting the log-likelihood across iterations.
    It should rise steeply in the first few iterations (the initial constant-population
@@ -1154,8 +1158,8 @@ Let's trace the complete path we have traveled in this chapter:
    everything the data tells us about the parameters.
 
 4. **We built the EM loop**: alternate between computing expected counts
-   (E-step) and finding parameters that maximize the expected log-likelihood
-   (M-step). Each iteration improves the fit, guaranteed by the ELBO inequality.
+   (E-step) and numerically searching for parameters that improve the expected
+   log-likelihood (M-step).
 
 5. **We handled multiple sequences and missing data**, exploiting the additivity
    of sufficient statistics and the standard HMM trick of setting missing-data
@@ -1276,12 +1280,14 @@ Solutions
    the underflow that would occur with raw forward probabilities, which shrink
    exponentially with sequence length.
 
-   **(b)** The log-likelihood must be monotonically non-decreasing -- this is
-   guaranteed by EM theory (the ELBO argument). Any decrease indicates a bug.
+   **(b)** The log-likelihood should be non-decreasing up to numerical tolerance.
+   A material decrease indicates that the numerical M-step failed to improve
+   the objective.
 
-   **(c)** After ~10 iterations, :math:`\hat{\theta}` should be within a few
-   percent of the true value. The estimate improves with longer sequences; with
-   10,000 bins, expect a relative error of roughly 5--10%.
+   **(c)** Compare :math:`\hat{\theta}` with the generating value across several
+   random seeds and sequence lengths. There is no universal percentage-error
+   target: it depends on length, heterozygosity, missingness, discretization,
+   parameter grouping, and whether the optimizer has converged.
 
 .. admonition:: Solution 2: EM on simulated bottleneck data
 
@@ -1337,9 +1343,10 @@ Solutions
 .. admonition:: Solution 3: The effect of sequence length
 
    We run PSMC on sequences of increasing length to study how statistical power
-   scales with data. The key insight is that PSMC accuracy improves with
-   :math:`\sqrt{L}` (standard statistical scaling), and a minimum of ~50,000
-   bins is needed for reliable inference.
+   changes with data. More sequence generally supplies more informative
+   transitions and heterozygous bins, but linked observations, time
+   discretization, and optimizer error prevent a universal sample-size cutoff or
+   a guaranteed :math:`1/\sqrt{L}` error law for every demographic parameter.
 
    .. code-block:: python
 
@@ -1378,25 +1385,11 @@ Solutions
           print(f"L={L:>8}: RMSE = {np.sqrt(mse):.4f}, "
                 f"final LL = {results[-1]['log_likelihood']:.2f}")
 
-   **Expected results:**
-
-   - **L = 1,000:** Very noisy. The inferred :math:`\lambda_k` will be far from
-     the truth. With ~1 heterozygous site per 1,000 bins, there is almost no
-     signal. RMSE will be high (:math:`> 0.5`).
-
-   - **L = 10,000:** Marginal. The bottleneck may be faintly visible but with
-     large errors. RMSE improves but remains substantial.
-
-   - **L = 100,000:** Reliable. The bottleneck should be clearly detected with
-     quantitative accuracy. This is the minimum recommended sequence length for
-     PSMC. RMSE should be below 0.2.
-
-   - **L = 1,000,000:** Excellent. The inferred :math:`\lambda_k` closely match
-     the true values. RMSE should be well below 0.1.
-
-   The accuracy scales approximately as :math:`1/\sqrt{L}`, consistent with
-   standard statistical theory -- doubling the data reduces the error by a
-   factor of :math:`\sqrt{2}`.
+   **Interpretation:** Repeat each length with independent seeds and summarize
+   the distribution of RMSE, rather than treating one nested realization as a
+   benchmark. The typical error should tend to fall as information increases,
+   but individual runs need not be monotone and no fixed RMSE thresholds follow
+   from PSMC theory.
 
 .. admonition:: Solution 4: Watch the EM gears turn
 

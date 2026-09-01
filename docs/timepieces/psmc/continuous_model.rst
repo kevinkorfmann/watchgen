@@ -651,9 +651,10 @@ distribution lemma), with :math:`g(u) = 1` and :math:`h(u) = 1/\lambda(u)`.
 
    For constant population size (:math:`\lambda(t) = 1`), the stationary
    distribution is :math:`\pi(t) = t e^{-t}`, which is the :math:`\text{Gamma}(2, 1)`
-   distribution. Its mean is 2, matching the well-known result that the expected
-   pairwise coalescence time is :math:`2N` generations (or 2 in coalescent units of
-   :math:`2N_0`), as established in :ref:`coalescent_theory`.
+   distribution. Its mean is 2 because :math:`\pi` describes coalescence times
+   observed at recombination events and is length-biased toward older trees.
+   It must not be confused with the ordinary pairwise coalescence-time density
+   :math:`e^{-t}`, whose mean is 1 in units of :math:`2N_0` generations.
 
 
 Step 5: Including No-Recombination (The Full Transition)
@@ -716,30 +717,11 @@ In other words, integrating against the Dirac delta "picks out" the value of
    When computing expectations under :math:`p(t|s)`, the Dirac delta contributes
    the "no change" case: :math:`E[g(T')] = (1 - e^{-\rho s})\int g(t)\,q(t|s)\,dt + e^{-\rho s}\,g(s)`.
 
+.. literalinclude:: ../../../watchgen/mini_psmc.py
+   :language: python
+   :pyobject: full_transition_density
+
 .. code-block:: python
-
-   def full_transition_density(t, s, rho, lambda_func, tol=1e-8):
-       """Full transition density p(t|s) including no-recombination.
-
-       For the Dirac delta part (t == s), returns the point mass weight
-       separately. For t != s, returns the continuous part.
-
-       Returns
-       -------
-       continuous : float
-           The continuous part of the density at t.
-       point_mass : float
-           The weight of the point mass at t = s (nonzero only when
-           |t - s| < tol).
-       """
-       recomb_prob = 1.0 - np.exp(-rho * s)
-       if abs(t - s) < tol:
-           # Point mass contribution: e^{-rho*s} * delta(t-s)
-           # Cannot return density at the point mass; return (continuous, point_mass)
-           q_ts = psmc_transition_density_general(t, s, lambda_func)
-           return recomb_prob * q_ts, np.exp(-rho * s)
-       else:
-           return recomb_prob * psmc_transition_density_general(t, s, lambda_func), 0.0
 
    # The probability of recombination depends on branch length s
    for s_val in [0.5, 1.0, 2.0, 5.0]:
@@ -778,43 +760,19 @@ higher recombination probability, so they "churn" more and their stationary weig
    so they need higher stationary weight to account for all the silent
    no-recombination steps.
 
+At :math:`t=0` both numerator and denominator vanish.  The implementation uses
+the analytic limit there and ``expm1`` elsewhere, avoiding the removable
+``0/0`` singularity without discarding the youngest part of the integral.
+
+.. literalinclude:: ../../../watchgen/mini_psmc.py
+   :language: python
+   :pyobject: full_stationary
+
+.. literalinclude:: ../../../watchgen/mini_psmc.py
+   :language: python
+   :pyobject: compute_C_sigma
+
 .. code-block:: python
-
-   def full_stationary(t, lambda_func, rho, C_pi=None, C_sigma=None):
-       """Full stationary distribution sigma(t).
-
-       Parameters
-       ----------
-       t : float
-       lambda_func : callable
-       rho : float
-           Recombination rate per bin.
-       C_pi, C_sigma : float, optional
-       """
-       if C_pi is None:
-           C_pi = compute_C_pi(lambda_func)
-       pi_t = stationary_distribution(t, lambda_func, C_pi)
-
-       if C_sigma is None:
-           C_sigma = compute_C_sigma(lambda_func, rho, C_pi)
-
-       return pi_t / (C_sigma * (1 - np.exp(-rho * t)))
-
-   def compute_C_sigma(lambda_func, rho, C_pi=None, t_max=20):
-       """Compute C_sigma = integral pi(t) / (1 - exp(-rho*t)) dt.
-
-       The lower limit is slightly above 0 (1e-6) to avoid division
-       by zero, since 1 - exp(-rho*t) -> 0 as t -> 0.
-       """
-       if C_pi is None:
-           C_pi = compute_C_pi(lambda_func)
-
-       def integrand(t):
-           return stationary_distribution(t, lambda_func, C_pi) / (1 - np.exp(-rho * t))
-
-       # _ discards the error estimate from quad.
-       C_sigma, _ = quad(integrand, 1e-6, t_max)
-       return C_sigma
 
    # Test: the probability of recombination at any site is 1/C_sigma
    rho = 0.001
@@ -986,20 +944,24 @@ heterozygous sites:
    theta = 0.001  # typical for humans at 100bp bins
    C_pi = 1.0
    p_het_approx = C_pi * theta
-   p_het_exact = 1 - np.exp(-theta * 1.0)  # for T = 1 (mean under Exp(1))
+   # Substituting E[T]=1 is a useful approximation, not a marginalization over T.
+   p_het_at_mean = 1 - np.exp(-theta * 1.0)
    print(f"Approximate P(het): {p_het_approx:.6f}")
-   print(f"Using mean T: {p_het_exact:.6f}")
+   print(f"Using mean T: {p_het_at_mean:.6f}")
 
    # Initial estimate of theta from data
    def estimate_theta_initial(seq):
-       """Estimate theta_0 from the observed fraction of het sites.
+       """Return the original PSMC initialization for theta_0.
 
-       Uses the exact inversion: if P(het) = 1 - exp(-theta), then
-       theta = -log(1 - P(het)).
+       Missing bins (encoded by values >= 2) are excluded. The transformation
+       is PSMC's initialization heuristic, not an exact marginal estimator
+       under a random coalescence time.
        """
-       frac_het = np.mean(seq)
-       # -log(1 - frac_het) is the exact solution of 1 - exp(-theta) = frac_het
-       return -np.log(1 - frac_het)
+       observed = np.asarray(seq)[np.asarray(seq) < 2]
+       if observed.size == 0:
+           raise ValueError("sequence contains no callable bins")
+       frac_het = np.mean(observed)
+       return -np.log1p(-frac_het)
 
    # Test on simulated data
    theta_hat = estimate_theta_initial(seq)

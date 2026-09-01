@@ -353,27 +353,16 @@ and determine the population size history.
    :math:`\lambda` parameter to further reduce overfitting -- this is what the
    ``-p`` pattern in the PSMC software controls.
 
-.. admonition:: Why is the ratio :math:`\theta_0 / \rho_0` fixed?
+.. admonition:: What does the :math:`\theta_0 / \rho_0` option do?
 
-   PSMC typically fixes the ratio :math:`\theta_0 / \rho_0` (the default value
-   is 5) rather than estimating both rates independently. The reason is
-   **identifiability**: from a single diploid genome, it is very difficult to
-   separately estimate the mutation rate and the recombination rate. Both
-   parameters affect the data in partially overlapping ways -- increasing the
-   mutation rate makes the sequence "look" similar to decreasing the
-   recombination rate, and vice versa.
-
-   By fixing their ratio, PSMC essentially says: "I know the relative rates of
-   mutation and recombination from external evidence (e.g., pedigree studies),
-   and I will use that knowledge as a constraint." This reduces the number of
-   free parameters by one and makes the remaining parameters (the overall scale
-   :math:`\theta_0` and the population sizes :math:`\lambda_k`) better
-   identifiable.
-
-   In the watch metaphor, fixing :math:`\theta_0 / \rho_0` is like knowing the
-   gear ratio between two wheels in advance. You still need to determine how
-   fast the mainspring unwinds, but you know exactly how the two wheels relate
-   to each other.
+   The original program's ``-r`` option supplies the **initial** ratio
+   :math:`\theta_0/\rho_0` (default 5). It does not hold that ratio fixed during
+   inference: the C implementation stores :math:`\theta_0` and :math:`\rho_0`
+   as separate free parameters and the numerical M-step updates both. The ratio
+   matters because the two rates can be difficult to disentangle from one
+   diploid genome, so a sensible starting value helps the optimizer. Treating
+   ``-r`` as a hard biological constraint would misdescribe both the original
+   software and the miniature implementation used here.
 
 
 The Data: From BAM to Binary Sequence
@@ -396,84 +385,17 @@ The following code simulates this process. Instead of starting from real genomic
 data, we simulate the underlying coalescent process directly, which lets us
 verify that PSMC can recover the true parameters.
 
+The simulator below samples an exponential draw on the **cumulative-hazard**
+scale and numerically inverts it.  This distinction matters when
+:math:`\lambda(t)` changes with time: adding a single exponential wait based on
+the population size at the starting time is only valid for a constant-size
+epoch that extends forever.
+
+.. literalinclude:: ../../../watchgen/mini_psmc.py
+   :language: python
+   :pyobject: simulate_psmc_input
+
 .. code-block:: python
-
-   import numpy as np
-
-   def simulate_psmc_input(L, theta, rho, lambda_func, n_bins=None):
-       """Simulate a PSMC input sequence.
-
-       This simulates the process that generates the data PSMC sees:
-       - Draw coalescence times along the genome using the SMC
-       - Given each coalescence time, flip a coin for het/hom
-
-       Parameters
-       ----------
-       L : int
-           Number of bins.
-       theta : float
-           Mutation rate per bin (theta_0).
-       rho : float
-           Recombination rate per bin (rho_0).
-       lambda_func : callable
-           lambda_func(t) returns relative population size at time t.
-           This is a Python function (see the "lambda" explanation below).
-
-       Returns
-       -------
-       seq : ndarray of shape (L,), dtype=int
-           Binary sequence: 0 = homozygous, 1 = heterozygous.
-       coal_times : ndarray of shape (L,)
-           True coalescence times (for verification).
-       """
-       # np.zeros(L, dtype=int) creates an array of L integers, all initially 0.
-       seq = np.zeros(L, dtype=int)
-       coal_times = np.zeros(L)
-
-       # Draw first coalescence time from stationary distribution.
-       # For constant lambda: T ~ Exp(1).
-       # np.random.exponential(scale) draws a random number from the
-       # exponential distribution with the given scale (= 1/rate).
-       # So scale=1.0 gives rate=1, matching the coalescent with constant
-       # population size (see coalescent_theory).
-       t = np.random.exponential(1.0)  # simplified: constant pop
-       coal_times[0] = t
-
-       for a in range(L):
-           # Emission: het with prob 1 - exp(-theta * t).
-           # This is the probability that at least one mutation occurred
-           # in a bin of 'theta' expected mutations over coalescence time t.
-           # It comes from the Poisson model of mutations: the probability
-           # of zero mutations is exp(-theta * t), so the probability of
-           # at least one is 1 - exp(-theta * t).
-           p_het = 1 - np.exp(-theta * t)
-
-           # np.random.binomial(1, p) performs a single Bernoulli trial:
-           # it returns 1 with probability p and 0 with probability 1-p.
-           # This is the "coin flip" that determines whether the bin is
-           # heterozygous. The name "binomial" comes from the binomial
-           # distribution; with n=1 trial, it reduces to a Bernoulli trial.
-           seq[a] = np.random.binomial(1, p_het)
-           coal_times[a] = t
-
-           if a < L - 1:
-               # Recombination? The probability of at least one recombination
-               # on the pair of branches (total length 2t, rate rho/2 each)
-               # is 1 - exp(-rho * t). See the SMC chapter for the derivation.
-               if np.random.random() < 1 - np.exp(-rho * t):
-                   # Recombination occurred. Pick a time u uniformly on [0, t]
-                   # (the recombination can strike anywhere on the branch).
-                   u = np.random.uniform(0, t)
-
-                   # Re-coalescence: starting from time u, wait an Exp(1) time
-                   # for the detached lineage to find the other lineage again.
-                   # np.random.exponential(1.0) draws from Exp(rate=1),
-                   # where the scale parameter equals 1/rate = 1.0.
-                   t = u + np.random.exponential(1.0)
-               # If no recombination, t stays the same (the coalescence time
-               # carries over to the next bin unchanged).
-
-       return seq, coal_times
 
    # Simulate a short genome.
    # np.random.seed(42) makes the random number generator reproducible:

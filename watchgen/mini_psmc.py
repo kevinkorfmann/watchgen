@@ -28,7 +28,7 @@ from individual whole-genome sequences. Nature, 475, 493-496.
 
 import numpy as np
 from scipy.integrate import quad
-from scipy.optimize import minimize
+from scipy.optimize import brentq, minimize
 
 
 # ============================================================
@@ -133,7 +133,11 @@ def full_transition_density(t, s, rho, lambda_func, tol=1e-8):
     point_mass : float
         The weight of the point mass at t = s (nonzero only when |t - s| < tol).
     """
-    recomb_prob = 1.0 - np.exp(-rho * s)
+    if s < 0 or rho < 0:
+        raise ValueError("s and rho must be non-negative")
+    if s == 0:
+        return 0.0, 1.0 if abs(t) < tol else 0.0
+    recomb_prob = -np.expm1(-rho * s)
     if abs(t - s) < tol:
         q_ts = psmc_transition_density_general(t, s, lambda_func)
         return recomb_prob * q_ts, np.exp(-rho * s)
@@ -146,34 +150,52 @@ def full_stationary(t, lambda_func, rho, C_pi=None, C_sigma=None):
 
     sigma(t) = pi(t) / (C_sigma * (1 - exp(-rho*t)))
     """
+    if t < 0 or rho <= 0:
+        raise ValueError("t must be non-negative and rho must be positive")
     if C_pi is None:
         C_pi = compute_C_pi(lambda_func)
-    pi_t = stationary_distribution(t, lambda_func, C_pi)
     if C_sigma is None:
         C_sigma = compute_C_sigma(lambda_func, rho, C_pi)
-    return pi_t / (C_sigma * (1 - np.exp(-rho * t)))
+    if t == 0:
+        return 1.0 / (C_pi * C_sigma * rho * lambda_func(0.0))
+    pi_t = stationary_distribution(t, lambda_func, C_pi)
+    return pi_t / (C_sigma * -np.expm1(-rho * t))
 
 
 def compute_C_sigma(lambda_func, rho, C_pi=None, t_max=20):
     """Compute C_sigma = integral pi(t) / (1 - exp(-rho*t)) dt."""
+    if rho <= 0 or t_max <= 0:
+        raise ValueError("rho and t_max must be positive")
     if C_pi is None:
         C_pi = compute_C_pi(lambda_func)
 
     def integrand(t):
-        return stationary_distribution(t, lambda_func, C_pi) / (1 - np.exp(-rho * t))
+        if t == 0:
+            return 1.0 / (C_pi * rho * lambda_func(0.0))
+        return stationary_distribution(t, lambda_func, C_pi) / -np.expm1(-rho * t)
 
-    C_sigma, _ = quad(integrand, 1e-6, t_max)
+    C_sigma, _ = quad(integrand, 0, t_max)
     return C_sigma
 
 
 def estimate_theta_initial(seq):
-    """Estimate theta_0 from the observed fraction of het sites.
+    """Return the original PSMC initialization for ``theta_0``.
 
-    Uses the exact inversion: if P(het) = 1 - exp(-theta), then
-    theta = -log(1 - P(het)).
+    PSMC uses ``-log(1 - fraction_heterozygous)`` as an initial value.
+    Observations greater than one denote missing bins and are excluded.
+    This is an initialization heuristic, not the exact marginal estimator
+    under a random coalescence time.
     """
-    frac_het = np.mean(seq)
-    return -np.log(1 - frac_het)
+    seq = np.asarray(seq)
+    observed = seq[seq < 2]
+    if observed.size == 0:
+        raise ValueError("sequence contains no callable bins")
+    if np.any((observed != 0) & (observed != 1)):
+        raise ValueError("observed bins must be encoded as 0 or 1")
+    frac_het = np.mean(observed)
+    if frac_het >= 1:
+        return np.inf
+    return -np.log1p(-frac_het)
 
 
 # ============================================================
@@ -200,7 +222,11 @@ def compute_time_intervals(n, t_max, alpha=0.1):
     t : ndarray of shape (n + 2,)
         Boundaries [t_0, t_1, ..., t_n, t_{n+1}].
     """
-    beta = np.log(1 + t_max / alpha) / n
+    if not isinstance(n, (int, np.integer)) or n < 1:
+        raise ValueError("n must be a positive integer")
+    if t_max <= 0 or t_max >= 1000 or alpha <= 0:
+        raise ValueError("require 0 < t_max < 1000 and alpha > 0")
+    beta = np.log1p(t_max / alpha) / n
     t = np.zeros(n + 2)
     for k in range(n):
         t[k] = alpha * (np.exp(beta * k) - 1)
@@ -220,6 +246,13 @@ def compute_helpers(n, t, lambdas):
     q_aux : ndarray -- auxiliary quantity for transition matrix
     C_pi : float -- normalization constant
     """
+    t = np.asarray(t, dtype=float)
+    lambdas = np.asarray(lambdas, dtype=float)
+    if t.shape != (n + 2,) or lambdas.shape != (n + 1,):
+        raise ValueError("t and lambdas have incompatible lengths")
+    if np.any(np.diff(t) <= 0) or np.any(lambdas <= 0):
+        raise ValueError("time boundaries and lambdas must be strictly positive")
+
     tau = np.zeros(n + 1)
     alpha = np.zeros(n + 2)
     beta = np.zeros(n + 1)
@@ -278,9 +311,8 @@ def compute_transition_matrix(n, tau, alpha, beta, q_aux, lambdas,
         ak1 = alpha[k] - alpha[k + 1]
         cpik = ak1 * (sum(tau[:k]) + lambdas[k]) - alpha[k + 1] * tau[k]
 
-        if cpik < 1e-30:
-            q[k, :] = 1.0 / N
-            continue
+        if cpik <= 0 or not np.isfinite(cpik):
+            raise FloatingPointError("invalid event-chain interval mass")
 
         for l in range(k):
             q[k, l] = ak1 / cpik * q_aux[l]
@@ -348,6 +380,8 @@ def parse_pattern(pattern):
     n_intervals : int
         Total number of atomic intervals (= n + 1).
     """
+    if not isinstance(pattern, str) or not pattern:
+        raise ValueError("pattern must be a non-empty string")
     par_map = []
     free_idx = 0
 
@@ -355,12 +389,16 @@ def parse_pattern(pattern):
         if '*' in part:
             count, width = part.split('*')
             count, width = int(count), int(width)
+            if count <= 0 or width <= 0:
+                raise ValueError("pattern counts and widths must be positive")
             for _ in range(count):
                 for _ in range(width):
                     par_map.append(free_idx)
                 free_idx += 1
         else:
             width = int(part)
+            if width <= 0:
+                raise ValueError("pattern widths must be positive")
             for _ in range(width):
                 par_map.append(free_idx)
             free_idx += 1
@@ -394,9 +432,18 @@ def build_psmc_hmm(n, t_max, theta, rho, lambdas, par_map=None, alpha_param=0.1)
     emissions : ndarray of shape (2, n+1)
     initial : ndarray of shape (n+1,)
     """
+    if theta < 0 or rho <= 0:
+        raise ValueError("theta must be non-negative and rho must be positive")
+    lambdas = np.asarray(lambdas, dtype=float)
+    if np.any(~np.isfinite(lambdas)) or np.any(lambdas <= 0):
+        raise ValueError("lambdas must be finite and positive")
     if par_map is not None:
+        if len(par_map) != n + 1 or min(par_map) < 0 or max(par_map) >= len(lambdas):
+            raise ValueError("par_map is incompatible with n and lambdas")
         full_lambdas = np.array([lambdas[par_map[k]] for k in range(n + 1)])
     else:
+        if len(lambdas) != n + 1:
+            raise ValueError("lambdas must contain n + 1 values")
         full_lambdas = lambdas
 
     t = compute_time_intervals(n, t_max, alpha_param)
@@ -628,9 +675,9 @@ def psmc_em_step(hmm, seq, par_map=None):
             return 1e30
 
         Q = 0.0
-        for k in range(N):
-            if initial[k] > 0:
-                Q += gamma_sum[k] * np.log(initial[k] + 1e-300) / len(seq)
+        # Match the original PSMC objective (khmm.c:hmm_Q), which optimizes
+        # emission and transition terms only. Average state occupancy is not
+        # a valid substitute for the posterior initial-state count.
 
         for k in range(N):
             for l in range(N):
@@ -686,8 +733,11 @@ def psmc_inference(seq, n=63, t_max=15.0, theta_rho_ratio=5.0,
     par_map, n_free, n_intervals = parse_pattern(pattern)
     assert n_intervals == N, f"Pattern gives {n_intervals} intervals, need {N}"
 
-    frac_het = np.mean(seq[seq < 2])
-    theta = -np.log(1.0 - frac_het)
+    theta = estimate_theta_initial(seq)
+    if not np.isfinite(theta) or theta <= 0:
+        raise ValueError(
+            "PSMC inference requires at least one homozygous and one "
+            "heterozygous callable bin")
     rho = theta / theta_rho_ratio
 
     free_lambdas = np.ones(n_free)
@@ -790,8 +840,19 @@ def scale_mutation_free(theta_0, lambdas, t_boundaries, s=100):
 
 
 def correct_for_coverage(theta_0, fnr):
-    """Correct theta_0 for false negative rate on heterozygotes."""
-    return theta_0 / (1 - fnr)
+    """Correct the bin-level theta initialization for heterozygote FNR.
+
+    Converts ``theta`` back to a heterozygous-bin probability, corrects that
+    probability, and then applies the inverse transformation. Dividing theta
+    directly by ``1 - fnr`` is only the small-theta approximation.
+    """
+    if theta_0 < 0 or not 0 <= fnr < 1:
+        raise ValueError("theta_0 must be non-negative and 0 <= fnr < 1")
+    p_observed = -np.expm1(-theta_0)
+    p_true = p_observed / (1 - fnr)
+    if p_true >= 1:
+        raise ValueError("false-negative correction implies probability >= 1")
+    return -np.log1p(-p_true)
 
 
 def split_sequence(seq, segment_length=50000):
@@ -811,9 +872,19 @@ def bootstrap_resample(segments, total_length):
     return replicate[:total_length]
 
 
-def check_overfitting(sigma_k, C_sigma, threshold=20):
-    """Check which intervals have too few expected segments."""
-    expected_segments = C_sigma * sigma_k
+def check_overfitting(pi_k, C_sigma, threshold=20):
+    """Apply the interval-support diagnostic from the PSMC derivation.
+
+    Li's PSMC notes use ``C_sigma * pi_k``. Here ``pi_k`` is the stationary
+    distribution of the embedded recombination-event chain, not the full-chain
+    occupancy ``sigma_k``.
+    """
+    pi_k = np.asarray(pi_k, dtype=float)
+    if pi_k.ndim != 1 or np.any(pi_k < 0):
+        raise ValueError("pi_k must be a one-dimensional probability vector")
+    if C_sigma <= 0 or threshold < 0:
+        raise ValueError("C_sigma must be positive and threshold non-negative")
+    expected_segments = C_sigma * pi_k
     warnings = []
     for k, exp_seg in enumerate(expected_segments):
         if exp_seg < threshold:
@@ -863,8 +934,11 @@ def goodness_of_fit_sigma(hmm, seq):
     sigma_data = np.zeros(N)
     for pos in range(len(seq)):
         gamma = alpha_hat[pos] * beta_hat[pos]
-        sigma_data += gamma
-    sigma_data /= sigma_data.sum()
+        total = gamma.sum()
+        if total <= 0:
+            raise FloatingPointError("posterior state probabilities vanished")
+        sigma_data += gamma / total
+    sigma_data /= len(seq)
 
     G_sigma = 0.0
     for k in range(N):
@@ -901,21 +975,39 @@ def simulate_psmc_input(L, theta, rho, lambda_func, n_bins=None):
     coal_times : ndarray of shape (L,)
         True coalescence times.
     """
+    if L <= 0:
+        raise ValueError("L must be positive")
+    if theta < 0 or rho < 0:
+        raise ValueError("theta and rho must be non-negative")
+
     seq = np.zeros(L, dtype=int)
     coal_times = np.zeros(L)
 
     def _sample_coalescence_time(lambda_func, t_start=0.0):
         """Sample coalescence time under variable population size."""
-        t = t_start
-        while True:
-            # Rate at current time: 1/lambda(t)
-            lam = lambda_func(t)
-            dt = np.random.exponential(lam)
-            # Thinning: accept with probability lambda(t)/lambda(t+dt)
-            # For piecewise constant lambda, just use the rate directly
-            t += dt
-            # Accept (simplified for piecewise-constant lambda)
-            return t
+        target = np.random.exponential(1.0)
+
+        def integrated_hazard(t):
+            value, _ = quad(lambda u: 1.0 / lambda_func(u), t_start, t)
+            return value
+
+        lam_start = float(lambda_func(t_start))
+        if not np.isfinite(lam_start) or lam_start <= 0:
+            raise ValueError("lambda_func must return finite positive values")
+
+        upper = t_start + max(lam_start * target, 1e-12)
+        for _ in range(80):
+            hazard = integrated_hazard(upper)
+            if not np.isfinite(hazard):
+                raise ValueError("lambda_func produced a non-finite hazard")
+            if hazard >= target:
+                return brentq(
+                    lambda t: integrated_hazard(t) - target,
+                    t_start,
+                    upper,
+                )
+            upper = t_start + 2.0 * (upper - t_start)
+        raise ValueError("cumulative coalescence hazard did not reach sample target")
 
     t = _sample_coalescence_time(lambda_func)
     coal_times[0] = t
