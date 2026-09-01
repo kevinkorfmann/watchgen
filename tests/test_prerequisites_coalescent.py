@@ -26,7 +26,8 @@ def wright_fisher_forward(two_N, n_generations):
     Returns
     -------
     parent_table : ndarray of shape (n_generations, two_N)
-        parent_table[g, i] = parent index of individual i in generation g.
+           parent_table[g, i] = parental-copy index of offspring copy i for
+           the transition represented by row g.
     """
     parent_table = np.zeros((n_generations, two_N), dtype=int)
     for g in range(n_generations):
@@ -296,9 +297,10 @@ class TestSimulateCoalescent:
 # ---------------------------------------------------------------------------
 
 def expected_lineages(t, n):
-    """Expected number of lineages at time t for n initial samples.
+    """Mean-field approximation to the lineage count at time t.
 
-    Uses the large-n deterministic approximation (Frost & Volz, 2010).
+    Uses the deterministic mean-field approximation analyzed by
+    Jewett and Rosenberg (2014).
 
     Parameters
     ----------
@@ -310,7 +312,7 @@ def expected_lineages(t, n):
     Returns
     -------
     float
-        Expected number of lineages at time t.
+        Approximate expected number of lineages at time t.
     """
     return n / (n + (1 - n) * np.exp(-t / 2))
 
@@ -337,7 +339,7 @@ def simulate_lineage_count(n, t, n_replicates=10000):
 
 
 class TestExpectedLineages:
-    """Tests for the expected_lineages analytical formula."""
+    """Tests for the expected_lineages mean-field approximation."""
 
     def test_at_time_zero_returns_n(self):
         """At t=0, the number of lineages should be n."""
@@ -406,9 +408,9 @@ class TestSimulateLineageCount:
 def add_mutations(events, n, theta, seq_length=1):
     """Add mutations to a coalescent tree under the infinite sites model.
 
-    For each branch in the tree, we draw a Poisson number of mutations
-    (proportional to the branch length and the mutation rate), and place
-    each mutation at a random position along the genome.
+        For each branch in the tree, we draw a Poisson number of mutations
+        (proportional to the branch length and the mutation rate), and place
+        each mutation at a random position on a continuous genome.
 
     Parameters
     ----------
@@ -418,8 +420,8 @@ def add_mutations(events, n, theta, seq_length=1):
         Number of samples (leaf nodes, labeled 0 to n-1).
     theta : float
         Population-scaled mutation rate (4*Ne*mu).
-    seq_length : int
-        Sequence length in base pairs.
+    seq_length : float
+        Length of the continuous genomic interval, in base-pair units.
 
     Returns
     -------
@@ -428,10 +430,8 @@ def add_mutations(events, n, theta, seq_length=1):
         sits on, and the time at which it occurred.
     """
     node_times = {i: 0.0 for i in range(n)}
-    children = {}
     for t, c1, c2, p in events:
         node_times[p] = t
-        children[p] = (c1, c2)
 
     mutations = []
     root = events[-1][3]
@@ -484,7 +484,7 @@ class TestAddMutations:
         events = simulate_coalescent(8)
         muts = add_mutations(events, 8, theta=50, seq_length=seq_length)
         for pos, _, _ in muts:
-            assert 0 <= pos <= seq_length
+            assert 0 <= pos < seq_length
 
     def test_mutation_times_positive(self):
         """All mutation times should be positive (they occur on branches above time 0)."""
@@ -531,10 +531,10 @@ class TestAddMutations:
         assert abs(mean_muts - expected_muts) / expected_muts < 0.1
 
     def test_doc_example_runs(self):
-        """Run the documented example: seed=42, n=10, theta=100, seq_length=1000."""
+        """Run the documented example: seed=42, n=10, theta=0.001, L=1000."""
         np.random.seed(42)
         events = simulate_coalescent(10)
-        mutations = add_mutations(events, 10, theta=100, seq_length=1000)
-        # The doc says it prints "Number of segregating sites: {len(mutations)}"
+        mutations = add_mutations(events, 10, theta=0.001, seq_length=1000)
+        # Under infinite sites, each mutation creates a segregating site.
         assert len(mutations) >= 0
         assert isinstance(mutations, list)

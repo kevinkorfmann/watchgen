@@ -55,10 +55,12 @@ are :math:`2N` gene copies in the population.
 
    Diploid organisms (including humans) carry two copies of each chromosome. When we
    track a single locus, there are :math:`2N` copies in the population -- two per
-   individual. We often write :math:`N_e` for the **effective population size** (which
-   accounts for various complications like unequal sex ratios or fluctuating population
-   size), and the total number of gene copies is :math:`2N_e`. For now, just think of
-   :math:`2N` as "the total number of gene copies we're tracking."
+   individual. In this idealized model :math:`N` is both the census size and
+   the parameter controlling drift. In real populations, :math:`N_e` is an
+   **effective** size chosen to match a specified aspect of the ancestry or
+   drift process; :math:`2N_e` is a coalescent time scale, not generally the
+   literal number of gene copies. For now, :math:`2N` is the actual number of
+   copies in the Wright--Fisher population.
 
 In the **Wright-Fisher model**, reproduction works like this:
 
@@ -98,7 +100,8 @@ explain each function as we use it.
        Returns
        -------
        parent_table : ndarray of shape (n_generations, two_N)
-           parent_table[g, i] = parent index of individual i in generation g.
+           parent_table[g, i] = parental-copy index of offspring copy i for
+           the transition represented by row g.
        """
        # np.zeros creates an array filled with zeros.
        # dtype=int means the entries are integers (parent indices).
@@ -117,7 +120,7 @@ explain each function as we use it.
    # you'll get the same result every time you run this code.
    np.random.seed(42)
    parents = wright_fisher_forward(10, 20)
-   print("Parent of each individual in generation 0 (most recent):")
+   print("Parent of each gene copy in the first simulated transition:")
    print(parents[0])
 
 Notice what the code does: in each generation, every gene copy independently picks a
@@ -168,11 +171,12 @@ and a *different* parent with probability:
    This follows directly from the Wright-Fisher model: each gene copy in the
    next generation picks its parent *independently* and *uniformly* from the
    :math:`2N` copies. The "uniformly" gives us :math:`1/(2N)` and the
-   "independently" lets us treat the two lineages separately. For large :math:`N`,
-   sampling with replacement (WF model) and without replacement are nearly
-   identical -- the error is :math:`O(1/N^2)`.
+   "independently" lets us treat the two draws separately. Sampling *with*
+   replacement is essential here: sampling parental copies without replacement
+   would forbid the two lineages from choosing the same copy and hence would
+   eliminate coalescence in that generation.
 
-For human populations where :math:`N_e \approx 10{,}000`, we get :math:`2N = 20{,}000`,
+For an idealized population with :math:`N=10{,}000`, we get :math:`2N = 20{,}000`,
 so the probability of coalescence in any given generation is just :math:`1/20{,}000 =
 0.00005`. That's tiny! This means that for most generations, nothing happens -- the
 two lineages just independently trace back to different parents. But over thousands of
@@ -316,16 +320,18 @@ generations, is approximately exponentially distributed with rate 1.
    "clock speed" of the coalescent -- it makes the coalescence rate for a pair
    exactly 1, which simplifies all subsequent mathematics enormously.
 
-   From now on, unless stated otherwise, **all times in this book are measured in
-   coalescent time units** (multiples of :math:`2N` generations).
+   From now on in this chapter, unless stated otherwise, time is measured in
+   **coalescent units** of :math:`2N` generations. Other chapters sometimes use
+   generations directly or state a different conventional scaling.
 
 .. admonition:: How good is the approximation?
 
-   The geometric and exponential distributions agree closely even for moderate
-   :math:`N`. For :math:`2N = 100`, the relative error in the survival function
-   is less than 1% for all :math:`\tau`. For :math:`2N = 1000`, it's less than 0.1%.
-   In practice, effective population sizes are in the thousands to millions, so
-   the approximation is excellent.
+   The convergence is pointwise in :math:`\tau`, not uniform over all time:
+   the relative error eventually grows in the far tail. For the interval
+   :math:`0\leq\tau\leq2`, the relative error in the survival function is
+   about 1% or less when :math:`2N=100`, and about 0.1% or less when
+   :math:`2N=1000`. Typical effective sizes make the approximation excellent
+   over ordinary coalescent time horizons.
 
 Let's verify this with simulation. We'll directly simulate pairs of lineages picking
 random parents until they coalesce, repeat many times, and check that the distribution
@@ -384,9 +390,12 @@ The Coalescent with :math:`n` Samples
 
 So far we've considered just two lineages. What happens with :math:`n` samples?
 
-The key insight is that coalescence events happen between **pairs** of lineages, and
-each pair behaves independently. When there are :math:`k` lineages remaining, we
-need to count how many pairs there are and figure out how quickly one of them coalesces.
+The key insight in Kingman's large-population limit is that mergers are
+binary and exchangeable :cite:`kingman1982`. When there are :math:`k`
+lineages remaining, we count the possible pairs and determine the rate of the
+next merger. The finite Wright--Fisher ancestry can contain simultaneous or
+multiple mergers; their probabilities vanish under the usual fixed-sample,
+:math:`N\to\infty` scaling.
 
 **Counting pairs.** The number of distinct pairs you can form from :math:`k` items
 is the **binomial coefficient**:
@@ -402,8 +411,10 @@ is the **binomial coefficient**:
    {A, B} is the same as {B, A}), so divide by 2. For :math:`k = 5`:
    :math:`\binom{5}{2} = 5 \times 4 / 2 = 10` pairs.
 
-Since each pair coalesces independently at rate 1 (in coalescent time units), and
-there are :math:`\binom{k}{2}` pairs, the **total coalescence rate** is:
+In the limiting continuous-time chain, each pair has instantaneous merger
+hazard 1 in these coalescent units. Equivalently, one may construct independent
+rate-1 exponential clocks for the currently available pairs. Therefore the
+**total coalescence rate** is:
 
 .. math::
 
@@ -495,11 +506,11 @@ survive.
    (in coalescent time units). Adding more samples barely changes the tree
    height! Here are the numbers:
 
-   - :math:`n = 2`: TMRCA = 1.000
-   - :math:`n = 5`: TMRCA = 1.600
-   - :math:`n = 10`: TMRCA = 1.800
-   - :math:`n = 100`: TMRCA = 1.980
-   - :math:`n = 1000`: TMRCA = 1.998
+   - :math:`n = 2`: :math:`\mathbb{E}[T_{\rm MRCA}] = 1.000`
+   - :math:`n = 5`: :math:`\mathbb{E}[T_{\rm MRCA}] = 1.600`
+   - :math:`n = 10`: :math:`\mathbb{E}[T_{\rm MRCA}] = 1.800`
+   - :math:`n = 100`: :math:`\mathbb{E}[T_{\rm MRCA}] = 1.980`
+   - :math:`n = 1000`: :math:`\mathbb{E}[T_{\rm MRCA}] = 1.998`
 
    The diminishing returns are dramatic. Most coalescent events happen quickly when
    there are many lineages (the rate :math:`k(k-1)/2` is huge), so the tree rapidly
@@ -575,20 +586,26 @@ Let's implement the full coalescent simulation:
    print(f"\nTMRCA = {events[-1][0]:.4f}")
    print(f"Expected TMRCA = {2*(1 - 1/5):.4f}")
 
-Read through the output carefully. You'll see that the first few coalescence events
-happen quickly (when there are many lineages competing), while the final coalescence
-to the MRCA takes longer. This matches the theory: the rate drops from
-:math:`\binom{5}{2} = 10` down to :math:`\binom{2}{2} = 1`.
+Read through the output carefully. Early waiting times are shorter *on
+average* because there are more possible pairs, while the final waiting time
+has the largest mean. A single realization need not appear in that order. The
+rate drops from :math:`\binom{5}{2}=10` to
+:math:`\binom{2}{2}=1`.
 
 Expected Number of Lineages at Time :math:`t`
 ===============================================
 
-A result that will be critical for the SINGER algorithm: given :math:`n` samples,
-what is the expected number of lineages remaining at time :math:`t`?
+A useful approximation for the SINGER algorithm asks: given :math:`n`
+samples, how many lineages remain at time :math:`t` on a typical coalescent
+genealogy?
 
-Frost and Volz (2010) showed that for large :math:`n`, the number of lineages
-:math:`\lambda(t)` is nearly deterministic and satisfies the **ordinary differential
-equation (ODE)**:
+Let :math:`K(t)` be the random lineage count. Its exact mean obeys
+:math:`d\mathbb{E}[K]/dt=-\mathbb{E}[K(K-1)]/2`, which is not closed because it
+depends on the second moment. The deterministic approximation replaces
+:math:`\mathbb{E}[K(K-1)]` by
+:math:`\mathbb{E}[K](\mathbb{E}[K]-1)`. Writing the resulting smooth
+approximation as :math:`\lambda(t)` gives the **ordinary differential
+equation (ODE)** :cite:`jewett_rosenberg2014`:
 
 .. math::
 
@@ -601,10 +618,11 @@ with initial condition :math:`\lambda(0) = n`.
    A differential equation relates a quantity to its rate of change. Here,
    :math:`d\lambda/dt` is the rate at which the number of lineages changes
    over time. The equation says: the rate of decrease equals the number of
-   possible pairs, :math:`\binom{\lambda}{2}`. This makes sense because each
-   coalescence (which reduces :math:`\lambda` by 1) happens at rate
-   :math:`\binom{\lambda}{2}`. The minus sign indicates that :math:`\lambda`
-   is decreasing.
+   mean-field number of possible pairs, :math:`\binom{\lambda}{2}`. For the
+   stochastic process, a coalescence reduces :math:`K` by 1 and occurs at rate
+   :math:`\binom{K}{2}`; replacing the random quadratic rate by the quadratic
+   of the mean is the approximation. The minus sign indicates that
+   :math:`\lambda` decreases.
 
    Solving a differential equation means finding a function :math:`\lambda(t)`
    that satisfies this relationship. We do this below using a technique called
@@ -680,9 +698,10 @@ Let's verify this formula by comparing it to simulation:
 .. code-block:: python
 
    def expected_lineages(t, n):
-       """Expected number of lineages at time t for n initial samples.
+       """Mean-field approximation to the lineage count at time t.
 
-       Uses the large-n deterministic approximation (Frost & Volz, 2010).
+       Uses the deterministic mean-field approximation analyzed by
+       Jewett and Rosenberg (2014).
 
        Parameters
        ----------
@@ -694,7 +713,7 @@ Let's verify this formula by comparing it to simulation:
        Returns
        -------
        float
-           Expected number of lineages at time t.
+           Approximate expected number of lineages at time t.
        """
        return n / (n + (1 - n) * np.exp(-t / 2))
 
@@ -724,8 +743,10 @@ Let's verify this formula by comparing it to simulation:
        simulated = simulate_lineage_count(n, t, n_replicates=5000)
        print(f"t={t:.2f}: approx={approx:.2f}, simulated={simulated:.2f}")
 
-The agreement should be excellent, especially for :math:`n = 50`, confirming that the
-deterministic approximation captures the coalescent dynamics well.
+The agreement should be close for this grid at :math:`n=50`. It is not an
+identity: accuracy depends on time and sample size, and the exact expected
+lineage count is obtained from the pure-death transition probabilities rather
+than this closed ODE :cite:`jewett_rosenberg2014`.
 
 Mutations on the Coalescent Tree
 ==================================
@@ -734,7 +755,8 @@ So far, the coalescent tells us about the genealogical tree -- its shape and tim
 But what we actually *observe* in real data is not the tree itself, but **mutations**:
 differences between DNA sequences at specific positions.
 
-Mutations are added to the coalescent tree under the **infinite sites model**:
+Mutations are added to the coalescent tree here under the **infinite-sites
+model**:
 
 - Each mutation occurs at a unique position on the genome (no position mutates twice)
 - Mutations arise as a **Poisson process** along each branch of the tree
@@ -747,7 +769,7 @@ Mutations are added to the coalescent tree under the **infinite sites model**:
    per generation. A branch of length :math:`\ell` in coalescent time units
    corresponds to :math:`2N_e \cdot \ell` generations (since 1 coalescent unit =
    :math:`2N_e` generations). The expected number of mutations on this branch at a
-   single site is:
+   per base pair is:
 
    .. math::
 
@@ -782,15 +804,17 @@ Mutations are added to the coalescent tree under the **infinite sites model**:
    the total mutation count converges to a Poisson distribution (this is the
    **Poisson limit theorem**).
 
-The number of mutations on a branch of length :math:`\ell` follows a Poisson
-distribution with mean :math:`\theta\ell/2`. The probability that a branch carries
-**no** mutations at a single site is:
+On a continuous genomic region of length :math:`B`, the number of mutations on
+a branch of length :math:`\ell` follows a Poisson distribution with mean
+:math:`\theta\ell B/2`; independently sampled continuous positions are unique
+with probability one. Setting :math:`B=1` for one unit of sequence, the
+probability that a branch carries **no** mutation in that unit is:
 
 .. math::
 
    P(\text{no mutation}) = \frac{(\theta\ell/2)^0}{0!} e^{-\theta\ell/2} = \exp\left(-\frac{\theta}{2} \ell\right)
 
-and the probability of **at least one** mutation is:
+and the probability of **at least one** mutation in that unit is:
 
 .. math::
 
@@ -803,11 +827,12 @@ For small :math:`\theta\ell/2`, we can use the approximation :math:`e^{-x} \appr
 
    P(\text{mutation}) \approx \frac{\theta}{2}\ell \quad \text{when } \frac{\theta}{2}\ell \ll 1
 
-For human data, :math:`\mu \approx 1.25 \times 10^{-8}` per bp per generation
-and :math:`N_e \approx 10{,}000`, giving :math:`\theta \approx 5 \times 10^{-4}`
-per bp. Since branch lengths are :math:`O(1)` in coalescent units,
-:math:`\theta\ell/2 \approx 2.5 \times 10^{-4}`, so the linear approximation
-is excellent for per-site calculations.
+For a representative human mutation rate of order :math:`10^{-8}` per bp per
+generation and :math:`N_e` of order :math:`10^4`, :math:`\theta` is of order
+:math:`10^{-4}` per bp. Since branch lengths are :math:`O(1)` in coalescent
+units, :math:`\theta\ell/2` is small, so the linear and infinite-sites
+approximations are often accurate per base. Across long regions, however,
+multiple mutations occur on a branch and the full Poisson count is needed.
 
 .. code-block:: python
 
@@ -816,7 +841,8 @@ is excellent for per-site calculations.
 
        For each branch in the tree, we draw a Poisson number of mutations
        (proportional to the branch length and the mutation rate), and place
-       each mutation at a random position along the genome.
+       each mutation at a random position on a continuous genome. Continuous
+       positions are unique with probability one, implementing infinite sites.
 
        Parameters
        ----------
@@ -826,8 +852,8 @@ is excellent for per-site calculations.
            Number of samples (leaf nodes, labeled 0 to n-1).
        theta : float
            Population-scaled mutation rate (4*Ne*mu).
-       seq_length : int
-           Sequence length in base pairs.
+       seq_length : float
+           Length of the continuous genomic interval, in base-pair units.
 
        Returns
        -------
@@ -837,10 +863,8 @@ is excellent for per-site calculations.
        """
        # Build a dictionary mapping each node to its time
        node_times = {i: 0.0 for i in range(n)}  # samples are at time 0
-       children = {}
        for t, c1, c2, p in events:
            node_times[p] = t
-           children[p] = (c1, c2)
 
        mutations = []
        root = events[-1][3]  # the root is the parent in the last event
@@ -866,8 +890,8 @@ is excellent for per-site calculations.
 
    np.random.seed(42)
    events = simulate_coalescent(10)
-   mutations = add_mutations(events, 10, theta=100, seq_length=1000)
-   print(f"Number of segregating sites: {len(mutations)}")
+   mutations = add_mutations(events, 10, theta=0.001, seq_length=1000)
+   print(f"Number of mutations (segregating sites here): {len(mutations)}")
 
 Summary
 =======
@@ -889,8 +913,8 @@ Timepiece in this book. Let's take stock of what you've built:
      - :math:`\mathbb{E}[T_{\text{MRCA}}] = 2(1 - 1/n)`
    * - Expected lineages at time :math:`t`
      - :math:`\lambda(t) \approx \frac{n}{n + (1-n)e^{-t/2}}`
-   * - Mutation probability on branch of length :math:`\ell`
-     - :math:`P(\text{mut}) = 1 - e^{-\theta\ell/2}`
+   * - Mutation probability on branch of length :math:`\ell`, per unit region
+     - :math:`P(\text{at least one mut}) = 1 - e^{-\theta\ell/2}`
 
 These results are the foundation -- the ticking mechanism at the heart of the watch.
 Everything that follows, from ARGs to HMMs to full ARG inference algorithms, builds
