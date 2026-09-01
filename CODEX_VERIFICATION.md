@@ -1,7 +1,7 @@
 # Codex verification ledger
 
 Last reconciled: 2026-09-01  
-Baseline: GitHub `main` at `d0d99a3`  
+Baseline: GitHub `main` at `c198881`  
 Scope: the current source-grounded, chapter-by-chapter Codex review campaign
 
 This ledger records **Codex verification**, not independent expert review or a
@@ -44,7 +44,7 @@ chapter review evidence, not necessarily the repository-wide total.
 |---:|---|---|---|---|
 | I | PSMC | `FOLLOW-UP` | `e7336e0` | Review commit exists. A later mini audit corrected infinite-tail normalization in the shared worktree; the fix and focused PSMC suite still need a dedicated pushed commit and clean completion. |
 | II | SMC++ | `VERIFIED` | `49a01f0` | 37 focused tests; upstream C++ CSFS parity within `2e-12`, transition parity within `2.4e-16`; 2,475-test broad run and strict Sphinx build passed. |
-| III | Li & Stephens HMM | `IN PROGRESS` | task `Review and fix book chapters` | Paper and `lshmm` parity audit completed substantial fixes; validation/commit packaging is still active, so the earlier date in the book table is not counted as campaign closure. |
+| III | Li & Stephens HMM | `VERIFIED` | `c198881` | Appendix A/PAC audit; haploid `lshmm` 0.0.8 parity within `3.6e-15`; optimized stochastic diploid recursion matched direct `O(k^4)` enumeration; 162 Python and 17 Rust tests, strict Sphinx build, and rendered-PDF review passed. |
 | IV | msprime | `FOLLOW-UP` | `60025dc` | Review commit exists. Later mini review fixed gap recombination and per-site/recurrent mutation-state handling in the shared worktree; those fixes need a dedicated pushed commit and final focused validation. |
 | V | ARGweaver | `NOT STARTED` | — | Requires original ARGweaver source/paper parity audit and chapter-scoped validation. |
 | VI | tsinfer | `NOT STARTED` | — | Requires upstream `tsinfer` parity fixtures and chapter-scoped validation. |
@@ -64,7 +64,7 @@ chapter review evidence, not necessarily the repository-wide total.
 ## Remaining campaign gates
 
 1. Push and validate the post-review PSMC and msprime mini fixes.
-2. Finish and push the active Li & Stephens HMM and SINGER reviews.
+2. Finish and push the active SINGER review.
 3. Review the eleven `NOT STARTED` Timepieces one chapter at a time.
 4. Reconcile `docs/timepieces/verification.rst` from this ledger after each pushed
    chapter, while preserving its independent-domain-expert disclaimer.
