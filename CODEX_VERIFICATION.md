@@ -47,7 +47,7 @@ chapter review evidence, not necessarily the repository-wide total.
 | III | Li & Stephens HMM | `VERIFIED` | `c198881` | Appendix A/PAC audit; haploid `lshmm` 0.0.8 parity within `3.6e-15`; optimized stochastic diploid recursion matched direct `O(k^4)` enumeration; 162 Python and 17 Rust tests, strict Sphinx build, and rendered-PDF review passed. |
 | IV | msprime | `VERIFIED` | `60025dc`, `dc10c1c` | Review plus parity closure; 209 focused tests covered source-matched gap recombination, per-site state independence, default discrete-genome recurrent/back mutations, genotype reconstruction, strict Sphinx build, and rendered-PDF review. |
 | V | ARGweaver | `NOT STARTED` | — | Requires original ARGweaver source/paper parity audit and chapter-scoped validation. |
-| VI | tsinfer | `NOT STARTED` | — | Requires upstream `tsinfer` parity fixtures and chapter-scoped validation. |
+| VI | tsinfer | `VERIFIED` | `629aa65` | 21 focused tests; three ancestor fixtures and both probability transforms matched official tsinfer 0.4.1 Python code; Ruff checks and a fresh strict 135-page Sphinx build passed. |
 | VII | SINGER | `VERIFIED` | `3c37ea7` | 35 focused equation/invariant tests; official C++ source at `eb8e39b` compiled and its CLI validation ran; corrected figures were rendered and inspected; strict 135-page Sphinx build passed. |
 | VIII | Threads | `NOT STARTED` | — | Requires paper/software parity audit and chapter-scoped validation. |
 | IX | tsdate | `NOT STARTED` | — | Requires upstream `tsdate` parity, dating-prior checks, and chapter-scoped validation. |
