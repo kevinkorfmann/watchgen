@@ -152,6 +152,8 @@ def exponential_race(*rates):
 def merge_segments(segs_a, segs_b):
     """Merge two segment lists (simplified: just concatenate and sort)."""
     all_segs = sorted(segs_a + segs_b)
+    if not all_segs:
+        return []
     merged = [all_segs[0]]
     for l, r in all_segs[1:]:
         if l <= merged[-1][1]:
@@ -189,7 +191,10 @@ def split_at_breakpoint(segs, bp):
 
 
 def coalescent_with_recombination_simple(n, L, rho, max_events=10000):
-    """A simple (but slow) coalescent with recombination.
+    """A count-level event sketch for the coalescent with recombination.
+
+    This teaching helper does not retain parent-child ancestry or return a
+    tree sequence; use :class:`MinimalSimulator` for a genealogical result.
 
     Parameters
     ----------
@@ -198,7 +203,7 @@ def coalescent_with_recombination_simple(n, L, rho, max_events=10000):
     L : float
         Genome length.
     rho : float
-        Population-scaled recombination rate (4*Ne*r*L).
+        Diploid population-scaled recombination rate (4*Ne*r*L).
 
     Returns
     -------
@@ -261,7 +266,7 @@ def coalescent_waiting_time_growth(k, N0, alpha, t0):
     k : int
         Number of lineages.
     N0 : float
-        Current population size.
+        Population size at time zero.
     alpha : float
         Growth rate (positive = population was smaller in the past).
     t0 : float
@@ -278,8 +283,7 @@ def coalescent_waiting_time_growth(k, N0, alpha, t0):
     if alpha == 0:
         return N0 * u
 
-    dt = 0
-    z = 1 + alpha * N0 * math.exp(-alpha * dt) * u
+    z = 1 + alpha * N0 * math.exp(-alpha * t0) * u
     if z <= 0:
         return np.inf
 
@@ -593,14 +597,13 @@ class MinimalSimulator:
         self.t = 0.0
 
         self.recomb_rate = recombination_rate
-        self.rho = 4 * pop_size * recombination_rate * sequence_length
+        # This teaching simulator uses a haploid population-size convention.
+        self.rho = 2 * pop_size * recombination_rate * sequence_length
 
         self.max_segs = 100 * n
         self.segments = [None] * (self.max_segs + 1)
         self.free_segs = list(range(self.max_segs, 0, -1))
         self.mass_index = FenwickTree(self.max_segs)
-
-        self.S = {0: n, sequence_length: -1}
 
         self.lineages = []
         for i in range(n):
@@ -625,10 +628,7 @@ class MinimalSimulator:
 
     def is_completed(self):
         """Check if all positions have found their MRCA."""
-        for x, count in self.S.items():
-            if count > 1:
-                return False
-        return True
+        return len(self.lineages) == 0
 
     def get_recomb_mass(self, seg):
         """Recombination mass of a segment."""
@@ -660,6 +660,59 @@ class MinimalSimulator:
 
         return self.edges, self.nodes
 
+    @staticmethod
+    def _segments_in(lineage):
+        """Return the segments in a lineage as a list."""
+        segments = []
+        seg = lineage.head
+        while seg is not None:
+            segments.append(seg)
+            seg = seg.next
+        return segments
+
+    def _register_lineage(self, lineage):
+        """Set lineage pointers and recombination masses for one chain."""
+        segments = self._segments_in(lineage)
+        if not segments:
+            return
+        lineage.head = segments[0]
+        lineage.tail = segments[-1]
+        for seg in segments:
+            seg.lineage = lineage
+            self.mass_index.set_value(seg.index, self.get_recomb_mass(seg))
+
+    def _release_segments(self, segments):
+        """Return segments to the simulator's small educational pool."""
+        for seg in segments:
+            self.mass_index.set_value(seg.index, 0.0)
+            self.segments[seg.index] = None
+            self.free_segs.append(seg.index)
+
+    def _alloc_segment(self, left, right, node):
+        if not self.free_segs:
+            raise RuntimeError(
+                "Segment pool exhausted; reduce the recombination rate or "
+                "increase MinimalSimulator.max_segs"
+            )
+        index = self.free_segs.pop()
+        seg = Segment(index=index, left=left, right=right, node=node)
+        self.segments[index] = seg
+        return seg
+
+    @staticmethod
+    def _node_at(segments, position):
+        for seg in segments:
+            if seg.left <= position < seg.right:
+                return seg.node
+        return None
+
+    def _coverage(self, lineages, position):
+        """Count extant ancestors at a genomic position."""
+        return sum(
+            self._node_at(self._segments_in(lineage), position) is not None
+            for lineage in lineages
+        )
+
     def _recombination_event(self):
         """Handle a recombination event: split one lineage into two."""
         self.num_re_events += 1
@@ -674,111 +727,107 @@ class MinimalSimulator:
         if bp <= y.left or bp >= y.right:
             return
 
-        new_idx = self.free_segs.pop()
-        alpha = Segment(index=new_idx, left=bp, right=y.right,
-                        node=y.node)
-        self.segments[new_idx] = alpha
-        alpha.next = y.next
-        if y.next is not None:
-            y.next.prev = alpha
-        y.next = None
-        y.right = bp
-
-        self.mass_index.set_value(y.index, self.get_recomb_mass(y))
-        self.mass_index.set_value(alpha.index,
-                                  self.recomb_rate * (alpha.right - alpha.left))
-
         old_lin = y.lineage
-        old_lin.tail = y
-        new_lin = Lineage(head=alpha, tail=alpha, population=0)
-        alpha.lineage = new_lin
-        self.lineages.append(new_lin)
+        old_segments = self._segments_in(old_lin)
+        for seg in old_segments:
+            self.mass_index.set_value(seg.index, 0.0)
+
+        if bp <= y.left:
+            # The breakpoint lies in a gap between ancestral segments.
+            left_tail = y.prev
+            if left_tail is None:
+                self._register_lineage(old_lin)
+                return
+            left_tail.next = None
+            y.prev = None
+            left_head = old_lin.head
+            right_head = y
+        else:
+            old_next = y.next
+            alpha = self._alloc_segment(bp, y.right, y.node)
+            alpha.next = old_next
+            if old_next is not None:
+                old_next.prev = alpha
+            y.right = bp
+            y.next = None
+            left_head = old_lin.head
+            left_tail = y
+            right_head = alpha
+
+        right_tail = right_head
+        while right_tail.next is not None:
+            right_tail = right_tail.next
+
+        self.lineages.remove(old_lin)
+        left_lin = Lineage(left_head, left_tail, old_lin.population, old_lin.label)
+        right_lin = Lineage(right_head, right_tail, old_lin.population, old_lin.label)
+        self._register_lineage(left_lin)
+        self._register_lineage(right_lin)
+        self.lineages.extend([left_lin, right_lin])
 
     def _coalescence_event(self):
         """Handle a coalescence event: merge two lineages into one."""
         self.num_ca_events += 1
         k = len(self.lineages)
 
+        all_lineages = list(self.lineages)
         i, j = sorted(np.random.choice(k, 2, replace=False))
         y_lin = self.lineages.pop(j)
         x_lin = self.lineages.pop(i)
+        x_segments = self._segments_in(x_lin)
+        y_segments = self._segments_in(y_lin)
 
-        u = len(self.nodes)
-        self.nodes.append((self.t, 0))
+        breakpoints = sorted({
+            coordinate
+            for seg in x_segments + y_segments
+            for coordinate in (seg.left, seg.right)
+        })
+        output = []
+        parent = None
 
-        x, y = x_lin.head, y_lin.head
-        new_lin = Lineage(head=None, tail=None, population=0)
-        coalescence = False
+        for left, right in zip(breakpoints[:-1], breakpoints[1:]):
+            midpoint = (left + right) / 2
+            x_node = self._node_at(x_segments, midpoint)
+            y_node = self._node_at(y_segments, midpoint)
+            if x_node is None and y_node is None:
+                continue
+            if x_node is None or y_node is None:
+                output.append((left, right, x_node if y_node is None else y_node))
+                continue
 
-        while x is not None or y is not None:
-            alpha = None
+            if parent is None:
+                parent = len(self.nodes)
+                self.nodes.append((self.t, x_lin.population))
+            self.edges.append((left, right, parent, x_node))
+            self.edges.append((left, right, parent, y_node))
 
-            if x is None:
-                alpha = y
-                y = None
-            elif y is None:
-                alpha = x
-                x = None
-            else:
-                if y.left < x.left:
-                    x, y = y, x
+            # Once only the chosen pair covers an interval, their common
+            # ancestor is its local MRCA and no material remains to simulate.
+            if self._coverage(all_lineages, midpoint) > 2:
+                output.append((left, right, parent))
 
-                if x.right <= y.left:
-                    alpha = x
-                    x = x.next
-                    alpha.next = None
-                elif x.left < y.left:
-                    new_idx = self.free_segs.pop()
-                    alpha = Segment(new_idx, left=x.left, right=y.left,
-                                    node=x.node)
-                    self.segments[new_idx] = alpha
-                    x.left = y.left
+        self._release_segments(x_segments + y_segments)
+
+        if output:
+            # Coalesce adjacent pieces represented by the same node.
+            merged = []
+            for left, right, node in output:
+                if merged and merged[-1][1] == left and merged[-1][2] == node:
+                    merged[-1] = (merged[-1][0], right, node)
                 else:
-                    coalescence = True
-                    left = x.left
-                    right = min(x.right, y.right)
+                    merged.append((left, right, node))
 
-                    self.edges.append((left, right, u, x.node))
-                    self.edges.append((left, right, u, y.node))
-
-                    self._decrement_overlap(left, right)
-
-                    new_idx = self.free_segs.pop()
-                    alpha = Segment(new_idx, left=left, right=right,
-                                    node=u)
-                    self.segments[new_idx] = alpha
-
-                    if x.right == right:
-                        old_x = x
-                        x = x.next
-                    else:
-                        x.left = right
-                    if y.right == right:
-                        old_y = y
-                        y = y.next
-                    else:
-                        y.left = right
-
-            if alpha is not None:
-                alpha.lineage = new_lin
-                alpha.prev = new_lin.tail
-                mass = self.recomb_rate * (alpha.right - alpha.left)
-                self.mass_index.set_value(alpha.index, mass)
+            new_lin = Lineage(head=None, tail=None, population=x_lin.population)
+            for left, right, node in merged:
+                seg = self._alloc_segment(left, right, node)
+                seg.prev = new_lin.tail
                 if new_lin.head is None:
-                    new_lin.head = alpha
+                    new_lin.head = seg
                 else:
-                    new_lin.tail.next = alpha
-                new_lin.tail = alpha
-
-        if new_lin.head is not None:
+                    new_lin.tail.next = seg
+                new_lin.tail = seg
+            self._register_lineage(new_lin)
             self.lineages.append(new_lin)
-
-    def _decrement_overlap(self, left, right):
-        """Decrement overlap counter in [left, right)."""
-        keys = sorted(self.S.keys())
-        for k in keys:
-            if k >= left and k < right:
-                self.S[k] -= 1
 
 
 # ============================================================================
@@ -817,7 +866,7 @@ class Population:
 
 
 def bottleneck_event(lineages, intensity):
-    """Simulate a bottleneck: randomly coalesce lineages.
+    """Collapse a Kingman interval into an instantaneous bottleneck.
 
     Parameters
     ----------
@@ -831,27 +880,35 @@ def bottleneck_event(lineages, intensity):
     lineages : list
         Lineages after the bottleneck.
     coalesced_pairs : list of (int, int)
-        Which pairs coalesced.
+        Representative input indices for each binary merger.
     """
+    if intensity < 0:
+        raise ValueError("intensity must be nonnegative")
+
     coalesced_pairs = []
-    k = len(lineages)
-    if k < 2:
-        return lineages, coalesced_pairs
+    # Each entry stores a surviving lineage object and an input index used
+    # solely to make the event log interpretable.
+    remaining = [(lineage, index) for index, lineage in enumerate(lineages)]
+    elapsed = 0.0
+    while len(remaining) > 1:
+        k = len(remaining)
+        rate = k * (k - 1) / 2
+        wait = np.random.exponential(1.0 / rate)
+        if elapsed + wait > intensity:
+            break
+        elapsed += wait
 
-    p = 1 - np.exp(-intensity)
+        first, second = np.random.choice(k, size=2, replace=False)
+        if first < second:
+            first, second = second, first
+        lineage_i, label_i = remaining.pop(first)
+        _lineage_j, label_j = remaining.pop(second)
+        coalesced_pairs.append((label_i, label_j))
+        # A full ARG implementation would create a new ancestor here.  This
+        # count-level helper retains one representative lineage instead.
+        remaining.append((lineage_i, min(label_i, label_j)))
 
-    remaining = list(range(len(lineages)))
-    np.random.shuffle(remaining)
-
-    while len(remaining) >= 2:
-        if np.random.random() < p:
-            i = remaining.pop()
-            j = remaining.pop()
-            coalesced_pairs.append((i, j))
-        else:
-            remaining.pop()
-
-    return lineages, coalesced_pairs
+    return [lineage for lineage, _ in remaining], coalesced_pairs
 
 
 def migration_event(populations, migration_matrix, source, dest):
@@ -893,8 +950,11 @@ def mass_migration_event(populations, source, dest, fraction=1.0):
     n_to_move : int
         Number of lineages moved.
     """
+    if not 0 <= fraction <= 1:
+        raise ValueError("fraction must lie between 0 and 1")
     n_source = populations[source].num_ancestors
-    n_to_move = int(np.round(n_source * fraction))
+    # Each lineage moves independently, matching msprime's MassMigration.
+    n_to_move = np.random.binomial(n_source, fraction)
 
     populations[source].num_ancestors -= n_to_move
     populations[dest].num_ancestors += n_to_move
@@ -943,7 +1003,12 @@ class DemographicEventQueue:
 
 def simulate_with_demographics(n, L, recomb_rate, populations,
                                migration_matrix, event_queue):
-    """Hudson's algorithm with demographics.
+    """Run a counts-only Hudson simulation with demographics.
+
+    This teaching implementation follows lineage counts rather than genomic
+    segments, but it executes every sampled coalescence, recombination, and
+    migration event. It therefore illustrates the demographic event race
+    without pretending to return a tree sequence.
 
     Parameters
     ----------
@@ -956,6 +1021,11 @@ def simulate_with_demographics(n, L, recomb_rate, populations,
     migration_matrix : 2D array
     event_queue : DemographicEventQueue
     """
+    if n != sum(p.num_ancestors for p in populations):
+        raise ValueError("n must equal the initial number of ancestors")
+    if recomb_rate < 0 or L <= 0:
+        raise ValueError("recomb_rate must be nonnegative and L must be positive")
+
     t = 0.0
     total_events = 0
 
@@ -964,29 +1034,40 @@ def simulate_with_demographics(n, L, recomb_rate, populations,
         if total_lineages <= 1:
             break
 
-        t_ca = INFINITY
-        for pop in populations:
+        candidates = []
+        for pop_id, pop in enumerate(populations):
             k = pop.num_ancestors
             if k > 1:
-                coal_rate = k * (k - 1) / 2
-                t_pop = pop.get_size(t) * np.random.exponential(
-                    1.0 / (2 * coal_rate))
-                if t_pop < t_ca:
-                    t_ca = t_pop
+                wait = coalescent_waiting_time_growth(
+                    k,
+                    pop.start_size,
+                    pop.growth_rate,
+                    t - pop.start_time,
+                )
+                candidates.append((wait, "coalescence", (pop_id,)))
 
-        t_re = np.random.exponential(
-            1.0 / max(total_lineages * recomb_rate * L, 1e-10))
+        recomb_total = total_lineages * recomb_rate * L
+        if recomb_total > 0:
+            candidates.append((
+                np.random.exponential(1.0 / recomb_total),
+                "recombination",
+                (),
+            ))
 
-        t_mig = INFINITY
-        for j in range(len(populations)):
-            for k in range(len(populations)):
-                if j != k and migration_matrix[j][k] > 0:
-                    rate = populations[j].num_ancestors * migration_matrix[j][k]
+        for source in range(len(populations)):
+            for dest in range(len(populations)):
+                if source != dest and migration_matrix[source][dest] > 0:
+                    rate = (populations[source].num_ancestors
+                            * migration_matrix[source][dest])
                     if rate > 0:
-                        t_try = np.random.exponential(1.0 / rate)
-                        t_mig = min(t_mig, t_try)
+                        candidates.append((
+                            np.random.exponential(1.0 / rate),
+                            "migration",
+                            (source, dest),
+                        ))
 
-        min_event_time = min(t_ca, t_re, t_mig)
+        stochastic = min(candidates, default=(INFINITY, None, ()))
+        min_event_time, event_type, args = stochastic
 
         if t + min_event_time > event_queue.next_event_time():
             event_time, etype, args = event_queue.pop_event()
@@ -1000,15 +1081,32 @@ def simulate_with_demographics(n, L, recomb_rate, populations,
                 populations[pop_id].set_growth_rate(rate, t)
             elif etype == 'mass_migration':
                 source, dest, fraction = args
-                n_move = int(populations[source].num_ancestors * fraction)
-                populations[source].num_ancestors -= n_move
-                populations[dest].num_ancestors += n_move
+                mass_migration_event(populations, source, dest, fraction)
             elif etype == 'migration_rate':
                 source, dest, rate = args
                 migration_matrix[source][dest] = rate
         else:
+            if not np.isfinite(min_event_time):
+                raise RuntimeError(
+                    "Simulation cannot complete: lineages are isolated and "
+                    "no future demographic event can connect them"
+                )
             t += min_event_time
             total_events += 1
+
+            if event_type == "coalescence":
+                (pop_id,) = args
+                populations[pop_id].num_ancestors -= 1
+            elif event_type == "recombination":
+                weights = np.array(
+                    [pop.num_ancestors for pop in populations], dtype=float
+                )
+                pop_id = np.random.choice(len(populations), p=weights / weights.sum())
+                populations[pop_id].num_ancestors += 1
+            else:
+                source, dest = args
+                populations[source].num_ancestors -= 1
+                populations[dest].num_ancestors += 1
 
     return t, total_events
 
@@ -1158,10 +1256,19 @@ class MatrixMutationModel:
 
     def __init__(self, alleles, root_distribution, transition_matrix):
         self.alleles = alleles
-        self.root_distribution = np.array(root_distribution)
-        self.transition_matrix = np.array(transition_matrix)
-        assert np.allclose(self.transition_matrix.diagonal(), 0)
-        assert np.allclose(self.transition_matrix.sum(axis=1), 1)
+        self.root_distribution = np.asarray(root_distribution, dtype=float)
+        self.transition_matrix = np.asarray(transition_matrix, dtype=float)
+        n = len(alleles)
+        if self.root_distribution.shape != (n,):
+            raise ValueError("root_distribution must have one value per allele")
+        if self.transition_matrix.shape != (n, n):
+            raise ValueError("transition_matrix must be square with one row per allele")
+        if np.any(self.root_distribution < 0) or np.any(self.transition_matrix < 0):
+            raise ValueError("mutation probabilities must be nonnegative")
+        if not np.isclose(self.root_distribution.sum(), 1):
+            raise ValueError("root_distribution must sum to one")
+        if not np.allclose(self.transition_matrix.sum(axis=1), 1):
+            raise ValueError("each transition_matrix row must sum to one")
 
     def draw_root_state(self):
         """Sample the ancestral allele at the root."""
@@ -1240,12 +1347,18 @@ def place_mutations_on_tree(tree, mu, model, sequence_length):
             _, child_time, _ = tree[child]
             branch_length = time - child_time
 
-            n_muts = np.random.poisson(mu * branch_length)
+            n_muts = np.random.poisson(
+                mu * sequence_length * branch_length
+            )
 
             state = current_state
-            for _ in range(n_muts):
+            # Traverse from the older parent toward the younger child so the
+            # recorded sequence of states follows ancestry forward in time.
+            mutation_times = np.sort(
+                np.random.uniform(child_time, time, size=n_muts)
+            )[::-1]
+            for mut_time in mutation_times:
                 new_state = model.mutate(state)
-                mut_time = np.random.uniform(child_time, time)
                 position = np.random.uniform(0, sequence_length)
                 mutations.append((position, child, node,
                                   model.alleles[new_state], mut_time))
@@ -1291,7 +1404,8 @@ def build_genotype_matrix(mutations, tree_sequence, n_samples):
 
 def get_descendants(tree_sequence, node, position):
     """Get all leaf descendants of a node at a genomic position."""
-    return []
+    tree = tree_sequence.at(position)
+    return list(tree.samples(node))
 
 
 # ============================================================================

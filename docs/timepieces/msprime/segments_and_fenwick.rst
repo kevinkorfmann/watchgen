@@ -119,8 +119,11 @@ Why not arrays? Because the two most frequent operations are:
 1. **Split** (recombination): break a segment at position :math:`x`
 2. **Merge** (coalescence): combine two segment chains into one
 
-Both are :math:`O(1)` with linked lists (just rewire pointers) but
-:math:`O(n)` with arrays (shifting elements).
+A split at an already-located segment and local insertion or removal are
+:math:`O(1)` with linked lists because they only rewire pointers. A full
+coalescence merge still walks the participating chains and is linear in the
+number of segments examined; linked lists avoid the extra array shifting that
+would otherwise accompany each local edit.
 
 In the watch metaphor, segments are the linked-list track that follows each
 lineage's ancestral material. Like the links of a fine watch bracelet, each

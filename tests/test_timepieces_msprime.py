@@ -120,20 +120,19 @@ def split_at_breakpoint(segs, bp):
 def coalescent_waiting_time_constant(k, N):
     """Waiting time for k lineages, constant population size N."""
     rate = k * (k - 1) / 2
-    u = np.random.exponential(1.0 / (2 * rate))
+    u = np.random.exponential(1.0 / rate)
     return N * u
 
 
 def coalescent_waiting_time_growth(k, N0, alpha, t0):
     """Waiting time for k lineages, exponential growth."""
     rate = k * (k - 1) / 2
-    u = np.random.exponential(1.0 / (2 * rate))
+    u = np.random.exponential(1.0 / rate)
 
     if alpha == 0:
         return N0 * u
 
-    dt = 0
-    z = 1 + alpha * N0 * math.exp(-alpha * dt) * u
+    z = 1 + alpha * N0 * math.exp(-alpha * t0) * u
     if z <= 0:
         return np.inf
 
@@ -200,8 +199,10 @@ class Population:
 
 def mass_migration_event(populations, source, dest, fraction=1.0):
     """Move a fraction of lineages from source to dest."""
+    if not 0 <= fraction <= 1:
+        raise ValueError("fraction must lie between 0 and 1")
     n_source = populations[source].num_ancestors
-    n_to_move = int(np.round(n_source * fraction))
+    n_to_move = np.random.binomial(n_source, fraction)
     populations[source].num_ancestors -= n_to_move
     populations[dest].num_ancestors += n_to_move
     return n_to_move
@@ -249,10 +250,19 @@ class MatrixMutationModel:
 
     def __init__(self, alleles, root_distribution, transition_matrix):
         self.alleles = alleles
-        self.root_distribution = np.array(root_distribution)
-        self.transition_matrix = np.array(transition_matrix)
-        assert np.allclose(self.transition_matrix.diagonal(), 0)
-        assert np.allclose(self.transition_matrix.sum(axis=1), 1)
+        self.root_distribution = np.asarray(root_distribution, dtype=float)
+        self.transition_matrix = np.asarray(transition_matrix, dtype=float)
+        n = len(alleles)
+        if self.root_distribution.shape != (n,):
+            raise ValueError("root_distribution must have one value per allele")
+        if self.transition_matrix.shape != (n, n):
+            raise ValueError("transition_matrix must be square with one row per allele")
+        if np.any(self.root_distribution < 0) or np.any(self.transition_matrix < 0):
+            raise ValueError("mutation probabilities must be nonnegative")
+        if not np.isclose(self.root_distribution.sum(), 1):
+            raise ValueError("root_distribution must sum to one")
+        if not np.allclose(self.transition_matrix.sum(axis=1), 1):
+            raise ValueError("each transition_matrix row must sum to one")
 
     def draw_root_state(self):
         return np.random.choice(len(self.alleles), p=self.root_distribution)
@@ -782,10 +792,11 @@ class TestMassMigrationEvent:
         pops = [Population(start_size=5000), Population(start_size=5000)]
         pops[0].num_ancestors = 10
         pops[1].num_ancestors = 20
+        np.random.seed(1)
         n_moved = mass_migration_event(pops, source=1, dest=0, fraction=0.5)
-        assert pops[1].num_ancestors == 10
-        assert pops[0].num_ancestors == 20
-        assert n_moved == 10
+        assert pops[1].num_ancestors == 20 - n_moved
+        assert pops[0].num_ancestors == 10 + n_moved
+        assert 0 <= n_moved <= 20
 
     def test_conserves_total_lineages(self):
         pops = [Population(), Population(), Population()]
@@ -919,13 +930,20 @@ class TestMatrixMutationModel:
         for i in range(4):
             assert np.isclose(counts[i] / n_reps, 0.25, atol=0.03)
 
+    def test_silent_transitions_are_allowed(self):
+        model = MatrixMutationModel(
+            alleles=['0', '1'],
+            root_distribution=[1, 0],
+            transition_matrix=[[0.5, 0.5], [0.5, 0.5]]
+        )
+        assert model.transition_matrix[0, 0] == 0.5
+
     def test_invalid_transition_matrix(self):
-        """Diagonal not zero should raise."""
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             MatrixMutationModel(
                 alleles=['0', '1'],
                 root_distribution=[1, 0],
-                transition_matrix=[[0.5, 0.5], [0.5, 0.5]]
+                transition_matrix=[[0.2, 0.2], [0.5, 0.5]]
             )
 
 

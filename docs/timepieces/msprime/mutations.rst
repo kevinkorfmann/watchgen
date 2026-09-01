@@ -58,7 +58,9 @@ generations), and a per-base-pair, per-generation mutation rate :math:`\mu`:
 Under the **infinite-sites** assumption, every mutation creates a new variant
 at a previously-unmutated position. This means no two mutations can hit the
 same site. (For short branches and realistic :math:`\mu`, this is an excellent
-approximation.)
+approximation.) In msprime this spatial assumption is selected with
+``discrete_genome=False``. The default discrete genome permits recurrent
+mutation at integer-valued sites.
 
 .. admonition:: Probability Aside -- The Poisson process on branches
 
@@ -166,8 +168,9 @@ a population of size :math:`N` is:
 
    E[S] = \theta \cdot \sum_{k=1}^{n-1} \frac{1}{k}
 
-where :math:`\theta = 4N_e \mu L` is the population-scaled mutation rate for
-the whole genome, and the sum :math:`\sum_{k=1}^{n-1} 1/k` is the
+where :math:`\theta=2N_e\mu L` for a haploid population or
+:math:`\theta=4N_e\mu L` for a diploid population. The sum
+:math:`\sum_{k=1}^{n-1}1/k` is the
 :math:`(n-1)`-th harmonic number.
 
 **Derivation.** The total branch length of the coalescent tree is:
@@ -194,10 +197,11 @@ the whole genome, and the sum :math:`\sum_{k=1}^{n-1} 1/k` is the
    coalescent tree (recall from :ref:`coalescent_process` that most of the
    tree height comes from the last few lineages).
 
-Each unit of branch length produces mutations at rate :math:`\theta/2` per
-unit length (in coalescent units, the mutation rate is :math:`\theta/2`
-because :math:`\theta = 4N_e\mu` and time is in units of :math:`N_e`
-generations for haploids). So:
+Across the whole sequence, each unit of branch length produces mutations at
+rate :math:`\theta/2`. Equivalently, the rate is :math:`\theta/(2L)` per base
+pair per coalescent time unit. This follows because
+:math:`\theta=2N_e\mu L` and time is in units of :math:`N_e` generations in
+the haploid convention used for this derivation. Thus:
 
 .. math::
 
@@ -337,16 +341,17 @@ transition matrix :math:`P` gives the probability of each state change:
    p_{TA} & p_{TC} & p_{TG} & 0
    \end{pmatrix}
 
-where each row sums to 1 (the diagonal is 0 because a "mutation" must change
-the state).
+where each row sums to 1. A zero diagonal describes models such as the default
+Jukes--Cantor parameterization, in which every event changes state. msprime
+also permits nonzero diagonal entries for state-independent models; these
+entries represent silent mutation events.
 
 .. admonition:: Probability Aside -- Mutation as a Markov chain
 
    Each site's allelic state follows a continuous-time Markov chain (CTMC).
    When a mutation event occurs (Poisson process), the state transitions
-   according to the matrix :math:`P`. The diagonal is zero because a
-   "mutation" that does not change the state is unobservable (and by
-   convention, msprime only records observable changes). The stationary
+   according to the matrix :math:`P`. Diagonal entries may be nonzero, in
+   which case a recorded event can leave the state unchanged. The stationary
    distribution of this chain determines the long-run base composition.
    For the Jukes-Cantor model (all transitions equally likely), the
    stationary distribution is uniform: :math:`(1/4, 1/4, 1/4, 1/4)`.
@@ -370,13 +375,16 @@ the state).
                Probability of each allele at the root.
            transition_matrix : ndarray of shape (k, k)
                P[i, j] = probability of mutating from allele i to allele j.
-               Diagonal must be 0 (mutations must change the state).
+               Rows are probability distributions; diagonal entries may be
+               nonzero for silent transitions.
            """
            self.alleles = alleles
-           self.root_distribution = np.array(root_distribution)
-           self.transition_matrix = np.array(transition_matrix)
-           assert np.allclose(self.transition_matrix.diagonal(), 0)
-           assert np.allclose(self.transition_matrix.sum(axis=1), 1)
+           self.root_distribution = np.asarray(root_distribution, dtype=float)
+           self.transition_matrix = np.asarray(transition_matrix, dtype=float)
+           if not np.isclose(self.root_distribution.sum(), 1):
+               raise ValueError("root_distribution must sum to one")
+           if not np.allclose(self.transition_matrix.sum(axis=1), 1):
+               raise ValueError("each transition_matrix row must sum to one")
 
        def draw_root_state(self):
            """Sample the ancestral allele at the root."""
@@ -442,19 +450,12 @@ all marginal trees.
 Step 5: Placing Mutations on the Tree Sequence
 =================================================
 
-The mutation placement algorithm for a tree sequence:
-
-1. For each site position :math:`x` along the genome:
-
-   a. Find the marginal tree at position :math:`x`
-   b. Draw the root allele from the root distribution
-   c. Walk down the tree from root to leaves
-   d. On each branch, the number of mutations is Poisson with rate
-      :math:`\mu \cdot t_{\text{branch}}` (branch length in generations)
-   e. Each mutation changes the allelic state according to the model
-
-2. The allele at each leaf is the final state after all mutations along
-   the path from root to leaf.
+The mutation placement algorithm integrates over each marginal tree's genomic
+span. For a branch of length :math:`t` covering an interval of length
+:math:`\ell`, it draws a Poisson count with mean :math:`\mu\ell t`, assigns
+positions and times to those events, and then applies them in temporal order
+from the ancestral end of the branch toward the child. The allele at each leaf
+is the final state after all mutations on its root-to-leaf path.
 
 .. code-block:: python
 
@@ -497,14 +498,17 @@ The mutation placement algorithm for a tree sequence:
                _, child_time, _ = tree[child]
                branch_length = time - child_time  # time in generations
 
-               # Number of mutations on this branch: Poisson(mu * t)
-               n_muts = np.random.poisson(mu * branch_length)
+               # Number of mutations across this span: Poisson(mu * L * t)
+               n_muts = np.random.poisson(
+                   mu * sequence_length * branch_length
+               )
 
                state = current_state
-               for _ in range(n_muts):
+               mutation_times = np.sort(
+                   np.random.uniform(child_time, time, size=n_muts)
+               )[::-1]
+               for mut_time in mutation_times:
                    new_state = model.mutate(state)  # apply transition matrix
-                   # Random time on the branch
-                   mut_time = np.random.uniform(child_time, time)
                    # Random position within the tree's span
                    position = np.random.uniform(0, sequence_length)
                    mutations.append((position, child, node,
@@ -643,14 +647,18 @@ carried by each sample.
        This requires finding the marginal tree at 'position' and
        traversing below 'node'.
        """
-       # (Simplified placeholder -- in tskit, this is tree.samples(node))
-       return []
+       tree = tree_sequence.at(position)
+       return list(tree.samples(node))
 
 
 Putting It All Together
 ========================
 
-The complete mutation simulation pipeline:
+The following is a stripped-down mutation pipeline for teaching. The production
+``msprime.sim_mutations`` implementation additionally handles site tables,
+parent relationships among recurrent mutations, existing mutations, provenance,
+time bounds, discrete genomes, and specialized mutation models. Its default
+model is JC69, not an infinite-sites binary model.
 
 .. code-block:: python
 
@@ -667,7 +675,7 @@ The complete mutation simulation pipeline:
        rate : float or MutationRateMap
            Per-bp, per-generation mutation rate.
        model : MutationModel, optional
-           Defaults to infinite-sites binary model.
+           Defaults to a Jukes--Cantor nucleotide model, as in msprime.
 
        Returns
        -------
@@ -675,12 +683,16 @@ The complete mutation simulation pipeline:
            Tree sequence with mutations added.
        """
        if model is None:
-           # Default: binary (0/1) model -- equivalent to infinite-sites
-           # when mutation rate is low
+           # Default: Jukes--Cantor nucleotide model.
            model = MatrixMutationModel(
-               alleles=['0', '1'],
-               root_distribution=[1, 0],  # root is always '0' (ancestral)
-               transition_matrix=[[0, 1], [1, 0]]  # every mutation flips
+               alleles=['A', 'C', 'G', 'T'],
+               root_distribution=[0.25, 0.25, 0.25, 0.25],
+               transition_matrix=[
+                   [0, 1/3, 1/3, 1/3],
+                   [1/3, 0, 1/3, 1/3],
+                   [1/3, 1/3, 0, 1/3],
+                   [1/3, 1/3, 1/3, 0],
+               ],
            )
 
        mutations = []

@@ -524,248 +524,15 @@ is the master clockmaker's bench in miniature: a working simulation that
 uses all the data structures from :ref:`segments_fenwick` and all the
 mathematics from :ref:`coalescent_process`.
 
+.. literalinclude:: ../../../watchgen/mini_msprime.py
+   :language: python
+   :pyobject: MinimalSimulator
+
+The returned ``edges`` and ``nodes`` use the same core table semantics as
+``tskit``. The regression suite loads them into a ``tskit.TableCollection``
+and verifies that every marginal tree has one root.
+
 .. code-block:: python
-
-   class MinimalSimulator:
-       """A minimal but complete Hudson's algorithm implementation.
-
-       This implements the core simulation loop with coalescence and
-       recombination (no gene conversion, no migration for simplicity).
-       It is the ticking of the clock -- the main event loop.
-       """
-
-       def __init__(self, n, sequence_length, recombination_rate, pop_size=1.0):
-           self.n = n
-           self.L = sequence_length
-           self.Ne = pop_size
-           self.t = 0.0  # current simulation time (backwards from present)
-
-           # Rate map (uniform recombination rate)
-           self.recomb_rate = recombination_rate
-           self.rho = 4 * pop_size * recombination_rate * sequence_length
-
-           # Segments and Fenwick tree -- the gear train
-           self.max_segs = 100 * n
-           self.segments = [None] * (self.max_segs + 1)
-           self.free_segs = list(range(self.max_segs, 0, -1))
-           self.mass_index = FenwickTree(self.max_segs)  # the clever indexing mechanism
-
-           # Overlap counter -- tracks when we're done
-           self.S = {0: n, sequence_length: -1}
-
-           # Lineages -- initially n lineages, each covering [0, L)
-           self.lineages = []
-           for i in range(n):
-               seg_idx = self.free_segs.pop()
-               seg = Segment(index=seg_idx, left=0, right=sequence_length,
-                              node=i)
-               self.segments[seg_idx] = seg
-               lin = Lineage(head=seg, tail=seg, population=0)
-               seg.lineage = lin
-               self.lineages.append(lin)
-
-               # Register segment mass in Fenwick tree
-               mass = recombination_rate * sequence_length
-               self.mass_index.set_value(seg_idx, mass)
-
-           # Output tables: edges and nodes form the tree sequence
-           self.edges = []  # (left, right, parent, child)
-           self.nodes = []  # (time, population)
-           for i in range(n):
-               self.nodes.append((0.0, 0))  # sample nodes at time 0
-
-           self.num_re_events = 0
-           self.num_ca_events = 0
-
-       def is_completed(self):
-           """Check if all positions have found their MRCA."""
-           for x, count in self.S.items():
-               if count > 1:
-                   return False
-           return True
-
-       def get_recomb_mass(self, seg):
-           """Recombination mass of a segment.
-
-           The left bound accounts for the gap subtlety: if this segment
-           has a predecessor, the effective left bound is prev.right (not
-           seg.left), because recombination in the gap has no effect.
-           """
-           left_bound = seg.prev.right if seg.prev is not None else seg.left
-           return self.recomb_rate * (seg.right - left_bound)
-
-       def simulate(self):
-           """Run the simulation until completion.
-
-           This is the main loop -- each iteration is one tick of the clock.
-           """
-           while not self.is_completed():
-               k = len(self.lineages)
-
-               # Recombination rate: from the Fenwick tree -- O(log n)
-               re_total = self.mass_index.get_total()
-               t_re = (np.random.exponential(1.0 / re_total)
-                       if re_total > 0 else INFINITY)
-
-               # Coalescence rate: k choose 2, scaled by population size
-               coal_rate = k * (k - 1) / 2
-               t_ca = INFINITY
-               if coal_rate > 0:
-                   # Draw from Exp(2 * binom(k,2)), then scale by Ne
-                   t_ca = self.Ne * np.random.exponential(
-                       1.0 / (2 * coal_rate))
-
-               # === The exponential race: smallest time wins ===
-               min_t = min(t_re, t_ca)
-               self.t += min_t
-
-               if min_t == t_re:
-                   self._recombination_event()
-               else:
-                   self._coalescence_event()
-
-           return self.edges, self.nodes
-
-       def _recombination_event(self):
-           """Handle a recombination event: split one lineage into two."""
-           self.num_re_events += 1
-           # Choose breakpoint using Fenwick tree -- O(log n)
-           random_mass = np.random.uniform(0, self.mass_index.get_total())
-           seg_idx = self.mass_index.find(random_mass)
-           y = self.segments[seg_idx]
-
-           # Convert mass coordinate to genomic position
-           cum_mass = self.mass_index.get_cumulative_sum(seg_idx)
-           mass_from_right = cum_mass - random_mass
-           bp = y.right - mass_from_right / self.recomb_rate
-
-           if bp <= y.left or bp >= y.right:
-               return  # degenerate breakpoint (at segment boundary)
-
-           # Split the segment -- O(1) pointer rewiring
-           new_idx = self.free_segs.pop()
-           alpha = Segment(index=new_idx, left=bp, right=y.right,
-                            node=y.node)
-           self.segments[new_idx] = alpha
-           alpha.next = y.next
-           if y.next is not None:
-               y.next.prev = alpha
-           y.next = None
-           y.right = bp
-
-           # Update Fenwick tree -- O(log n)
-           self.mass_index.set_value(y.index, self.get_recomb_mass(y))
-           self.mass_index.set_value(alpha.index,
-                                      self.recomb_rate * (alpha.right - alpha.left))
-
-           # Create new lineage for the right part
-           old_lin = y.lineage
-           old_lin.tail = y
-           new_lin = Lineage(head=alpha, tail=alpha, population=0)
-           alpha.lineage = new_lin
-           self.lineages.append(new_lin)
-
-       def _coalescence_event(self):
-           """Handle a coalescence event: merge two lineages into one."""
-           self.num_ca_events += 1
-           k = len(self.lineages)
-
-           # Pick two random lineages (uniformly at random)
-           i, j = sorted(np.random.choice(k, 2, replace=False))
-           y_lin = self.lineages.pop(j)  # remove j first (higher index)
-           x_lin = self.lineages.pop(i)  # then i
-
-           # Create ancestor node in the tree sequence
-           u = len(self.nodes)
-           self.nodes.append((self.t, 0))
-
-           # Walk through both chains -- the merge algorithm
-           x, y = x_lin.head, y_lin.head
-           new_lin = Lineage(head=None, tail=None, population=0)
-           coalescence = False
-
-           while x is not None or y is not None:
-               alpha = None
-
-               if x is None:
-                   # x exhausted: absorb rest of y
-                   alpha = y
-                   y = None
-               elif y is None:
-                   # y exhausted: absorb rest of x
-                   alpha = x
-                   x = None
-               else:
-                   # Both active: ensure x starts at or before y
-                   if y.left < x.left:
-                       x, y = y, x
-
-                   if x.right <= y.left:
-                       # No overlap: x passes through
-                       alpha = x
-                       x = x.next
-                       alpha.next = None
-                   elif x.left < y.left:
-                       # Partial overlap: trim x's prefix
-                       new_idx = self.free_segs.pop()
-                       alpha = Segment(new_idx, left=x.left, right=y.left,
-                                        node=x.node)
-                       self.segments[new_idx] = alpha
-                       x.left = y.left  # advance x
-                   else:
-                       # Coalescence! x and y start at the same position
-                       coalescence = True
-                       left = x.left
-                       right = min(x.right, y.right)
-
-                       # Record edges: both are children of ancestor u
-                       self.edges.append((left, right, u, x.node))
-                       self.edges.append((left, right, u, y.node))
-
-                       # Update overlap counter
-                       self._decrement_overlap(left, right)
-
-                       # Create coalesced segment under ancestor u
-                       new_idx = self.free_segs.pop()
-                       alpha = Segment(new_idx, left=left, right=right,
-                                        node=u)
-                       self.segments[new_idx] = alpha
-
-                       # Consume overlapping portions of x and y
-                       if x.right == right:
-                           old_x = x
-                           x = x.next
-                       else:
-                           x.left = right  # x has leftover
-                       if y.right == right:
-                           old_y = y
-                           y = y.next
-                       else:
-                           y.left = right  # y has leftover
-
-               # Append alpha to the merged chain
-               if alpha is not None:
-                   alpha.lineage = new_lin
-                   alpha.prev = new_lin.tail
-                   mass = self.recomb_rate * (alpha.right - alpha.left)
-                   self.mass_index.set_value(alpha.index, mass)
-                   if new_lin.head is None:
-                       new_lin.head = alpha
-                   else:
-                       new_lin.tail.next = alpha
-                   new_lin.tail = alpha
-
-           # Add the merged lineage back (if it has remaining segments)
-           if new_lin.head is not None:
-               self.lineages.append(new_lin)
-
-       def _decrement_overlap(self, left, right):
-           """Decrement overlap counter in [left, right)."""
-           # Simplified version (the full version uses an AVL tree)
-           keys = sorted(self.S.keys())
-           for k in keys:
-               if k >= left and k < right:
-                   self.S[k] -= 1
 
    # Run a small simulation
    np.random.seed(42)
@@ -831,7 +598,8 @@ events.
 
 **Total simulation**: :math:`O(n + E \log n)` where :math:`E` is the total
 number of events. The number of events is :math:`O(n + \rho)` where
-:math:`\rho = 4N_e r L` is the population-scaled recombination rate. This
+:math:`\rho=2N_e rL` for the haploid convention used by
+``MinimalSimulator`` (or :math:`4N_e rL` for diploids). This
 gives msprime its celebrated near-linear scaling in :math:`n`.
 
 .. admonition:: Probability Aside -- Why :math:`O(n + \rho)` events?
@@ -928,8 +696,9 @@ Solutions
 .. admonition:: Solution 1: Build a minimal simulator
 
    The expected number of distinct marginal trees grows roughly linearly with
-   the population-scaled recombination rate :math:`\rho = 4 N_e r L`. For
-   :math:`N_e = 1` (coalescent units), :math:`\rho = 4 r L`. We count trees
+   the diploid population-scaled recombination rate
+   :math:`\rho=4N_e rL` (or :math:`2N_e rL` in the haploid convention used
+   by ``MinimalSimulator``). We count trees
    by counting how many recombination events produced distinct breakpoints.
 
    .. code-block:: python
@@ -986,7 +755,7 @@ Solutions
       n = 20
       L = 1e4
       r = 1e-4
-      rho = 4 * 1.0 * r * L  # pop_size=1.0 in coalescent units
+      rho = 2 * 1.0 * r * L  # haploid convention in MinimalSimulator
 
       sim = MinimalSimulator(n=n, sequence_length=L,
                               recombination_rate=r, pop_size=1.0)

@@ -15,12 +15,15 @@ mutation rate, and recombination rate, it produces random ancestral histories
 **backwards in time**, starting from a set of sampled genomes in the present
 and tracing their ancestry back until all lineages have found common ancestors.
 
-While SINGER (Timepiece VII) *infers* an ARG from observed data, msprime
-*generates* an ARG from a specified model. They are complementary tools, like a
-watch and a watch-testing machine: msprime creates the ground truth that tools
-like SINGER try to recover. Understanding how the simulator works gives you deep
-insight into the coalescent process itself, and provides you with a reliable way
-to test every other Timepiece in this book.
+While SINGER (Timepiece VII) *infers* genealogies from observed data, msprime
+*simulates* genealogies from a specified model. They are complementary tools,
+like a watch and a watch-testing machine: msprime creates model-based ground
+truth that tools like SINGER try to recover. By default, msprime records the
+succinct marginal trees, not every event in the full ancestral recombination
+graph (ARG); extra event nodes can be retained with ``additional_nodes`` or the
+legacy ``record_full_arg=True`` option. Understanding how the simulator works
+gives you deep insight into the coalescent process itself and a reliable way to
+test every other Timepiece in this book.
 
 If PSMC is the simplest watch (two hands, one gear train), msprime is the
 **master clockmaker's bench** -- the machine that produces the movements for
@@ -30,7 +33,7 @@ structures) reveal how nature's own clockwork operates.
 
 .. admonition:: Primary Reference
 
-   :cite:`msprime`
+   :cite:`msprime,msprime2`
 
 The four gears of msprime:
 

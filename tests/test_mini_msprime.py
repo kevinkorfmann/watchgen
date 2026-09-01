@@ -200,6 +200,9 @@ class TestMergeSegments:
         result = merge_segments([], [(100, 200)])
         assert result == [(100, 200)]
 
+    def test_both_empty(self):
+        assert merge_segments([], []) == []
+
     def test_multiple_segments(self):
         result = merge_segments([(0, 100), (200, 300)], [(50, 250)])
         assert result == [(0, 300)]
@@ -306,6 +309,14 @@ class TestCoalescentWaitingTimeGrowth:
         mean_growth = np.mean(growth_times)
         assert mean_growth < mean_const
 
+    def test_current_time_changes_growth_hazard(self):
+        """With positive growth, smaller ancient N means a shorter wait."""
+        np.random.seed(123)
+        recent = coalescent_waiting_time_growth(5, 1000, 0.01, 0)
+        np.random.seed(123)
+        ancient = coalescent_waiting_time_growth(5, 1000, 0.01, 100)
+        assert ancient < recent
+
 
 # ============================================================================
 # Tests for demographics.rst functions
@@ -365,10 +376,11 @@ class TestMassMigrationEvent:
         pops = [Population(start_size=5000), Population(start_size=5000)]
         pops[0].num_ancestors = 10
         pops[1].num_ancestors = 20
+        np.random.seed(1)
         n_moved = mass_migration_event(pops, source=1, dest=0, fraction=0.5)
-        assert pops[1].num_ancestors == 10
-        assert pops[0].num_ancestors == 20
-        assert n_moved == 10
+        assert pops[1].num_ancestors == 20 - n_moved
+        assert pops[0].num_ancestors == 10 + n_moved
+        assert 0 <= n_moved <= 20
 
     def test_conserves_total_lineages(self):
         pops = [Population(), Population(), Population()]
@@ -379,6 +391,34 @@ class TestMassMigrationEvent:
         mass_migration_event(pops, source=1, dest=0, fraction=0.5)
         total_after = sum(p.num_ancestors for p in pops)
         assert total_before == total_after
+
+
+class TestBottleneckEvent:
+    def test_zero_strength_has_no_effect(self):
+        lineages = list(range(8))
+        remaining, pairs = bottleneck_event(lineages, intensity=0)
+        assert remaining == lineages
+        assert pairs == []
+
+    def test_each_event_reduces_lineage_count(self):
+        np.random.seed(8)
+        lineages = list(range(10))
+        remaining, pairs = bottleneck_event(lineages, intensity=2)
+        assert len(remaining) == len(lineages) - len(pairs)
+        assert 1 <= len(remaining) < len(lineages)
+
+    def test_negative_strength_rejected(self):
+        with pytest.raises(ValueError):
+            bottleneck_event([0, 1], intensity=-1)
+
+    def test_two_lineage_probability_matches_collapsed_interval(self):
+        np.random.seed(21)
+        strength = 0.7
+        merged = [
+            len(bottleneck_event([0, 1], strength)[0]) == 1
+            for _ in range(5000)
+        ]
+        assert np.isclose(np.mean(merged), 1 - np.exp(-strength), atol=0.025)
 
 
 # ============================================================================
@@ -502,13 +542,21 @@ class TestMatrixMutationModel:
         for i in range(4):
             assert np.isclose(counts[i] / n_reps, 0.25, atol=0.03)
 
+    def test_silent_transitions_are_allowed(self):
+        """msprime permits nonzero diagonal (silent) transitions."""
+        model = MatrixMutationModel(
+            alleles=['0', '1'],
+            root_distribution=[1, 0],
+            transition_matrix=[[0.5, 0.5], [0.5, 0.5]]
+        )
+        assert model.transition_matrix[0, 0] == 0.5
+
     def test_invalid_transition_matrix(self):
-        """Diagonal not zero should raise."""
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             MatrixMutationModel(
                 alleles=['0', '1'],
                 root_distribution=[1, 0],
-                transition_matrix=[[0.5, 0.5], [0.5, 0.5]]
+                transition_matrix=[[0.2, 0.2], [0.5, 0.5]]
             )
 
 
@@ -889,3 +937,106 @@ class TestCoalescentIntegration:
 
         # Total mass should be preserved
         assert np.isclose(ft.get_total(), rate * 1000)
+
+
+class TestMinimalSimulatorOutput:
+    def test_emits_valid_tree_sequence_with_recombination(self):
+        """The pedagogical simulator must satisfy tskit's edge invariants."""
+        tskit = pytest.importorskip("tskit")
+        np.random.seed(5)  # deterministically produces a recombination event
+        sim = MinimalSimulator(
+            n=3,
+            sequence_length=5,
+            recombination_rate=5e-4,
+            pop_size=50,
+        )
+        edges, nodes = sim.simulate()
+        assert sim.num_re_events > 0
+
+        tables = tskit.TableCollection(sequence_length=5)
+        for node_id, (time, _population) in enumerate(nodes):
+            flags = tskit.NODE_IS_SAMPLE if node_id < sim.n else 0
+            tables.nodes.add_row(flags=flags, time=time)
+        for left, right, parent, child in edges:
+            tables.edges.add_row(left, right, parent, child)
+        tables.sort()
+        ts = tables.tree_sequence()
+
+        assert ts.num_samples == sim.n
+        assert all(tree.num_roots == 1 for tree in ts.trees())
+
+
+class TestDemographicSimulation:
+    def test_stochastic_coalescences_are_executed(self):
+        pop = Population(start_size=100)
+        pop.num_ancestors = 5
+        np.random.seed(9)
+        time, events = simulate_with_demographics(
+            n=5,
+            L=10,
+            recomb_rate=0,
+            populations=[pop],
+            migration_matrix=[[0]],
+            event_queue=DemographicEventQueue(),
+        )
+        assert np.isfinite(time)
+        assert events == 4
+        assert pop.num_ancestors == 1
+
+
+class TestTreeMutationHelpers:
+    @staticmethod
+    def binary_model():
+        return MatrixMutationModel(
+            alleles=['0', '1'],
+            root_distribution=[1, 0],
+            transition_matrix=[[0, 1], [1, 0]],
+        )
+
+    def test_mutation_count_scales_with_genomic_span(self):
+        tree = {
+            0: (2, 0.0, []),
+            1: (2, 0.0, []),
+            2: (None, 1.0, [0, 1]),
+        }
+        np.random.seed(19)
+        counts = [
+            len(place_mutations_on_tree(tree, 0.01, self.binary_model(), 100)[0])
+            for _ in range(2000)
+        ]
+        # Two unit-length branches x 100 sites x rate 0.01 => mean 2.
+        assert np.isclose(np.mean(counts), 2.0, atol=0.15)
+
+    def test_get_descendants_uses_marginal_tree(self):
+        msprime = pytest.importorskip("msprime")
+        ts = msprime.sim_ancestry(
+            samples=2,
+            ploidy=1,
+            sequence_length=10,
+            recombination_rate=0,
+            random_seed=7,
+        )
+        root = ts.first().root
+        assert sorted(get_descendants(ts, root, 5)) == sorted(ts.samples())
+
+
+class TestMsprimeApiParity:
+    def test_integer_samples_denote_individuals_by_default(self):
+        msprime = pytest.importorskip("msprime")
+        diploid = msprime.sim_ancestry(samples=3, random_seed=31)
+        haploid = msprime.sim_ancestry(samples=3, ploidy=1, random_seed=31)
+        assert diploid.num_samples == 6
+        assert haploid.num_samples == 3
+
+    def test_default_mutation_model_is_nucleotide(self):
+        msprime = pytest.importorskip("msprime")
+        ancestry = msprime.sim_ancestry(
+            samples=4,
+            ploidy=1,
+            sequence_length=100,
+            random_seed=32,
+        )
+        mutated = msprime.sim_mutations(ancestry, rate=0.1, random_seed=33)
+        assert mutated.num_mutations > 0
+        ancestral_states = {site.ancestral_state for site in mutated.sites()}
+        assert ancestral_states.issubset(set("ACGT"))

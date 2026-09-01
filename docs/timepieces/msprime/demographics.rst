@@ -150,72 +150,41 @@ the bottleneck.
 Step 2: The Bottleneck
 ========================
 
-A bottleneck is a special demographic event where lineages are forcibly
-coalesced with some probability. This models a severe reduction in population
-size that is too brief to simulate explicitly.
-
-**The math.** At time :math:`t`, with bottleneck intensity :math:`I`, each
-pair of lineages coalesces independently with probability
-:math:`1 - e^{-I/\binom{k}{2}}`, where :math:`k` is the number of lineages.
-In practice, msprime implements this by randomly merging lineage pairs.
+A bottleneck can be represented by collapsing a short interval of ordinary
+Kingman coalescent time into a single instant. With dimensionless strength
+:math:`B`, run the usual coalescent clock for an interval of length :math:`B`:
+while :math:`k` lineages remain, the next waiting time is exponential with
+rate :math:`\binom{k}{2}`. Every merger during that interval is recorded at
+the same simulation time. Pair outcomes are therefore *not* independent.
 
 .. admonition:: Probability Aside -- Bottleneck intensity
 
-   The bottleneck intensity :math:`I` is measured in coalescent units. It
+   The bottleneck strength :math:`B` is measured in coalescent units. It
    represents the "amount of coalescence" that would have occurred in a
-   population of size 1 for :math:`I` time units. A higher :math:`I` means
-   more coalescence: :math:`I = 0` means no effect, :math:`I \to \infty`
+   population of size 1 for :math:`B` time units. A higher :math:`B` means
+   more coalescence: :math:`B = 0` means no effect, :math:`B \to \infty`
    means all lineages coalesce to a single ancestor. The probability that a
    specific pair survives the bottleneck without coalescing is :math:`e^{-I}`,
    which comes from the survival function of an :math:`\text{Exp}(1)` random
    variable.
 
+.. literalinclude:: ../../../watchgen/mini_msprime.py
+   :language: python
+   :pyobject: bottleneck_event
+
 .. code-block:: python
-
-   def bottleneck_event(lineages, intensity):
-       """Simulate a bottleneck: randomly coalesce lineages.
-
-       Parameters
-       ----------
-       lineages : list
-           Current lineages.
-       intensity : float
-           Bottleneck intensity (higher = more coalescence).
-
-       Returns
-       -------
-       lineages : list
-           Lineages after the bottleneck.
-       coalesced_pairs : list of (int, int)
-           Which pairs coalesced.
-       """
-       coalesced_pairs = []
-       # Probability of each pair coalescing
-       k = len(lineages)
-       if k < 2:
-           return lineages, coalesced_pairs
-
-       p = 1 - np.exp(-intensity)  # per-pair coalescence probability
-
-       # Try to coalesce random pairs
-       remaining = list(range(len(lineages)))
-       np.random.shuffle(remaining)
-
-       while len(remaining) >= 2:
-           if np.random.random() < p:
-               i = remaining.pop()
-               j = remaining.pop()
-               coalesced_pairs.append((i, j))
-               # In practice: merge the two lineages using merge_two_ancestors
-           else:
-               remaining.pop()  # this one doesn't coalesce
-
-       return lineages, coalesced_pairs
 
    # Example
    lins = list(range(10))  # 10 lineages
-   _, pairs = bottleneck_event(lins, intensity=2.0)
+   remaining, pairs = bottleneck_event(lins, intensity=2.0)
    print(f"Bottleneck with intensity 2.0: {len(pairs)} pairs coalesced")
+
+The helper retains one input object as a representative after each merger;
+a full ancestry simulator would instead create the corresponding ancestor
+node and edges. msprime also exposes ``add_simple_bottleneck``, a distinct
+pedagogical event in which each lineage independently chooses whether to join
+one common ancestor. It should not be confused with the collapsed Kingman
+interval above.
 
 Bottlenecks are point events -- they happen instantaneously. The next
 ingredient, migration, is a continuous process that operates alongside
@@ -354,8 +323,11 @@ lineages in population :math:`B` move to population :math:`A`.
        fraction : float
            Fraction of lineages to move (0 to 1).
        """
+       if not 0 <= fraction <= 1:
+           raise ValueError("fraction must lie between 0 and 1")
        n_source = populations[source].num_ancestors
-       n_to_move = int(np.round(n_source * fraction))
+       # Each lineage moves independently, as in msprime MassMigration.
+       n_to_move = np.random.binomial(n_source, fraction)
 
        populations[source].num_ancestors -= n_to_move
        populations[dest].num_ancestors += n_to_move
@@ -464,96 +436,15 @@ check if a deterministic demographic event occurs first. This is the point
 where the case and dial attach to the movement -- where population history
 shapes the genealogy.
 
+.. literalinclude:: ../../../watchgen/mini_msprime.py
+   :language: python
+   :pyobject: simulate_with_demographics
+
+This counts-only teaching helper now executes each sampled stochastic event;
+it does not return edges or genealogies. Use ``msprime.sim_ancestry`` for
+scientific simulations and tree-sequence output.
+
 .. code-block:: python
-
-   def simulate_with_demographics(n, L, recomb_rate, populations,
-                                   migration_matrix, event_queue):
-       """Hudson's algorithm with demographics.
-
-       This extends the main loop from hudson_algorithm with demographic
-       event handling: size changes, growth rate changes, mass migrations,
-       and migration rate changes.
-
-       Parameters
-       ----------
-       n : int
-           Total sample size across all populations.
-       L : float
-           Sequence length.
-       recomb_rate : float
-       populations : list of Population
-       migration_matrix : 2D array
-       event_queue : DemographicEventQueue
-       """
-       t = 0.0
-       total_events = 0
-
-       while True:  # simplified termination
-           # Compute event rates
-           total_lineages = sum(p.num_ancestors for p in populations)
-           if total_lineages <= 1:
-               break
-
-           # Coalescence: per population (each with its own rate)
-           t_ca = INFINITY
-           for pop in populations:
-               k = pop.num_ancestors
-               if k > 1:
-                   coal_rate = k * (k - 1) / 2
-                   # Scale by population size (larger pop -> longer wait)
-                   t_pop = pop.get_size(t) * np.random.exponential(
-                       1.0 / (2 * coal_rate))
-                   if t_pop < t_ca:
-                       t_ca = t_pop
-
-           # Recombination
-           # (simplified: use total lineage count as proxy)
-           t_re = np.random.exponential(1.0 / max(total_lineages * recomb_rate * L, 1e-10))
-
-           # Migration: per (source, dest) pair
-           t_mig = INFINITY
-           for j in range(len(populations)):
-               for k in range(len(populations)):
-                   if j != k and migration_matrix[j][k] > 0:
-                       rate = populations[j].num_ancestors * migration_matrix[j][k]
-                       if rate > 0:
-                           t_try = np.random.exponential(1.0 / rate)
-                           t_mig = min(t_mig, t_try)
-
-           min_event_time = min(t_ca, t_re, t_mig)
-
-           # === Check demographic events ===
-           # If a demographic event occurs before the next stochastic event,
-           # execute it first and re-enter the loop with updated parameters.
-           if t + min_event_time > event_queue.next_event_time():
-               # Demographic event fires first!
-               event_time, etype, args = event_queue.pop_event()
-               t = event_time
-
-               if etype == 'size_change':
-                   pop_id, new_size = args
-                   populations[pop_id].set_size(new_size, t)
-                   print(f"t={t}: Pop {pop_id} size -> {new_size}")
-               elif etype == 'growth_rate':
-                   pop_id, rate = args
-                   populations[pop_id].set_growth_rate(rate, t)
-                   print(f"t={t}: Pop {pop_id} growth rate -> {rate}")
-               elif etype == 'mass_migration':
-                   source, dest, fraction = args
-                   n_move = int(populations[source].num_ancestors * fraction)
-                   populations[source].num_ancestors -= n_move
-                   populations[dest].num_ancestors += n_move
-                   print(f"t={t}: {n_move} lineages: pop {source} -> pop {dest}")
-               elif etype == 'migration_rate':
-                   source, dest, rate = args
-                   migration_matrix[source][dest] = rate
-                   print(f"t={t}: migration {source}->{dest} = {rate}")
-           else:
-               t += min_event_time
-               total_events += 1
-               # Execute the stochastic event (simplified: just count)
-
-       print(f"\nSimulation completed: {total_events} events, TMRCA = {t:.1f}")
 
    # Run with the Out-of-Africa model
    INFINITY = float('inf')
@@ -589,14 +480,13 @@ Wright-Fisher (DTWF)** model, which simulates each generation explicitly.
 .. admonition:: Closing a confusion gap -- When does the coalescent approximation fail?
 
    The continuous-time coalescent assumes :math:`N` is large enough that the
-   probability of two simultaneous coalescences is negligible. For
-   :math:`N = 50` with :math:`k = 20` lineages, the probability of a
-   double coalescence in one generation is about
-   :math:`\binom{20}{2}^2 / (2 \cdot 50^2) \approx 1.4\%` -- no longer
-   negligible. The DTWF model handles this correctly by simulating every
-   generation exactly. In practice, msprime uses a hybrid approach: DTWF for
-   the recent past (where populations may be small), switching to the
-   coalescent for the distant past (where the approximation is excellent).
+   probability of simultaneous coalescences is negligible. For
+   :math:`N=50` with :math:`k=20` haploid lineages, the exact occupancy
+   calculation gives a probability of about :math:`0.914` that two or more
+   collisions occur in one generation. The DTWF model handles these events
+   by simulating every generation explicitly. msprime defaults to the Hudson
+   coalescent, but users can request a hybrid model list: DTWF for a chosen
+   recent duration followed by the standard coalescent in the distant past.
 
 **The algorithm per generation:**
 
@@ -608,10 +498,10 @@ Wright-Fisher (DTWF)** model, which simulates each generation explicitly.
 .. code-block:: python
 
    def dtwf_generation(lineages, N, recomb_rate, L):
-       """Simulate one generation of the DTWF model.
+       """Sketch lineage-count changes in one haploid WF generation.
 
-       Unlike the coalescent, this processes every generation explicitly.
-       It is exact (no large-N approximation) but slower for large N.
+       This teaching sketch does not update segment ancestry at recombination
+       and is therefore not a replacement for msprime's DTWF implementation.
 
        Parameters
        ----------
@@ -665,8 +555,13 @@ Wright-Fisher (DTWF)** model, which simulates each generation explicitly.
 
        return new_lineages, events
 
-   # DTWF is used for recent generations, then switches to coalescent
-   # for efficiency. This is the "hybrid" approach in msprime.
+   # Production msprime can compose an explicit hybrid model:
+   import msprime
+
+   model = [
+       msprime.DiscreteTimeWrightFisher(duration=100),
+       msprime.StandardCoalescent(),
+   ]
 
 
 .. admonition:: When to use DTWF vs coalescent
@@ -675,8 +570,8 @@ Wright-Fisher (DTWF)** model, which simulates each generation explicitly.
      populations where the coalescent approximation is poor.
    - **Coalescent**: Use for the distant past where the continuous-time
      approximation is excellent and much faster.
-   - **Hybrid**: msprime's default approach. Simulate DTWF for recent
-     generations, then switch to the coalescent for the deep past.
+   - **Hybrid**: Explicitly pass a DTWF phase followed by the standard
+     coalescent. This is often a useful compromise, but it is not the default.
 
 You have now seen how population history -- size changes, bottlenecks,
 migration, splits, and the DTWF model -- integrates into the simulation.
@@ -701,8 +596,10 @@ Exercises
    Simulate a symmetric island model with 3 populations, :math:`N = 1000`
    each, and migration rate :math:`m = 0.001`. Compute the expected
    coalescence time for two lineages sampled from (a) the same population and
-   (b) different populations. Compare to the theoretical values:
-   :math:`E[T_{\text{same}}] = N + N/(2Nm)^2` (approximate).
+   (b) different populations. Here :math:`m` is the rate to each other deme.
+   Under the haploid convention used by the helper, compare to
+   :math:`E[T_{\mathrm{same}}]=dN` and
+   :math:`E[T_{\mathrm{different}}]=dN+1/(2m)`.
 
 .. admonition:: Exercise 3: Out-of-Africa model
 
@@ -800,11 +697,11 @@ Solutions
 .. admonition:: Solution 2: Island model
 
    For a symmetric island model with :math:`d` demes, each of size :math:`N`, and
-   per-generation migration rate :math:`m`, the expected coalescence time for two
-   lineages sampled from the same deme is approximately :math:`N + N/(2Nm \cdot d)`
-   (the within-deme component plus the between-deme waiting time). For lineages from
-   different demes, the expected time is longer because they must first migrate into
-   the same deme.
+   per-destination, per-generation migration rate :math:`m`, a two-state
+   first-step calculation gives :math:`E[T_{\mathrm{same}}]=dN` under the
+   haploid convention. Two lineages starting in different demes must first
+   enter the same deme, adding :math:`1/(2m)`, so
+   :math:`E[T_{\mathrm{different}}]=dN+1/(2m)`.
 
    .. code-block:: python
 
@@ -826,7 +723,7 @@ Solutions
           t = 0.0
           while True:
               # Rates:
-              # Coalescence: only if both in same deme, rate = 1/(2N)
+              # Coalescence: only if both are in the same deme, rate = 1/N
               coal_rate = (1.0 / N) if deme[0] == deme[1] else 0.0
               # Migration: each lineage migrates at rate m*(d-1) total
               mig_rate = 2 * m * (d - 1)  # total migration rate for both lineages
@@ -850,8 +747,8 @@ Solutions
       print(f"Island model: d={d}, N={N}, m={m}")
       print(f"Same deme:      E[T] = {np.mean(same_times):.0f} generations")
       print(f"Different deme: E[T] = {np.mean(diff_times):.0f} generations")
-      print(f"Approximate theory (same deme): "
-            f"N + N/(2Nm)^2 ~ {N + N / (2*N*m)**2:.0f}")
+      print(f"Theory (same deme): {d * N:.0f}")
+      print(f"Theory (different demes): {d * N + 1 / (2 * m):.0f}")
 
 .. admonition:: Solution 3: Out-of-Africa model
 
@@ -889,18 +786,19 @@ Solutions
       sfs_eur = np.zeros(n_eur - 1)
 
       # The key insight is that the SFS for each population depends on
-      # the genealogy shaped by the demographic model. Under the bottleneck,
-      # the European SFS will show an excess of intermediate-frequency variants
-      # (due to the star-like tree created by the bottleneck), while the
-      # African SFS will follow the standard 1/i pattern more closely.
+      # the genealogy shaped by the demographic model. A bottleneck changes
+      # branch lengths and usually reduces diversity; its SFS effect depends
+      # on the bottleneck's timing, duration, and severity. A star-like tree
+      # and excess of rare variants are signatures of rapid expansion, not a
+      # generic consequence of a bottleneck.
 
       print(f"Expected SFS (standard neutral model, theta={theta:.1f}):")
       for i in range(1, min(6, n_afr)):
           print(f"  xi_{i} = {theta/i:.1f}")
 
       print(f"\nThe African SFS should approximate theta/i.")
-      print(f"The European SFS will be distorted by the bottleneck, showing")
-      print(f"an excess of intermediate-frequency variants and reduced diversity.")
+      print("The European SFS will be distorted by the bottleneck; the")
+      print("direction and magnitude require simulation of the stated model.")
 
 .. admonition:: Solution 4: DTWF vs coalescent
 

@@ -132,8 +132,11 @@ time of two lineages is approximately :math:`\text{Exponential}(1)`.
    print(f"Theory:     mean = 1.0000, var = 1.0000")
 
 With the two-lineage case in hand, we can now generalize to :math:`n` lineages.
-The key insight is that each *pair* of lineages races independently to coalesce,
-and with :math:`k` lineages there are :math:`\binom{k}{2}` such pairs.
+In the continuous-time limit, each *pair* of lineages can be represented by a
+rate-one coalescence clock. With :math:`k` lineages there are
+:math:`\binom{k}{2}` possible pairs; their aggregate event rate is therefore
+:math:`\binom{k}{2}`. The underlying one-generation collision indicators are
+not independent, as the next section makes explicit.
 
 
 Step 2: Multiple Lineages, No Recombination
@@ -146,8 +149,10 @@ generation back, any pair could coalesce. How many pairs are there?
 
    \binom{k}{2} = \frac{k(k-1)}{2}
 
-Each pair independently has probability :math:`1/N` of coalescing. For large
-:math:`N`, the probability that *any* pair coalesces is approximately:
+Each pair has marginal probability :math:`1/N` of coalescing; these pairwise
+events are not independent because one lineage cannot choose two parents in
+the same generation. For fixed :math:`k` and large :math:`N`, the probability
+that *any* pair coalesces is approximately:
 
 .. math::
 
@@ -158,14 +163,15 @@ probability :math:`O(1/N^2)`.)
 
 .. admonition:: Probability Aside -- Why we can ignore simultaneous events
 
-   The probability that exactly one pair coalesces is
-   :math:`\binom{k}{2} \cdot \frac{1}{N} \cdot (1 - \frac{1}{N})^{\binom{k}{2}-1} \approx \binom{k}{2}/N`.
-   The probability that two or more pairs coalesce simultaneously is
-   :math:`O(\binom{k}{2}^2 / N^2)`. For :math:`k = 100` and :math:`N = 10{,}000`,
-   the single-event probability is about :math:`0.5`, while the
-   double-event probability is about :math:`0.0025` -- negligible. In the
-   continuous-time limit (:math:`N \to \infty`), simultaneous events have
-   probability exactly zero.
+   The probability that all :math:`k` lineages choose distinct parents is
+   :math:`(N)_k/N^k`, where :math:`(N)_k=N(N-1)\cdots(N-k+1)`. The probability
+   of exactly one colliding pair is
+   :math:`\binom{k}{2}(N)_{k-1}/N^k`. Thus multiple mergers are negligible
+   only when :math:`k^2/N` is small. For :math:`k=100` and :math:`N=10{,}000`,
+   the exact probability of two or more collisions is about :math:`0.087`,
+   not negligible; this is precisely a regime where the DTWF model is safer.
+   For fixed :math:`k` in the limit :math:`N\to\infty`, simultaneous events
+   vanish and Kingman's continuous-time coalescent is recovered.
 
 **The continuous-time limit.** In units of :math:`N` generations, the waiting
 time until the next coalescence among :math:`k` lineages is:
@@ -386,12 +392,12 @@ the ticking of the clock.
 
 .. admonition:: A practical subtlety
 
-   msprime does **not** actually compute the minimum of several exponential
-   random variables. Instead, it draws each exponential independently and
-   takes the minimum. This is mathematically equivalent but allows each
-   rate to be computed separately (e.g., coalescence rates per population,
-   migration rates per population pair), which is important for the
-   implementation.
+   An implementation may draw one exponential with the summed rate and then
+   choose the event in proportion to its rate, or draw an exponential for
+   every event class and take the minimum. These constructions are
+   mathematically equivalent. msprime groups rates where efficient and uses
+   indexed data structures to choose the particular lineage, population, or
+   breakpoint involved.
 
 With the exponential race in our toolkit, we are ready to add the crucial
 complication that makes the coalescent interesting (and computationally
@@ -415,16 +421,16 @@ Going backwards in time, a recombination event on a lineage at position
 This increases the number of lineages by one.
 
 **Rate of recombination.** A lineage carrying a segment of length :math:`\ell`
-has a recombination rate of :math:`\rho \cdot \ell / L` per coalescent time
+has a recombination rate of :math:`\rho \cdot \ell /(2L)` per coalescent time
 unit, where :math:`\rho = 4N_e r L` is the population-scaled recombination
-rate for the whole genome. Equivalently, the per-base-pair rate in coalescent
-units is :math:`\rho / L`.
+rate for the whole genome under the diploid :math:`2N_e` time scale.
+Equivalently, the per-base-pair rate in coalescent units is :math:`\rho/(2L)`.
 
 The **total** recombination rate across all lineages is:
 
 .. math::
 
-   \lambda_{\text{recomb}} = \frac{\rho}{L} \sum_{i=1}^{k} \ell_i
+   \lambda_{\text{recomb}} = \frac{\rho}{2L} \sum_{i=1}^{k} \ell_i
 
 where :math:`\ell_i` is the total length of ancestry carried by lineage
 :math:`i`.
@@ -483,7 +489,7 @@ where :math:`\ell_i` is the total length of ancestry carried by lineage
            total_length = sum(
                sum(r - l for l, r in segs) for segs in lineages
            )
-           recomb_rate = rho * total_length / L
+           recomb_rate = rho * total_length / (2 * L)
 
            # Exponential race between coalescence and recombination
            winner, dt = exponential_race(coal_rate, recomb_rate)
@@ -680,22 +686,25 @@ this distribution, we use the inversion method.
    :math:`\Lambda(W) = E`. The advantage is that we can solve for :math:`W`
    analytically when :math:`\Lambda` has a closed-form inverse.
 
-**Deriving the waiting time formula.** Let :math:`c = \binom{k}{2}`. We draw
-:math:`U \sim \text{Exp}(2c)` (the waiting time under constant size
-:math:`N_0 = 1`). Then we need to solve:
+**Deriving the waiting time formula.** Let :math:`c = \binom{k}{2}` and draw
+:math:`E\sim\operatorname{Exp}(1)`. Equivalently, define
+:math:`U=E/c`, so :math:`U\sim\operatorname{Exp}(c)`. We then solve:
 
 .. math::
 
-   U = \int_{t_0}^{t_0 + W} \frac{c}{N(s)} \, ds
+   E = \int_{t_0}^{t_0 + W} \frac{c}{N(s)} \, ds
 
-For constant size: :math:`W = N_0 \cdot U / c \cdot 2 = N_0 \cdot U`, which
-gives :math:`\text{Exp}(c / N_0)`.
+For constant size, :math:`W=N_0U`, which gives
+:math:`W\sim\operatorname{Exp}(c/N_0)`.
 
-For exponential growth, using :math:`N(s) = N_0 e^{-\alpha(s - t_0)}`:
+For exponential growth, using :math:`N(s)=N_0e^{-\alpha s}`:
 
 .. math::
 
-   U = \frac{c}{N_0} \int_0^W e^{\alpha s} \, ds = \frac{c}{N_0 \alpha}(e^{\alpha W} - 1)
+   E = \frac{c e^{\alpha t_0}}{N_0}
+       \int_0^W e^{\alpha s} \, ds
+     = \frac{c e^{\alpha t_0}}{N_0\alpha}
+       (e^{\alpha W}-1)
 
 .. admonition:: Calculus Aside -- Evaluating the growth integral
 
@@ -715,62 +724,27 @@ Solving for :math:`W`:
 
 .. math::
 
-   e^{\alpha W} = 1 + \frac{\alpha N_0 U}{c}
+   e^{\alpha W} = 1 + \alpha N_0 e^{-\alpha t_0}U
 
 Taking the logarithm:
 
 .. math::
 
-   W = \frac{1}{\alpha} \ln\left(1 + \alpha N_0 U \cdot \frac{1}{c}\right)
+   W = \frac{1}{\alpha}
+       \ln\left(1 + \alpha N_0 e^{-\alpha t_0}U\right)
 
-This is valid only if :math:`1 + \alpha N_0 U / c > 0`. When :math:`\alpha < 0`
+This is valid only if
+:math:`1+\alpha N_0e^{-\alpha t_0}U>0`. When :math:`\alpha<0`
 (population was *larger* in the past), the argument can become zero or negative,
 meaning the population was so large that coalescence never occurs within the
 growth epoch -- the simulation must wait for a demographic event that changes
 the growth rate.
 
+.. literalinclude:: ../../../watchgen/mini_msprime.py
+   :language: python
+   :pyobject: coalescent_waiting_time_growth
+
 .. code-block:: python
-
-   import math
-
-   def coalescent_waiting_time_constant(k, N):
-       """Waiting time for k lineages, constant population size N."""
-       rate = k * (k - 1) / 2  # binom(k,2)
-       u = np.random.exponential(1.0 / (2 * rate))
-       return N * u  # scale from coalescent units to generations
-
-   def coalescent_waiting_time_growth(k, N0, alpha, t0):
-       """Waiting time for k lineages, exponential growth.
-
-       Parameters
-       ----------
-       k : int
-           Number of lineages.
-       N0 : float
-           Current population size.
-       alpha : float
-           Growth rate (positive = population was smaller in the past).
-       t0 : float
-           Current time.
-
-       Returns
-       -------
-       w : float
-           Waiting time (can be inf if coalescence doesn't occur).
-       """
-       rate = k * (k - 1) / 2  # binom(k,2)
-       u = np.random.exponential(1.0 / (2 * rate))  # draw from Exp(2c)
-
-       if alpha == 0:
-           return N0 * u  # constant-size case
-
-       dt = 0  # already at t0
-       # Apply the inversion formula derived above
-       z = 1 + alpha * N0 * math.exp(-alpha * dt) * u
-       if z <= 0:
-           return np.inf  # coalescence doesn't happen in this epoch
-
-       return math.log(z) / alpha
 
    # Compare waiting times: constant vs growing population
    N0, alpha = 10000, 0.01
@@ -785,23 +759,12 @@ the growth rate.
    print(f"Growth alpha={alpha}: mean waiting time = {np.mean(growth_times):.1f} gen")
    print(f"(Growth concentrates coalescences in the recent past)")
 
-.. admonition:: The formula in msprime's code
+.. admonition:: Connection to msprime
 
-   In the reference implementation (``algorithms.py``), the waiting time
-   with growth is computed in ``Population._get_common_ancestor_waiting_time``:
-
-   .. code-block:: python
-
-      u = random.expovariate(2 * np)
-      if self.growth_rate == 0:
-          ret = self.start_size * u
-      else:
-          z = 1 + self.growth_rate * self.start_size
-              * math.exp(-self.growth_rate * dt) * u
-          if z > 0:
-              ret = math.log(z) / self.growth_rate
-
-   This matches our derivation exactly.
+   msprime uses the same integrated-hazard inversion, with the ploidy factor
+   included in its common-ancestor rate. The function above uses the haploid
+   convention established at the start of this chapter; multiply
+   :math:`N_0` by two for the usual diploid timescale.
 
 With coalescence, recombination, and variable population size all accounted
 for, there is one more biological mechanism to add: gene conversion.

@@ -20,8 +20,8 @@ Overview of msprime
 
 Welcome to the master clockmaker's bench. Of all the timepieces we will
 examine in this book, msprime is arguably the most finely engineered: a
-coalescent simulator that can generate the complete genealogical history of
-millions of genomes in seconds. In the chapters ahead, we will disassemble
+coalescent simulator that can generate succinct genealogical histories for
+very large samples. In the chapters ahead, we will disassemble
 this mechanism gear by gear, understand every spring and escapement, and
 reassemble it from scratch.
 
@@ -62,8 +62,12 @@ relationships among the sampled genomes at every position along the chromosome.
 
 Each marginal tree :math:`\Psi_k` covers a contiguous genomic interval and
 describes the ancestral relationships of all :math:`n` samples within that
-interval. Adjacent trees differ by exactly one **Subtree Prune and Regraft
-(SPR)** operation, which corresponds to a recombination event.
+interval. Under the continuous-genome Hudson model, a visible recombination
+commonly relates neighboring trees by a **Subtree Prune and Regraft (SPR)**
+operation. The correspondence is not one-to-one in the default output:
+recombinations can be invisible in the marginal trees, and tree-sequence
+simplification omits non-coalescing common-ancestor and recombination-event
+nodes.
 
 Think of the tree sequence as a long filmstrip: each frame is a genealogical
 tree, and as you advance along the chromosome, the tree changes smoothly --
@@ -93,9 +97,10 @@ The other 19,900 are irrelevant noise.
 
 **The coalescent** flips the arrow of time. Instead of evolving a whole
 population forward, we start with the :math:`n` sampled genomes and trace their
-ancestry **backwards**. We only track lineages that are ancestral to our
-sample -- and there are at most :math:`n` of them at any time, shrinking
-to 1 as they coalesce.
+ancestry **backwards**. We only track lineages carrying material ancestral to
+our sample. Without recombination their number decreases from :math:`n` to
+one; with recombination it can temporarily exceed :math:`n`, because a
+lineage can split into two ancestral lineages.
 
 .. code-block:: text
 
@@ -109,7 +114,7 @@ to 1 as they coalesce.
               ...                           |\ |/
    Gen T:  o o o o o o o o     MRCA:       *        (1 lineage)
 
-   Tracks 8 genomes x T gens   Tracks <=4 lineages
+   Tracks 8 genomes x T gens   Tracks only ancestral material
 
 The efficiency gain is dramatic: the coalescent simulation runs in time
 proportional to :math:`n` (the sample size), essentially independent of
@@ -156,7 +161,8 @@ post-processing step.
    # Phase 1: generate the genealogy (no mutations yet)
    # sim_ancestry builds the tree sequence -- the "skeleton" of the watch.
    ts = msprime.sim_ancestry(
-       samples=100,              # number of haploid genomes to sample
+       samples=100,              # number of sampled individuals
+       ploidy=1,                 # one haploid genome per individual
        sequence_length=1_000_000, # genome length in base pairs
        recombination_rate=1e-8,  # crossover probability per bp per generation
        population_size=10_000,   # effective population size (constant here)
@@ -227,9 +233,11 @@ Before diving into the gears, let's nail down the terminology precisely.
      - The idealized population size that produces the same rate of genetic
        drift as the real population.
    * - **Coalescent units**
-     - Time measured in units of :math:`2N_e` generations (for haploids) or
-       :math:`4N_e` generations (for diploids). In these units, the rate of
-       coalescence between two lineages is 1.
+     - Time measured in units of :math:`N_e` generations for a haploid
+       Wright--Fisher population or :math:`2N_e` generations for a diploid
+       population. In these units, the rate of coalescence between two
+       lineages is 1. msprime uses the diploid scale by default because its
+       default ploidy is two.
    * - **Rate map**
      - A function mapping genomic position to local recombination or mutation
        rate, allowing for hotspots and coldspots.

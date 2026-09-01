@@ -33,8 +33,8 @@ def run(cmd, cwd=None, check=True):
 def main():
     os.chdir(REPO_ROOT)
 
-    if not shutil.which("pdflatex"):
-        print("Error: pdflatex not found. Install a LaTeX distribution "
+    if not shutil.which("xelatex"):
+        print("Error: xelatex not found. Install a LaTeX distribution "
               "(MacTeX, TeX Live).", file=sys.stderr)
         sys.exit(1)
 
@@ -49,11 +49,14 @@ def main():
         print(f"Error: {MAIN_TEX} not found in {LATEX_DIR}", file=sys.stderr)
         sys.exit(1)
 
-    print("[2/2] Compiling PDF (3 passes for TOC & cross-refs)...")
+    print("[2/2] Compiling PDF with XeLaTeX (3 passes for TOC & cross-refs)...")
     for i in range(1, 4):
-        print(f"  pdflatex pass {i}/3 ...")
-        run(["pdflatex", "-interaction=nonstopmode", MAIN_TEX],
-            cwd=LATEX_DIR, check=False)
+        print(f"  xelatex pass {i}/3 ...")
+        run(["xelatex", "-interaction=nonstopmode", "-halt-on-error", MAIN_TEX],
+            cwd=LATEX_DIR)
+        if i == 1 and shutil.which("makeindex"):
+            run(["makeindex", MAIN_TEX.replace(".tex", ".idx")],
+                cwd=LATEX_DIR)
 
     pdf_name = MAIN_TEX.replace(".tex", ".pdf")
     pdf_path = os.path.join(LATEX_DIR, pdf_name)
