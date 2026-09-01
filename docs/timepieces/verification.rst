@@ -132,9 +132,11 @@ The Timepieces are grouped by what they do, with verification status for each.
      - Deterministic tree sequence inference at biobank scale.
    * - VII
      - :ref:`SINGER <singer_timepiece>`
-     - 172
-     - --
-     - Bayesian ARG sampling with continuous time and two-HMM architecture.
+     - 35
+     - 2026-09-01
+     - Published branch/time HMM equations, mutation-clock rescaling, and SGPR
+       acceptance checked against the paper supplement and official C++ source;
+       teaching code explicitly bounded below full ARG-sampler parity.
    * - VIII
      - :ref:`Threads <threads_timepiece>`
      - 56

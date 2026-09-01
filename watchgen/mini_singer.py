@@ -1,1309 +1,517 @@
+"""Small, source-guided mechanisms from SINGER.
+
+This module implements scalar equations and single-tree analogues used in the
+SINGER chapter. It is deliberately *not* an ARG sampler: production SINGER
+maintains partial-branch states across a tree sequence, performs stochastic
+traceback in two HMMs, maps mutations, and executes SGPR proposals on an ARG.
+
+Ground truth is Deng, Nielsen & Song (2025), Methods and Supplement B.1-B.4,
+and popgenmethods/SINGER commit eb8e39b1a15be4a9a4df4fdaab61847bf73515d7.
 """
-Mini-implementation of the SINGER algorithm for ARG inference.
 
-SINGER (Sampling and Inference of Genealogies with Recombination) is a Bayesian
-method for sampling Ancestral Recombination Graphs (ARGs) from their posterior
-distribution, given observed genetic variation data. It uses an iterative
-threading algorithm: one haplotype at a time is "threaded" onto a growing
-partial ARG using Hidden Markov Models.
+from __future__ import annotations
 
-The four gears of SINGER:
-
-1. Branch Sampling -- An HMM that determines *which branch* each new lineage
-   joins at each genomic position (the topological question).
-
-2. Time Sampling -- A second HMM that determines *when* (at what time) the
-   lineage joins, conditioned on the branch choice. This uses the PSMC
-   transition density as a component.
-
-3. ARG Rescaling -- A post-processing step that adjusts coalescence times to
-   match the mutation clock, using a piecewise linear transformation based on
-   observed vs expected mutation counts in time windows.
-
-4. SGPR (Sub-Graph Pruning and Re-grafting) -- The MCMC update mechanism that
-   explores the space of ARGs by removing and re-threading subsets of the
-   genealogy. The acceptance ratio reduces to a simple tree height ratio.
-
-References
-----------
-Deng, Nielsen, Song (2024). SINGER: Sampling and Inference of Genealogies
-with Recombination.
-"""
+from dataclasses import dataclass
+from math import exp, isfinite, log
 
 import numpy as np
 from scipy.integrate import quad
 
 
-# ============================================================================
-# Chapter 1: Branch Sampling
-# ============================================================================
+def _check_interval(lower, upper):
+    if not (isfinite(lower) and isfinite(upper) and 0 <= lower < upper):
+        raise ValueError("expected a finite interval with 0 <= lower < upper")
+
+
+# Branch sampling (Supplement B.1)
 
 def joining_probability_exact(x, y, tree_intervals):
-    """Compute the exact probability of joining a branch spanning [x, y].
-
-    Parameters
-    ----------
-    x, y : float
-        Lower and upper time of the branch.
-    tree_intervals : list of (lower, upper)
-        All branch intervals in the marginal tree, defining lambda(t).
-
-    Returns
-    -------
-    p : float
-        Joining probability for this branch.
-    """
-    def lambda_psi(t):
-        """Number of lineages at time t.
-
-        Count how many branches in the tree span time t.
-        This is a step function that decreases as we go deeper
-        in time (further from the present), because lineages
-        merge at coalescence events.
-        """
-        return sum(1 for lo, hi in tree_intervals if lo <= t < hi)
-
-    def integrand_for_F_bar(t):
-        """exp(-integral_0^t lambda(x) dx) = F_bar(t).
-
-        This is the survival probability: the chance that the
-        new lineage has NOT coalesced by time t.  We compute
-        it by numerically integrating lambda from 0 to t.
-        """
-        integral, _ = quad(lambda_psi, 0, t)
-        return np.exp(-integral)
-
-    # Integrate the survival function over the branch interval [x, y].
-    # This gives the probability of joining this specific branch.
-    p, _ = quad(integrand_for_F_bar, x, y)
-    return p
+    """Integrate the exact survival function over branch interval ``[x,y)``."""
+    _check_interval(x, y)
+    intervals = [(float(lo), float(hi)) for lo, hi in tree_intervals]
+    if any(lo < 0 or hi <= lo for lo, hi in intervals):
+        raise ValueError("tree intervals must have 0 <= lower < upper")
+    points = sorted({0.0, x, y, *(z for p in intervals for z in p if z <= y)})
+    survival = 1.0
+    answer = 0.0
+    for left, right in zip(points[:-1], points[1:]):
+        if right <= left:
+            continue
+        mid = (left + right) / 2
+        lineages = sum(lo <= mid < hi for lo, hi in intervals)
+        width = right - left
+        if right > x and left < y:
+            a, b = max(left, x), min(right, y)
+            local = survival * exp(-lineages * (a - left))
+            answer += (local * (1 - exp(-lineages * (b - a))) / lineages
+                       if lineages else local * (b - a))
+        survival *= exp(-lineages * width)
+    return answer
 
 
 def lambda_approx(t, n):
-    """Deterministic approximation for number of lineages at time t.
-
-    This replaces the stochastic step-function lambda(t) with a
-    smooth curve that tracks the expected lineage count.  The
-    approximation improves as n increases (law of large numbers).
-    """
+    """Deterministic lineage-count approximation in Supplement B.1.2."""
+    if n <= 1:
+        raise ValueError("n must exceed one")
+    t = np.asarray(t)
+    if np.any(t < 0):
+        raise ValueError("time must be non-negative")
     return n / (n + (1 - n) * np.exp(-t / 2))
 
 
 def F_bar_approx(t, n):
-    """Exceedance probability P(T > t) under the approximation.
-
-    This is the probability that the new lineage has NOT coalesced
-    by time t.  The formula was derived by integrating the smooth
-    lambda approximation.
-    """
-    return np.exp(-t) / (n + (1 - n) * np.exp(-t / 2))**2
+    """Approximate exceedance probability of a new lineage's joining time."""
+    t = np.asarray(t)
+    denominator = n + (1 - n) * np.exp(-t / 2)
+    return np.exp(-t) / denominator**2
 
 
 def f_approx(t, n):
-    """Density of joining time under the approximation.
-
-    f(t) = lambda(t) * F_bar(t): the rate of coalescence at time t
-    times the probability of having survived to time t.
-    """
-    return n * np.exp(-t) / (n + (1 - n) * np.exp(-t / 2))**3
+    """Approximate joining-time density ``lambda(t) * F_bar(t)``."""
+    return lambda_approx(t, n) * F_bar_approx(t, n)
 
 
 def joining_prob_approx(x, y, n):
-    """Joining probability for branch [x, y] using the approximation.
-
-    Numerically integrates the survival function over the branch
-    interval.  This is much faster than the exact calculation
-    because F_bar_approx is a smooth closed-form function.
-    """
-    result, _ = quad(lambda t: F_bar_approx(t, n), x, y)
-    return result
+    """Approximate probability of joining a branch spanning ``[x,y)``."""
+    _check_interval(x, y)
+    value, _ = quad(lambda t: float(F_bar_approx(t, n)), x, y)
+    return value
 
 
 def lambda_inverse(ell, n):
-    """Inverse of the lambda function: find t such that lambda(t) = ell.
-
-    This inverts the deterministic approximation formula.
-    We need this to convert from a target lineage count (the
-    geometric mean) back to a physical time.
-    """
-    # lambda(t) = n / (n + (1-n)*exp(-t/2))
-    # Solving for t:
-    # ell * (n + (1-n)*exp(-t/2)) = n
-    # (1-n)*exp(-t/2) = n/ell - n = n(1-ell)/ell
-    # exp(-t/2) = n(1-ell) / (ell*(1-n))
-    # Since n > 1 and 1-n < 0: n(1-ell)/(ell*(1-n)) should be positive
-    # when ell < n (which it always is for branches below TMRCA)
-    ratio = (n - n * ell) / (ell - n * ell)
-    if ratio <= 0:
-        return np.inf  # edge case: lineage count at or beyond n
-    return -2 * np.log(ratio)
+    """Inverse of :func:`lambda_approx` for ``1 < ell <= n``."""
+    if n <= 1 or not 1 < ell <= n:
+        raise ValueError("expected n > 1 and 1 < ell <= n")
+    return -2 * log(n * (ell - 1) / (ell * (n - 1)))
 
 
 def representative_time(x, y, n):
-    """Compute representative joining time for branch [x, y].
+    """SINGER's heuristic representative time for a branch ``[x,y)``."""
+    _check_interval(x, y)
+    target = np.sqrt(lambda_approx(x, n) * lambda_approx(y, n))
+    return lambda_inverse(float(target), n)
 
-    Uses the geometric mean of lambda at the endpoints to find
-    a single representative time for the branch.  This time is
-    used in emission and transition probability calculations.
+
+def poisson_edge_probability(changes, length, theta):
+    """Poisson probability for zero or one binary change on an edge."""
+    if changes not in (0, 1):
+        raise ValueError("the binary model permits zero or one change")
+    if length < 0 or theta < 0:
+        raise ValueError("length and theta must be non-negative")
+    mean = theta * length / 2
+    return exp(-mean) * (mean if changes else 1.0)
+
+
+def emission_probability(allele_new, allele_lower, allele_upper, tau,
+                         branch_lower, branch_upper, theta):
+    """Three-edge emission from Supplementary Figure 22.
+
+    The joining-point state is imputed by binary parsimony (majority of the
+    three incident states). The product covers the new lineage and both pieces
+    of the bisected joining branch. A one-change edge uses ``m exp(-m)``, not
+    the probability of at least one mutation.
     """
-    lam_x = lambda_approx(x, n)
-    lam_y = lambda_approx(y, n)
-    # Geometric mean: the "natural midpoint" on a log scale
-    lam_tau = np.sqrt(lam_x * lam_y)
-    tau = lambda_inverse(lam_tau, n)
-    return tau
+    alleles = (allele_new, allele_lower, allele_upper)
+    if any(a not in (0, 1) for a in alleles):
+        raise ValueError("alleles must be binary")
+    if not 0 <= branch_lower <= tau <= branch_upper:
+        raise ValueError("tau must lie on the joining branch")
+    join = int(sum(alleles) >= 2)
+    pieces = (
+        (abs(allele_new - join), tau),
+        (abs(allele_lower - join), tau - branch_lower),
+        (abs(allele_upper - join), branch_upper - tau),
+    )
+    return float(np.prod([poisson_edge_probability(k, length, theta)
+                          for k, length in pieces]))
 
 
-def emission_probability(allele_new, allele_at_join, tau, branch_lower,
-                         branch_upper, theta):
-    """Compute emission probability for one site.
-
-    Parameters
-    ----------
-    allele_new : int
-        Allele (0 or 1) at the new node (sample).
-    allele_at_join : int
-        Imputed allele at the joining point (by parsimony).
-    tau : float
-        Representative joining time.
-    branch_lower : float
-        Lower time of the joining branch.
-    branch_upper : float
-        Upper time of the joining branch.
-    theta : float
-        Population-scaled mutation rate (4*Ne*mu).
-
-    Returns
-    -------
-    prob : float
-        Per-site emission probability.
-    """
-    # Branch lengths: how much "time" each branch spans
-    l1 = tau                    # new lineage: from present to joining point
-    l2 = tau - branch_lower     # lower part of joining branch
-    l3 = branch_upper - tau     # upper part of joining branch
-
-    def p_mutation(length):
-        """Probability of mutation on a branch of given length.
-
-        Under the Poisson mutation model, mutations occur at rate
-        theta/2 per unit time.  1 - exp(-rate * time) is the
-        probability of at least one event.
-        """
-        return 1 - np.exp(-theta / 2 * length)
-
-    def p_no_mutation(length):
-        """Probability of no mutation on a branch of given length.
-
-        exp(-rate * time) is the probability of zero events in
-        a Poisson process -- the "survival" probability for mutations.
-        """
-        return np.exp(-theta / 2 * length)
-
-    # New lineage: needs mutation if allele_new != allele_at_join
-    if allele_new != allele_at_join:
-        e1 = p_mutation(l1)
-    else:
-        e1 = p_no_mutation(l1)
-
-    # For the two parts of the joining branch, we need to consider
-    # what alleles are expected above and below the joining point.
-    # The detailed calculation depends on the tree topology above,
-    # but the core structure is:
-    e2 = p_no_mutation(l2)  # Simplified: no mutation on lower part
-    e3 = p_no_mutation(l3)  # Simplified: no mutation on upper part
-
-    # Independence: multiply the three branch probabilities
-    return e1 * e2 * e3
-
-
+@dataclass(frozen=True)
 class BranchState:
-    """A branch state in the SINGER HMM (full or partial).
-
-    Each state represents either a complete branch of the marginal
-    tree (full) or a segment of a branch that was split by a
-    recombination event in the partial ARG (partial).
-    """
-
-    def __init__(self, child, parent, lower_time, upper_time, is_partial=False):
-        self.child = child            # child node ID in the tree
-        self.parent = parent          # parent node ID in the tree
-        self.lower_time = lower_time  # start of the time interval
-        self.upper_time = upper_time  # end of the time interval
-        self.is_partial = is_partial  # True if this is a sub-segment
+    """Full or carried partial-branch state in the branch HMM."""
+    child: int
+    parent: int
+    lower_time: float
+    upper_time: float
+    is_partial: bool = False
 
     @property
     def length(self):
-        """Time span of this branch (or branch segment)."""
         return self.upper_time - self.lower_time
 
-    def __repr__(self):
-        kind = "partial" if self.is_partial else "full"
-        return (f"BranchState({self.child},{self.parent}): "
-                f"[{self.lower_time:.4f},{self.upper_time:.4f}] ({kind})")
+
+def build_state_space(full_branches, partial_branches, forward_probs=None,
+                      epsilon=0.01):
+    """Keep all full branches and partial states above the forward threshold."""
+    if not 0 <= epsilon <= 1:
+        raise ValueError("epsilon must lie in [0,1]")
+    if forward_probs is not None:
+        partial_branches = zip(partial_branches, forward_probs)
+    return list(full_branches) + [state for state, probability in partial_branches
+                                  if probability >= epsilon]
 
 
-def build_state_space(full_branches, partial_branches, forward_probs,
-                       epsilon=0.01):
-    """Build the state space for a bin, pruning unlikely partial branches.
-
-    Parameters
-    ----------
-    full_branches : list of BranchState
-        Full branches of the marginal tree at this bin.
-    partial_branches : list of (BranchState, float)
-        Candidate partial branches with their forward probabilities.
-    epsilon : float
-        Pruning threshold: partial branches with forward probability
-        below epsilon are discarded to keep the state space manageable.
-
-    Returns
-    -------
-    states : list of BranchState
-        Active states for this bin.
-    """
-    # All full branches are always included -- they are always valid
-    # joining targets for the new lineage
-    states = list(full_branches)
-
-    # Partial branches are included only if their forward probability
-    # exceeds epsilon.  This keeps the state space from growing
-    # unboundedly while preserving the most important constraints.
-    for branch, fwd_prob in partial_branches:
-        if fwd_prob >= epsilon:
-            states.append(branch)
-
-    return states
+def branch_recombination_probability(tau, rho):
+    """Return ``r_i = 1 - exp(-rho*tau/2)`` (Supplement B.1.5)."""
+    if tau < 0 or rho < 0:
+        raise ValueError("tau and rho must be non-negative")
+    return 1 - exp(-rho * tau / 2)
 
 
 def branch_transition_prob(tau_i, tau_j, p_j, rho, is_partial_j,
                            q_sum, same_branch):
-    """Compute transition probability from branch i to branch j.
-
-    Parameters
-    ----------
-    tau_i : float
-        Representative time of the current branch.
-    tau_j : float
-        Representative time of the target branch.
-    p_j : float
-        Coalescence probability for target branch.
-    rho : float
-        Population-scaled recombination rate per bin.
-    is_partial_j : bool
-        Whether target branch is a partial branch state.
-    q_sum : float
-        Sum of q_k over all states in S_ell.
-    same_branch : bool
-        Whether i == j (same branch, no recombination).
-
-    Returns
-    -------
-    prob : float
-    """
-    # r_i: probability of recombination on the new lineage up to tau_i
-    r_i = 1 - np.exp(-rho / 2 * tau_i)
-
-    if is_partial_j:
-        q_j = 0.0  # partial branches get zero weight
-    else:
-        r_j = 1 - np.exp(-rho / 2 * tau_j)
-        q_j = r_j * p_j  # product ensures correct stationary distribution
-
-    if same_branch:
-        # No-recombination term + recombination-to-self term
-        return (1 - r_i) + r_i * q_j / q_sum
-    else:
-        # Pure recombination term: probability of jumping to branch j
-        return r_i * q_j / q_sum
+    """Li-Stephens-like branch transition in Supplement B.1.5."""
+    if p_j < 0 or q_sum <= 0:
+        raise ValueError("p_j must be non-negative and q_sum positive")
+    r_i = branch_recombination_probability(tau_i, rho)
+    q_j = (0.0 if is_partial_j else
+           branch_recombination_probability(tau_j, rho) * p_j)
+    return (1 - r_i if same_branch else 0.0) + r_i * q_j / q_sum
 
 
 def split_branch_transition(full_branch, segments, n):
-    """Distribute transition probability when a branch splits.
-
-    When the partial ARG has a recombination that splits a branch
-    into segments, the probability mass from the full branch must
-    be distributed among the segments.  We weight each segment
-    by its coalescence probability -- how likely the new lineage
-    is to join that particular segment.
-
-    Parameters
-    ----------
-    full_branch : BranchState
-        The full branch being split.
-    segments : list of BranchState
-        The resulting segments.
-    n : int
-        Number of samples (for joining probability calculation).
-
-    Returns
-    -------
-    weights : list of float
-        Transition weight for each segment (sums to 1).
-    """
-    probs = []
-    for seg in segments:
-        # Each segment's weight is its joining probability
-        p = joining_prob_approx(seg.lower_time, seg.upper_time, n)
-        probs.append(p)
-
-    total = sum(probs)
-    if total == 0:
-        # Fallback: if all probabilities are zero (degenerate case),
-        # distribute uniformly
-        return [1.0 / len(segments)] * len(segments)
-    return [p / total for p in probs]
+    """Split forward mass among carried segments by joining probability."""
+    del full_branch
+    if not segments:
+        raise ValueError("at least one segment is required")
+    mass = np.array([joining_prob_approx(s.lower_time, s.upper_time, n)
+                     for s in segments])
+    if mass.sum() <= 0:
+        raise ValueError("segments have no joining mass")
+    return (mass / mass.sum()).tolist()
 
 
-# ============================================================================
-# Chapter 2: Time Sampling
-# ============================================================================
+# Time sampling (Supplement B.2)
 
 def partition_branch(x, y, d=20):
-    """Partition a branch [x, y) into d sub-intervals.
-
-    Uses uniform spacing in the exponential CDF, so sub-intervals
-    have equal probability mass under Exp(1).  This gives denser
-    spacing near the present (x) and sparser spacing toward the
-    past (y), matching where coalescence events are most likely.
-
-    Parameters
-    ----------
-    x, y : float
-        Lower and upper time of the branch.
-    d : int
-        Number of sub-intervals.
-
-    Returns
-    -------
-    boundaries : ndarray of shape (d + 1,)
-        Time boundaries [t_0, t_1, ..., t_d].
-    """
-    exp_x = np.exp(-x)  # e^{-x}: survival probability at lower endpoint
-    exp_y = np.exp(-y)  # e^{-y}: survival probability at upper endpoint
-    # fractions = [0, 1/d, 2/d, ..., 1]: the quantile levels
+    """Partition ``[x,y)`` into equal Exp(1) probability intervals."""
+    _check_interval(x, y)
+    if d < 1:
+        raise ValueError("d must be positive")
     fractions = np.linspace(0, 1, d + 1)
-    # Linear interpolation between exp_x and exp_y, then invert
-    # via -log to get the time boundaries
-    boundaries = -np.log(exp_x - fractions * (exp_x - exp_y))
-    return boundaries
+    survival = np.exp(-x) - fractions * (np.exp(-x) - np.exp(-y))
+    return -np.log(survival)
 
 
 def representative_times_ts(boundaries):
-    """Compute representative time for each sub-interval.
-
-    The representative time sits at the center of mass of the
-    sub-interval under the exponential distribution, not at the
-    arithmetic midpoint.
-
-    Parameters
-    ----------
-    boundaries : ndarray of shape (d + 1,)
-
-    Returns
-    -------
-    taus : ndarray of shape (d,)
-    """
-    d = len(boundaries) - 1
-    taus = np.zeros(d)
-    for i in range(d):
-        # Average in survival-probability space, then invert
-        avg_exp = (np.exp(-boundaries[i]) + np.exp(-boundaries[i+1])) / 2
-        taus[i] = -np.log(avg_exp)
-    return taus
+    """Representative times defined by midpoints in exponential space."""
+    boundaries = np.asarray(boundaries, dtype=float)
+    if len(boundaries) < 2 or np.any(np.diff(boundaries) <= 0):
+        raise ValueError("boundaries must be strictly increasing")
+    return -np.log((np.exp(-boundaries[:-1]) +
+                    np.exp(-boundaries[1:])) / 2)
 
 
 def psmc_transition_density(t, s, rho):
-    """PSMC transition density q_rho(t | s).
+    """Continuous density, or no-recombination point mass at ``t=s``.
 
-    This is the probability density of the new coalescence time t,
-    given the old coalescence time s and recombination rate rho.
-
-    Parameters
-    ----------
-    t : float
-        Target time.
-    s : float
-        Source time.
-    rho : float
-        Recombination rate per bin.
-
-    Returns
-    -------
-    density : float
+    This follows Supplement Eq. (3). The equality value is a discrete mass;
+    callers must not integrate it as if it were an ordinary density.
     """
-    # Probability that recombination occurred on the branch [0, s]
-    p_recomb = 1 - np.exp(-rho * s)
-
-    if abs(t - s) < 1e-12:
-        # Point mass (no recombination): probability e^{-rho*s}
-        return np.exp(-rho * s)
-
+    if t < 0 or s <= 0 or rho < 0:
+        raise ValueError("expected t >= 0, s > 0, and rho >= 0")
+    recomb = 1 - exp(-rho * s)
+    if np.isclose(t, s, rtol=0, atol=1e-12):
+        return exp(-rho * s)
     if t < s:
-        # New coalescence is shallower (more recent) than old
-        return (p_recomb / s) * (1 - np.exp(-t))
-    else:
-        # New coalescence is deeper (more ancient) than old
-        return (p_recomb / s) * (np.exp(-(t - s)) - np.exp(-t))
+        return recomb / s * (1 - exp(-t))
+    return recomb / s * (exp(-(t - s)) - exp(-t))
 
 
 def psmc_transition_cdf(t, s, rho):
-    """PSMC transition CDF Q_rho(t | s).
-
-    The cumulative distribution function: P(T_new <= t | T_old = s).
-    Includes both the continuous density (recombination cases) and
-    the point mass at t = s (no recombination).
-    """
-    p_recomb = 1 - np.exp(-rho * s)
-    p_no_recomb = np.exp(-rho * s)
-
+    """CDF from Supplement Eq. (3), including its atom at ``s``."""
+    if t < 0 or s <= 0 or rho < 0:
+        raise ValueError("expected t >= 0, s > 0, and rho >= 0")
+    recomb = 1 - exp(-rho * s)
     if t < s:
-        # Only the t < s continuous density contributes
-        return (p_recomb / s) * (t + np.exp(-t) - 1)
-    else:
-        # The t < s density (integrated to s), plus the point mass,
-        # plus the t > s density (integrated from s to t)
-        return (p_recomb / s) * (s - np.exp(-(t - s)) + np.exp(-t)) + p_no_recomb
+        return recomb / s * (t + exp(-t) - 1)
+    return recomb / s * (s - exp(-(t - s)) + exp(-t)) + exp(-rho * s)
 
 
 def time_transition_matrix(boundaries_prev, taus_prev, boundaries_next, rho):
-    """Compute transition matrix between time sub-intervals.
-
-    Each entry Q[i, j] gives the probability of transitioning from
-    sub-interval i at the previous bin to sub-interval j at the
-    current bin, conditioned on the coalescence falling within the
-    current branch interval.
-
-    Parameters
-    ----------
-    boundaries_prev : ndarray of shape (d_prev + 1,)
-        Sub-interval boundaries at bin ell-1.
-    taus_prev : ndarray of shape (d_prev,)
-        Representative times at bin ell-1.
-    boundaries_next : ndarray of shape (d_next + 1,)
-        Sub-interval boundaries at bin ell.
-    rho : float
-
-    Returns
-    -------
-    Q : ndarray of shape (d_prev, d_next)
-        Transition matrix.
-    """
-    d_prev = len(taus_prev)
-    d_next = len(boundaries_next) - 1
-    Q = np.zeros((d_prev, d_next))
-
-    # Branch interval boundaries for normalization
-    x_ell = boundaries_next[0]   # lower bound of joining branch
-    y_ell = boundaries_next[-1]  # upper bound of joining branch
-
-    for i in range(d_prev):
-        # Denominator: total mass in the branch interval [x, y)
-        denom = (psmc_transition_cdf(y_ell, taus_prev[i], rho) -
-                 psmc_transition_cdf(x_ell, taus_prev[i], rho))
-        if denom < 1e-15:
-            Q[i, :] = 1.0 / d_next  # uniform fallback for degenerate cases
-            continue
-
-        for j in range(d_next):
-            # Numerator: mass in sub-interval j
-            numer = (psmc_transition_cdf(boundaries_next[j+1],
-                                         taus_prev[i], rho) -
-                     psmc_transition_cdf(boundaries_next[j],
-                                         taus_prev[i], rho))
-            Q[i, j] = numer / denom  # conditional probability
-
-    return Q
+    """Conditional interval probabilities from Supplement Eq. (4)."""
+    del boundaries_prev
+    taus_prev = np.asarray(taus_prev, dtype=float)
+    boundaries_next = np.asarray(boundaries_next, dtype=float)
+    if len(boundaries_next) < 2 or np.any(np.diff(boundaries_next) <= 0):
+        raise ValueError("next-state boundaries must be strictly increasing")
+    matrix = np.empty((len(taus_prev), len(boundaries_next) - 1))
+    lower, upper = boundaries_next[0], boundaries_next[-1]
+    for i, source in enumerate(taus_prev):
+        denominator = (psmc_transition_cdf(upper, source, rho) -
+                       psmc_transition_cdf(lower, source, rho))
+        if denominator <= 0:
+            raise ValueError("target branch has zero transition mass")
+        for j, (left, right) in enumerate(zip(boundaries_next[:-1],
+                                              boundaries_next[1:])):
+            matrix[i, j] = (psmc_transition_cdf(right, source, rho) -
+                            psmc_transition_cdf(left, source, rho)) / denominator
+    return matrix
 
 
 def forward_linearized(alpha_prev, Q, emissions):
-    """Linear-time forward step for Type A transitions.
+    """Exact linear forward recursion for a type-A transition.
 
-    Exploits Properties 1 and 2 to compute the forward step in
-    O(d) time instead of O(d^2).  The result is identical to the
-    standard matrix-vector product alpha_prev @ Q * emissions.
-
-    Parameters
-    ----------
-    alpha_prev : ndarray of shape (d,)
-        Forward probabilities at previous bin.
-    Q : ndarray of shape (d, d)
-        Transition matrix (Type A: same state space).
-    emissions : ndarray of shape (d,)
-        Emission probabilities at current bin.
-
-    Returns
-    -------
-    alpha_curr : ndarray of shape (d,)
+    The supplement writes the upper-triangular contribution using a simple
+    suffix sum.  Here rows have already been conditioned on the allowed branch
+    interval, so source-specific normalizers remain.  Propagating the weighted
+    suffix by its adjacent-column ratio preserves the same factorization and
+    agrees with dense multiplication.
     """
-    d = len(alpha_prev)
-
-    # Compute kappa values: the geometric ratio from Property 2
-    # kappa[j] = q[i,j] / q[i,j-1] for any i < j
-    kappa = np.zeros(d)
+    alpha = np.asarray(alpha_prev, dtype=float)
+    Q = np.asarray(Q, dtype=float)
+    emissions = np.asarray(emissions, dtype=float)
+    d = len(alpha)
+    if Q.shape != (d, d) or emissions.shape != (d,):
+        raise ValueError("incompatible forward arrays")
+    below = np.zeros(d)
+    above = np.zeros(d)
     for j in range(1, d):
-        kappa[j] = Q[0, j] / Q[0, j-1] if Q[0, j-1] > 0 else 0
-
-    # Compute S_j (from below): accumulates contributions from i < j
-    # S_j = alpha_{j-1} * q_{j-1,j} + kappa_j * S_{j-1}
-    S = np.zeros(d)
-    for j in range(1, d):
-        S[j] = alpha_prev[j-1] * Q[j-1, j] + kappa[j] * S[j-1]
-
-    # Compute A_j (from above): accumulates contributions from i > j
-    # A_j = alpha_{j+1} + A_{j+1}
-    # By Property 1, all i > j contribute the same q_{j+1,j}, so
-    # we just need the sum of alpha values above j
-    A = np.zeros(d)
+        carried = 0.0
+        if j > 1:
+            if Q[0, j - 1] <= 0:
+                raise ValueError("matrix lacks positive type-A structure")
+            carried = Q[0, j] / Q[0, j - 1] * below[j - 1]
+        below[j] = alpha[j - 1] * Q[j - 1, j] + carried
     for j in range(d - 2, -1, -1):
-        A[j] = alpha_prev[j+1] + A[j+1]
-
-    # Forward probabilities: combine below, diagonal, and above
-    alpha_curr = np.zeros(d)
+        carried = 0.0
+        if j < d - 2:
+            if Q[-1, j + 1] <= 0:
+                raise ValueError("matrix lacks positive type-A structure")
+            carried = Q[-1, j] / Q[-1, j + 1] * above[j + 1]
+        above[j] = alpha[j + 1] * Q[j + 1, j] + carried
+    out = np.empty(d)
     for j in range(d):
-        alpha_curr[j] = emissions[j] * (
-            S[j] + alpha_prev[j] * Q[j, j] + A[j] * Q[j+1, j] if j < d-1
-            else S[j] + alpha_prev[j] * Q[j, j]
+        out[j] = emissions[j] * (
+            below[j] + alpha[j] * Q[j, j] + above[j]
         )
-
-    return alpha_curr
+    return out
 
 
 def type_b_transition(alpha_prev, boundaries_prev, boundaries_next,
-                       mapped_intervals, rho):
-    """Handle Type B transition (recombination hitchhiking).
+                      mapped_intervals, rho=None):
+    """Transfer mass along supplied hitchhiking interval mappings.
 
-    When the partial ARG has a recombination, some sub-intervals
-    from the previous bin map directly to sub-intervals in the
-    current bin (the new lineage hitchhikes on the existing
-    recombination), while others do not (wrong branch).
-
-    Parameters
-    ----------
-    alpha_prev : ndarray
-        Forward probabilities at previous bin.
-    boundaries_prev : ndarray
-        Time boundaries at previous bin.
-    boundaries_next : ndarray
-        Time boundaries at current bin.
-    mapped_intervals : list of (prev_idx, next_idx) or None
-        Maps previous sub-intervals to current ones.
-        None means the interval doesn't contribute (wrong branch).
-    rho : float
-
-    Returns
-    -------
-    alpha_curr : ndarray
+    This is only the deterministic bookkeeping part of type B. Production
+    SINGER also creates uncovered states and applies their HMM emissions.
     """
-    d_next = len(boundaries_next) - 1
-    alpha_curr = np.zeros(d_next)
-
-    for prev_idx, mapping in enumerate(mapped_intervals):
-        if mapping is not None:
-            next_idx = mapping
-            # Forward probability transfers directly: the new lineage
-            # stays at the same time, just in the new tree's coordinates
-            alpha_curr[next_idx] += alpha_prev[prev_idx]
-
-    # Sub-intervals not covered by hitchhiking get zero forward probability
-    # from the hitchhiked states but may receive probability from
-    # the transition matrix for newly created states
-
-    return alpha_curr
+    del boundaries_prev, rho
+    out = np.zeros(len(boundaries_next) - 1)
+    for source, target in enumerate(mapped_intervals):
+        if target is not None:
+            out[target] += alpha_prev[source]
+    return out
 
 
 def type_c_transition(alpha_prev, taus_prev, boundaries_next):
-    """Handle Type C transition (new recombination in the new lineage).
-
-    When rho -> infinity, the transition is just the unconditional
-    coalescence density restricted to the new branch.
-
-    Parameters
-    ----------
-    alpha_prev : ndarray of shape (d_prev,)
-    taus_prev : ndarray of shape (d_prev,)
-    boundaries_next : ndarray of shape (d_next + 1,)
-
-    Returns
-    -------
-    alpha_curr : ndarray of shape (d_next,)
-    """
-    # With rho -> infinity, the no-recombination term vanishes
-    # and we use the conditional transition q_0(t|s)
-    Q = time_transition_matrix(
-        None,  # boundaries don't matter for rho=infinity
-        taus_prev,
-        boundaries_next,
-        rho=1e10  # approximate infinity: e^{-1e10 * s} is essentially 0
-    )
-
-    # Standard matrix-vector multiply: sum over source sub-intervals
-    alpha_curr = alpha_prev @ Q
-    return alpha_curr
+    """Type-C transition conditioned on a new recombination (rho -> infinity)."""
+    return np.asarray(alpha_prev) @ time_transition_matrix(
+        None, taus_prev, boundaries_next, rho=1e12)
 
 
-# ============================================================================
-# Chapter 3: ARG Rescaling
-# ============================================================================
+def recombination_time_median(lower, upper, recoalescence_time):
+    """Median recombination time under truncated density proportional to exp(x)."""
+    _check_interval(lower, upper)
+    if recoalescence_time < upper:
+        raise ValueError("recoalescence must not precede the upper bound")
+    return log((exp(lower) + exp(upper)) / 2)
+
+
+# ARG rescaling (Supplement B.3)
 
 def compute_arg_length_in_window(branches, window_lower, window_upper):
-    """Compute total ARG length overlapping a time window.
-
-    For each branch in the ARG, compute the time overlap between
-    the branch's time interval and the window, then weight by the
-    branch's genomic span (number of base pairs it covers).
-
-    Parameters
-    ----------
-    branches : list of (span, lower_time, upper_time)
-        Each branch has a genomic span and a time interval.
-    window_lower, window_upper : float
-        Time window boundaries.
-
-    Returns
-    -------
-    length : float
-        Total branch length in this window, weighted by span.
-    """
-    total = 0.0
-    for span, lo, hi in branches:
-        # Overlap between [lo, hi) and [window_lower, window_upper)
-        overlap_lo = max(lo, window_lower)
-        overlap_hi = min(hi, window_upper)
-        if overlap_hi > overlap_lo:
-            # span * time_overlap = total branch-length contribution
-            total += span * (overlap_hi - overlap_lo)
-    return total
+    """Span-weighted branch length overlapping one time window."""
+    return sum(span * max(0.0, min(hi, window_upper) - max(lo, window_lower))
+               for span, lo, hi in branches)
 
 
 def partition_time_axis(branches, J=100):
-    """Partition time axis into J equal-ARG-length windows.
-
-    Finds time boundaries such that each window contains
-    1/J of the total ARG branch length.  Uses a sweep through
-    all distinct time points in the ARG.
-
-    Parameters
-    ----------
-    branches : list of (span, lower_time, upper_time)
-    J : int
-        Number of windows.
-
-    Returns
-    -------
-    boundaries : ndarray of shape (J + 1,)
-    """
-    # Total ARG length (sum of span * branch_length for all branches)
-    t_max = max(hi for _, _, hi in branches)
-    total_length = compute_arg_length_in_window(branches, 0, t_max)
-    target_per_window = total_length / J
-
-    # Find boundaries by scanning through time.
-    # Collect all distinct time points (branch endpoints) to avoid
-    # missing discontinuities in the branch-length function.
-    time_points = sorted(set(
-        [0.0, t_max] +
-        [lo for _, lo, _ in branches] +
-        [hi for _, _, hi in branches]
-    ))
-
-    boundaries = [0.0]
+    """Choose J windows with equal span-weighted ARG length."""
+    if not branches or J < 1:
+        raise ValueError("non-empty branches and positive J are required")
+    endpoints = sorted({z for _, lo, hi in branches for z in (lo, hi)})
+    if endpoints[0] < 0:
+        raise ValueError("branch times must be non-negative")
+    total = compute_arg_length_in_window(branches, endpoints[0], endpoints[-1])
+    if total <= 0:
+        raise ValueError("ARG length must be positive")
+    targets = np.linspace(0, total, J + 1)
+    result = [endpoints[0]]
     cumulative = 0.0
-
-    for k in range(len(time_points) - 1):
-        segment_length = compute_arg_length_in_window(
-            branches, time_points[k], time_points[k + 1])
-        cumulative += segment_length
-
-        # When we've accumulated enough length, place a boundary
-        while cumulative >= target_per_window and len(boundaries) < J:
-            # Interpolate to find exact boundary within this segment
-            overshoot = cumulative - target_per_window
-            segment_total = segment_length
-            if segment_total > 0:
-                fraction = 1 - overshoot / segment_total
-                boundary = (time_points[k] +
-                            fraction * (time_points[k + 1] - time_points[k]))
-            else:
-                boundary = time_points[k + 1]
-            boundaries.append(boundary)
-            cumulative -= target_per_window
-
-    boundaries.append(t_max)
-    return np.array(boundaries[:J + 1])
+    target_index = 1
+    for left, right in zip(endpoints[:-1], endpoints[1:]):
+        rate = sum(span for span, lo, hi in branches if lo < right and hi > left)
+        segment = rate * (right - left)
+        while target_index < J and cumulative + segment >= targets[target_index]:
+            result.append(left + (targets[target_index] - cumulative) / rate)
+            target_index += 1
+        cumulative += segment
+    result.append(endpoints[-1])
+    return np.asarray(result)
 
 
 def count_mutations_per_window(mutations, boundaries):
-    """Count mutations in each time window, fractionally.
-
-    Each mutation is distributed across windows proportionally
-    to the overlap between its branch and each window.
-
-    Parameters
-    ----------
-    mutations : list of (branch_lower, branch_upper)
-        Time interval of the branch carrying each mutation.
-    boundaries : ndarray of shape (J + 1,)
-
-    Returns
-    -------
-    counts : ndarray of shape (J,)
-    """
-    J = len(boundaries) - 1
-    counts = np.zeros(J)
-
-    for branch_lo, branch_hi in mutations:
-        branch_length = branch_hi - branch_lo
-        if branch_length == 0:
-            continue  # degenerate branch: skip
-
-        for i in range(J):
-            # How much of this branch falls in window i?
-            overlap_lo = max(branch_lo, boundaries[i])
-            overlap_hi = min(branch_hi, boundaries[i + 1])
-            if overlap_hi > overlap_lo:
-                fraction = (overlap_hi - overlap_lo) / branch_length
-                counts[i] += fraction  # fractional mutation count
-
+    """Fractionally assign each mapped mutation across its carrier branch."""
+    boundaries = np.asarray(boundaries)
+    counts = np.zeros(len(boundaries) - 1)
+    for lower, upper in mutations:
+        _check_interval(lower, upper)
+        for i, (left, right) in enumerate(zip(boundaries[:-1], boundaries[1:])):
+            overlap = max(0.0, min(upper, right) - max(lower, left))
+            counts[i] += overlap / (upper - lower)
     return counts
 
 
 def compute_scaling_factors(counts, total_arg_length, theta, J):
-    """Compute rescaling factors for each time window.
-
-    Each factor c_i = observed / expected mutations in window i.
-    A factor > 1 means time was compressed (too few mutations for
-    the branch length); < 1 means time was stretched.
-
-    Parameters
-    ----------
-    counts : ndarray of shape (J,)
-        Mutation counts per window.
-    total_arg_length : float
-    theta : float
-        Population-scaled mutation rate.
-    J : int
-        Number of windows.
-
-    Returns
-    -------
-    c : ndarray of shape (J,)
-        Scaling factors.
-    """
-    # Expected mutations per window: theta/2 * (total_length / J)
-    expected_per_window = theta * total_arg_length / (2 * J)
-    if expected_per_window == 0:
-        return np.ones(J)  # nothing to rescale
-
-    c = counts / expected_per_window
-    return c
+    """Return ``c_i = 2 J m_i / (theta L(G))`` (Supplement B.3.1)."""
+    if total_arg_length <= 0 or theta <= 0 or J < 1:
+        raise ValueError("ARG length, theta, and J must be positive")
+    counts = np.asarray(counts, dtype=float)
+    if len(counts) != J or np.any(counts < 0):
+        raise ValueError("counts must be J non-negative values")
+    return 2 * J * counts / (theta * total_arg_length)
 
 
 def rescale_times(node_times, boundaries, scaling_factors):
-    """Rescale all coalescence times using window-specific scaling.
-
-    Each node's time is transformed according to the scaling factor
-    of the window it falls in.  The transformation is piecewise
-    linear and monotonically increasing.
-
-    Parameters
-    ----------
-    node_times : dict of {node_id: time}
-    boundaries : ndarray of shape (J + 1,)
-    scaling_factors : ndarray of shape (J,)
-
-    Returns
-    -------
-    new_times : dict of {node_id: rescaled_time}
-    """
-    J = len(scaling_factors)
-
-    # Compute new window boundaries by applying the rescaling
-    new_boundaries = np.zeros(J + 1)
-    for i in range(J):
-        # Each new boundary = previous boundary + scaled window width
-        new_boundaries[i + 1] = (scaling_factors[i] *
-                                  (boundaries[i + 1] - boundaries[i]) +
-                                  new_boundaries[i])
-
-    # Rescale each node time
-    new_times = {}
-    for node_id, t in node_times.items():
-        if t <= 0:
-            new_times[node_id] = 0.0  # leaf nodes stay at time 0
-            continue
-
-        # Find which window this time falls in
-        for i in range(J):
-            if boundaries[i] <= t < boundaries[i + 1]:
-                # Apply piecewise linear rescaling:
-                # offset within window * scaling factor + new window start
-                new_t = (scaling_factors[i] * (t - boundaries[i]) +
-                         new_boundaries[i])
-                new_times[node_id] = new_t
-                break
-        else:
-            # Time is at or beyond t_max: map to the end
-            new_times[node_id] = new_boundaries[-1]
-
-    return new_times
+    """Apply SINGER's continuous piecewise-linear monotone time map."""
+    boundaries = np.asarray(boundaries, dtype=float)
+    factors = np.asarray(scaling_factors, dtype=float)
+    if len(boundaries) != len(factors) + 1 or np.any(factors < 0):
+        raise ValueError("one non-negative factor is required per window")
+    new_boundaries = np.r_[0.0, np.cumsum(factors * np.diff(boundaries))]
+    answer = {}
+    for node, time in node_times.items():
+        if time < boundaries[0] or time > boundaries[-1]:
+            raise ValueError("node time lies outside the grid")
+        index = min(np.searchsorted(boundaries, time, side="right") - 1,
+                    len(factors) - 1)
+        answer[node] = (new_boundaries[index] +
+                        factors[index] * (time - boundaries[index]))
+    return answer
 
 
 def count_mutations_with_rate_variation(branches, mutations, boundaries,
                                          mutation_rate_map):
-    """Count expected mutations per window accounting for rate variation.
-
-    Instead of assuming a constant mutation rate, this function uses
-    a position-dependent rate map to compute expected mutations.
-
-    Parameters
-    ----------
-    branches : list of (start_pos, end_pos, lower_time, upper_time)
-    mutations : list of (position, branch_lower, branch_upper)
-    boundaries : ndarray of shape (J + 1,)
-    mutation_rate_map : callable
-        mutation_rate_map(x) returns the local mutation rate at position x.
-
-    Returns
-    -------
-    expected : ndarray of shape (J,)
-        Expected mutations per window.
-    observed : ndarray of shape (J,)
-        Observed mutations per window.
-    """
-    J = len(boundaries) - 1
-    expected = np.zeros(J)
-    observed = np.zeros(J)
-
-    # Expected: integrate over branches, weighting by local mutation rate
-    for start, end, lo, hi in branches:
-        # Average mutation rate over this branch's genomic span
-        # (simplified: evaluate at midpoint instead of integrating)
-        mu_avg = mutation_rate_map((start + end) / 2)
-        span = end - start
-
-        for i in range(J):
-            overlap_lo = max(lo, boundaries[i])
-            overlap_hi = min(hi, boundaries[i + 1])
-            if overlap_hi > overlap_lo:
-                # Expected mutations = rate * span * time_overlap
-                expected[i] += mu_avg * span * (overlap_hi - overlap_lo)
-
-    # Observed: count actual mutations (same as before)
-    for pos, branch_lo, branch_hi in mutations:
-        branch_length = branch_hi - branch_lo
-        if branch_length == 0:
-            continue
-        for i in range(J):
-            overlap_lo = max(branch_lo, boundaries[i])
-            overlap_hi = min(branch_hi, boundaries[i + 1])
-            if overlap_hi > overlap_lo:
-                observed[i] += (overlap_hi - overlap_lo) / branch_length
-
+    """Expected and observed counts under an integrated genomic rate map."""
+    boundaries = np.asarray(boundaries)
+    expected = np.zeros(len(boundaries) - 1)
+    observed = np.zeros_like(expected)
+    for start, end, lower, upper in branches:
+        if end <= start:
+            raise ValueError("genomic branch spans must be positive")
+        integrated_rate, _ = quad(mutation_rate_map, start, end)
+        for i, (left, right) in enumerate(zip(boundaries[:-1], boundaries[1:])):
+            overlap = max(0.0, min(upper, right) - max(lower, left))
+            expected[i] += integrated_rate * overlap
+    for _position, lower, upper in mutations:
+        _check_interval(lower, upper)
+        for i, (left, right) in enumerate(zip(boundaries[:-1], boundaries[1:])):
+            overlap = max(0.0, min(upper, right) - max(lower, left))
+            observed[i] += overlap / (upper - lower)
     return expected, observed
 
 
-# ============================================================================
-# Chapter 4: SGPR (Sub-Graph Pruning and Re-grafting)
-# ============================================================================
+# Single-tree SPR analogue and SGPR ratio (Supplement B.4)
 
 class SimpleTree:
-    """A minimal tree for demonstrating SPR.
-
-    Stores the tree as a parent map (each node points to its parent)
-    and a time map (each node has a time/height).  This is the same
-    representation used internally by tree sequence libraries like
-    tskit (see the ARG prerequisite chapter).
-    """
-
+    """Minimal rooted binary tree used only to illustrate one marginal SPR."""
     def __init__(self, parent, time):
-        """
-        Parameters
-        ----------
-        parent : dict of {node: parent_node}
-        time : dict of {node: time}
-        """
-        self.parent = parent
-        self.time = time
-        # Build children map by inverting the parent map
+        self.parent = dict(parent)
+        self.time = dict(time)
         self.children = {}
-        for child, par in parent.items():
-            if par is not None:
-                self.children.setdefault(par, []).append(child)
+        for child, parent_node in self.parent.items():
+            if parent_node is not None:
+                self.children.setdefault(parent_node, []).append(child)
 
     def branches(self):
-        """Return all branches as (child, parent, length)."""
-        result = []
-        for child, par in self.parent.items():
-            if par is not None:
-                result.append((child, par,
-                               self.time[par] - self.time[child]))
-        return result
+        return [(child, parent, self.time[parent] - self.time[child])
+                for child, parent in self.parent.items() if parent is not None]
 
     def height(self):
-        """Return the tree height (TMRCA).
-
-        The TMRCA (Time to Most Recent Common Ancestor) is the time
-        of the root node -- the oldest node in the tree.
-        """
         return max(self.time.values())
 
 
 def spr_move(tree, cut_node, new_parent, new_time):
-    """Perform an SPR move on a tree.
+    """Apply a valid single-tree subtree-prune-and-regraft move.
 
-    This implements the three-step SPR procedure:
-    1. Detach the subtree rooted at cut_node
-    2. Remove the now-unary node (the old parent of cut_node)
-    3. Re-attach cut_node to new_parent at new_time
-
-    Parameters
-    ----------
-    tree : SimpleTree
-    cut_node : int
-        The node whose branch we cut above.
-    new_parent : int
-        The branch (identified by its child node) to re-attach to.
-    new_time : float
-        The time of the re-attachment point.
-
-    Returns
-    -------
-    new_tree : SimpleTree
+    ``new_parent`` identifies the child endpoint of the target branch. This is
+    a pedagogical operation, not SINGER's chromosome-spanning SGPR proposal.
     """
-    new_parent_dict = dict(tree.parent)
-    new_time_dict = dict(tree.time)
+    if cut_node not in tree.parent or tree.parent[cut_node] is None:
+        raise ValueError("cut_node must have a parent")
+    if new_parent not in tree.time or new_parent == cut_node:
+        raise ValueError("invalid target branch")
+    descendants = {cut_node}
+    frontier = [cut_node]
+    while frontier:
+        node = frontier.pop()
+        for child in tree.children.get(node, []):
+            descendants.add(child)
+            frontier.append(child)
+    if new_parent in descendants:
+        raise ValueError("cannot regraft into the pruned subtree")
+    target_upper = tree.time.get(tree.parent.get(new_parent), np.inf)
+    if not tree.time[new_parent] < new_time < target_upper:
+        raise ValueError("new_time must lie strictly inside the target branch")
+    if new_time <= tree.time[cut_node]:
+        raise ValueError("new parent must be older than the pruned subtree root")
 
-    # Find the old parent and grandparent of cut_node
-    old_parent = new_parent_dict[cut_node]
-    old_grandparent = new_parent_dict.get(old_parent)
+    parent = dict(tree.parent)
+    times = dict(tree.time)
+    old_parent = parent[cut_node]
+    old_grandparent = parent.get(old_parent)
+    siblings = [c for c in tree.children.get(old_parent, []) if c != cut_node]
+    if len(siblings) != 1:
+        raise ValueError("the teaching move requires a binary old parent")
+    sibling = siblings[0]
+    parent[sibling] = old_grandparent
+    parent.pop(old_parent)
+    times.pop(old_parent)
 
-    # Find sibling of cut_node (the other child of old_parent)
-    siblings = [c for c in tree.children.get(old_parent, [])
-                 if c != cut_node]
-
-    if siblings and old_grandparent is not None:
-        sibling = siblings[0]
-        # Remove old_parent node: connect sibling directly to grandparent
-        # This eliminates the now-unary internal node
-        new_parent_dict[sibling] = old_grandparent
-        del new_parent_dict[old_parent]
-
-    # Re-attach cut_node to new_parent at new_time
-    # Create a new internal node at the re-attachment point
-    new_internal = max(new_time_dict.keys()) + 1
-    new_time_dict[new_internal] = new_time
-
-    # Re-wire: cut_node and new_parent both become children
-    # of the new internal node
-    target_parent = new_parent_dict.get(new_parent)
-    new_parent_dict[new_parent] = new_internal
-    new_parent_dict[cut_node] = new_internal
-    if target_parent is not None:
-        new_parent_dict[new_internal] = target_parent
-
-    return SimpleTree(new_parent_dict, new_time_dict)
+    target_parent = parent.get(new_parent)
+    internal = max(times) + 1
+    times[internal] = new_time
+    parent[new_parent] = internal
+    parent[cut_node] = internal
+    parent[internal] = target_parent
+    return SimpleTree(parent, times)
 
 
-def select_cut(tree):
-    """Select a random cut on a marginal tree.
-
-    The cut is chosen by first sampling a time uniformly in
-    [0, tree height], then choosing uniformly among branches
-    that cross that time.  This two-step procedure gives each
-    branch a probability proportional to its length.
-
-    Parameters
-    ----------
-    tree : SimpleTree
-
-    Returns
-    -------
-    cut_node : int
-        The branch being cut (identified by child node).
-    cut_time : float
-        The time of the cut.
-    """
-    # Sample time uniformly in [0, tree height]
-    h = tree.height()
-    cut_time = np.random.uniform(0, h)
-
-    # Find branches that cross this time
-    crossing_branches = []
-    for child, parent, length in tree.branches():
-        if tree.time[child] <= cut_time < tree.time[parent]:
-            crossing_branches.append(child)
-
-    # Choose one uniformly at random
-    cut_node = np.random.choice(crossing_branches)
-    return cut_node, cut_time
+def select_cut(tree, rng=None):
+    """Use SINGER's time-slice cut rule from Supplement B.4.1."""
+    rng = np.random.default_rng() if rng is None else rng
+    cut_time = rng.uniform(0, tree.height())
+    crossing = [child for child, parent, _ in tree.branches()
+                if tree.time[child] <= cut_time < tree.time[parent]]
+    if not crossing:
+        raise ValueError("no branch crosses the sampled time")
+    return int(rng.choice(crossing)), float(cut_time)
 
 
 def sgpr_acceptance_ratio(old_tree_height, new_tree_height):
-    """Compute the SGPR Metropolis-Hastings acceptance ratio.
-
-    The acceptance ratio is simply the ratio of the old to new
-    tree heights.  This remarkably simple formula follows from
-    the cancellation of posterior ratios (see derivation above).
-
-    Parameters
-    ----------
-    old_tree_height : float
-        Height of the marginal tree before the move.
-    new_tree_height : float
-        Height of the marginal tree after the move.
-
-    Returns
-    -------
-    ratio : float
-        Acceptance probability.
-    """
+    """Approximate SGPR acceptance ``min(1,h(Psi_x)/h(Psi'_x))``."""
+    if old_tree_height <= 0 or new_tree_height <= 0:
+        raise ValueError("tree heights must be positive")
     return min(1.0, old_tree_height / new_tree_height)
 
 
-def simulate_tree_height_variability(n, n_replicates=10000):
-    """Simulate TMRCA for n samples to see height variability.
-
-    Under the standard coalescent (see the coalescent_theory chapter),
-    the TMRCA converges to 2 in coalescent units as n -> infinity.
-    The coefficient of variation (CV) decreases with n, which is
-    why SGPR's acceptance rate approaches 1.
-    """
+def simulate_tree_height_variability(n, n_replicates=10_000, rng=None):
+    """Draw standard-coalescent heights for an acceptance illustration."""
+    if n < 2 or n_replicates < 1:
+        raise ValueError("n >= 2 and n_replicates >= 1 are required")
+    rng = np.random.default_rng() if rng is None else rng
     heights = np.zeros(n_replicates)
-    for rep in range(n_replicates):
-        k = n
-        t = 0.0
-        while k > 1:
-            # Coalescence rate with k lineages: k*(k-1)/2
-            rate = k * (k - 1) / 2
-            # Wait an exponential time before the next coalescence
-            t += np.random.exponential(1.0 / rate)
-            k -= 1
-        heights[rep] = t
+    for k in range(n, 1, -1):
+        heights += rng.exponential(1 / (k * (k - 1) / 2), n_replicates)
     return heights
 
 
-# ============================================================================
-# Demo
-# ============================================================================
-
 def demo():
-    """Demonstrate key components of the SINGER algorithm."""
-
-    print("=" * 60)
-    print("SINGER Mini-Implementation Demo")
-    print("=" * 60)
-
-    # --- Branch Sampling: Joining Probabilities ---
-    print("\n--- Branch Sampling: Joining Probabilities ---")
-
-    # Exact joining probability
-    t1, t2 = 0.3, 0.8
-    tree_intervals = [
-        (0, t1), (0, t1), (0, t1), (0, t1),  # 4 leaf branches
-        (t1, t2), (t1, t2),                    # 2 internal branches
-        (t2, 5.0),                              # root branch (truncated)
-    ]
-
-    for i, (lo, hi) in enumerate(tree_intervals):
-        p = joining_probability_exact(lo, hi, tree_intervals)
-        print(f"Branch {i} [{lo:.1f}, {hi:.1f}]: p = {p:.6f}")
-
-    # Approximate joining probability
-    print("\n--- Deterministic Approximation ---")
-    n = 50
-    t1, t2, t3 = 0.01, 0.05, 0.2
-    branches_approx = [(0, t1), (t1, t2), (t2, t3), (t3, 2.0)]
-
-    print(f"{'Branch':<20} {'p_approx':>10}")
-    print("-" * 32)
-    total = 0
-    for lo, hi in branches_approx:
-        p = joining_prob_approx(lo, hi, n)
-        total += p
-        print(f"[{lo:.2f}, {hi:.2f}]{'':<10} {p:>10.6f}")
-    print(f"{'Sum':<20} {total:>10.6f}")
-
-    # Representative time
-    print("\n--- Representative Joining Times ---")
-    for x, y in [(0.0, 0.01), (0.01, 0.05), (0.05, 0.2), (0.2, 1.0)]:
-        tau = representative_time(max(x, 1e-10), y, n)
-        print(f"Branch [{x:.2f}, {y:.2f}]: tau = {tau:.6f}, "
-              f"lambda(x)={lambda_approx(max(x,1e-10),n):.2f}, "
-              f"lambda(y)={lambda_approx(y,n):.2f}, "
-              f"lambda(tau)={lambda_approx(tau,n):.2f}")
-
-    # Emission probability
-    print("\n--- Emission Probabilities ---")
-    theta = 0.001
-    tau = 0.5
-    branch = (0.1, 1.2)
-    for allele_new, allele_join in [(0, 0), (0, 1), (1, 0), (1, 1)]:
-        e = emission_probability(allele_new, allele_join, tau,
-                                 branch[0], branch[1], theta)
-        print(f"allele_new={allele_new}, allele_join={allele_join}: "
-              f"emission={e:.8f}")
-
-    # Transition probability
-    print("\n--- Branch Transition Matrix ---")
-    rho = 0.5
-    branches_tr = [(0.0, 0.02), (0.02, 0.06), (0.06, 0.15),
-                   (0.15, 0.4), (0.4, 2.0)]
-    taus = [representative_time(max(x, 1e-10), y, n) for x, y in branches_tr]
-    probs = [joining_prob_approx(x, y, n) for x, y in branches_tr]
-
-    r_vals = [1 - np.exp(-rho / 2 * t) for t in taus]
-    q_vals = [r * p for r, p in zip(r_vals, probs)]
-    q_sum = sum(q_vals)
-
-    print("Transition matrix:")
-    T = np.zeros((5, 5))
-    for i in range(5):
-        for j in range(5):
-            T[i, j] = branch_transition_prob(
-                taus[i], taus[j], probs[j], rho,
-                is_partial_j=False, q_sum=q_sum, same_branch=(i == j)
-            )
-        print(f"  From branch {i}: {np.round(T[i], 4)}")
-    print(f"Row sums: {T.sum(axis=1)}")
-
-    # Partial branch states
-    print("\n--- Partial Branch States ---")
-    full = [
-        BranchState(0, 4, 0.0, 0.3),
-        BranchState(1, 4, 0.0, 0.3),
-        BranchState(2, 5, 0.0, 0.7),
-        BranchState(4, 5, 0.3, 0.7),
-        BranchState(5, -1, 0.7, float('inf')),
-    ]
-    partial_candidates = [
-        (BranchState(0, 4, 0.0, 0.15, is_partial=True), 0.05),
-        (BranchState(0, 4, 0.15, 0.3, is_partial=True), 0.002),
-    ]
-    states = build_state_space(full, partial_candidates, None, epsilon=0.01)
-    print(f"State space size: {len(states)}")
-    for s in states:
-        print(f"  {s}")
-
-    # Split branch transition
-    print("\n--- Split Branch Transition ---")
-    full_b = BranchState(1, 5, 0.0, 1.0)
-    seg_lower = BranchState(1, 5, 0.0, 0.3, is_partial=True)
-    seg_upper = BranchState(1, 5, 0.3, 1.0, is_partial=True)
-    weights = split_branch_transition(full_b, [seg_lower, seg_upper], n=50)
-    print(f"Lower segment weight: {weights[0]:.4f}")
-    print(f"Upper segment weight: {weights[1]:.4f}")
-
-    # --- Time Sampling ---
-    print("\n--- Time Sampling: Branch Partition ---")
-    boundaries = partition_branch(0.1, 2.0, d=10)
-    print("Sub-interval boundaries:")
-    for i in range(len(boundaries) - 1):
-        width = boundaries[i+1] - boundaries[i]
-        print(f"  [{boundaries[i]:.4f}, {boundaries[i+1]:.4f}) width={width:.4f}")
-
-    taus_ts = representative_times_ts(boundaries)
-    print("\nRepresentative times:")
-    for i, tau_val in enumerate(taus_ts):
-        print(f"  Sub-interval {i}: tau = {tau_val:.4f}")
-
-    # PSMC transition CDF verification
-    print(f"\nCDF(100 | s=1, rho=0.5) = {psmc_transition_cdf(100, 1.0, 0.5):.6f}")
-
-    # Time transition matrix
-    Q = time_transition_matrix(boundaries, taus_ts, boundaries, rho=0.5)
-    print(f"\nTransition matrix shape: {Q.shape}")
-    print(f"Row sums: {np.round(Q.sum(axis=1), 6)}")
-    print(f"\nFirst row: {np.round(Q[0], 4)}")
-
-    # Linearized forward step verification
-    print("\n--- Linearized Forward Step ---")
-    d = 10
-    np.random.seed(42)
-    alpha_prev = np.random.dirichlet(np.ones(d))
-    emissions = np.random.uniform(0.1, 0.9, size=d)
-
-    alpha_quad = emissions * (alpha_prev @ Q)
-    alpha_lin = forward_linearized(alpha_prev, Q, emissions)
-    print(f"Max difference (linear vs quadratic): {np.max(np.abs(alpha_quad - alpha_lin)):.2e}")
-
-    # --- ARG Rescaling ---
-    print("\n--- ARG Rescaling ---")
-    branches_rescale = [
-        (1000, 0.0, 0.3),
-        (1000, 0.0, 0.3),
-        (1000, 0.0, 0.7),
-        (1000, 0.0, 0.7),
-        (1000, 0.3, 0.7),
-        (1000, 0.3, 0.7),
-        (1000, 0.7, 1.5),
-    ]
-    boundaries_rescale = partition_time_axis(branches_rescale, J=5)
-    print("Time window boundaries:")
-    for i in range(len(boundaries_rescale) - 1):
-        length = compute_arg_length_in_window(branches_rescale,
-                                               boundaries_rescale[i],
-                                               boundaries_rescale[i + 1])
-        print(f"  [{boundaries_rescale[i]:.4f}, {boundaries_rescale[i+1]:.4f}): "
-              f"ARG length = {length:.1f}")
-
-    # Mutation counts
-    np.random.seed(42)
-    mutations = [(np.random.uniform(0, 0.5), np.random.uniform(0.5, 1.5))
-                 for _ in range(20)]
-    counts = count_mutations_per_window(mutations, boundaries_rescale)
-    print("\nMutation counts per window:")
-    for i in range(len(counts)):
-        print(f"  Window {i}: {counts[i]:.2f} mutations")
-
-    # Scaling factors
-    total_length = sum(span * (hi - lo) for span, lo, hi in branches_rescale)
-    theta_rescale = 0.001
-    c = compute_scaling_factors(counts, total_length, theta_rescale, len(counts))
-    print("\nScaling factors:")
-    for i, ci in enumerate(c):
-        print(f"  Window {i}: c = {ci:.4f}")
-
-    # Rescale times
-    node_times = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0,
-                  4: 0.3, 5: 0.7, 6: 1.5}
-    new_times = rescale_times(node_times, boundaries_rescale, c)
-    print("\nRescaled coalescence times:")
-    for node_id in sorted(new_times.keys()):
-        print(f"  Node {node_id}: {node_times[node_id]:.4f} -> "
-              f"{new_times[node_id]:.4f}")
-
-    # --- SGPR ---
-    print("\n--- SGPR: SPR Moves ---")
-    tree = SimpleTree(
-        parent={0: 4, 1: 4, 2: 5, 3: 5, 4: 6, 5: 6},
-        time={0: 0, 1: 0, 2: 0, 3: 0, 4: 0.3, 5: 0.7, 6: 1.5}
-    )
-    print("Original branches:")
-    for c_node, p_node, l in tree.branches():
-        print(f"  {c_node} -> {p_node}: length={l:.2f}")
-
-    np.random.seed(42)
-    cut_node, cut_time = select_cut(tree)
-    print(f"\nCut: node {cut_node} at time {cut_time:.4f}")
-
-    # SGPR acceptance ratio
-    print("\n--- SGPR Acceptance Ratio ---")
-    print(f"sgpr_acceptance_ratio(2.0, 2.0) = {sgpr_acceptance_ratio(2.0, 2.0)}")
-    print(f"sgpr_acceptance_ratio(1.5, 2.0) = {sgpr_acceptance_ratio(1.5, 2.0)}")
-    print(f"sgpr_acceptance_ratio(2.0, 1.5) = {sgpr_acceptance_ratio(2.0, 1.5)}")
-
-    # Tree height variability
-    print("\n--- Tree Height Variability ---")
-    for n_sample in [10, 50, 100, 500]:
-        heights = simulate_tree_height_variability(n_sample, n_replicates=5000)
-        cv = heights.std() / heights.mean()
-        print(f"n={n_sample:>4d}: mean height={heights.mean():.4f}, "
-              f"CV={cv:.4f}")
-
-    print("\n" + "=" * 60)
-    print("Demo complete.")
-    print("=" * 60)
+    branch = (0.2, 0.8)
+    tau = representative_time(*branch, 50)
+    print(f"representative joining time: {tau:.6f}")
+    print(f"joining probability: {joining_prob_approx(*branch, 50):.6g}")
+    print("SGPR height-ratio acceptance:", sgpr_acceptance_ratio(1.9, 2.0))
 
 
 if __name__ == "__main__":
