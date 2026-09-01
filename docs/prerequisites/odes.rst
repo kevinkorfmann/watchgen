@@ -82,35 +82,36 @@ satisfies both the equation and the initial condition. Think of it as specifying
 the gear positions at the moment the watch is wound, then asking where the gears
 will be at any future time.
 
-**Connection to the coalescent.** In :ref:`coalescent_theory`, we encountered
-the ODE for the expected number of lineages:
+**Connection to the coalescent.** Conditional on currently having an integer
+:math:`k` lineages, the next coalescence occurs at rate
 
 .. math::
 
-   \frac{d\lambda}{dt} = -\frac{\lambda(\lambda - 1)}{2}
+   c_k=\binom{k}{2}=\frac{k(k-1)}{2}.
 
-with :math:`\lambda(0) = n`. Where does the right-hand side come from? In a
-population of constant size, any pair of lineages coalesces at rate 1 (in
-coalescent units). With :math:`\lambda` lineages, there are
-:math:`\binom{\lambda}{2} = \lambda(\lambda-1)/2` pairs, so the total
-coalescence rate is :math:`\lambda(\lambda-1)/2`. Each coalescence reduces
-the lineage count by 1, hence the negative sign. This is the deterministic
-version of the random coalescent process: instead of tracking each random
-coalescence event, we track the *expected* number of lineages as a smooth
-function of time.
+Because each event reduces the count by one, the conditional instantaneous
+mean change is :math:`-c_k`. Replacing :math:`k` by a continuous
+:math:`\lambda` gives the useful mean-field ODE
+:math:`d\lambda/dt=-\lambda(\lambda-1)/2`, but it is **not** the exact ODE for
+:math:`\mathbb{E}[K_t]`: nonlinearity means
+:math:`\mathbb{E}[K_t(K_t-1)]\ne
+\mathbb{E}[K_t](\mathbb{E}[K_t]-1)` in general. The exact probability ODE is
+developed below.
 
 .. code-block:: python
 
    import numpy as np
 
-   # The coalescent ODE: rate of change = -lambda*(lambda-1)/2
-   def coalescent_rhs(lam, t):
-       return -lam * (lam - 1) / 2
+   def coalescence_event_rate(k):
+       """Kingman coalescence rate conditional on integer lineage count k."""
+       if not isinstance(k, (int, np.integer)) or k < 1:
+           raise ValueError("k must be a positive integer")
+       return k * (k - 1) / 2
 
    # Starting with 10 lineages, the initial rate of decrease is:
    lam_0 = 10
-   rate = coalescent_rhs(lam_0, 0)
-   print(f"With {lam_0} lineages: rate = {rate:.1f} lineages per unit time")
+   rate = coalescence_event_rate(lam_0)
+   print(f"With {lam_0} lineages: event rate = {rate:.1f} per unit time")
    print(f"(There are {lam_0*(lam_0-1)//2} pairs, each coalescing at rate 1)")
 
 Let us warm up with a simpler ODE before tackling numerical methods. The
@@ -154,6 +155,9 @@ We will use this to test our numerical methods.
        y : float or ndarray
            Solution y(t).
        """
+       if y0 <= 0 or K <= 0 or r < 0:
+           raise ValueError("require y0 > 0, K > 0, and r >= 0")
+       t = np.asarray(t, dtype=float)
        return K / (1 + (K / y0 - 1) * np.exp(-r * t))
 
    # Verify: y(0) should equal y0, and y(inf) should approach K
@@ -207,20 +211,18 @@ computation. We will improve on it shortly.
    def euler_method(f, y0, t_span, h):
        """Solve dy/dt = f(y, t) using forward Euler with step size h."""
        t0, tf = t_span
-       # np.arange creates evenly spaced values from t0 to tf with spacing h.
-       t_values = np.arange(t0, tf + h / 2, h)
-       n_steps = len(t_values)
-
-       # Handle both scalar and vector y0
-       y0 = np.atleast_1d(np.asarray(y0, dtype=float))
-       y_values = np.zeros((n_steps, len(y0)))
-       y_values[0] = y0
-
-       for i in range(1, n_steps):
-           # Forward Euler: y_{n+1} = y_n + h * f(y_n, t_n)
-           y_values[i] = y_values[i - 1] + h * np.atleast_1d(f(y_values[i - 1], t_values[i - 1]))
-
-       return t_values, y_values.squeeze()
+       if h <= 0 or tf < t0:
+           raise ValueError("require h > 0 and tf >= t0")
+       times = [float(t0)]
+       values = [np.atleast_1d(np.asarray(y0, dtype=float))]
+       while times[-1] < tf:
+           step = min(h, tf - times[-1])
+           slope = np.atleast_1d(f(values[-1], times[-1]))
+           if slope.shape != values[-1].shape:
+               raise ValueError("f must return the same shape as y0")
+           values.append(values[-1] + step * slope)
+           times.append(times[-1] + step)
+       return np.array(times), np.array(values).squeeze()
 
    # Logistic equation: dy/dt = r*y*(1 - y/K)
    def logistic_rhs(y, t):
@@ -334,30 +336,29 @@ for non-stiff problems.
    def rk4_method(f, y0, t_span, h):
        """Solve dy/dt = f(y, t) using the classical fourth-order Runge-Kutta."""
        t0, tf = t_span
-       t_values = np.arange(t0, tf + h / 2, h)
-       n_steps = len(t_values)
-
-       y0 = np.atleast_1d(np.asarray(y0, dtype=float))
-       y_values = np.zeros((n_steps, len(y0)))
-       y_values[0] = y0
-
-       for i in range(1, n_steps):
-           t = t_values[i - 1]
-           y = y_values[i - 1]
+       if h <= 0 or tf < t0:
+           raise ValueError("require h > 0 and tf >= t0")
+       times = [float(t0)]
+       values = [np.atleast_1d(np.asarray(y0, dtype=float))]
+       while times[-1] < tf:
+           step = min(h, tf - times[-1])
+           t = times[-1]
+           y = values[-1]
 
            # Four slope evaluations
            k1 = np.atleast_1d(f(y, t))
-           k2 = np.atleast_1d(f(y + h / 2 * k1, t + h / 2))
-           k3 = np.atleast_1d(f(y + h / 2 * k2, t + h / 2))
-           k4 = np.atleast_1d(f(y + h * k3, t + h))
+           k2 = np.atleast_1d(f(y + step / 2 * k1, t + step / 2))
+           k3 = np.atleast_1d(f(y + step / 2 * k2, t + step / 2))
+           k4 = np.atleast_1d(f(y + step * k3, t + step))
+           if not all(k.shape == y.shape for k in (k1, k2, k3, k4)):
+               raise ValueError("f must return the same shape as y0")
 
            # Weighted combination
-           y_values[i] = y + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+           values.append(y + (step / 6) * (k1 + 2 * k2 + 2 * k3 + k4))
+           times.append(t + step)
+       return np.array(times), np.array(values).squeeze()
 
-       return t_values, y_values.squeeze()
-
-   # Compare Euler, RK4, and scipy on the logistic equation
-   from scipy.integrate import solve_ivp
+   # Compare Euler and RK4 with the independent exact solution.
 
    y0, r, K = 0.1, 1.0, 10.0
    t_final = 5.0
@@ -369,16 +370,9 @@ for non-stiff problems.
    # RK4 with h=0.1
    _, y_rk4 = rk4_method(logistic_rhs, y0, (0.0, t_final), 0.1)
 
-   # scipy solve_ivp (Dormand-Prince RK45)
-   # Note: solve_ivp expects f(t, y) with t first, so we wrap our function.
-   sol = solve_ivp(lambda t, y: logistic_rhs(y, t), [0.0, t_final], [y0],
-                   dense_output=True)
-   y_scipy = sol.sol(t_final)[0]
-
    print(f"Exact solution:  {y_exact:.10f}")
    print(f"Euler (h=0.1):   {float(y_euler[-1]):.10f}  error={abs(float(y_euler[-1]) - y_exact):.2e}")
    print(f"RK4   (h=0.1):   {float(y_rk4[-1]):.10f}  error={abs(float(y_rk4[-1]) - y_exact):.2e}")
-   print(f"scipy RK45:      {y_scipy:.10f}  error={abs(y_scipy - y_exact):.2e}")
 
    # RK4 convergence: error should decrease as h^4
    print("\nRK4 convergence:")
@@ -433,131 +427,64 @@ coupled to its neighbors.
    The formulas are identical; only the data types change from floats to
    arrays.
 
-**Example: SFS drift and mutation.** A central system in population genetics
-describes how each entry of the site frequency spectrum evolves under genetic
-drift and mutation. For a sample of size :math:`n`, the SFS has entries
-:math:`\phi_1, \phi_2, \ldots, \phi_{n-1}`, where :math:`\phi_j` is the
-expected number of sites at which :math:`j` out of :math:`n` chromosomes
-carry the derived allele.
-
-Under the neutral Wright-Fisher model, the moment equations (derived in detail
-in the moments Timepiece, :ref:`moments_timepiece`) take the form:
+**Example: exact coalescent lineage-count probabilities.** Let
+:math:`p_k(t)=P(K_t=k\mid K_0=n)`. From state :math:`k`, Kingman's coalescent
+jumps only to :math:`k-1`, at rate :math:`c_k=\binom{k}{2}`. The Kolmogorov
+forward equations are therefore
 
 .. math::
 
-   \frac{d\phi_j}{dt} = \underbrace{-\frac{j(n-j)}{n} \phi_j + \frac{(j+1)(n-j-1)}{n} \phi_{j+1}
-   + \frac{(j-1)(n-j+1)}{n} \phi_{j-1}}_{\text{drift}}
-   + \underbrace{\theta \delta_{j,1}}_{\text{mutation}}
+   \frac{dp_k}{dt}=c_{k+1}p_{k+1}-c_kp_k,
+   \qquad k=1,\ldots,n,
 
-for :math:`j = 1, \ldots, n-1`, with boundary conditions :math:`\phi_0 =
-\phi_n = 0` and :math:`\theta = 4N_e\mu`.
+where :math:`c_1=0` and :math:`p_{n+1}=0`. The gain into state :math:`k`
+exactly matches loss from state :math:`k+1`, so summing the equations gives
+:math:`d\sum_kp_k/dt=0`. Unlike the earlier mean-field equation, this system is
+an exact description of the Kingman lineage-count process :cite:`kingman1982`.
 
-Where do the coefficients come from? Each term has a biological meaning:
-
-- **Loss from class** :math:`j`: The term :math:`-j(n-j)/n \cdot \phi_j`
-  says that alleles at frequency :math:`j/n` can drift either up (to
-  :math:`(j+1)/n`) or down (to :math:`(j-1)/n`). The rate :math:`j(n-j)/n`
-  comes from the variance of binomial sampling: in a finite population,
-  :math:`j` copies and :math:`n-j` copies interact to produce fluctuations
-  proportional to :math:`j(n-j)`.
-
-- **Gain from class** :math:`j+1`: The term
-  :math:`(j+1)(n-j-1)/n \cdot \phi_{j+1}` is the rate at which alleles drift
-  *down* from frequency :math:`(j+1)/n` to :math:`j/n`.
-
-- **Gain from class** :math:`j-1`: Similarly,
-  :math:`(j-1)(n-j+1)/n \cdot \phi_{j-1}` is the rate at which alleles drift
-  *up* from :math:`(j-1)/n` to :math:`j/n`.
-
-- **Mutation**: :math:`\theta \delta_{j,1}` injects new mutations at the
-  lowest frequency class (:math:`j=1`). The Kronecker delta
-  :math:`\delta_{j,1}` equals 1 when :math:`j=1` and 0 otherwise -- new
-  mutations always start as singletons.
-
-The result is a **tridiagonal** system: each frequency class :math:`j`
-interacts only with its immediate neighbors :math:`j-1` and :math:`j+1`.
-This structure makes the ODE efficient to solve numerically.
-
-At **equilibrium** (:math:`d\phi_j/dt = 0`), the expected SFS is:
-
-.. math::
-
-   \phi_j^{(\text{eq})} = \frac{\theta}{j}
-
-This is the classic result: the equilibrium SFS under neutrality is
-proportional to :math:`1/j`.
+The ``moments`` software also evolves a coupled ODE system, but for expected
+sample-frequency-spectrum entries. Its operators and time scaling should be
+taken from the original derivation and implementation rather than inferred by
+treating adjacent frequency classes as a generic birth--death chain
+:cite:`moments`.
 
 .. code-block:: python
 
-   def sfs_ode(phi, t, n, theta):
-       """Right-hand side of the SFS moment equations (drift + mutation).
+   def coalescent_count_ode(probabilities, t):
+       """Forward equation for Kingman lineage-count probabilities.
 
        Parameters
        ----------
-       phi : ndarray of shape (n-1,) -- SFS entries phi_1, ..., phi_{n-1}.
-       t : float -- current time (unused, required by ODE interface).
-       n : int -- sample size.
-       theta : float -- population-scaled mutation rate (4*Ne*mu).
+       probabilities : ndarray of shape (n,)
+           Entry k-1 is P(K_t=k), for k=1,...,n.
+       t : float
+           Current time (unused for this time-homogeneous process).
        """
-       m = n - 1  # number of SFS entries
-       dphi = np.zeros(m)
+       probabilities = np.asarray(probabilities, dtype=float)
+       if probabilities.ndim != 1 or len(probabilities) < 1:
+           raise ValueError("probabilities must be a nonempty vector")
+       n = len(probabilities)
+       derivative = np.zeros(n)
+       for k in range(1, n + 1):
+           loss = k * (k - 1) / 2 * probabilities[k - 1]
+           gain = 0.0
+           if k < n:
+               gain = (k + 1) * k / 2 * probabilities[k]
+           derivative[k - 1] = gain - loss
+       return derivative
 
-       for j in range(1, n):
-           idx = j - 1  # phi_j is stored at index j-1
-
-           # Drift: loss from frequency class j
-           drift_out = -(j * (n - j)) / n * phi[idx]
-
-           # Drift: gain from frequency class j+1 (if it exists)
-           drift_up = 0.0
-           if j + 1 <= n - 1:
-               drift_up = ((j + 1) * (n - j - 1)) / n * phi[idx + 1]
-
-           # Drift: gain from frequency class j-1 (if it exists)
-           drift_down = 0.0
-           if j - 1 >= 1:
-               drift_down = ((j - 1) * (n - j + 1)) / n * phi[idx - 1]
-
-           # Mutation: new derived alleles enter at frequency 1/n
-           mutation = theta if j == 1 else 0.0
-
-           dphi[idx] = drift_out + drift_up + drift_down + mutation
-
-       return dphi
-
-   # Integrate from an empty SFS to equilibrium using RK4
-   n = 20          # sample size
-   theta = 1.0     # mutation rate
-
-   # Start from zero SFS (no variation)
-   phi0 = np.zeros(n - 1)
-
-   # Integrate for a long time to reach equilibrium
-   # We use scipy's solve_ivp for production-quality integration.
-   sol = solve_ivp(
-       lambda t, y: sfs_ode(y, t, n, theta),
-       [0.0, 50.0],
-       phi0,
-       method='RK45',
-       max_step=0.1,
-       dense_output=True
-   )
-   phi_numerical = sol.y[:, -1]
-
-   # Theoretical equilibrium: theta / j
-   phi_theory = np.array([theta / j for j in range(1, n)])
-
-   print("SFS at equilibrium: numerical vs. theory")
-   print(f"{'j':>4s}  {'numerical':>12s}  {'theta/j':>12s}  {'rel. error':>12s}")
-   for j in range(1, min(n, 11)):
-       num = phi_numerical[j - 1]
-       theo = phi_theory[j - 1]
-       rel_err = abs(num - theo) / theo
-       print(f"{j:4d}  {num:12.6f}  {theo:12.6f}  {rel_err:12.2e}")
-
-   # Verify the 1/j spectrum
-   print(f"\nRatio phi_1/phi_2 (expected ~2.0): {phi_numerical[0] / phi_numerical[1]:.4f}")
-   print(f"Ratio phi_1/phi_5 (expected ~5.0): {phi_numerical[0] / phi_numerical[4]:.4f}")
+   # For n=3, an independent closed form is available.
+   p0 = np.array([0.0, 0.0, 1.0])
+   times, probabilities = rk4_method(coalescent_count_ode, p0, (0.0, 2.0), 0.001)
+   p_numeric = probabilities[-1]
+   t = times[-1]
+   p3 = np.exp(-3 * t)
+   p2 = 1.5 * (np.exp(-t) - np.exp(-3 * t))
+   p_exact = np.array([1 - p2 - p3, p2, p3])
+   print("Lineage-count probabilities at t=2:")
+   print("  numerical:", p_numeric)
+   print("  exact:    ", p_exact)
+   print("  total:    ", p_numeric.sum())
 
 
 Stiffness and Implicit Methods
@@ -601,10 +528,12 @@ we must solve an equation (or a system of equations) at each step. For linear
 ODEs, this reduces to solving a linear system; for nonlinear ODEs, it requires
 Newton's method or a similar iterative procedure.
 
-The trade-off: implicit methods require more work per step (solving a system
-instead of just evaluating :math:`f`), but they are **unconditionally stable**
--- they never blow up regardless of step size. For stiff problems, this more
-than compensates for the extra per-step cost.
+The trade-off: implicit methods require more work per step. Backward Euler is
+**A-stable** for the scalar linear test equation :math:`y'=\lambda y` with
+:math:`\operatorname{Re}(\lambda)<0`, so its stability does not impose the
+explicit Euler bound. That does not mean every implicit method is stable for
+every nonlinear problem or that arbitrarily large steps are accurate; nonlinear
+solves can fail and accuracy still constrains the step size.
 
 **BDF methods** (Backward Differentiation Formulas) are a family of implicit
 multi-step methods that generalize backward Euler. They are the method behind
@@ -613,56 +542,38 @@ choice for stiff ODE systems in population genetics.
 
 .. code-block:: python
 
-   def stiff_ode(y, t):
-       """A stiff two-component system: dy1/dt = -1000*y1 + y2 (fast),
-       dy2/dt = y1 - y2 (slow). Stiffness ratio ~1000."""
-       return np.array([-1000 * y[0] + y[1],
-                         y[0] - y[1]])
+   def backward_euler_decay(rate, y0, T, h):
+       """Solve y'=-rate*y with backward Euler."""
+       if rate < 0 or h <= 0 or T < 0:
+           raise ValueError("require rate >= 0, h > 0, and T >= 0")
+       t = 0.0
+       y = float(y0)
+       while t < T:
+           step = min(h, T - t)
+           y /= 1 + rate * step
+           t += step
+       return y
 
-   # Try explicit RK45 vs implicit BDF on the stiff system
-   y0_stiff = np.array([1.0, 0.0])
-   t_span_stiff = (0.0, 1.0)
-
-   # RK45 (explicit): will need many steps to stay stable
-   sol_rk45 = solve_ivp(
-       lambda t, y: stiff_ode(y, t),
-       t_span_stiff, y0_stiff,
-       method='RK45', rtol=1e-8, atol=1e-10
+   rate, y0_stiff, T, h = 1000.0, 1.0, 0.1, 0.01
+   _, explicit = euler_method(
+       lambda y, t: -rate * y, y0_stiff, (0.0, T), h
    )
-
-   # BDF (implicit): designed for stiff systems
-   sol_bdf = solve_ivp(
-       lambda t, y: stiff_ode(y, t),
-       t_span_stiff, y0_stiff,
-       method='BDF', rtol=1e-8, atol=1e-10
-   )
-
-   print("Stiff ODE: explicit vs implicit solver")
-   print(f"RK45 function evaluations: {sol_rk45.nfev}")
-   print(f"BDF  function evaluations: {sol_bdf.nfev}")
-   print(f"RK45 steps taken:          {len(sol_rk45.t)}")
-   print(f"BDF  steps taken:          {len(sol_bdf.t)}")
-
-   # Both should give the same answer at t=1
-   print(f"\nSolution at t=1:")
-   print(f"  RK45: y1={sol_rk45.y[0, -1]:.8f}, y2={sol_rk45.y[1, -1]:.8f}")
-   print(f"  BDF:  y1={sol_bdf.y[0, -1]:.8f}, y2={sol_bdf.y[1, -1]:.8f}")
-
-   # The fast component y1 decays on timescale 1/1000, the slow on timescale 1
-   # After t=0.01, y1 is essentially slaved to y2
-   print(f"\nAt t=0.01: y1={sol_bdf.sol(0.01)[0]:.6f} (fast transient nearly gone)")
-   print(f"At t=1.00: y1={sol_bdf.sol(1.0)[0]:.6f} (slow decay dominates)")
+   implicit = backward_euler_decay(rate, y0_stiff, T, h)
+   exact = np.exp(-rate * T)
+   print("Stiff decay y'=-1000y at t=0.1 with h=0.01")
+   print(f"  forward Euler:  {float(explicit[-1]):.6e}  (unstable)")
+   print(f"  backward Euler: {implicit:.6e}  (stable, but not exact)")
+   print(f"  exact:          {exact:.6e}")
 
 .. admonition:: Probability Aside -- Stiffness in the moments Timepiece
 
    When the moments Timepiece (:ref:`moments_timepiece`) computes the SFS
    under strong selection, the ODE system becomes stiff. The selection
-   coefficient :math:`s` introduces a timescale of :math:`1/(2Ns)` in
+   scaled selection coefficient introduces a short timescale in
    coalescent units, which can be orders of magnitude shorter than the drift
    timescale. The ``moments`` package uses implicit methods (specifically
-   a Crank-Nicolson scheme) to handle this efficiently. Without implicit
-   methods, computing the SFS under strong selection would require
-   impractically small time steps.
+   a Crank--Nicolson update in its integration code) together with controlled
+   time steps :cite:`moments`.
 
 
 The Matrix Exponential
@@ -711,7 +622,8 @@ where :math:`A` is an :math:`m \times m` matrix of constant coefficients and
    So :math:`d\mathbf{y}/dt = A \exp(At) \mathbf{y}(0) = A \mathbf{y}(t)`,
    confirming the solution.
 
-   If :math:`A` has an **eigendecomposition** :math:`A = V \Lambda V^{-1}`
+   If :math:`A` is diagonalizable with **eigendecomposition**
+   :math:`A = V \Lambda V^{-1}`
    where :math:`\Lambda = \text{diag}(\lambda_1, \ldots, \lambda_m)` is the
    diagonal matrix of eigenvalues, then:
 
@@ -719,10 +631,11 @@ where :math:`A` is an :math:`m \times m` matrix of constant coefficients and
 
       \exp(At) = V \, \text{diag}(e^{\lambda_1 t}, \ldots, e^{\lambda_m t}) \, V^{-1}
 
-   This is the computationally efficient way to evaluate the matrix
-   exponential: decompose once, then exponentiate the eigenvalues (which are
-   scalars). The cost is dominated by the eigendecomposition, which is
-   :math:`O(m^3)`.
+   This identity is useful for symmetric or otherwise well-conditioned matrices,
+   especially at repeated times after one decomposition. It is not a general
+   prescription: defective matrices are not diagonalizable, and ill-conditioned
+   eigenvectors can destroy accuracy. General ``expm`` routines instead use
+   stable algorithms such as scaling and squaring.
 
 **Connection to population genetics.** The matrix exponential appears in
 several Timepieces:
@@ -748,17 +661,26 @@ migration.
 
 .. code-block:: python
 
-   from scipy.linalg import expm
-
    def migration_matrix(m_rate, n_pops=2):
        """Rate matrix for symmetric migration between n_pops populations.
 
        Off-diagonal: A[i,j] = m_rate (gain from pop j).
-       Diagonal: A[i,i] = -(n_pops-1)*m_rate (conservation: rows sum to 0).
+       Diagonal: A[i,i] = -(n_pops-1)*m_rate. Symmetry makes both rows
+       and columns sum to zero, conserving the component sum.
        """
-       A = np.full((n_pops, n_pops), m_rate)
+       if m_rate < 0 or not isinstance(n_pops, (int, np.integer)) or n_pops < 2:
+           raise ValueError("require m_rate >= 0 and integer n_pops >= 2")
+       A = np.full((n_pops, n_pops), m_rate, dtype=float)
        np.fill_diagonal(A, -(n_pops - 1) * m_rate)
        return A
+
+   def symmetric_matrix_exponential(A, t):
+       """Compute exp(A*t) for a real symmetric matrix."""
+       A = np.asarray(A, dtype=float)
+       if A.ndim != 2 or A.shape[0] != A.shape[1] or not np.allclose(A, A.T):
+           raise ValueError("A must be a real symmetric square matrix")
+       eigenvalues, eigenvectors = np.linalg.eigh(A)
+       return (eigenvectors * np.exp(eigenvalues * t)) @ eigenvectors.T
 
    # Two populations with symmetric migration
    m_rate = 0.5  # migration rate
@@ -773,18 +695,17 @@ migration.
    print("\nAllele frequencies over time (matrix exponential):")
    print(f"{'t':>6s}  {'pop1':>8s}  {'pop2':>8s}")
    for t in [0.0, 0.5, 1.0, 2.0, 5.0, 10.0]:
-       # expm(A*t) computes the matrix exponential of A*t
-       y_t = expm(A * t) @ y0  # @ is matrix-vector multiplication
+       y_t = symmetric_matrix_exponential(A, t) @ y0
        print(f"{t:6.1f}  {y_t[0]:8.4f}  {y_t[1]:8.4f}")
 
    # Verify: at equilibrium, both populations should have the same frequency
    # (the mean of the initial frequencies)
-   y_eq = expm(A * 100.0) @ y0
+   y_eq = symmetric_matrix_exponential(A, 100.0) @ y0
    expected_eq = np.mean(y0)
    print(f"\nEquilibrium frequency: {y_eq[0]:.6f} (expected {expected_eq:.6f})")
 
    # Compare with eigendecomposition
-   eigenvalues, V = np.linalg.eig(A)
+   eigenvalues, V = np.linalg.eigh(A)
    print(f"\nEigenvalues of A: {eigenvalues}")
    # For symmetric 2x2 migration: eigenvalues are 0 and -2*m_rate
    # The zero eigenvalue corresponds to the stationary distribution
@@ -794,20 +715,20 @@ migration.
    t_test = 2.0
    # exp(A*t) = V * diag(exp(lambda_i * t)) * V^{-1}
    D = np.diag(np.exp(eigenvalues * t_test))
-   y_eigen = V @ D @ np.linalg.inv(V) @ y0
-   y_expm = expm(A * t_test) @ y0
+   y_eigen = V @ D @ V.T @ y0
+   y_expm = symmetric_matrix_exponential(A, t_test) @ y0
    print(f"\nAt t={t_test}:")
    print(f"  Via expm:              {y_expm}")
    print(f"  Via eigendecomposition: {np.real(y_eigen)}")
    print(f"  Agree: {np.allclose(y_expm, np.real(y_eigen))}")
 
-The same approach extends to three or more populations with asymmetric
-migration rates -- you simply build a larger rate matrix with appropriate
-off-diagonal entries and diagonal entries that ensure each row sums to zero
-(probability conservation). The eigenvalues of the rate matrix determine the
-timescales of convergence to equilibrium, with the zero eigenvalue
-corresponding to the stationary distribution and the most negative eigenvalue
-governing the fastest transient.
+The symmetric construction extends directly to three or more populations. For
+asymmetric migration, fix a row- or column-vector convention first: with the
+column-vector equation used here, conservation of the component sum requires
+**columns** of :math:`A` to sum to zero. The matrix can then be non-symmetric, so
+the ``eigh`` helper above no longer applies; use a general matrix-exponential
+routine. Eigenvalues describe modal timescales when the matrix is diagonalizable,
+but non-normal systems can also show transients not captured by eigenvalues alone.
 
 
 Summary
