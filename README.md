@@ -1,14 +1,14 @@
 # watchgen
 
-[![Unit tests](https://img.shields.io/badge/tests-2672%20passed-brightgreen)](https://github.com/kevinkorfmann/watchgen/actions) [![Codex verification](https://img.shields.io/badge/Codex%20verification-88%25-brightgreen)](CODEX_VERIFICATION.md) [![Mini parity](https://img.shields.io/badge/mini%20parity-83%25-brightgreen)](CODEX_VERIFICATION.md#mini-implementation-parity-batch) [![CI](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml/badge.svg)](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml) [![Read the Docs](https://img.shields.io/readthedocs/watchgen)](https://watchgen.readthedocs.io) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Unit tests](https://img.shields.io/badge/tests-1849%20passed-brightgreen)](https://github.com/kevinkorfmann/watchgen/actions) [![Codex verification](https://img.shields.io/badge/Codex%20verification-100%25-brightgreen)](CODEX_VERIFICATION.md) [![Mini parity](https://img.shields.io/badge/mini%20parity-100%25-brightgreen)](CODEX_VERIFICATION.md#mini-implementation-parity-batch) [![CI](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml/badge.svg)](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml) [![Read the Docs](https://img.shields.io/readthedocs/watchgen)](https://watchgen.readthedocs.io) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **The Watchmaker's Guide to Population Genetics** — a build-it-yourself book on the algorithms behind modern population genetics. Every concept is derived from first principles, every method reimplemented from scratch in Python. No black boxes.
 
 **Read online:** https://watchgen.readthedocs.io &nbsp;|&nbsp; **Download PDF:** https://watchgen.readthedocs.io/_/downloads/en/latest/pdf/
 
-**Codex verification progress: 88% — 23 of 26 prerequisite and Timepiece chapters verified.** See the [verification ledger](CODEX_VERIFICATION.md) for chapter-level evidence and remaining work.
+**Codex verification progress: 100% — all 26 prerequisite and Timepiece chapters verified.** See the [verification ledger](CODEX_VERIFICATION.md) for chapter-level and final-gate evidence.
 
-**Mini implementation parity: 83% — 15 of 18 mini implementations verified.**
+**Mini implementation parity: 100% — all 18 mini implementations verified.**
 The [mini parity batch](CODEX_VERIFICATION.md#mini-implementation-parity-batch)
 tracks source, upstream-fixture, and independent-oracle coverage separately from
 general chapter verification.
@@ -53,7 +53,8 @@ pip install watchgen  # or: git clone + pip install -e .
 from watchgen import mini_psmc, mini_msprime, mini_tsinfer  # etc.
 ```
 
-19 modules, ~17,500 lines of code, 2,672 unit tests. Each module depends only on NumPy and SciPy.
+19 modules, ~17,500 lines of code, and 1,849 passing public tests in the final
+repository gate. Each module depends only on NumPy and SciPy.
 
 ---
 

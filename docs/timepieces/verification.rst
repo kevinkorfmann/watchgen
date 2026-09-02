@@ -65,7 +65,7 @@ The Timepieces are grouped by what they do, with verification status for each.
    * - II
      - :ref:`SMC++ <smcpp_timepiece>`
      - 112
-     - --
+     - 2026-09-01
      - Extends PSMC to multiple unphased genomes with a distinguished lineage approach.
    * - XIII
      - :ref:`Gamma-SMC <gamma_smc_timepiece>`

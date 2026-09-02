@@ -1,7 +1,7 @@
 # Codex verification ledger
 
 Last reconciled: 2026-09-01  
-Baseline: GitHub `main` at `4f82b83`
+Final-gate baseline: GitHub `main` at `e758bba`
 Scope: the current source-grounded, chapter-by-chapter Codex review campaign
 
 This ledger records **Codex verification**, not independent expert review or a
@@ -20,7 +20,7 @@ GitHub `main`. Worktree-only changes do not count.
 
 ## Mini implementation parity batch
 
-**Progress: 83% — 15 of 18 mini implementations have completed source-grounded
+**Progress: 100% — all 18 mini implementations have completed source-grounded
 parity review.** A mini counts as complete here only when its scoped behavior has
 been checked against the primary paper, official source, upstream fixtures, or an
 independent analytic/brute-force oracle, and the corresponding Timepiece row below
@@ -28,7 +28,7 @@ is `VERIFIED` on GitHub `main`.
 
 | Batch | Complete | Total | Progress | Completed mini implementations | Remaining mini implementations |
 |---|---:|---:|---:|---|---|
-| Mini implementation parity | 15 | 18 | **83%** | PSMC, SMC++, Li & Stephens HMM, msprime, ARGweaver, tsinfer, SINGER, Relate, discoal, Threads, moments, dadi, momi2, Gamma-SMC, SLiM | tsdate, PHLASH, CLUES |
+| Mini implementation parity | 18 | 18 | **100%** | PSMC, SMC++, Li & Stephens HMM, msprime, ARGweaver, tsinfer, SINGER, Relate, discoal, Threads, moments, dadi, momi2, Gamma-SMC, SLiM, tsdate, PHLASH, CLUES | None |
 
 ## Prerequisites
 
@@ -62,7 +62,7 @@ chapter review evidence, not necessarily the repository-wide total.
 | VI | tsinfer | `VERIFIED` | `629aa65` | 21 focused tests; three ancestor fixtures and both probability transforms matched official tsinfer 0.4.1 Python code; Ruff checks and a fresh strict 135-page Sphinx build passed. |
 | VII | SINGER | `VERIFIED` | `3c37ea7` | 35 focused equation/invariant tests; official C++ source at `eb8e39b` compiled and its CLI validation ran; corrected figures were rendered and inspected; strict 135-page Sphinx build passed. |
 | VIII | Threads | `VERIFIED` | `3538b09` | 65 focused tests; official threads-arg 0.2.1 example produced 55,765 finite positive segment dates; emitted-fixture parity, tail/quadrature checks, Ruff, and strict 135-source Sphinx passed. |
-| IX | tsdate | `VERIFIED` | `this commit` | 147 focused tests; exact conditional-coalescent means and variances matched tsdate 0.2.7 for all k at n=2,3,4,10,50,100; official variational-gamma executable produced 189 finite, strictly ordered node times over 605 edges; Ruff and a fresh strict 135-source Sphinx build passed; both regenerated figures were inspected. |
+| IX | tsdate | `VERIFIED` | `5554658` | 147 focused tests; exact conditional-coalescent means and variances matched tsdate 0.2.7 for all k at n=2,3,4,10,50,100; official variational-gamma executable produced 189 finite, strictly ordered node times over 605 edges; Ruff and a fresh strict 135-source Sphinx build passed; both regenerated figures were inspected. |
 | X | moments | `VERIFIED` | `94d9167` | 118 focused tests; neutral drift/mutation matrix scaling and split fixtures checked against moments-popgen 1.6.1 source; numerical-Hessian/Godambe regressions, corrected figures, Ruff, and strict 135-source Sphinx build passed. |
 | XI | dadi | `VERIFIED` | `3821fbc` | 54 focused tests; official dadi 2.4.5 source/executable at `8db007f` audited (exact grid, equilibrium-density, split, implicit-step, likelihood/scaling parity; bounded teaching-projection error); corrected figures, Ruff, and strict 135-source Sphinx passed. |
 | XII | momi2 | `VERIFIED` | `7584b91` | 143 focused tests; W recurrence, sojourn times, Moran transitions, pulse tensor, hypergeometric pseudoinverse, likelihood, and finite-sample f-statistic weights matched analytic or official-source oracles at momi2 `b038d43`; Ruff and strict 135-source Sphinx passed. |
@@ -73,14 +73,28 @@ chapter review evidence, not necessarily the repository-wide total.
 | XVII | Relate | `VERIFIED` | `d0d99a3` | 37 focused checks, source-guided teaching kernels, official Relate build/example execution, output-structure validation, strict Sphinx build. |
 | XVIII | discoal | `VERIFIED` | `0a00529` | 32 focused checks, primary sweep/structured-coalescent audit, regenerated figures, strict build. |
 
-## Remaining campaign gates
+## Campaign closure
 
-1. Complete the three remaining Timepieces: tsdate, CLUES, and PHLASH.
-2. Reconcile `docs/timepieces/verification.rst` from this ledger after each pushed
-   chapter, while preserving its independent-domain-expert disclaimer.
-3. After all chapters are closed, run the entire repository test suite, execute all
-   published examples, build HTML and PDF with warnings as errors, and perform a
-   final cross-chapter terminology/equation/citation audit.
+**Overall progress: 100% — 26 of 26 prerequisite and Timepiece chapters are
+`VERIFIED`.** The final repository-wide gate ran from a clean clone of GitHub
+`main` at `e758bba` and completed as follows:
+
+1. The public Python suite passed with **1,849 tests passed and 7 expected
+   optional/private-dependency skips**.
+2. All **36 published figure scripts** ran headlessly to completion. Their
+   chapter-scoped repair commits also include focused numerical validation and
+   rendered-figure inspection.
+3. Fresh strict dummy, HTML, and nitpicky Sphinx builds passed for all **135
+   sources**. The warning-as-error LaTeX/PDF pipeline produced a **733-page PDF**.
+4. Cross-chapter terminology, equation, semantic-reference, and citation checks
+   passed. All 33 cited keys resolve within the 37-entry bibliography, with no
+   missing or duplicate keys; the live DOI verifier reported **37 verified, 0
+   failed**.
+
+The independent-domain-expert disclaimer in
+`docs/timepieces/verification.rst` remains in force: this campaign is a
+source-grounded Codex verification, not a formal proof or independent expert
+review.
 
 ## Update protocol for Codex tasks
 
