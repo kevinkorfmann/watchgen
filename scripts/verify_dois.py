@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
-"""Query CrossRef API to verify DOIs and generate BibTeX entries.
+"""Verify every DOI recorded in the canonical project bibliography.
 
-Reads dois.txt, queries https://api.crossref.org for each DOI,
-verifies the first author surname matches, and writes verified
-BibTeX to docs/references.bib.
+The maintained source of citation metadata is ``docs/references.bib``. This
+script derives each citation key, DOI, and expected first-author surname from
+that file, then checks the DOI through Crossref and doi.org content
+negotiation. It never rewrites the bibliography that it is auditing.
 """
 
 import json
+import re
 import sys
 import time
-import urllib.request
 import urllib.error
+import urllib.request
+from pathlib import Path
 
-DOIS_FILE = "docs/dois.txt"
-OUTPUT_BIB = "docs/references.bib"
+BIBLIOGRAPHY_FILE = Path("docs/references.bib")
 
 
 def fetch_crossref(doi):
-    """Fetch metadata from CrossRef for a given DOI."""
+    """Fetch metadata from Crossref for a DOI."""
     url = f"https://api.crossref.org/works/{doi}"
     req = urllib.request.Request(
         url,
@@ -30,16 +32,22 @@ def fetch_crossref(doi):
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode())
             return data["message"]
-    except urllib.error.HTTPError as e:
-        print(f"  HTTP {e.code} for DOI {doi}")
+    except urllib.error.HTTPError as error:
+        print(f"  HTTP {error.code} for DOI {doi}")
         return None
-    except Exception as e:
-        print(f"  Error fetching {doi}: {e}")
+    except (
+        json.JSONDecodeError,
+        KeyError,
+        TimeoutError,
+        UnicodeDecodeError,
+        urllib.error.URLError,
+    ) as error:
+        print(f"  Error fetching {doi}: {error}")
         return None
 
 
 def fetch_bibtex(doi):
-    """Fetch BibTeX directly from doi.org content negotiation."""
+    """Fetch BibTeX from doi.org content negotiation."""
     url = f"https://doi.org/{doi}"
     req = urllib.request.Request(
         url,
@@ -51,124 +59,142 @@ def fetch_bibtex(doi):
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return resp.read().decode("utf-8")
-    except Exception as e:
-        print(f"  Error fetching BibTeX for {doi}: {e}")
+    except (TimeoutError, UnicodeDecodeError, urllib.error.URLError) as error:
+        print(f"  Error fetching BibTeX for {doi}: {error}")
         return None
 
 
 def verify_author(metadata, expected_surname):
-    """Check if the expected first author surname appears in the author list."""
+    """Return whether Crossref reports the expected first-author surname."""
     authors = metadata.get("author", [])
     if not authors:
         return False
     first_author = authors[0].get("family", "")
-    return first_author.lower() == expected_surname.lower()
+    return first_author.casefold() == expected_surname.casefold()
+
+
+def _bibtex_entries(text):
+    """Yield ``(key, body)`` pairs using balanced entry braces."""
+    entry_start = re.compile(r"@\w+\s*\{\s*([^,\s]+)\s*,", re.IGNORECASE)
+    position = 0
+    while match := entry_start.search(text, position):
+        depth = 1
+        cursor = match.end()
+        while cursor < len(text) and depth:
+            if text[cursor] == "{":
+                depth += 1
+            elif text[cursor] == "}":
+                depth -= 1
+            cursor += 1
+        if depth:
+            raise ValueError(f"unterminated BibTeX entry {match.group(1)!r}")
+        yield match.group(1), text[match.end() : cursor - 1]
+        position = cursor
+
+
+def _field(body, name):
+    pattern = re.compile(
+        rf"\b{re.escape(name)}\s*=\s*(?:\{{([^{{}}]+)\}}|\"([^\"]+)\")",
+        re.IGNORECASE,
+    )
+    match = pattern.search(body)
+    if match is None:
+        return None
+    return next(value.strip() for value in match.groups() if value is not None)
+
+
+def _first_author_surname(author_field):
+    first_author = re.split(
+        r"\s+and\s+", author_field, maxsplit=1, flags=re.IGNORECASE
+    )[0]
+    if "," in first_author:
+        surname = first_author.split(",", 1)[0]
+    else:
+        surname = first_author.rsplit(maxsplit=1)[-1]
+    return surname.strip().strip("{}")
+
+
+def load_entries(path=BIBLIOGRAPHY_FILE):
+    """Load DOI audit tuples from the maintained BibTeX bibliography."""
+    text = Path(path).read_text(encoding="utf-8")
+    entries = []
+    missing = []
+    for key, body in _bibtex_entries(text):
+        doi = _field(body, "doi")
+        author = _field(body, "author")
+        if doi is None or author is None:
+            missing.append(key)
+            continue
+        entries.append((key, doi, _first_author_surname(author)))
+
+    if missing:
+        joined = ", ".join(missing)
+        raise ValueError(f"bibliography entries missing DOI or author: {joined}")
+    if not entries:
+        raise ValueError("bibliography contains no DOI entries")
+    return entries
+
+
+def _bibtex_first_author(bibtex):
+    author = _field(bibtex, "author")
+    return None if author is None else _first_author_surname(author)
 
 
 def main():
-    # Read DOI list
-    entries = []
-    with open(DOIS_FILE) as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("|")
-            if len(parts) != 3:
-                print(f"Skipping malformed line: {line}")
-                continue
-            key, doi, expected_author = parts
-            entries.append((key.strip(), doi.strip(), expected_author.strip()))
+    """Verify the canonical bibliography; return a process exit status."""
+    try:
+        entries = load_entries()
+    except (OSError, ValueError) as error:
+        print(f"DOI inventory error: {error}", file=sys.stderr)
+        return 2
 
-    print(f"Found {len(entries)} DOIs to verify\n")
-
+    print(f"Found {len(entries)} bibliography DOIs to verify\n")
     verified = []
     failed = []
 
     for key, doi, expected_author in entries:
         print(f"[{key}] Querying DOI: {doi}")
-
-        # Step 1: Verify via CrossRef metadata
         metadata = fetch_crossref(doi)
-
-        # Step 2: If CrossRef fails, try BibTeX content negotiation as fallback
         bibtex = fetch_bibtex(doi)
         if bibtex is None:
-            print(f"  FAILED: Could not fetch BibTeX")
-            failed.append((key, doi, "bibtex fetch failed"))
-            time.sleep(1)
+            print("  FAILED: Could not fetch BibTeX")
+            failed.append((key, doi, "BibTeX fetch failed"))
             continue
 
         if metadata is None:
-            # CrossRef failed but BibTeX worked - verify author from BibTeX
-            import re as re_mod
-            author_match = re_mod.search(r"author\s*=\s*\{([^}]+)\}", bibtex)
-            if author_match:
-                first_author_bib = author_match.group(1).split(",")[0].split(" and ")[0].strip()
-                if expected_author.lower() not in first_author_bib.lower():
-                    print(f"  FAILED: Expected author '{expected_author}' not in '{first_author_bib}'")
-                    failed.append((key, doi, f"author mismatch in BibTeX"))
-                    time.sleep(1)
-                    continue
-            title_match = re_mod.search(r"title\s*=\s*\{([^}]+)\}", bibtex)
-            title_str = title_match.group(1)[:70] if title_match else "?"
-            print(f"  VERIFIED (via BibTeX): {expected_author} - {title_str}...")
+            actual = _bibtex_first_author(bibtex)
+            if actual is None or expected_author.casefold() != actual.casefold():
+                print(
+                    f"  FAILED: Expected first author {expected_author!r}, got {actual!r}"
+                )
+                failed.append((key, doi, "author mismatch in BibTeX"))
+                continue
+            print(f"  VERIFIED via doi.org: {actual}")
         else:
-            # Step 3: Verify first author from CrossRef
             if not verify_author(metadata, expected_author):
                 authors = metadata.get("author", [])
                 actual = authors[0].get("family", "???") if authors else "no authors"
-                print(f"  FAILED: Expected first author '{expected_author}', got '{actual}'")
-                failed.append((key, doi, f"author mismatch: expected {expected_author}, got {actual}"))
-                time.sleep(1)
+                print(
+                    f"  FAILED: Expected first author {expected_author!r}, got {actual!r}"
+                )
+                failed.append((key, doi, "Crossref author mismatch"))
                 continue
-
-            # Step 4: Get title for display
             title = metadata.get("title", ["???"])[0]
-            year = metadata.get("published-print", metadata.get("published-online", {}))
-            year_str = str(year.get("date-parts", [[None]])[0][0]) if year else "?"
-            authors = metadata.get("author", [])
-            first = authors[0].get("family", "?") if authors else "?"
+            print(f"  VERIFIED: {expected_author} - {title[:70]}...")
 
-            print(f"  VERIFIED: {first} et al. ({year_str}) - {title[:70]}...")
+        verified.append((key, doi))
+        time.sleep(0.1)
 
-        # Replace the auto-generated key with our key
-        # BibTeX entries typically start with @type{key,
-        import re
-        bibtex = re.sub(
-            r"@(\w+)\{[^,]+,",
-            rf"@\1{{{key},",
-            bibtex,
-            count=1,
-        )
-
-        verified.append((key, doi, bibtex))
-        time.sleep(0.5)  # Rate-limit politely
-
-    # Write output
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Results: {len(verified)} verified, {len(failed)} failed")
-    print(f"{'='*60}")
-
+    print("=" * 60)
     if failed:
         print("\nFailed DOIs:")
         for key, doi, reason in failed:
             print(f"  [{key}] {doi} - {reason}")
-
-    if verified:
-        with open(OUTPUT_BIB, "w") as f:
-            f.write(f"% Auto-generated BibTeX references for The Watchmaker's Guide\n")
-            f.write(f"% Verified via CrossRef API ({len(verified)} entries)\n")
-            f.write(f"% DO NOT EDIT MANUALLY - regenerate with: python scripts/verify_dois.py\n\n")
-            for key, doi, bibtex in verified:
-                f.write(f"% --- {key} ---\n")
-                f.write(bibtex.strip())
-                f.write("\n\n")
-
-        print(f"\nWrote {len(verified)} entries to {OUTPUT_BIB}")
-    else:
-        print("\nNo entries verified, no output written.")
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
