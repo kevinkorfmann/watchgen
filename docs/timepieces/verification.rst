@@ -185,7 +185,8 @@ The Timepieces are grouped by what they do, with verification status for each.
      - Dates tree sequence nodes using the molecular clock.
    * - XV
      - :ref:`CLUES <clues_timepiece>`
-     - 93
-     - --
-     - Full-likelihood estimation of selection coefficients from gene trees and ancient
-       DNA.
+     - 21
+     - 2026-09-01
+     - CLUES/CLUES2 version and parameter boundaries audited against both primary
+       papers and source ``b20dc5d``; transition/emission fixtures, brute-force HMM
+       recursion, importance ratios, and the official ancient-haplotype CLI run passed.
