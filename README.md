@@ -1,19 +1,24 @@
 # watchgen
 
-[![Unit tests](https://img.shields.io/badge/tests-1849%20passed-brightgreen)](https://github.com/kevinkorfmann/watchgen/actions) [![Codex verification](https://img.shields.io/badge/Codex%20verification-100%25-brightgreen)](CODEX_VERIFICATION.md) [![Mini parity](https://img.shields.io/badge/mini%20parity-100%25-brightgreen)](CODEX_VERIFICATION.md#mini-implementation-parity-batch) [![CI](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml/badge.svg)](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml) [![Read the Docs](https://img.shields.io/readthedocs/watchgen)](https://watchgen.readthedocs.io) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Unit tests](https://img.shields.io/badge/tests-1849%20passed-brightgreen)](https://github.com/kevinkorfmann/watchgen/actions) [![Codex verification](https://img.shields.io/badge/Codex%20verification-100%25-brightgreen)](CODEX_VERIFICATION.md) [![Mini parity](https://img.shields.io/badge/mini%20parity-18%2F18-brightgreen)](CODEX_VERIFICATION.md#mini-implementation-parity-batch) [![CI](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml/badge.svg)](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml) [![Read the Docs](https://img.shields.io/readthedocs/watchgen)](https://watchgen.readthedocs.io) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **The Watchmaker's Guide to Population Genetics** — a build-it-yourself book on the algorithms behind modern population genetics. Every concept is derived from first principles, every method reimplemented from scratch in Python. No black boxes.
 
 **Read online:** https://watchgen.readthedocs.io &nbsp;|&nbsp; **Download PDF:** https://watchgen.readthedocs.io/_/downloads/en/latest/pdf/
 
-**Codex verification progress: 100% — all 26 prerequisite and Timepiece chapters verified.** See the [verification ledger](CODEX_VERIFICATION.md) for chapter-level and final-gate evidence.
+**Codex verification: 100% — all 26 prerequisite and Timepiece chapters and all
+18 mini implementations passed the final clean-clone gate.** The gate reported
+**1,849 tests passed with 7 expected optional/private skips**, all 36 published
+figure scripts passed, strict HTML/dummy/nitpicky and 733-page PDF builds passed,
+and all 37 bibliography DOIs verified. See the
+[verification ledger](CODEX_VERIFICATION.md) for chapter-level evidence.
 
-**Mini implementation parity: 100% — all 18 mini implementations verified.**
+**Mini implementation parity: 100% — 18 of 18 mini implementations reviewed.**
 The [mini parity batch](CODEX_VERIFICATION.md#mini-implementation-parity-batch)
 tracks source, upstream-fixture, and independent-oracle coverage separately from
 general chapter verification.
 
-> **Note:** A citable version number will be assigned in the coming days. Until then, please cite by URL and access date.
+> **Version 0.0.2:** This is a living draft under technical audit. When citing the book, please include version 0.0.2, the project URL, and the access date.
 
 ---
 
@@ -53,8 +58,9 @@ pip install watchgen  # or: git clone + pip install -e .
 from watchgen import mini_psmc, mini_msprime, mini_tsinfer  # etc.
 ```
 
-19 modules, ~17,500 lines of code, and 1,849 passing public tests in the final
-repository gate. Each module depends only on NumPy and SciPy.
+18 teaching implementations across 19 Python modules, ~17,500 lines of code,
+and 1,849 passing public tests in the final repository gate. The package uses
+the Python standard library, NumPy, SciPy, msprime, and tskit.
 
 ---
 
@@ -63,7 +69,7 @@ repository gate. Each module depends only on NumPy and SciPy.
 **HTML:**
 
 ```bash
-pip install sphinx sphinx-rtd-theme sphinx-copybutton sphinx-design sphinxcontrib-bibtex
+pip install sphinx sphinx-book-theme sphinx-copybutton sphinx-design sphinxcontrib-bibtex
 python -m sphinx docs docs/_build/html -b html
 open docs/_build/html/index.html
 ```
@@ -79,5 +85,5 @@ cd docs/_build/latex && xelatex watchmakers-guide.tex
 
 ## Contributing
 
-This is version 0.1 — an unverified draft. No chapter has been reviewed by a domain expert yet. Contributions that cross-check derivations, correct mistakes, improve explanations, or add chapters are very welcome.
+This is version 0.0.2 — a technically audited living draft. No chapter has been reviewed by a domain expert yet. Contributions that cross-check derivations, correct mistakes, improve explanations, or add chapters are very welcome.
 Open an issue or pull request on [GitHub](https://github.com/kevinkorfmann/watchgen).

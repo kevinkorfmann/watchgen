@@ -4,7 +4,7 @@ import sys
 project = "The Watchmaker's Guide to Population Genetics"
 copyright = '2026, Kevin Korfmann'
 author = "The Watchmaker's Guide Contributors"
-release = '0.1.0'
+release = '0.0.2'
 
 extensions = [
     'sphinx.ext.mathjax',
@@ -175,7 +175,7 @@ as the foundation for exactly that kind of effort.
 
 \medskip
 \noindent\emph{On versioning.}
-This is a living draft under chapter-by-chapter technical audit. The online
+Version 0.0.2 is a living draft under chapter-by-chapter technical audit. The online
 verification table records completed source, implementation, and automated-test
 reviews. These reviews are not a substitute for independent domain-expert review,
 and no derivation should be treated as error-free. Substantial contributors will

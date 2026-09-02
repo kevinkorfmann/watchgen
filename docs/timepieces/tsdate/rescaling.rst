@@ -73,8 +73,8 @@ does not by itself identify the biological cause of that mismatch.
 Step 1: Partition Time into Windows
 ======================================
 
-Divide the time axis :math:`[0, t_{\max})` into :math:`J` windows such that each
-window contains approximately equal total branch length:
+Divide the time axis :math:`[0, t_{\max})` into :math:`J` windows intended to
+contain approximately equal total branch length:
 
 .. math::
 
@@ -82,7 +82,11 @@ window contains approximately equal total branch length:
 
 **Why equal branch length?** So that each window has comparable statistical
 power for estimating the local mutation rate. A window with very little branch
-length would have very few mutations and a noisy estimate.
+length would have very few mutations and a noisy estimate. The compact example
+below assigns each whole edge to its midpoint when choosing breakpoints, so it
+is only an approximation: a long edge spanning several windows is not split
+during this partitioning step. Production code uses its own rescaling machinery;
+the example should not be read as source-equivalent breakpoint construction.
 
 .. code-block:: python
 
@@ -146,10 +150,13 @@ length would have very few mutations and a noisy estimate.
 Step 2: Count Mutations per Window
 =====================================
 
-For each time window, count how many mutations fall in it. A mutation on edge
-:math:`e` is assigned to the time window containing the midpoint of the edge
-(or, more precisely, proportionally distributed across windows that the edge
-spans).
+For each time window, estimate how many mutations fall in it. In the teaching
+code below, a mutation whose exact time is unavailable inherits its edge's time
+distribution: the edge's mutation count is divided among windows in proportion
+to the edge duration within each window. This preserves the total count but is
+an expectation under a uniform clock along the branch, not an observation of
+the mutation's actual time. If reliable mutation times are available, they can
+instead be assigned directly to their windows.
 
 .. code-block:: python
 
@@ -310,7 +317,10 @@ where :math:`j^*` is the window containing :math:`t_u`.
        new_times : np.ndarray
            Rescaled node times.
        """
-       new_times = np.zeros_like(node_times)
+       node_times = np.asarray(node_times, dtype=float)
+       breakpoints = np.asarray(breakpoints, dtype=float)
+       scales = np.asarray(scales, dtype=float)
+       new_times = np.empty_like(node_times, dtype=float)
        J = len(scales)
 
        # Build cumulative scaling function
@@ -335,6 +345,24 @@ where :math:`j^*` is the window containing :math:`t_u`.
            # Rescaled time = cumulative up to window j + fraction within window
            fraction_in_window = t - breakpoints[j]
            new_times[u] = cum_rescaled[j] + scales[j] * fraction_in_window
+
+       # Fixed ancient samples are not transformed. Reject a result if that
+       # would move a younger node above an originally older node.
+       order = np.argsort(node_times, kind="stable")
+       sorted_times = node_times[order]
+       sorted_new_times = new_times[order]
+       _, starts, sizes = np.unique(
+           sorted_times, return_index=True, return_counts=True)
+       group_min = np.array([
+           np.min(sorted_new_times[start:start + size])
+           for start, size in zip(starts, sizes)
+       ])
+       group_max = np.array([
+           np.max(sorted_new_times[start:start + size])
+           for start, size in zip(starts, sizes)
+       ])
+       if np.any(group_max[:-1] > group_min[1:]):
+           raise ValueError("rescaling reverses node-time order around fixed nodes")
 
        return new_times
 

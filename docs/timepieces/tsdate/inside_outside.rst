@@ -73,17 +73,26 @@ fine resolution there.
        grid : np.ndarray
            Array of timepoints, starting at 0.
        """
+       if not isinstance(n, (int, np.integer)) or n < 2:
+           raise ValueError("n must be an integer greater than or equal to 2")
+       if not np.isfinite(Ne) or Ne <= 0:
+           raise ValueError("Ne must be finite and positive")
+       if not isinstance(num_points, (int, np.integer)) or num_points < 2:
+           raise ValueError("num_points must be an integer greater than or equal to 2")
+       if grid_type not in {"linear", "logarithmic"}:
+           raise ValueError("grid_type must be 'linear' or 'logarithmic'")
+
        # Expected TMRCA under standard coalescent: 2*Ne*(1 - 1/n)
        expected_tmrca = 2 * Ne * (1 - 1.0 / n)
        t_max = expected_tmrca * 4  # go well beyond expected TMRCA
 
        if grid_type == "linear":
            return np.linspace(0, t_max, num_points)
-       else:
-           # Log-spaced: more points near 0, fewer far out
-           # Start from a small positive number to avoid log(0)
-           t_min = t_max / (10 * num_points)
-           return np.concatenate([[0], np.geomspace(t_min, t_max, num_points - 1)])
+
+       # Log-spaced: more points near 0, fewer far out
+       # Start from a small positive number to avoid log(0)
+       t_min = t_max / (10 * num_points)
+       return np.concatenate([[0], np.geomspace(t_min, t_max, num_points - 1)])
 
    # Example
    grid = make_time_grid(n=100, num_points=20)
@@ -463,11 +472,21 @@ all evidence arriving from above (outside).
            posterior[u, :] is the marginal posterior distribution over
            grid points for node u.
        """
+       inside = np.asarray(inside, dtype=float)
+       outside = np.asarray(outside, dtype=float)
+       if inside.shape != outside.shape or inside.ndim != 2:
+           raise ValueError("inside and outside must have the same two-dimensional shape")
+       if np.any(~np.isfinite(inside)) or np.any(~np.isfinite(outside)):
+           raise ValueError("inside and outside must be finite")
+       if np.any(inside < 0) or np.any(outside < 0):
+           raise ValueError("inside and outside values must be nonnegative")
+
        posterior = inside * outside  # element-wise product
 
        # Normalize each node's posterior to sum to 1
        row_sums = posterior.sum(axis=1, keepdims=True)
-       row_sums[row_sums == 0] = 1.0  # avoid division by zero
+       if np.any(row_sums <= 0):
+           raise ValueError("inside and outside have disjoint or zero support")
        posterior /= row_sums
 
        return posterior

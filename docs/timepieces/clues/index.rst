@@ -11,6 +11,15 @@ over an allele-frequency trajectory and, when genealogy samples are supplied,
 over uncertain local trees.  It is an **approximate full likelihood** method,
 not an exact likelihood for the original sequence data.
 
+Conceptually, CLUES works backward from the allele frequency observed today.
+For a proposed selection coefficient, it asks which past frequency paths are
+plausible under Wright--Fisher dynamics and how well each path explains the
+coalescences or ancient observations.  An HMM sums over frequency paths on a
+grid; importance sampling then averages over sampled genealogies when the local
+tree is uncertain.  Keeping those two integrations separate is the key to the
+chapter: the frequency-path HMM handles uncertainty *within* a genealogy, while
+importance sampling handles uncertainty *between* genealogies.
+
 .. important:: Two methods and two parameterizations
 
    The original CLUES release accompanied Stern, Wilton, and Nielsen (2019)

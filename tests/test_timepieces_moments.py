@@ -6,6 +6,7 @@ The neutral operator fixtures below follow moments-popgen 1.6.1
 ``LinearSystem.calcD``/``Integration.integrate_nD`` scaling.
 """
 
+import demes
 import numpy as np
 
 from watchgen.mini_moments import (
@@ -15,6 +16,23 @@ from watchgen.mini_moments import (
     mutation_operator,
     split_1d_to_2d,
 )
+
+
+def test_published_demes_builder_example_resolves_to_graph():
+    """The chapter must pass a resolved graph, not a nonexistent builder export."""
+    builder = demes.Builder(description="Two-epoch expansion model")
+    builder.add_deme(
+        "ancestral", epochs=[{"start_size": 10000, "end_time": 5000}]
+    )
+    builder.add_deme(
+        "modern",
+        ancestors=["ancestral"],
+        epochs=[{"start_size": 50000, "end_time": 0}],
+    )
+
+    graph = builder.resolve()
+    assert isinstance(graph, demes.Graph)
+    assert [deme.name for deme in graph.demes] == ["ancestral", "modern"]
 
 
 def test_neutral_operator_matches_moments_1_6_1_matrix_fixture():

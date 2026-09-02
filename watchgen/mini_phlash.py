@@ -52,9 +52,10 @@ def logarithmic_grid(log_t1, log_tM, intervals=16):
 def afs_log_score(observed, expected, transform=None):
     """Return the AFS contribution used by ``phlash.model.log_density``.
 
-    Both spectra may be linearly transformed (for example, folding and binning),
-    after which the expected spectrum is normalized. Parameter-independent
-    multinomial constants are omitted, exactly as in the source.
+    The expected spectrum is normalized first, after which both spectra may be
+    linearly transformed (for example, folding and binning). Standard transforms
+    preserve total mass. Parameter-independent multinomial constants are omitted,
+    exactly as in the source.
     """
     observed = np.asarray(observed, dtype=float)
     expected = np.asarray(expected, dtype=float)

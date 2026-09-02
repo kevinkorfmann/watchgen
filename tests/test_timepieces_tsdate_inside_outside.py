@@ -40,17 +40,26 @@ def make_time_grid(n, Ne=1.0, num_points=20, grid_type="logarithmic"):
     grid : np.ndarray
         Array of timepoints, starting at 0.
     """
+    if not isinstance(n, (int, np.integer)) or n < 2:
+        raise ValueError("n must be an integer greater than or equal to 2")
+    if not np.isfinite(Ne) or Ne <= 0:
+        raise ValueError("Ne must be finite and positive")
+    if not isinstance(num_points, (int, np.integer)) or num_points < 2:
+        raise ValueError("num_points must be an integer greater than or equal to 2")
+    if grid_type not in {"linear", "logarithmic"}:
+        raise ValueError("grid_type must be 'linear' or 'logarithmic'")
+
     # Expected TMRCA under standard coalescent: 2*Ne*(1 - 1/n)
     expected_tmrca = 2 * Ne * (1 - 1.0 / n)
     t_max = expected_tmrca * 4  # go well beyond expected TMRCA
 
     if grid_type == "linear":
         return np.linspace(0, t_max, num_points)
-    else:
-        # Log-spaced: more points near 0, fewer far out
-        # Start from a small positive number to avoid log(0)
-        t_min = t_max / (10 * num_points)
-        return np.concatenate([[0], np.geomspace(t_min, t_max, num_points - 1)])
+
+    # Log-spaced: more points near 0, fewer far out
+    # Start from a small positive number to avoid log(0)
+    t_min = t_max / (10 * num_points)
+    return np.concatenate([[0], np.geomspace(t_min, t_max, num_points - 1)])
 
 
 def edge_likelihood_matrix(m_e, lambda_e, grid):
@@ -101,11 +110,21 @@ def compute_posteriors(inside, outside):
         posterior[u, :] is the marginal posterior distribution over
         grid points for node u.
     """
+    inside = np.asarray(inside, dtype=float)
+    outside = np.asarray(outside, dtype=float)
+    if inside.shape != outside.shape or inside.ndim != 2:
+        raise ValueError("inside and outside must have the same two-dimensional shape")
+    if np.any(~np.isfinite(inside)) or np.any(~np.isfinite(outside)):
+        raise ValueError("inside and outside must be finite")
+    if np.any(inside < 0) or np.any(outside < 0):
+        raise ValueError("inside and outside values must be nonnegative")
+
     posterior = inside * outside  # element-wise product
 
     # Normalize each node's posterior to sum to 1
     row_sums = posterior.sum(axis=1, keepdims=True)
-    row_sums[row_sums == 0] = 1.0  # avoid division by zero
+    if np.any(row_sums <= 0):
+        raise ValueError("inside and outside have disjoint or zero support")
     posterior /= row_sums
 
     return posterior
@@ -405,17 +424,15 @@ class TestComputePosteriors:
         expected = np.ones(K) / K
         np.testing.assert_allclose(posterior[0], expected)
 
-    def test_zero_row_handled_gracefully(self):
-        """A node with all-zero inside*outside should not cause division errors."""
+    def test_zero_row_is_rejected(self):
+        """Disjoint support is impossible evidence, not an age-zero posterior."""
         K = 5
         inside = np.zeros((2, K))
         inside[1, :] = 1.0
         outside = np.ones((2, K))
 
-        posterior = compute_posteriors(inside, outside)
-        # Row 0 is all zeros -- should remain all zeros (not NaN)
-        assert np.all(posterior[0, :] == 0.0)
-        assert not np.any(np.isnan(posterior))
+        with pytest.raises(ValueError, match="disjoint or zero support"):
+            compute_posteriors(inside, outside)
 
     def test_product_of_narrow_distributions(self):
         """Product of two peaked distributions should be even more peaked."""

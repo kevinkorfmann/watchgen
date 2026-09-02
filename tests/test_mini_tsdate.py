@@ -283,16 +283,15 @@ class TestComputePosteriors:
         expected = np.ones(K) / K
         np.testing.assert_allclose(post[0], expected)
 
-    def test_zero_row_handled_gracefully(self):
-        """A node with all-zero inside*outside should not cause division errors."""
+    def test_zero_row_is_rejected(self):
+        """Disjoint support is impossible evidence, not an age-zero posterior."""
         K = 5
         inside = np.zeros((2, K))
         inside[1, :] = 1.0
         outside = np.ones((2, K))
 
-        post = compute_posteriors(inside, outside)
-        assert np.all(post[0, :] == 0.0)
-        assert not np.any(np.isnan(post))
+        with pytest.raises(ValueError, match="disjoint or zero support"):
+            compute_posteriors(inside, outside)
 
     def test_product_of_narrow_distributions(self):
         """Product of two peaked distributions should be even more peaked."""
@@ -1051,3 +1050,37 @@ class TestApplyRescaling:
         scales = np.array([0.5, 2.0, 1.0])
         new_times = apply_rescaling(times, breakpoints, scales, set())
         assert np.all(np.diff(new_times) >= 0)
+
+    def test_integer_input_does_not_truncate_fractional_times(self):
+        times = np.array([0, 1, 2, 3], dtype=int)
+        breakpoints = np.array([0.0, 2.0, 4.0])
+        scales = np.array([0.5, 1.5])
+        new_times = apply_rescaling(times, breakpoints, scales, set())
+        assert np.issubdtype(new_times.dtype, np.floating)
+        np.testing.assert_allclose(new_times, [0.0, 0.5, 1.0, 2.5])
+
+    def test_fixed_ancient_sample_cannot_overtake_rescaled_parent(self):
+        times = np.array([10.0, 11.0])
+        with pytest.raises(ValueError, match="reverses node-time order"):
+            apply_rescaling(times, np.array([0.0, 20.0]), np.array([0.5]), {0})
+
+    def test_tied_times_do_not_depend_on_node_index_order(self):
+        times = np.array([10.0, 10.0])
+        result = apply_rescaling(
+            times, np.array([0.0, 20.0]), np.array([0.5]), {0}
+        )
+        np.testing.assert_allclose(result, [10.0, 5.0])
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"n": 1},
+        {"n": 2, "Ne": 0},
+        {"n": 2, "num_points": 1},
+        {"n": 2, "grid_type": "quadratic"},
+    ],
+)
+def test_time_grid_rejects_invalid_parameters(kwargs):
+    with pytest.raises(ValueError):
+        make_time_grid(**kwargs)

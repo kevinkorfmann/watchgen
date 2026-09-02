@@ -317,17 +317,26 @@ def make_time_grid(n, Ne=1.0, num_points=20, grid_type="logarithmic"):
     grid : np.ndarray
         Array of timepoints, starting at 0.
     """
+    if not isinstance(n, (int, np.integer)) or n < 2:
+        raise ValueError("n must be an integer greater than or equal to 2")
+    if not np.isfinite(Ne) or Ne <= 0:
+        raise ValueError("Ne must be finite and positive")
+    if not isinstance(num_points, (int, np.integer)) or num_points < 2:
+        raise ValueError("num_points must be an integer greater than or equal to 2")
+    if grid_type not in {"linear", "logarithmic"}:
+        raise ValueError("grid_type must be 'linear' or 'logarithmic'")
+
     # Expected TMRCA under standard coalescent: 2*Ne*(1 - 1/n)
     expected_tmrca = 2 * Ne * (1 - 1.0 / n)
     t_max = expected_tmrca * 4  # go well beyond expected TMRCA
 
     if grid_type == "linear":
         return np.linspace(0, t_max, num_points)
-    else:
-        # Log-spaced: more points near 0, fewer far out
-        # Start from a small positive number to avoid log(0)
-        t_min = t_max / (10 * num_points)
-        return np.concatenate([[0], np.geomspace(t_min, t_max, num_points - 1)])
+
+    # Log-spaced: more points near 0, fewer far out. Start from a small
+    # positive number to avoid log(0).
+    t_min = t_max / (10 * num_points)
+    return np.concatenate([[0], np.geomspace(t_min, t_max, num_points - 1)])
 
 
 def edge_likelihood_matrix(m_e, lambda_e, grid):
@@ -378,11 +387,21 @@ def compute_posteriors(inside, outside):
         posterior[u, :] is the marginal posterior distribution over
         grid points for node u.
     """
+    inside = np.asarray(inside, dtype=float)
+    outside = np.asarray(outside, dtype=float)
+    if inside.shape != outside.shape or inside.ndim != 2:
+        raise ValueError("inside and outside must have the same two-dimensional shape")
+    if np.any(~np.isfinite(inside)) or np.any(~np.isfinite(outside)):
+        raise ValueError("inside and outside must be finite")
+    if np.any(inside < 0) or np.any(outside < 0):
+        raise ValueError("inside and outside values must be nonnegative")
+
     posterior = inside * outside  # element-wise product
 
     # Normalize each node's posterior to sum to 1
     row_sums = posterior.sum(axis=1, keepdims=True)
-    row_sums[row_sums == 0] = 1.0  # avoid division by zero
+    if np.any(row_sums <= 0):
+        raise ValueError("inside and outside have disjoint or zero support")
     posterior /= row_sums
 
     return posterior
@@ -610,6 +629,17 @@ def compute_scaling_factors(observed, expected, min_count=1.0):
     -------
     scales : np.ndarray, shape (J,)
     """
+    observed = np.asarray(observed, dtype=float)
+    expected = np.asarray(expected, dtype=float)
+    if observed.ndim != 1 or observed.shape != expected.shape:
+        raise ValueError("observed and expected must be equally sized one-dimensional arrays")
+    if np.any(~np.isfinite(observed)) or np.any(~np.isfinite(expected)):
+        raise ValueError("observed and expected must be finite")
+    if np.any(observed < 0) or np.any(expected < 0):
+        raise ValueError("observed and expected counts must be nonnegative")
+    if not np.isfinite(min_count) or min_count < 0:
+        raise ValueError("min_count must be finite and nonnegative")
+
     scales = np.ones(len(observed))
 
     for j in range(len(observed)):
@@ -636,7 +666,25 @@ def apply_rescaling(node_times, breakpoints, scales, fixed_nodes):
     new_times : np.ndarray
         Rescaled node times.
     """
-    new_times = np.zeros_like(node_times)
+    node_times = np.asarray(node_times, dtype=float)
+    breakpoints = np.asarray(breakpoints, dtype=float)
+    scales = np.asarray(scales, dtype=float)
+    if node_times.ndim != 1 or np.any(~np.isfinite(node_times)) or np.any(node_times < 0):
+        raise ValueError("node_times must be a one-dimensional array of finite nonnegative times")
+    if breakpoints.ndim != 1 or scales.ndim != 1 or len(breakpoints) != len(scales) + 1:
+        raise ValueError("breakpoints must contain exactly one more entry than scales")
+    if len(scales) == 0:
+        raise ValueError("at least one rescaling interval is required")
+    if breakpoints[0] != 0 or np.any(~np.isfinite(breakpoints)) or np.any(np.diff(breakpoints) <= 0):
+        raise ValueError("breakpoints must start at zero and increase strictly")
+    if np.any(~np.isfinite(scales)) or np.any(scales <= 0):
+        raise ValueError("scales must be finite and positive")
+    fixed_nodes = set(fixed_nodes)
+    if any(not isinstance(u, (int, np.integer)) or u < 0 or u >= len(node_times)
+           for u in fixed_nodes):
+        raise ValueError("fixed_nodes contains an invalid node index")
+
+    new_times = np.empty_like(node_times, dtype=float)
     J = len(scales)
 
     # Build cumulative scaling function
@@ -660,6 +708,26 @@ def apply_rescaling(node_times, breakpoints, scales, fixed_nodes):
         # Rescaled time = cumulative up to window j + fraction within window
         fraction_in_window = t - breakpoints[j]
         new_times[u] = cum_rescaled[j] + scales[j] * fraction_in_window
+
+    # A piecewise map is monotone among rescaled nodes, but leaving ancient
+    # samples fixed can reverse their order relative to rescaled ancestors.
+    # Without topology information the safest contract is to reject every
+    # global time-order reversal rather than emit potentially negative edges.
+    order = np.argsort(node_times, kind="stable")
+    sorted_times = node_times[order]
+    sorted_new_times = new_times[order]
+    _, group_starts, group_sizes = np.unique(
+        sorted_times, return_index=True, return_counts=True)
+    group_min = np.array([
+        np.min(sorted_new_times[start:start + size])
+        for start, size in zip(group_starts, group_sizes)
+    ])
+    group_max = np.array([
+        np.max(sorted_new_times[start:start + size])
+        for start, size in zip(group_starts, group_sizes)
+    ])
+    if np.any(group_max[:-1] > group_min[1:]):
+        raise ValueError("rescaling reverses node-time order around fixed nodes")
 
     return new_times
 

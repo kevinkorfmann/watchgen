@@ -24,8 +24,8 @@ The Watchmaker's Guide to Population Genetics
 
    .. note::
 
-      This book has not yet been assigned a version number. A citable release is planned for the coming days.
-      In the meantime, please cite by URL and access date.
+      This is version 0.0.2 of a living draft under technical audit. When citing
+      the book, please include version 0.0.2, the project URL, and the access date.
 
    .. raw:: html
 
@@ -80,7 +80,7 @@ The Watchmaker's Guide to Population Genetics
    with its explicit derivations and reference implementations, is designed to serve
    as the foundation for exactly that kind of effort.
 
-   *On versioning.* This is a living draft under chapter-by-chapter technical audit.
+   *On versioning.* Version 0.0.2 is a living draft under chapter-by-chapter technical audit.
    The :ref:`verification table <verification_status>` records completed source,
    implementation, and automated-test reviews. These reviews are not a substitute
    for independent domain-expert review, and no derivation should be treated as
@@ -163,7 +163,7 @@ of a balance wheel keeping perfect time.
 
 .. admonition:: What you need
 
-   - **Python 3.8+** with NumPy and SciPy (we'll explain every function we use)
+   - **Python 3.11+** with NumPy and SciPy (we'll explain every function we use)
    - **Some familiarity with probability and calculus** -- but don't worry if you're
      rusty. We introduce every concept we use, with intuition first and formulas second.
      If you know what a derivative is and what "probability" means, you have enough to
