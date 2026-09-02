@@ -8,14 +8,16 @@ Rescaling
    the master clock.*
 
 After belief propagation (whether inside-outside or variational gamma), tsdate
-has posterior estimates for every node's age. But these estimates assume a
-**constant effective population size**, which is almost never true. If the
-population was larger in the past, branches are too long; if it was smaller,
-they're too short.
+has posterior estimates for every node's age. The inferred topology, finite
+mutation counts, polytomies, and prior approximation can nevertheless put the
+branch-based and site-based mutation clocks on slightly different scales.
+This is not simply a consequence of assuming constant effective population
+size: the modern variational-gamma prior is learned rather than a
+constant-:math:`N_e` coalescent prior.
 
-Rescaling corrects for this by comparing the inferred times against the
-**empirical mutation clock**: the observed number of mutations in different
-time windows. In the watch metaphor, this is the final calibration -- checking
+Rescaling corrects this by comparing branch- and site-based summaries of the
+**empirical mutation clock** in different time windows. In the watch metaphor,
+this is the final calibration -- checking
 the movement against a master reference clock and adjusting the hands until
 the ticks match.
 
@@ -35,24 +37,11 @@ This is the same idea used in SINGER's ARG rescaling (see
 The Problem: Mismatch Between Model and Reality
 ===================================================
 
-The coalescent prior assumes constant :math:`N_e`. Under this model, the
-expected time between coalescence events is fixed. But real populations have
-complex histories: bottlenecks, expansions, migrations.
-
-When :math:`N_e` was *larger* in the past:
-
-- Real coalescence events were *slower* (more time between them)
-- The constant-:math:`N_e` model underestimates deep times
-- Branches in the deep past are too short
-
-When :math:`N_e` was *smaller* in the past:
-
-- Real coalescence events were *faster*
-- The model overestimates deep times
-- Branches in the deep past are too long
-
-Either way, the mutation rate implied by the inferred times won't match the
-true mutation rate. Rescaling fixes this.
+Initial posterior means need not imply a constant instantaneous mutation
+density. Sparse counts, inferred polytomies, topology error, and approximation
+can all make some time intervals too compressed and others too stretched.
+Production tsdate therefore estimates a monotone piecewise-linear mapping from
+the current time axis to a mutation-calibrated axis.
 
 Think of it as a watch whose mainspring weakens with age: the gears near the
 present run at the right speed, but the deeper you go, the more the rate
@@ -77,8 +66,8 @@ in every time window. If it's consistently :math:`> 1` in some window, our
 branch lengths there are too short, and we need to stretch time. If it's
 :math:`< 1`, we need to compress.
 
-This ratio is a direct diagnostic: any deviation from 1.0 reveals how much
-the constant-:math:`N_e` assumption has distorted the time scale in that epoch.
+This ratio diagnoses a local mismatch in the inferred mutational timescale. It
+does not by itself identify the biological cause of that mismatch.
 
 
 Step 1: Partition Time into Windows
@@ -259,24 +248,16 @@ stretching). If :math:`s_j < 1`, they're too long (need compression).
 
        return scales
 
-**Intuition**: This is a piecewise-constant estimate of :math:`N_e(t)`.
-If the model assumed :math:`N_e = 10{,}000` but the true :math:`N_e` was
-:math:`20{,}000` during window :math:`j`, then branch lengths are half what
-they should be, and :math:`s_j \approx 2`.
+**Intuition**: this is a piecewise scaling of the time coordinate that makes
+mutation density more nearly constant. It is not an estimate of
+:math:`N_e(t)`.
 
-.. admonition:: Probability Aside -- Rescaling as implicit Ne estimation
+.. admonition:: Interpretation caution
 
-   The scaling factor :math:`s_j` is closely related to the ratio of true
-   :math:`N_e` to assumed :math:`N_e` in window :math:`j`. Under the
-   coalescent with variable population size, the coalescent rate is
-   :math:`1/N_e(t)`. If we used the wrong :math:`N_e`, the branch lengths in
-   that epoch are stretched or compressed by the ratio
-   :math:`N_e^{\text{true}} / N_e^{\text{assumed}}`. By setting
-   :math:`s_j = \text{observed}_j / \text{expected}_j`, we effectively
-   estimate this ratio and correct for it -- without explicitly fitting a
-   population-size model. This is similar in spirit to how PSMC
-   (:ref:`psmc_timepiece`) estimates :math:`N_e(t)`, except here it is a
-   post-processing step rather than the main inference.
+   Demography can influence inferred branch lengths, but mutation-density
+   rescaling also absorbs topology error, polytomies, finite mutation noise,
+   and approximation error. Treating a scaling factor as a direct population-
+   size estimate confounds these effects.
 
 
 Step 4: Apply the Rescaling
@@ -294,8 +275,8 @@ is just a sum:
 
 .. math::
 
-   t_u^{\text{new}} = \sum_{j : t_j < t_u} s_j \cdot \min(t_u, t_{j+1}) - t_j)
-   + s_{j^*} \cdot (t_u - t_{j^*})
+   t_u^{\text{new}} = \sum_{j < j^*} s_j (t_{j+1} - t_j)
+   + s_{j^*} (t_u - t_{j^*})
 
 where :math:`j^*` is the window containing :math:`t_u`.
 
@@ -415,25 +396,14 @@ alignment with the master clock.
        return times
 
 
-Connection to Population Size History
-========================================
+What Rescaling Does Not Estimate
+================================
 
-The scaling factors :math:`s_j` are intimately related to the effective
-population size history. Under the coalescent with variable :math:`N_e(t)`:
-
-- The rate of coalescence at time :math:`t` is :math:`1 / N_e(t)`
-- The mutation rate is constant at :math:`\mu`
-
-If we model the coalescent under constant :math:`N_e^{(0)}` but the true
-population size in window :math:`j` is :math:`N_e^{(j)}`, then:
-
-.. math::
-
-   s_j \approx \frac{N_e^{(j)}}{N_e^{(0)}}
-
-So the rescaling implicitly estimates the population size history. This is
-similar to what PSMC does (see the :ref:`psmc_timepiece`), but here it's a
-post-processing step rather than the main inference.
+The factors :math:`s_j` calibrate the mutation clock conditional on the input
+genealogy and dating approximation. They are not a demographic inference and
+should not be interpreted as a population-size history. Methods such as PSMC
+(:ref:`psmc_timepiece`) fit demographic parameters from genealogical patterns;
+tsdate's rescaling has a different objective.
 
 
 Edge Cases and Robustness
@@ -441,73 +411,30 @@ Edge Cases and Robustness
 
 Several practical issues arise:
 
-**Windows with few mutations**: If a window has very few mutations (or none),
-the scaling factor is unreliable. tsdate handles this by:
-
-- Setting a minimum count threshold
-- Smoothing adjacent scaling factors
-- Falling back to a scale of 1.0 for empty windows
-
-**Negative branch lengths**: After rescaling, some edges might end up with
-the parent younger than the child. tsdate enforces constraints by adjusting
-times to maintain the topological ordering.
-
-**Convergence**: Rescaling typically converges within 3-5 iterations. The
-scaling factors stabilize as the times settle into their correct positions.
+Production tsdate ignores negative-duration edges when estimating the total
+rate, chooses a bounded number of changepoints from mutational area, preserves
+fixed node times, and checks that both the original and rescaled breakpoints
+remain strictly increasing. The public variational-gamma wrapper defaults to
+five rescaling iterations; this is a configured iteration count, not a claim
+that every dataset has converged after five rounds.
 
 
 The Full Pipeline
 ==================
 
-Putting rescaling together with EP, here is the complete tsdate pipeline from
-raw tree sequence to dated genealogy.
+Putting rescaling together with EP is handled by the official public API:
 
 .. code-block:: python
 
-   def tsdate_full_pipeline(ts, mutation_rate, Ne=1.0, max_ep_iter=25,
-                            rescaling_intervals=1000, rescaling_iterations=5):
-       """The complete tsdate pipeline.
+   import tsdate
 
-       Parameters
-       ----------
-       ts : tskit.TreeSequence
-           Input (topology from tsinfer).
-       mutation_rate : float
-       Ne : float
-       max_ep_iter : int
-       rescaling_intervals : int
-       rescaling_iterations : int
-
-       Returns
-       -------
-       dated_ts : np.ndarray
-           Posterior mean node times.
-       """
-       # Step 1: Build priors (Gear 1 -- the expected beat rate)
-       prior_grid = build_coalescent_priors(ts, Ne)
-
-       # Step 2: Run EP (Gear 4 -- messages flow through the gear train)
-       posteriors = run_ep(ts, mutation_rate, prior_grid, max_ep_iter)
-
-       # Step 3: Extract posterior means
-       node_times = np.zeros(ts.num_nodes)
-       for u in range(ts.num_nodes):
-           if u in posteriors:
-               node_times[u] = posteriors[u].mean
-
-       fixed_nodes = set(ts.samples())
-       for s in fixed_nodes:
-           node_times[s] = 0.0
-
-       # Step 4: Rescale (Gear 5 -- calibrate against the mutation clock)
-       if rescaling_iterations > 0:
-           node_times = iterative_rescaling(
-               ts, node_times, mutation_rate, fixed_nodes,
-               J=rescaling_intervals,
-               num_iter=rescaling_iterations
-           )
-
-       return node_times
+   dated_ts = tsdate.variational_gamma(
+       ts,
+       mutation_rate=1e-8,
+       max_iterations=25,
+       rescaling_intervals=1000,
+       rescaling_iterations=5,
+   )
 
 
 Summary
@@ -528,8 +455,8 @@ The key equation:
    t_u^{\text{new}} = \int_0^{t_u^{\text{old}}} \frac{\text{observed mutations}(x)}
    {\text{expected mutations}(x)} \, dx
 
-This corrects for variable population size without explicitly modeling it,
-by letting the molecular clock be the final arbiter of time. In the watch
+This calibrates the inferred mutational timescale; it does not estimate or
+correct a population-size history. In the watch
 metaphor, the mutation clock is the master reference -- it ticks at a known
 rate (:math:`\mu`) regardless of population history, and rescaling adjusts
 every hand on the dial until the ticks match.
@@ -543,8 +470,7 @@ Congratulations -- you've now built every gear of the tsdate mechanism:
 3. **Inside-outside** -- messages flowing through the gear train on a discrete grid
 4. **Variational gamma** -- the same messages, now carried by continuous gamma
    distributions via expectation propagation
-5. **Rescaling** -- calibrating the clock against the master reference: adjusting
-   for variable population size
+5. **Rescaling** -- calibrating branch- and site-based mutation clocks
 
 Together, these gears transform a topology-only tree sequence (from tsinfer)
 into a fully dated genealogy. You understand the math, the code, and the

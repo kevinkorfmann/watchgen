@@ -11,21 +11,18 @@ Panel D: Variational gamma -- GammaDistribution multiply/divide operations
          showing prior -> posterior evolution.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.stats import gamma as gamma_dist
 
 from watchgen.mini_tsdate import (
-    conditional_coalescent_moments,
-    gamma_params_from_moments,
-    build_prior_grid,
-    edge_likelihood,
-    make_time_grid,
-    edge_likelihood_matrix,
-    compute_posteriors,
-    posterior_mean,
-    inside_pass_logspace,
     GammaDistribution,
+    compute_posteriors,
+    conditional_coalescent_moments,
+    edge_likelihood,
+    edge_likelihood_matrix,
+    gamma_params_from_moments,
+    make_time_grid,
 )
 
 # -- Style ---------------------------------------------------------------
@@ -96,7 +93,7 @@ ax = axes[0, 1]
 
 lambda_e = 0.001  # mu * span
 t_child = 0.0     # child is a leaf at time 0
-t_parent_range = np.linspace(0.01, 5.0, 500)
+t_parent_range = np.geomspace(1.0, 30_000.0, 500)
 
 mutation_counts = [0, 1, 2, 5, 10]
 colors_m = [C_GREY, C_BLUE, C_GREEN, C_ORANGE, C_RED]
@@ -113,7 +110,8 @@ ax.set_xlabel("Parent time $t_p$ (generations)")
 ax.set_ylabel("$P(m_e \\mid t_p, t_c=0)$")
 ax.set_title("B.  Poisson mutation likelihood per edge")
 ax.legend(fontsize=8, loc="upper right", framealpha=0.9)
-ax.set_xlim(0, 5.0)
+ax.set_xscale("log")
+ax.set_xlim(t_parent_range[0], t_parent_range[-1])
 ax.set_ylim(bottom=0)
 
 # Annotate the rate
@@ -121,7 +119,7 @@ ax.text(
     0.05, 0.92,
     f"$\\lambda_e = \\mu \\times \\ell = {lambda_e}$",
     transform=ax.transAxes, fontsize=8,
-    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=C_GREY, alpha=0.8),
+    bbox={"boxstyle": "round,pad=0.3", "fc": "white", "ec": C_GREY, "alpha": 0.8},
 )
 
 # =================================================================
@@ -250,7 +248,7 @@ ax.text(
     "Tree:  ((leaf0, leaf1):1, leaf2):0\n"
     "Mutations: $m_{3{\\to}0}{=}1,\\; m_{3{\\to}1}{=}2,\\; m_{4{\\to}2}{=}0$",
     transform=ax.transAxes, fontsize=6.5, va="top",
-    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=C_GREY, alpha=0.85),
+    bbox={"boxstyle": "round,pad=0.3", "fc": "white", "ec": C_GREY, "alpha": 0.85},
 )
 
 # =================================================================
@@ -295,7 +293,7 @@ for dist, label, col, ls, lw in distributions:
 # Add arrows to show the flow of operations
 ax.annotate(
     "", xy=(prior.mean, 0.55), xytext=(posterior.mean, 0.55),
-    arrowprops=dict(arrowstyle="<-", color=C_GREY, lw=1.5),
+    arrowprops={"arrowstyle": "<-", "color": C_GREY, "lw": 1.5},
 )
 ax.text(
     (prior.mean + posterior.mean) / 2, 0.60, "multiply",
@@ -304,7 +302,7 @@ ax.text(
 
 ax.annotate(
     "", xy=(posterior.mean, 0.42), xytext=(posterior_2.mean, 0.42),
-    arrowprops=dict(arrowstyle="<-", color=C_GREY, lw=1.5),
+    arrowprops={"arrowstyle": "<-", "color": C_GREY, "lw": 1.5},
 )
 ax.text(
     (posterior.mean + posterior_2.mean) / 2, 0.47, "multiply",
@@ -327,7 +325,7 @@ ax.text(
     "Multiply $\\Rightarrow$ add $\\eta$\n"
     "Divide $\\Rightarrow$ subtract $\\eta$",
     transform=ax.transAxes, fontsize=6.5, va="top",
-    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=C_GREY, alpha=0.85),
+    bbox={"boxstyle": "round,pad=0.3", "fc": "white", "ec": C_GREY, "alpha": 0.85},
 )
 
 # -- Save ---------------------------------------------------------------

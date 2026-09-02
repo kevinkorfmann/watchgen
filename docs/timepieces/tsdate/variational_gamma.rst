@@ -10,7 +10,7 @@ Variational Gamma (Expectation Propagation)
 The inside-outside method (:ref:`tsdate_inside_outside`) passes messages
 through the gear train using a discrete grid. It works, but the grid imposes
 limits on resolution and speed. The variational gamma method is tsdate's
-default and most accurate algorithm. Instead of discretizing time into a grid,
+default and empirically most accurate algorithm in current tsdate. Instead of discretizing time into a grid,
 it approximates each node's posterior age as a **gamma distribution** and
 refines it iteratively using **Expectation Propagation** (EP) -- a
 message-passing algorithm from machine learning (Minka, 2001).
@@ -41,9 +41,11 @@ pillars of EP -- and see how they fit together to date a tree sequence.
 
 .. admonition:: Prerequisites
 
-   This chapter builds on three earlier ones. The coalescent prior
-   (:ref:`tsdate_coalescent_prior`) provides the initial gamma beliefs; the
-   mutation likelihood (:ref:`tsdate_mutation_likelihood`) defines the Poisson
+   This chapter builds on the earlier probability machinery, but an important
+   production detail differs from the discrete methods: variational gamma uses
+   a piecewise-constant uniform mixture prior learned by expectation
+   maximization, not the conditional-coalescent gamma prior. The mutation
+   likelihood (:ref:`tsdate_mutation_likelihood`) defines the Poisson
    factors that link parent and child nodes; and the inside-outside chapter
    (:ref:`tsdate_inside_outside`) introduces the idea of two-pass message
    passing. If any of those concepts feel shaky, revisit the relevant chapter
@@ -74,7 +76,8 @@ The Big Picture
 
 Here's the algorithm in one paragraph:
 
-   Represent each node's posterior age as :math:`\text{Gamma}(\alpha_u, \beta_u)`.
+   Represent each node's approximate marginal age as
+   :math:`\text{Gamma}(\alpha_u, \beta_u)`.
    For each edge :math:`e=(u,v)`, compute a "message" that says how the Poisson
    mutation likelihood on :math:`e` updates the gamma beliefs for :math:`u` and
    :math:`v`. Apply these messages by **moment matching**: compute the exact
@@ -308,19 +311,22 @@ EP maintains the following state:
 - **Edge factors** :math:`f_e^{\to u}` and :math:`f_e^{\to v}` for each edge
   :math:`e = (u, v)`: gamma-shaped "messages" from the edge likelihood
 
-The posterior for node :math:`u` is the product of its prior and all incoming
-edge messages:
+The approximation for node :math:`u` combines the learned mixture-prior factor,
+constraint factor, and incoming edge (and, where applicable, unphased-block)
+factors. A stripped-down factorization is:
 
 .. math::
 
-   q(t_u) \propto \text{prior}(t_u) \cdot \prod_{e \ni u} f_e^{\to u}(t_u)
+   q(t_u) \propto f_{\mathrm{mix},u}(t_u) f_{\mathrm{constraint},u}(t_u)
+   \prod_{e \ni u} f_e^{\to u}(t_u)
 
 In natural parameters, this is a sum:
 
 .. math::
 
-   (\alpha_u - 1, -\beta_u) = (\alpha_{\text{prior}} - 1, -\beta_{\text{prior}})
-   + \sum_{e \ni u} (\alpha_{f_e} - 1, -\beta_{f_e})
+   \boldsymbol\eta_u = \boldsymbol\eta_{\mathrm{mix},u}
+   + \boldsymbol\eta_{\mathrm{constraint},u}
+   + \sum_{e \ni u} \boldsymbol\eta_{f_e}
 
 .. admonition:: Probability Aside -- Expectation Propagation vs. Variational Bayes
 
@@ -342,49 +348,11 @@ In natural parameters, this is a sum:
 Initialization
 ----------------
 
-1. Set each node's posterior to its coalescent prior:
-   :math:`q(t_u) = \text{Gamma}(\alpha_{\text{prior}}, \beta_{\text{prior}})`
-
-2. Set all edge factors to "uninformative":
-   :math:`f_e^{\to u} = \text{Gamma}(1, 0)` (i.e., natural parameters :math:`(0, 0)`)
-
-.. code-block:: python
-
-   def initialize_ep(ts, prior_grid):
-       """Initialize EP state.
-
-       Parameters
-       ----------
-       ts : tskit.TreeSequence
-       prior_grid : dict
-           {node_id: (alpha, beta)} from the coalescent prior.
-
-       Returns
-       -------
-       posteriors : dict
-           {node_id: GammaDistribution}
-       edge_factors : dict
-           {(edge_id, direction): GammaDistribution}
-           direction is 'rootward' (to parent) or 'leafward' (to child)
-       """
-       posteriors = {}
-       for node in ts.nodes():
-           if node.id in prior_grid:
-               alpha, beta = prior_grid[node.id]
-               # Start with the coalescent prior as the initial belief
-               posteriors[node.id] = GammaDistribution(alpha, beta)
-           else:
-               # Sample nodes: fixed at time 0 (very tight distribution)
-               posteriors[node.id] = GammaDistribution(1.0, 1e10)
-
-       # Initialize all edge factors to uninformative Gamma(1, 0)
-       # In natural parameters this is (0, 0) -- contributes nothing
-       edge_factors = {}
-       for edge in ts.edges():
-           edge_factors[(edge.id, 'rootward')] = GammaDistribution(1.0, 0.0)
-           edge_factors[(edge.id, 'leafward')] = GammaDistribution(1.0, 0.0)
-
-       return posteriors, edge_factors
+Production tsdate initializes zero natural-parameter factors for edges and
+separate factors for node constraints and the learned mixture prior. The
+piecewise-uniform mixture weights are updated by expectation maximization
+during fitting. A coalescent ``prior_grid`` is therefore not an input to
+``variational_gamma``; it belongs to the discrete methods.
 
 
 The EP Update for One Edge
@@ -902,47 +870,21 @@ Putting It All Together
 
 .. code-block:: python
 
-   def variational_gamma_date(ts, mutation_rate, Ne=1.0, max_iter=25):
-       """Date a tree sequence using the variational gamma method.
+   import tsdate
 
-       Parameters
-       ----------
-       ts : tskit.TreeSequence
-       mutation_rate : float
-       Ne : float
-       max_iter : int
+   dated = tsdate.variational_gamma(
+       ts,
+       mutation_rate=1e-8,
+       max_iterations=25,
+       rescaling_intervals=1000,
+       rescaling_iterations=5,
+   )
 
-       Returns
-       -------
-       node_times : np.ndarray
-       """
-       # Build coalescent prior (Gear 1)
-       prior_grid = {}
-       for node in ts.nodes():
-           if node.id not in set(ts.samples()):
-               k = count_sample_descendants(ts, node.id)
-               # Mean and variance from conditional coalescent
-               mean = sum(2.0 / (j * (j-1)) for j in range(2, max(k, 2) + 1))
-               var = sum(4.0 / (j * (j-1))**2 for j in range(2, max(k, 2) + 1))
-               # Convert to gamma parameters via method of moments
-               alpha = mean**2 / var
-               beta = mean / var
-               prior_grid[node.id] = (alpha, beta)
-
-       # Run EP (messages flow through the gear train until convergence)
-       posteriors = run_ep(ts, mutation_rate, prior_grid, max_iter)
-
-       # Extract posterior means as point estimates
-       node_times = np.zeros(ts.num_nodes)
-       for u in range(ts.num_nodes):
-           if u in posteriors:
-               node_times[u] = posteriors[u].mean
-
-       # Fix samples at time 0 (known ages)
-       for s in ts.samples():
-           node_times[s] = 0.0
-
-       return node_times
+The mini module implements gamma-factor algebra and tilted-moment kernels for
+inspection and testing. Full dating also requires mixture-prior EM, node-age
+constraints, singleton/unphased handling, rescaling, provenance, and tree
+sequence preprocessing; those responsibilities remain with the official
+package.
 
 
 Summary

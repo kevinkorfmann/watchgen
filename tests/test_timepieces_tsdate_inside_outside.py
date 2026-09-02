@@ -14,9 +14,8 @@ inside_outside_date, build_discrete_prior, is_root) are not tested.
 
 import numpy as np
 import pytest
-from scipy.stats import poisson
 from scipy.special import logsumexp
-
+from scipy.stats import poisson
 
 # =========================================================================
 # Code extracted from inside_outside.rst
@@ -544,8 +543,6 @@ class TestInsidePassLogspace:
         """
         np.random.seed(42)
         K = 8
-        grid = np.linspace(0, 5, K)
-
         # Create a random inside vector (positive) and likelihood matrix
         inside_linear = np.random.rand(K) + 0.01
         L_linear = np.zeros((K, K))

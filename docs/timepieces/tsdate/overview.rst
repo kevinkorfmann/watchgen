@@ -11,8 +11,8 @@ Overview of tsdate
    :align: center
 
    **tsdate at a glance.** Panel A: Coalescent prior -- conditional coalescent
-   moments for different sample sizes, with gamma priors on node age shaped by
-   descendant count. Panel B: Edge likelihood -- Poisson mutation likelihood as a
+   moments for different sample sizes, shown using the optional gamma moment
+   match (the discrete-method default is lognormal). Panel B: Edge likelihood -- Poisson mutation likelihood as a
    function of parent time for edges with varying mutation counts. Panel C:
    Inside-outside posterior distributions over a time grid for nodes with different
    roles in a small tree. Panel D: Variational gamma -- the multiply/divide
@@ -386,11 +386,10 @@ variational gamma method:
    +---------------------------+
    |  INITIALIZE               |
    |                           |
-   |  For each node u:         |
-   |    prior ~ Gamma(a0, b0)  |
-   |    (from conditional      |
-   |     coalescent, or        |
-   |     exponential for roots)|
+   |  Learn a piecewise-uniform|
+   |  mixture prior by EM;     |
+   |  initialize gamma         |
+   |  marginal factors        |
    |                           |
    |  For each edge e:         |
    |    count mutations m_e    |

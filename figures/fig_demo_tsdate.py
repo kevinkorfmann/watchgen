@@ -1,19 +1,17 @@
-"""
-Demo: tsdate node dating on msprime-simulated tree sequence.
+"""Source-grounded mini-tsdate kernel checks on one simulated genealogy.
 
-Simulates a tree sequence with known node times, strips timing
-information, runs tsdate's inside-outside algorithm, and compares
-inferred times to truth.
+This figure deliberately does not claim to run the complete tsdate pipeline.
+It compares conditional-coalescent prior means with simulated node ages and
+checks the Poisson edge clock on a single tree.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
 import msprime
+import numpy as np
 
 from watchgen.mini_tsdate import (
-    build_prior_grid,
-    edge_likelihood_matrix,
     GammaDistribution,
+    conditional_coalescent_moments,
 )
 
 plt.rcParams.update({
@@ -31,7 +29,7 @@ ts = msprime.simulate(
     sample_size=20,
     Ne=Ne,
     length=200_000,  # 200 kb
-    recombination_rate=1e-8,
+    recombination_rate=0,
     mutation_rate=mu,
     random_seed=2024,
 )
@@ -50,108 +48,56 @@ for tree in ts.trees():
             edge_key = (mut.node, parent_node)
             edge_mutations[edge_key] = edge_mutations.get(edge_key, 0) + 1
 
-# ── Compute priors and likelihoods ──────────────────────────────
-n_grid = 50
-t_grid = np.concatenate([[0], np.geomspace(10, 4 * Ne, n_grid - 1)])
+# Exact conditional-coalescent moments for this sample size. Standard
+# coalescent units convert to generations by multiplying by 2*Ne.
+moments = conditional_coalescent_moments(ts.num_samples, Ne=2 * Ne)
 
-# Build prior for different descendant counts
-prior_grid = {}
-for n_desc in [2, 5, 10, 20]:
-    prior = build_prior_grid(n_desc, Ne)
-    prior_grid[n_desc] = prior
-
-# Compute edge likelihoods for a range of mutation counts
-edge_liks = {}
-for m_count in range(10):
-    lik = edge_likelihood_matrix(m_count, mu * 200_000, t_grid)
-    edge_liks[m_count] = lik
-
-# ── Gamma approximation posterior ───────────────────────────────
-# For each internal node, compute approximate posterior from edge mutations
+# ── Conditional-coalescent prior means ──────────────────────────
 internal_nodes = [n for n in ts.nodes() if not n.is_sample()]
-posterior_means = []
-posterior_vars = []
+prior_means = []
 true_node_times = []
-
-# Build edge lookup: parent_id -> list of (child, left, right)
-edges_by_parent = {}
-for edge in ts.edges():
-    edges_by_parent.setdefault(edge.parent, []).append(edge)
-
-# Count descendant samples per node using the first tree as approximation
-first_tree = ts.first()
-tree_node_ids = set(first_tree.nodes())
-desc_counts = {}
+tree = ts.first()
 for node in internal_nodes:
-    if node.id in tree_node_ids:
-        desc_counts[node.id] = len(list(first_tree.samples(node.id)))
-    else:
-        desc_counts[node.id] = max(2, ts.num_samples // 2)
+    k = len(list(tree.samples(node.id)))
+    prior_means.append(moments[k][0])
+    true_node_times.append(node.time)
 
-n_samples = ts.num_samples
-for node in internal_nodes:
-    n_desc = desc_counts.get(node.id, 2)
-    if n_desc < 2:
-        n_desc = 2
-
-    # Prior: gamma with mean ~ 2*Ne*(1-1/n_desc), var ~ (2*Ne)^2 / n_desc
-    prior_mean = 2 * Ne * (1 - 1 / n_desc)
-    prior_var = (2 * Ne) ** 2 / n_desc
-    prior = GammaDistribution.from_moments(prior_mean, max(prior_var, 1.0))
-
-    # Likelihood from mutations on child edges
-    total_muts = 0
-    total_span = 0
-    for edge in edges_by_parent.get(node.id, []):
-        key = (edge.child, edge.parent)
-        total_muts += edge_mutations.get(key, 0)
-        total_span += edge.right - edge.left
-
-    if total_span > 0:
-        rate = mu * total_span
-        if rate > 0:
-            lik = GammaDistribution(total_muts + 1, rate)
-            posterior = prior.multiply(lik)
-            posterior_means.append(posterior.mean)
-            posterior_vars.append(posterior.variance)
-            true_node_times.append(node.time)
-
-posterior_means = np.array(posterior_means)
+prior_means = np.array(prior_means)
 true_node_times = np.array(true_node_times)
 
 # ── Figure ──────────────────────────────────────────────────────
 fig, axes = plt.subplots(2, 2, figsize=(11, 8.5))
 fig.suptitle(
-    f"Demo: tsdate on msprime Tree Sequence ({ts.num_samples} samples, {ts.num_trees} trees)",
+    f"Mini-tsdate kernels on an msprime genealogy ({ts.num_samples} samples)",
     fontsize=13, fontweight="bold", y=0.98,
 )
 
-# Panel A: True vs inferred node times (log scale)
+# Panel A: simulated node ages versus conditional-coalescent prior means
 ax = axes[0, 0]
-mask = (true_node_times > 0) & (posterior_means > 0)
-ax.scatter(true_node_times[mask], posterior_means[mask], s=20, alpha=0.5,
+mask = (true_node_times > 0) & (prior_means > 0)
+ax.scatter(true_node_times[mask], prior_means[mask], s=20, alpha=0.5,
            color="#2166AC", edgecolors="white", linewidths=0.3)
-lo = min(true_node_times[mask].min(), posterior_means[mask].min()) * 0.5
-hi = max(true_node_times[mask].max(), posterior_means[mask].max()) * 2
+lo = min(true_node_times[mask].min(), prior_means[mask].min()) * 0.5
+hi = max(true_node_times[mask].max(), prior_means[mask].max()) * 2
 ax.plot([lo, hi], [lo, hi], "k--", lw=1, alpha=0.4, label="$y = x$")
 ax.set_xscale("log")
 ax.set_yscale("log")
 ax.set_xlabel("True node time (generations)")
-ax.set_ylabel("Inferred node time (posterior mean)")
-ax.set_title("A. True vs inferred node times")
+ax.set_ylabel("Conditional-coalescent prior mean")
+ax.set_title("A. Simulated age vs prior mean")
 ax.legend(fontsize=8)
-corr = np.corrcoef(true_node_times[mask], posterior_means[mask])[0, 1]
+corr = np.corrcoef(true_node_times[mask], prior_means[mask])[0, 1]
 ax.text(0.02, 0.95, f"$r$ = {corr:.3f}",
         transform=ax.transAxes, fontsize=9, va="top",
-        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8))
+        bbox={"boxstyle": "round,pad=0.3", "fc": "white", "ec": "gray", "alpha": 0.8})
 
 # Panel B: Prior distributions by descendant count
 ax = axes[0, 1]
 t_plot = np.geomspace(10, 4 * Ne, 200)
 from scipy.stats import gamma as gamma_dist
+
 for n_desc, color in [(2, "#2166AC"), (5, "#B2182B"), (10, "#1B7837"), (20, "#E08214")]:
-    prior_mean = 2 * Ne * (1 - 1 / n_desc)
-    prior_var = (2 * Ne) ** 2 / n_desc
+    prior_mean, prior_var = moments[n_desc]
     prior = GammaDistribution.from_moments(prior_mean, max(prior_var, 1.0))
     pdf = gamma_dist.pdf(t_plot, a=prior.alpha, scale=1.0/prior.beta)
     ax.plot(t_plot, pdf, lw=2, color=color, label=f"$n_d$ = {n_desc}")
@@ -179,21 +125,23 @@ ax.set_ylabel("Likelihood $P(m | t)$")
 ax.set_title("C. Mutation likelihood per edge")
 ax.legend(fontsize=7)
 
-# Panel D: Tree span and mutation distribution
+# Panel D: expected versus observed mutations on each edge
 ax = axes[1, 1]
-tree_spans = []
-tree_muts = []
-for tree in ts.trees():
-    span = tree.interval[1] - tree.interval[0]
-    n_muts = len(list(tree.sites()))
-    tree_spans.append(span)
-    tree_muts.append(n_muts)
+expected_muts = []
+observed_muts = []
+for edge in ts.edges():
+    span = edge.right - edge.left
+    duration = true_times[edge.parent] - true_times[edge.child]
+    expected_muts.append(mu * span * duration)
+    observed_muts.append(edge_mutations.get((edge.child, edge.parent), 0))
 
-ax.scatter(tree_spans, tree_muts, s=15, alpha=0.5, color="#2166AC",
+ax.scatter(expected_muts, observed_muts, s=18, alpha=0.6, color="#2166AC",
            edgecolors="white", linewidths=0.3)
-ax.set_xlabel("Tree span (bp)")
-ax.set_ylabel("Number of mutations")
-ax.set_title(f"D. Tree span vs mutations ({ts.num_trees} trees)")
+hi = max(max(expected_muts), max(observed_muts), 1)
+ax.plot([0, hi], [0, hi], "k--", lw=1, alpha=0.4)
+ax.set_xlabel(r"Expected mutations $\mu\ell\Delta t$")
+ax.set_ylabel("Observed mutations")
+ax.set_title("D. Poisson clock by edge")
 
 plt.tight_layout(rect=[0, 0, 1, 0.96])
 plt.savefig("figures/fig_demo_tsdate.png", dpi=150, bbox_inches="tight")

@@ -25,34 +25,33 @@ Covers:
 
 import numpy as np
 import pytest
-from scipy.stats import poisson, gamma as gamma_dist
-from scipy.special import logsumexp
+from scipy.stats import gamma as gamma_dist
+from scipy.stats import poisson
 
 from watchgen.mini_tsdate import (
+    # Chapter 4: Variational Gamma
+    GammaDistribution,
+    _transition_prob,
+    apply_rescaling,
+    build_prior_grid,
+    compute_posteriors,
+    # Chapter 5: Rescaling
+    compute_scaling_factors,
+    compute_tilted_moments,
     # Chapter 1: Coalescent Prior
     conditional_coalescent_mean,
     conditional_coalescent_moments,
-    gamma_params_from_moments,
-    build_prior_grid,
-    _transition_prob,
     # Chapter 2: Mutation Likelihood
     edge_likelihood,
+    edge_likelihood_matrix,
+    gamma_params_from_moments,
     gamma_poisson_update,
+    inside_pass_logspace,
     # Chapter 3: Inside-Outside
     make_time_grid,
-    edge_likelihood_matrix,
-    compute_posteriors,
-    posterior_mean,
-    inside_pass_logspace,
-    # Chapter 4: Variational Gamma
-    GammaDistribution,
     numerical_hessian,
-    compute_tilted_moments,
-    # Chapter 5: Rescaling
-    compute_scaling_factors,
-    apply_rescaling,
+    posterior_mean,
 )
-
 
 # =========================================================================
 # Tests for make_time_grid
@@ -409,8 +408,6 @@ class TestInsidePassLogspace:
         """Log-space computation should match linear-space computation."""
         np.random.seed(42)
         K = 8
-        grid = np.linspace(0, 5, K)
-
         inside_linear = np.random.rand(K) + 0.01
         L_linear = np.zeros((K, K))
         for i in range(K):
@@ -640,6 +637,27 @@ class TestIntegration:
 class TestConditionalCoalescentMoments:
     """Tests for the conditional_coalescent_moments function."""
 
+    @pytest.mark.parametrize(
+        "k,n,expected",
+        [(2, 4, 0.25), (3, 4, 0.5), (4, 4, 1.5), (4, 10, 0.3)],
+    )
+    def test_exact_upstream_means(self, k, n, expected):
+        """Match tsdate's exact tau_expect formulas."""
+        assert conditional_coalescent_mean(k, n) == pytest.approx(expected)
+
+    def test_exact_small_tree_variances(self):
+        moments = conditional_coalescent_moments(4)
+        assert moments[2][1] == pytest.approx(11 / 144)
+        assert moments[3][1] == pytest.approx(5 / 36)
+        assert moments[4][1] == pytest.approx(41 / 36)
+
+    def test_ne_rescales_first_two_moments(self):
+        unit = conditional_coalescent_moments(4)
+        scaled = conditional_coalescent_moments(4, Ne=10)
+        for k in range(2, 5):
+            assert scaled[k][0] == pytest.approx(unit[k][0] * 10)
+            assert scaled[k][1] == pytest.approx(unit[k][1] * 100)
+
     def test_root_mean(self):
         """Root (k=n) mean should be sum of 2/(j*(j-1)) for j=2..n."""
         n = 10
@@ -769,6 +787,10 @@ class TestEdgeLikelihood:
         """Equal parent and child times should give 0 likelihood."""
         assert edge_likelihood(1, 0.5, 1.0, 1.0) == 0.0
 
+    def test_equal_times_without_mutations(self):
+        """Poisson(0) assigns probability one to zero mutations."""
+        assert edge_likelihood(0, 0.5, 1.0, 1.0) == 1.0
+
     def test_zero_mutations_positive_branch(self):
         """P(0 | lambda*dt) = exp(-lambda*dt)."""
         t_p, t_c = 500, 0
@@ -892,6 +914,20 @@ class TestGammaDistribution:
         assert g.mean == pytest.approx(0.2)
         assert g.variance == pytest.approx(0.04)
         assert g.eta1 == pytest.approx(0.0)
+
+
+class TestComputeTiltedMoments:
+    def test_zero_rate_zero_mutations_is_finite(self):
+        result = compute_tilted_moments(
+            GammaDistribution(3.0, 1.0),
+            GammaDistribution(2.0, 2.0),
+            m_e=0,
+            lambda_e=0.0,
+        )
+        assert result is not None
+        assert np.all(np.isfinite(result))
+        assert result[1] > 0
+        assert result[3] > 0
 
 
 # =========================================================================

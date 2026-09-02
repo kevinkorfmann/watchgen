@@ -180,9 +180,12 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - IX
      - :ref:`tsdate <tsdate_timepiece>`
-     - 139
-     - --
-     - Dates tree sequence nodes using the molecular clock.
+     - 147
+     - 2026-09-01
+     - Conditional-coalescent moments, zero-length Poisson edges, and
+       variational tilted moments checked against tsdate 0.2.7 and official
+       source (``e725332``); a full variational-gamma run completed with
+       finite, strictly ordered node times.
    * - XV
      - :ref:`CLUES <clues_timepiece>`
      - 21

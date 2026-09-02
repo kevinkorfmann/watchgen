@@ -41,9 +41,10 @@ the prior probability of those ages (the **prior**).
 The four gears of tsdate:
 
 1. **The Coalescent Prior** (the escapement) -- A prior on node ages derived from
-   coalescent theory: nodes with more descendant samples are expected to be younger,
-   because large subtrees coalesce quickly. This is where the theory from
-   :ref:`Coalescent Theory <coalescent_theory>` provides the baseline expectation.
+   coalescent theory: on average, nodes with more descendant samples are older.
+   This prior is used by the discrete inside-outside and maximization methods.
+   The modern variational-gamma method instead learns a piecewise-uniform mixture
+   prior while fitting the data.
 
 2. **The Mutation Likelihood** (the gear train) -- A Poisson model for the number of
    mutations on each edge, connecting observed data to branch lengths. More mutations
@@ -53,12 +54,13 @@ The four gears of tsdate:
    prior and likelihood across the interconnected nodes of the tree sequence. Two
    flavors:
 
-   - *Inside-Outside* (discrete time grid) -- exact on a grid
-   - *Variational Gamma* (continuous time, default) -- approximate but efficient
+   - *Inside-Outside* (discrete time grid) -- a two-pass approximation on ARGs
+   - *Variational Gamma* (continuous time, default) -- expectation propagation,
+     empirically the most accurate method in current tsdate
 
-4. **Rescaling** (the regulator) -- A post-processing step that adjusts node times so
-   the inferred mutation rate matches the empirical rate across time windows. Like
-   a watchmaker adjusting the beat rate against a reference frequency.
+4. **Rescaling** (the regulator) -- A post-processing step that aligns branch- and
+   site-based mutational timescales across time windows. Like a watchmaker adjusting
+   the beat rate against a reference frequency.
 
 These gears mesh together into a dating pipeline:
 
@@ -137,6 +139,6 @@ Chapters
    rescaling
    demo
 
-Each chapter derives the math, explains the intuition, implements the code,
-and verifies it works. By the end, you'll have built a complete node-dating
-engine from scratch -- and you'll understand every gear that drives it.
+Each chapter derives the math, explains the intuition, and implements testable
+numerical kernels. These examples are not a drop-in replacement for the
+optimized production package; they mark their educational simplifications.

@@ -7,20 +7,20 @@ The Coalescent Prior
    *A watchmaker who knows how clocks age can guess a part's vintage before inspecting it.*
 
 Before looking at any mutational data, we already know something about how old
-each node should be. A node with 1000 descendant samples is almost certainly
-much younger than a node with only 2. This knowledge comes from **coalescent
+each node should be. A node with 1000 descendant samples is expected to be
+older than a node with only 2. This knowledge comes from **coalescent
 theory**, and tsdate encodes it as a **prior distribution** on each node's age.
 
 In the watch metaphor, the prior is **the expected beat rate from coalescent
 theory** -- our best guess for when each gear was manufactured, before we open
-the case and inspect the wear marks (mutations). A node with many descendants
-is like a mass-produced part: it was probably made recently. A node ancestral
-to only two samples is like a rare vintage component: it could be quite old.
+the case and inspect the wear marks (mutations). Larger descendant sets require
+more coalescences below their ancestral node and therefore shift the prior
+toward older ages.
 
-This chapter builds the coalescent prior from first principles. By the end you
-will be able to assign a Gamma(:math:`\alpha`, :math:`\beta`) distribution to
-every internal node of a tree sequence, ready to combine with the mutation
-likelihood in the chapters that follow.
+This chapter builds the conditional-coalescent moments from first principles.
+The discrete methods approximate them with a lognormal distribution by default
+or an optional gamma distribution before combining them with the mutation
+likelihood.
 
 .. admonition:: Prerequisites
 
@@ -30,8 +30,8 @@ likelihood in the chapters that follow.
    topology comes from tsinfer (see :ref:`tsinfer_overview`).
 
 
-The Intuition: More Descendants = Younger
-============================================
+The Intuition: More Descendants = Older
+=========================================
 
 Under the standard coalescent, a node with :math:`k` descendant leaves in a
 sample of :math:`n` coalesces at a time that depends on :math:`k` and :math:`n`.
@@ -93,18 +93,25 @@ the number of ancestors.
 When a subtree of size :math:`k` coalesces (going back in time from the
 present), there are :math:`a` total lineages remaining. The probability
 of having :math:`a` ancestors given :math:`k` and :math:`n` follows a
-hypergeometric-like distribution (Wiuf & Donnelly, 1999), and the coalescence
-time conditioned on :math:`a` is:
+hypergeometric-like distribution (Wiuf & Donnelly, 1999). Conditional on
+:math:`a`, node age is a **sum** of exponential waiting times, not one
+exponential draw:
 
 .. math::
 
-   T \mid a \;\sim\; \text{Exp}\left(\frac{a(a-1)}{4N_e}\right)
+   T \mid a \;\sim\; \sum_{j=a}^{n} \text{Exp}\left(\binom{j}{2}\right)
 
-So the conditional mean is:
+in standard coalescent units. Marginalizing the resulting hypoexponential
+moments over :math:`P(a\mid k,n)` gives the variance used by tsdate. The mean
+simplifies to an exact expression:
 
 .. math::
 
-   \mathbb{E}[T \mid k, n] = \sum_{a=2}^{n-k+1} P(a \mid k, n) \cdot \frac{4N_e}{a(a-1)}
+   \mathbb{E}[T \mid k,n] =
+   \begin{cases}
+   (k-1)/n, & k<n,\\
+   2(1-1/n), & k=n.
+   \end{cases}
 
 and the conditional variance includes both the variance within each :math:`a`
 class and the variance between classes (law of total variance).
@@ -128,80 +135,21 @@ class and the variance between classes (law of total variance).
 
 .. code-block:: python
 
-   import numpy as np
-   from scipy.special import comb
+   from watchgen.mini_tsdate import conditional_coalescent_mean
 
-   def conditional_coalescent_mean(k, n, Ne=1.0):
-       """Mean age of a node with k descendants in a sample of n.
-
-       Under the conditional coalescent (Wiuf & Donnelly, 1999), averaged
-       over the number of extant ancestors.
-
-       Parameters
-       ----------
-       k : int
-           Number of descendant leaves of this node.
-       n : int
-           Total number of leaves in the tree.
-       Ne : float
-           Effective population size (in coalescent units, 2*Ne generations).
-
-       Returns
-       -------
-       mean : float
-           Expected age in units of 2*Ne generations.
-       """
-       if k == n:
-           # The root: must wait for all n lineages to coalesce
-           # Mean is sum of 1/(j choose 2) for j = n down to 2
-           return sum(2.0 / (j * (j - 1)) for j in range(2, n + 1))
-
-       # P(a ancestors | k descendants coalesce, n total tips)
-       # computed recursively
-       mean = 0.0
-       for a in range(2, n - k + 2):
-           # Probability of a ancestors when subtree of size k merges
-           p_a = _pr_ancestors(a, k, n)
-           # Expected coalescence time given a lineages
-           expected_time = 2.0 / (a * (a - 1))
-           mean += p_a * expected_time
-
-       return mean
-
-   def _pr_ancestors(a, k, n):
-       """Probability of a extant ancestors when subtree of size k coalesces.
-
-       This follows Wiuf & Donnelly (1999). For a subtree of size k in a
-       tree of n tips, the number of other lineages when k coalesces to 1
-       ranges from 1 to n-k. So total ancestors a ranges from 2 to n-k+1.
-       """
-       if k == 2:
-           # Special case: the pair coalesces when a-1 other lineages exist
-           # at that time, so a total. This has a known distribution.
-           # P(a | k=2, n) = (n-1) * C(n-2, a-2) * C(a-1, 1)
-           #                / (C(n, 2) * product terms)
-           # ... simplified via the recursion in Wiuf & Donnelly
-           pass
-       # In practice, tsdate computes this recursively using the relationship:
-       # P(a | k, n) can be computed from P(a | k+1, n) using
-       # binomial coefficient identities.
-       # For educational purposes, here's a direct simulation approach:
-       raise NotImplementedError(
-           "See the recursive implementation below for the full computation."
-       )
+   # Exact values used by tsdate's conditional-coalescent lookup.
+   assert conditional_coalescent_mean(2, 4) == 0.25
+   assert conditional_coalescent_mean(3, 4) == 0.5
+   assert conditional_coalescent_mean(4, 4) == 1.5
 
 
 The Recursive Computation
 ---------------------------
 
-The key to computing :math:`P(a \mid k, n)` efficiently is a **recursive
-relationship** over decreasing :math:`k`. tsdate's implementation uses the
-identity:
-
-.. math::
-
-   P(a \mid k, n) = \sum_{a'=a}^{n-k+1} P(a' \mid k+1, n) \cdot
-   \frac{\binom{a'-1}{1}}{\binom{a'+1}{2}}
+The key to computing :math:`P(a \mid k, n)` efficiently is a log-space
+**recursive relationship** over decreasing :math:`k`. The production code
+updates the complete ancestor-count probability vector; it is not the simple
+two-state transition shown in earlier versions of this chapter.
 
 The base case is :math:`k = n-1`, where the subtree is the second-to-last
 to coalesce, and there are exactly :math:`a = 2` ancestors.
@@ -215,96 +163,28 @@ row at a time.
 
 .. code-block:: python
 
-   def conditional_coalescent_moments(n, Ne=1.0):
-       """Compute mean and variance of node age for all possible descendant counts.
+   import numpy as np
+   from watchgen.mini_tsdate import conditional_coalescent_moments
 
-       Parameters
-       ----------
-       n : int
-           Total number of tips.
-       Ne : float
-           Effective population size.
+   moments = conditional_coalescent_moments(4)
+   assert np.isclose(moments[2][1], 11 / 144)
+   assert np.isclose(moments[3][1], 5 / 36)
+   assert np.isclose(moments[4][1], 41 / 36)
 
-       Returns
-       -------
-       moments : dict
-           {k: (mean, variance)} for k = 2, 3, ..., n.
-       """
-       # Precompute unconditional coalescence time moments for a lineages
-       # E[T | a] = 2/(a*(a-1)),  Var[T | a] = E[T|a]^2 = 4/(a*(a-1))^2
-       max_a = n
-       t_mean = np.zeros(max_a + 1)   # t_mean[a] = expected coalescence time given a lineages
-       t_var = np.zeros(max_a + 1)    # t_var[a] = variance of coalescence time given a lineages
-       for a in range(2, max_a + 1):
-           rate = a * (a - 1) / 2.0   # coalescence rate with a lineages (num pairs)
-           t_mean[a] = 1.0 / rate     # exponential mean = 1/rate
-           t_var[a] = 1.0 / rate**2   # exponential variance = 1/rate^2
-
-       # Build P(a | k, n) table recursively from k=n-1 down to k=2
-       # Start: when k = n-1, there must be a=2 ancestors (only 2 lineages left)
-       pr_a = {}
-       pr_a[n-1] = np.zeros(max_a + 1)
-       pr_a[n-1][2] = 1.0  # certain: exactly 2 ancestors
-
-       for k in range(n - 2, 1, -1):
-           pr_a[k] = np.zeros(max_a + 1)
-           for a in range(2, n - k + 2):
-               # Recursive formula from Wiuf & Donnelly
-               for a_prime in range(a, n - k + 1):
-                   # Transition probability from (k+1, a') to (k, a)
-                   # depends on coalescent rates
-                   if pr_a[k+1][a_prime] > 0:
-                       transition = _transition_prob(a_prime, a)
-                       pr_a[k][a] += pr_a[k+1][a_prime] * transition
-
-           # Normalize to ensure probabilities sum to 1
-           total = pr_a[k].sum()
-           if total > 0:
-               pr_a[k] /= total
-
-       # Compute moments by averaging over a (law of total expectation/variance)
-       moments = {}
-       for k in range(2, n):
-           mean = np.sum(pr_a[k] * t_mean)             # E[T] = sum_a P(a) * E[T|a]
-           e_t_sq = np.sum(pr_a[k] * (t_var + t_mean**2))  # E[T^2] via law of total expectation
-           variance = e_t_sq - mean**2                  # Var = E[T^2] - (E[T])^2
-           moments[k] = (mean, variance)
-
-       # Root (k=n): sum of all waiting times from n lineages down to 1
-       root_mean = sum(2.0 / (j * (j - 1)) for j in range(2, n + 1))
-       root_var = sum(4.0 / (j * (j - 1))**2 for j in range(2, n + 1))
-       moments[n] = (root_mean, root_var)
-
-       return moments
-
-   def _transition_prob(a_prime, a):
-       """Transition probability in the Wiuf-Donnelly recursion.
-
-       Probability that when one more pair coalesces (decreasing k by 1),
-       the number of ancestors changes from a' to a.
-       """
-       if a > a_prime or a < 2:
-           return 0.0
-       if a == a_prime:
-           # The coalescing pair was entirely within the subtree
-           # (no change in total ancestor count -- it was the subtree
-           # that coalesced, reducing subtree lineages, but a new
-           # subtree-root lineage appears)
-           return (a_prime - 1) / (a_prime + 1)
-       if a == a_prime - 1:
-           # One of the coalescing lineages was in the subtree,
-           # the other was not, reducing total ancestors by 1
-           return 2.0 / (a_prime + 1)
-       return 0.0
+The mini implementation follows the production log-space recursion and sums
+the appropriate exponential waiting-time moments. Keeping one tested
+implementation avoids the incomplete transition formula that previously
+appeared in this chapter.
 
 
 From Moments to Gamma Parameters
 ===================================
 
 With the mean and variance of the conditional coalescent in hand, the next step
-is to convert them into a form that the dating algorithm can use. tsdate takes
-the mean and variance and fits a **gamma distribution** to them. This is the
-prior for each node.
+is to convert them into a form that a discrete dating algorithm can use. Current
+tsdate uses a **lognormal approximation by default** for these priors and also
+supports a gamma approximation. The mini implementation demonstrates the
+optional gamma moment match; variational gamma uses a different learned prior.
 
 Given mean :math:`\mu` and variance :math:`\sigma^2`, the gamma parameters are:
 

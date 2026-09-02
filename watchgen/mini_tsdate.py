@@ -10,8 +10,9 @@ when each ancestor lived.
 The four gears of tsdate:
 
 1. **The Coalescent Prior** -- A prior on node ages derived from coalescent
-   theory: nodes with more descendant samples are expected to be younger,
-   because large subtrees coalesce quickly.
+   theory: on average, nodes subtending more descendant samples are older.
+   This prior is used by tsdate's discrete-time methods; the modern
+   variational-gamma method instead learns a piecewise-uniform mixture prior.
 
 2. **The Mutation Likelihood** -- A Poisson model for the number of mutations
    on each edge, connecting observed data to branch lengths.
@@ -21,8 +22,11 @@ The four gears of tsdate:
    - Inside-Outside (discrete time grid)
    - Variational Gamma (continuous time, default)
 
-4. **Rescaling** -- A post-processing step that adjusts node times so the
-   inferred mutation rate matches the empirical rate across time windows.
+4. **Rescaling** -- A post-processing step that aligns branch- and site-based
+   mutational timescales across time windows.
+
+This educational module implements small, testable kernels from those methods;
+it is not a drop-in implementation of the complete production pipeline.
 
 This module extracts all self-contained code from the tsdate documentation
 chapters:
@@ -34,11 +38,10 @@ chapters:
 """
 
 import numpy as np
-from scipy.stats import poisson
-from scipy.special import logsumexp, comb, gammaln, digamma, polygamma
 from scipy.optimize import minimize
+from scipy.special import digamma, logsumexp, xlogy
 from scipy.stats import gamma as gamma_dist
-
+from scipy.stats import poisson
 
 # =========================================================================
 # Chapter 1: Coalescent Prior (coalescent_prior.rst)
@@ -57,29 +60,25 @@ def conditional_coalescent_mean(k, n, Ne=1.0):
     n : int
         Total number of leaves in the tree.
     Ne : float
-        Effective population size (in coalescent units, 2*Ne generations).
+        Multiplicative population-size time scale. ``Ne=1`` returns the
+        standard-coalescent values used in tsdate's prior lookup.
 
     Returns
     -------
     mean : float
-        Expected age in units of 2*Ne generations.
+        Expected age on the time scale set by ``Ne``.
     """
+    if not isinstance(k, (int, np.integer)) or not isinstance(
+            n, (int, np.integer)):
+        raise TypeError("k and n must be integers")
+    if n < 2 or k < 2 or k > n or Ne <= 0:
+        raise ValueError("require n >= 2, 2 <= k <= n, and Ne > 0")
+
+    # These are the exact expectations used by upstream tsdate.  ``Ne`` is a
+    # multiplicative time scale: Ne=1 returns standard coalescent units.
     if k == n:
-        # The root: must wait for all n lineages to coalesce
-        # Mean is sum of 1/(j choose 2) for j = n down to 2
-        return sum(2.0 / (j * (j - 1)) for j in range(2, n + 1))
-
-    # P(a ancestors | k descendants coalesce, n total tips)
-    # computed recursively
-    mean = 0.0
-    for a in range(2, n - k + 2):
-        # Probability of a ancestors when subtree of size k merges
-        p_a = _pr_ancestors(a, k, n)
-        # Expected coalescence time given a lineages
-        expected_time = 2.0 / (a * (a - 1))
-        mean += p_a * expected_time
-
-    return mean
+        return Ne * 2.0 * (1.0 - 1.0 / n)
+    return Ne * (k - 1.0) / n
 
 
 def _pr_ancestors(a, k, n):
@@ -89,17 +88,31 @@ def _pr_ancestors(a, k, n):
     tree of n tips, the number of other lineages when k coalesces to 1
     ranges from 1 to n-k. So total ancestors a ranges from 2 to n-k+1.
     """
-    if k == 2:
-        # Special case: the pair coalesces when a-1 other lineages exist
-        # at that time, so a total. This has a known distribution.
-        pass
-    # In practice, tsdate computes this recursively using the relationship:
-    # P(a | k, n) can be computed from P(a | k+1, n) using
-    # binomial coefficient identities.
-    # For educational purposes, here's a direct simulation approach:
-    raise NotImplementedError(
-        "See the recursive implementation below for the full computation."
-    )
+    if n < 2 or k < 2 or k >= n or a < 2 or a > n - k + 1:
+        return 0.0
+
+    # Log-space Wiuf-Donnelly recursion used by upstream tsdate.  At k=n-1,
+    # exactly two ancestors remain, so Pr(a=2)=1.  Each iteration transforms
+    # Pr(a | k,n) into Pr(a | k-1,n).
+    pr_a_ln = [np.nan, np.nan, 0.0]
+    for current_k in range(n - 1, 1, -1):
+        if current_k == k:
+            return float(np.exp(pr_a_ln[a]))
+        const = (
+            np.log(n - current_k)
+            + np.log(current_k - 2)
+            - np.log(current_k + 1)
+        )
+        for current_a in range(2, n - current_k + 2):
+            pr_a_ln[current_a] += const - np.log(
+                n - current_a - current_k + 2)
+        pr_a_ln.append(
+            pr_a_ln[-1]
+            + np.log(n - current_k + 2)
+            - np.log(current_k + 1)
+            - const
+        )
+    return 0.0
 
 
 def _transition_prob(a_prime, a):
@@ -135,47 +148,47 @@ def conditional_coalescent_moments(n, Ne=1.0):
     moments : dict
         {k: (mean, variance)} for k = 2, 3, ..., n.
     """
-    # Precompute unconditional coalescence time moments for a lineages
-    # E[T | a] = 2/(a*(a-1)),  Var[T | a] = E[T|a]^2 = 4/(a*(a-1))^2
-    max_a = n
-    t_mean = np.zeros(max_a + 1)
-    t_var = np.zeros(max_a + 1)
-    for a in range(2, max_a + 1):
-        rate = a * (a - 1) / 2.0
-        t_mean[a] = 1.0 / rate
-        t_var[a] = 1.0 / rate**2
+    if not isinstance(n, (int, np.integer)) or n < 2 or Ne <= 0:
+        raise ValueError("require integer n >= 2 and Ne > 0")
 
-    # Build P(a | k, n) table recursively from k=n-1 down to k=2
-    pr_a = {}
-    pr_a[n - 1] = np.zeros(max_a + 1)
-    pr_a[n - 1][2] = 1.0
+    # Conditional on the number of extant ancestors, node age is a sum of
+    # exponential waiting times.  Accumulate its first two moments, then use
+    # the same log-space ancestor-count marginalization as upstream tsdate.
+    coal_wait = np.array([
+        2.0 / (i * (i - 1)) if i > 1 else 0.0
+        for i in range(1, n + 1)
+    ])
+    mean_by_a = coal_wait.copy()
+    variance_by_a = coal_wait**2
+    for i in range(coal_wait.size - 2, 0, -1):
+        mean_by_a[i] += mean_by_a[i + 1]
+        variance_by_a[i] += variance_by_a[i + 1]
 
-    for k in range(n - 2, 1, -1):
-        pr_a[k] = np.zeros(max_a + 1)
+    values = np.stack(
+        (mean_by_a, variance_by_a + mean_by_a**2), axis=1)
+    marginalized = np.zeros((n + 1, 2))
+    pr_a_ln = [np.nan, np.nan, 0.0]
+
+    for k in range(n - 1, 1, -1):
         for a in range(2, n - k + 2):
-            for a_prime in range(a, n - k + 1):
-                if pr_a[k + 1][a_prime] > 0:
-                    transition = _transition_prob(a_prime, a)
-                    pr_a[k][a] += pr_a[k + 1][a_prime] * transition
+            marginalized[k] += np.exp(pr_a_ln[a]) * values[a]
+        if k > 2:
+            const = np.log(n - k) + np.log(k - 2) - np.log(k + 1)
+            for a in range(2, n - k + 2):
+                pr_a_ln[a] += const - np.log(n - a - k + 2)
+            pr_a_ln.append(
+                pr_a_ln[-1]
+                + np.log(n - k + 2)
+                - np.log(k + 1)
+                - const
+            )
+    marginalized[n] = values[1]
 
-            # Normalize to ensure probabilities sum to 1
-        total = pr_a[k].sum()
-        if total > 0:
-            pr_a[k] /= total
-
-    # Compute moments by averaging over a (law of total expectation/variance)
     moments = {}
-    for k in range(2, n):
-        mean = np.sum(pr_a[k] * t_mean)
-        e_t_sq = np.sum(pr_a[k] * (t_var + t_mean**2))
-        variance = e_t_sq - mean**2
-        moments[k] = (mean, variance)
-
-    # Root (k=n): sum of all waiting times from n lineages down to 1
-    root_mean = sum(2.0 / (j * (j - 1)) for j in range(2, n + 1))
-    root_var = sum(4.0 / (j * (j - 1))**2 for j in range(2, n + 1))
-    moments[n] = (root_mean, root_var)
-
+    for k in range(2, n + 1):
+        mean = conditional_coalescent_mean(k, n, Ne)
+        unit_variance = marginalized[k, 1] - marginalized[k, 0] ** 2
+        moments[k] = (mean, unit_variance * Ne**2)
     return moments
 
 
@@ -253,7 +266,7 @@ def edge_likelihood(m_e, lambda_e, t_parent, t_child):
         P(m_e | t_parent, t_child).
     """
     delta_t = t_parent - t_child
-    if delta_t <= 0:
+    if delta_t < 0:
         return 0.0
     expected = lambda_e * delta_t
     return poisson.pmf(m_e, expected)
@@ -493,7 +506,6 @@ def numerical_hessian(f, x, eps=1e-5):
     """
     n = len(x)
     H = np.zeros((n, n))
-    f0 = f(x)
     for i in range(n):
         for j in range(i, n):
             x_pp = x.copy()
@@ -542,8 +554,12 @@ def compute_tilted_moments(cavity_u, cavity_v, m_e, lambda_e):
         log_cavity_u = (cavity_u.alpha - 1) * np.log(t_u) - cavity_u.beta * t_u
         log_cavity_v = (cavity_v.alpha - 1) * np.log(max(t_v, 1e-20)) - cavity_v.beta * t_v
 
-        # Log Poisson likelihood: m*log(lambda*delta) - lambda*delta
-        log_lik = m_e * np.log(lambda_e * delta) - lambda_e * delta
+        # ``xlogy`` defines 0*log(0)=0, so a zero-rate, mutation-free edge
+        # contributes the correct neutral factor instead of NaN.
+        expected = lambda_e * delta
+        log_lik = xlogy(m_e, expected) - expected
+        if not np.isfinite(log_lik):
+            return 1e20
 
         return -(log_cavity_u + log_cavity_v + log_lik)
 
@@ -671,7 +687,7 @@ def demo():
     # --- Chapter 1: Coalescent Prior ---
     print("\n--- Chapter 1: Coalescent Prior ---")
 
-    k, n = 3, 100
+    k = 3
     approx_mean = 2.0 / (k * (k - 1))
     approx_var = approx_mean**2
 
@@ -795,7 +811,7 @@ def demo():
     new_times = apply_rescaling(node_times_demo, breakpoints, scales_demo, fixed)
     print(f"\nOriginal times: {node_times_demo}")
     print(f"Rescaled times: {new_times}")
-    print(f"(Fixed nodes at indices 0,1 unchanged)")
+    print("(Fixed nodes at indices 0,1 unchanged)")
 
     print("\n" + "=" * 60)
     print("Demo complete.")
