@@ -1,12 +1,17 @@
 # watchgen
 
-[![Unit tests](https://img.shields.io/badge/tests-2672%20passed-brightgreen)](https://github.com/kevinkorfmann/watchgen/actions) [![Codex verification](https://img.shields.io/badge/Codex%20verification-65%25-yellowgreen)](CODEX_VERIFICATION.md) [![CI](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml/badge.svg)](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml) [![Read the Docs](https://img.shields.io/readthedocs/watchgen)](https://watchgen.readthedocs.io) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Unit tests](https://img.shields.io/badge/tests-2672%20passed-brightgreen)](https://github.com/kevinkorfmann/watchgen/actions) [![Codex verification](https://img.shields.io/badge/Codex%20verification-88%25-brightgreen)](CODEX_VERIFICATION.md) [![Mini parity](https://img.shields.io/badge/mini%20parity-83%25-brightgreen)](CODEX_VERIFICATION.md#mini-implementation-parity-batch) [![CI](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml/badge.svg)](https://github.com/kevinkorfmann/watchgen/actions/workflows/tests.yml) [![Read the Docs](https://img.shields.io/readthedocs/watchgen)](https://watchgen.readthedocs.io) [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **The Watchmaker's Guide to Population Genetics** — a build-it-yourself book on the algorithms behind modern population genetics. Every concept is derived from first principles, every method reimplemented from scratch in Python. No black boxes.
 
 **Read online:** https://watchgen.readthedocs.io &nbsp;|&nbsp; **Download PDF:** https://watchgen.readthedocs.io/_/downloads/en/latest/pdf/
 
-**Codex verification progress: 65% — 17 of 26 prerequisite and Timepiece chapters verified.** See the [verification ledger](CODEX_VERIFICATION.md) for chapter-level evidence and remaining work.
+**Codex verification progress: 88% — 23 of 26 prerequisite and Timepiece chapters verified.** See the [verification ledger](CODEX_VERIFICATION.md) for chapter-level evidence and remaining work.
+
+**Mini implementation parity: 83% — 15 of 18 mini implementations verified.**
+The [mini parity batch](CODEX_VERIFICATION.md#mini-implementation-parity-batch)
+tracks source, upstream-fixture, and independent-oracle coverage separately from
+general chapter verification.
 
 > **Note:** A citable version number will be assigned in the coming days. Until then, please cite by URL and access date.
 
@@ -16,7 +21,7 @@
 
 Population genetics has powerful algorithms — but inaccessible ones. Most live inside papers and codebases that assume years of specialised training. This book is an attempt to change that: explicit derivations, step-by-step implementations, and unit tests for every algorithm covered.
 
-The companion Python package `watchgen` provides 19 minimal, self-contained reimplementations — small enough to read in one sitting, complete enough to run on toy examples, tested enough to trust. Think of them as movements built on the workbench: not for production, but for understanding.
+The companion Python package `watchgen` provides 18 minimal, self-contained reimplementations — small enough to read in one sitting, complete enough to run on toy examples, tested enough to trust. Think of them as movements built on the workbench: not for production, but for understanding.
 
 ---
 

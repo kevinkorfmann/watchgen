@@ -69,9 +69,11 @@ The Timepieces are grouped by what they do, with verification status for each.
      - Extends PSMC to multiple unphased genomes with a distinguished lineage approach.
    * - XIII
      - :ref:`Gamma-SMC <gamma_smc_timepiece>`
-     - 107
-     - --
-     - Ultrafast pairwise TMRCA inference with gamma-distributed posteriors.
+     - 114
+     - 2026-09-01
+     - Canonical flow perturbation, conjugate emissions, backward-message indexing,
+       and segmented trailing blocks checked against the primary paper and official
+       Gamma-SMC source (``61a4d046``).
    * - XIV
      - :ref:`PHLASH <phlash_timepiece>`
      - 130
@@ -91,19 +93,24 @@ The Timepieces are grouped by what they do, with verification status for each.
      - What it does
    * - X
      - :ref:`moments <moments_timepiece>`
-     - 162
-     - --
-     - Demographic inference from the SFS using moment equations.
+     - 118
+     - 2026-09-01
+     - SFS neutral drift/mutation scaling and population splitting checked against
+       moments-popgen 1.6.1 source fixtures; selection, migration, and LD teaching
+       approximations are explicitly bounded.
    * - XI
      - :ref:`dadi <dadi_timepiece>`
-     - 84
-     - --
-     - Demographic inference from the SFS by solving the Wright-Fisher diffusion PDE.
+     - 54
+     - 2026-09-01
+     - Grid, equilibrium density, split, implicit integration, likelihood, and
+       scaling checked against dadi 2.4.5 source/executable behavior (``8db007f``).
    * - XII
      - :ref:`momi2 <momi2_timepiece>`
-     - 140
-     - --
-     - Demographic inference from the SFS via coalescent tensor algebra.
+     - 143
+     - 2026-09-01
+     - Coalescent recurrence/sojourn times, Moran transitions, pulse tensor,
+       hypergeometric pseudoinverse, likelihood, and finite-sample f-statistic
+       weights checked against papers and official momi2 source (``b038d43``).
 
 **Genealogy and ARG inference** -- reconstructing ancestral histories
 

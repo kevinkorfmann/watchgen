@@ -18,6 +18,18 @@ GitHub `main`. Worktree-only changes do not count.
 | `IN PROGRESS` | An active Codex task owns the chapter; do not duplicate its work. |
 | `NOT STARTED` | No completed chapter-scoped review from this campaign is recorded. |
 
+## Mini implementation parity batch
+
+**Progress: 83% — 15 of 18 mini implementations have completed source-grounded
+parity review.** A mini counts as complete here only when its scoped behavior has
+been checked against the primary paper, official source, upstream fixtures, or an
+independent analytic/brute-force oracle, and the corresponding Timepiece row below
+is `VERIFIED` on GitHub `main`.
+
+| Batch | Complete | Total | Progress | Completed mini implementations | Remaining mini implementations |
+|---|---:|---:|---:|---|---|
+| Mini implementation parity | 15 | 18 | **83%** | PSMC, SMC++, Li & Stephens HMM, msprime, ARGweaver, tsinfer, SINGER, Relate, discoal, Threads, moments, dadi, momi2, Gamma-SMC, SLiM | tsdate, PHLASH, CLUES |
+
 ## Prerequisites
 
 All eight prerequisite chapters are complete. Their combined final gate was **281
@@ -49,21 +61,21 @@ chapter review evidence, not necessarily the repository-wide total.
 | V | ARGweaver | `VERIFIED` | `1423a74` | 125 focused tests; exact Jukes-Cantor/brute-force likelihood checks, diploid 2N coalescent/recoalescent oracles, and bounded transition invariants passed; official C++ source `fee3d32` built and its executable completed a finite sampling run; strict 135-source Sphinx/PDF build and rendered-page review passed. |
 | VI | tsinfer | `VERIFIED` | `629aa65` | 21 focused tests; three ancestor fixtures and both probability transforms matched official tsinfer 0.4.1 Python code; Ruff checks and a fresh strict 135-page Sphinx build passed. |
 | VII | SINGER | `VERIFIED` | `3c37ea7` | 35 focused equation/invariant tests; official C++ source at `eb8e39b` compiled and its CLI validation ran; corrected figures were rendered and inspected; strict 135-page Sphinx build passed. |
-| VIII | Threads | `VERIFIED` | `3538b09` | 65 focused tests; official `threads-arg` 0.2.1 completed its 500-haplotype example with 55,765 finite positive dated segments; emitted height fixtures matched within ~2e-14; stable upper-gamma and quadrature checks, Ruff, and a fresh strict 135-source Sphinx build passed. Full-book PDF regeneration was deferred because concurrent shared-workspace builds caused filesystem contention. |
-| IX | tsdate | `NOT STARTED` | — | Requires upstream `tsdate` parity, dating-prior checks, and chapter-scoped validation. |
-| X | moments | `NOT STARTED` | — | Requires original software/paper parity and SFS moment-equation fixtures. |
-| XI | dadi | `NOT STARTED` | — | Requires upstream `dadi` parity, PDE stability/convergence checks, and chapter-scoped validation. |
-| XII | momi2 | `NOT STARTED` | — | Requires original tensor/coalescent implementation parity and chapter-scoped validation. |
-| XIII | Gamma-SMC | `NOT STARTED` | — | Requires paper/software parity and gamma-posterior numerical fixtures. |
-| XIV | PHLASH | `NOT STARTED` | — | Requires original implementation/paper parity, composite-likelihood and SVGD checks. |
-| XV | CLUES | `NOT STARTED` | — | Requires original implementation/paper parity and selection-likelihood fixtures. |
-| XVI | SLiM | `VERIFIED` | `7ac1c01` | Tagged SLiM 5.2 source `f11de0d` built locally; its diagnostic suite reported 36,853 successes; 28 focused tests including three warning-free current Eidos recipes, Ruff, smoke test, and strict 135-source Sphinx build passed. |
+| VIII | Threads | `VERIFIED` | `3538b09` | 65 focused tests; official threads-arg 0.2.1 example produced 55,765 finite positive segment dates; emitted-fixture parity, tail/quadrature checks, Ruff, and strict 135-source Sphinx passed. |
+| IX | tsdate | `IN PROGRESS` | Codex mini parity audit | Conditional-coalescent prior, zero-length Poisson edges, and variational zero-rate handling require correction and upstream parity tests. |
+| X | moments | `VERIFIED` | `94d9167` | 118 focused tests; neutral drift/mutation matrix scaling and split fixtures checked against moments-popgen 1.6.1 source; numerical-Hessian/Godambe regressions, corrected figures, Ruff, and strict 135-source Sphinx build passed. |
+| XI | dadi | `VERIFIED` | `3821fbc` | 54 focused tests; official dadi 2.4.5 source/executable at `8db007f` audited (exact grid, equilibrium-density, split, implicit-step, likelihood/scaling parity; bounded teaching-projection error); corrected figures, Ruff, and strict 135-source Sphinx passed. |
+| XII | momi2 | `VERIFIED` | `7584b91` | 143 focused tests; W recurrence, sojourn times, Moran transitions, pulse tensor, hypergeometric pseudoinverse, likelihood, and finite-sample f-statistic weights matched analytic or official-source oracles at momi2 `b038d43`; Ruff and strict 135-source Sphinx passed. |
+| XIII | Gamma-SMC | `VERIFIED` | `5a41e2e` | 114 focused tests; canonical flow perturbation matched official source `61a4d046`, backward indexing/additional transition and segmented tail emissions covered by analytic oracles; Ruff passed and the real-flow demo was regenerated. |
+| XIV | PHLASH | `IN PROGRESS` | Backward reviewer after CLUES | Reserved for original implementation/paper parity, composite-likelihood, and SVGD checks. |
+| XV | CLUES | `IN PROGRESS` | Backward reviewer | Original implementation/paper parity and selection-likelihood audit underway. |
+| XVI | SLiM | `VERIFIED` | `7ac1c01` | 28 focused tests; SLiM 5.2 source/manual audit, 36,853 upstream diagnostic successes, three warning-free current recipes, Ruff, smoke test, and strict 135-source Sphinx passed. |
 | XVII | Relate | `VERIFIED` | `d0d99a3` | 37 focused checks, source-guided teaching kernels, official Relate build/example execution, output-structure validation, strict Sphinx build. |
 | XVIII | discoal | `VERIFIED` | `0a00529` | 32 focused checks, primary sweep/structured-coalescent audit, regenerated figures, strict build. |
 
 ## Remaining campaign gates
 
-1. Review the nine `NOT STARTED` Timepieces one chapter at a time.
+1. Complete the three remaining Timepieces: tsdate, CLUES, and PHLASH.
 2. Reconcile `docs/timepieces/verification.rst` from this ledger after each pushed
    chapter, while preserving its independent-domain-expert disclaimer.
 3. After all chapters are closed, run the entire repository test suite, execute all
