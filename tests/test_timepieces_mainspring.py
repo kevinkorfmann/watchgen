@@ -4,8 +4,20 @@ Tests for the Mainspring neural ARG inference module.
 Covers: PBWT, Encoder, Topology Decoder, Losses, Model, and Training.
 """
 
-import numpy as np
+import importlib.util
+
 import pytest
+
+if (
+    importlib.util.find_spec("timepieces") is None
+    or importlib.util.find_spec("timepieces.mainspring_piece") is None
+):
+    pytest.skip(
+        "requires the private timepieces.mainspring_piece package",
+        allow_module_level=True,
+    )
+
+import numpy as np
 import torch
 
 # ---------------------------------------------------------------------------

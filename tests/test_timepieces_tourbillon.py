@@ -11,9 +11,21 @@ Tests cover:
 8. Sampling -- valid TreeSequence output
 """
 
+import importlib.util
+
+import pytest
+
+if (
+    importlib.util.find_spec("timepieces") is None
+    or importlib.util.find_spec("timepieces.tourbillon_piece") is None
+):
+    pytest.skip(
+        "requires the private timepieces.tourbillon_piece package",
+        allow_module_level=True,
+    )
+
 import numpy as np
 import torch
-import pytest
 
 
 def _has_msprime():
