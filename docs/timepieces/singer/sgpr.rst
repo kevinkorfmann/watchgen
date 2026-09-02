@@ -56,7 +56,7 @@ rate for every dataset.
 Single-tree illustration
 ========================
 
-The miniature's :func:`~watchgen.mini_singer.spr_move` validates and performs
+The miniature's ``watchgen.mini_singer.spr_move`` validates and performs
 one marginal-tree SPR so the topology change can be inspected.  It does not
 propagate cuts, preserve ancestral material across a tree sequence, compute a
 proposal density, or run an MCMC chain.  Calling it “SGPR” without this

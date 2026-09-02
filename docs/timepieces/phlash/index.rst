@@ -17,7 +17,7 @@ bias vanish.
 
 .. admonition:: Verified scope
 
-   The code in :mod:`watchgen.mini_phlash` is a small parity model of selected
+   The code in ``watchgen.mini_phlash`` is a small parity model of selected
    kernels, not a reimplementation of PHLASH.  Production PHLASH includes VCF and
    tree-sequence input, data chunking, JAX/CUDA likelihood kernels, automatic
    differentiation around the model parameters, optimization, diagnostics, and

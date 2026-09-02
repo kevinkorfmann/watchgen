@@ -62,7 +62,7 @@ threaded haplotype nor an extra state inside the HMM.
 What the miniature covers
 ==========================
 
-:mod:`watchgen.mini_singer` makes the following source-level mechanisms
+``watchgen.mini_singer`` makes the following source-level mechanisms
 executable:
 
 * the branch joining mass and deterministic lineage-count approximation;

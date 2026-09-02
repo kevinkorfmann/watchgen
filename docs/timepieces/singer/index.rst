@@ -23,7 +23,7 @@ not a replacement for SINGER's ARG data structures or sampler.
    The paper benchmarked SINGER v0.1.8.  The source audit for this chapter used
    ``popgenmethods/SINGER`` commit
    ``eb8e39b1a15be4a9a4df4fdaab61847bf73515d7``.  The official program, not
-   :mod:`watchgen.mini_singer`, is the ground truth for production behavior.
+   ``watchgen.mini_singer``, is the ground truth for production behavior.
 
 .. toctree::
    :maxdepth: 2

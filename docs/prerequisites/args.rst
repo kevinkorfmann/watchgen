@@ -174,9 +174,9 @@ compete at total rate:
    that a particular process "wins" is its rate divided by the total rate.
 
 Implementing Hudson's ancestral-material bookkeeping correctly is subtle. The
-code below therefore delegates exact simulation to :mod:`msprime`, which
+code below therefore delegates exact simulation to ``msprime``, which
 implements the coalescent with recombination and returns its standard
-:mod:`tskit` tree-sequence representation :cite:`msprime`.
+``tskit`` tree-sequence representation :cite:`msprime`.
 
 .. code-block:: python
 

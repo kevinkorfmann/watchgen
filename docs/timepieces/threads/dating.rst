@@ -294,7 +294,7 @@ population sizes.
    piecewise formula for sparse-array mode. For sequence mode it evaluates the
    full piecewise formula through :math:`m=15`, then uses a constant-rate
    shortcut for larger mutation counts. The teaching function
-   :func:`watchgen.mini_threads.threads_date_segment` mirrors that dispatch;
+   ``watchgen.mini_threads.threads_date_segment`` mirrors that dispatch;
    the standalone MLEs above are derivations, not production defaults.
 
 .. code-block:: python

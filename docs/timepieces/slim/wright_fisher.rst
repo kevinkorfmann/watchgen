@@ -3,7 +3,7 @@
 Four Wright--Fisher Mechanisms
 ==============================
 
-The accompanying :mod:`watchgen.mini_slim` code isolates four mechanisms that
+The accompanying ``watchgen.mini_slim`` code isolates four mechanisms that
 can be tested without pretending to reproduce the whole program.
 
 Mutation identity
