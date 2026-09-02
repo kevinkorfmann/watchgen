@@ -71,11 +71,11 @@ After rescaling time by :math:`2N_{\text{ref}}`, this becomes
 
 .. math::
 
-   M(x) = \gamma \, x(1-x)\Big[h + (1-2h)x\Big]
+   M(x) = 2\gamma \, x(1-x)\Big[h + (1-2h)x\Big]
 
 where :math:`\gamma = 2N_{\text{ref}}s` is the population-scaled selection
 coefficient and :math:`h` is the dominance coefficient. For genic/additive
-selection (:math:`h = 0.5`), this simplifies to :math:`M(x) = \gamma x(1-x)/2`.
+selection (:math:`h = 0.5`), this simplifies to :math:`M(x) = \gamma x(1-x)`.
 
 .. admonition:: Plain-language summary -- Two forces shaping allele frequencies
 
@@ -97,7 +97,7 @@ Putting these together, the 1D diffusion equation that ``dadi`` solves is:
 
    \frac{\partial \phi}{\partial t} =
    \frac{1}{2}\frac{\partial^2}{\partial x^2}\left[\frac{x(1-x)}{\nu}\,\phi\right]
-   - \frac{\partial}{\partial x}\Big[\gamma \, x(1-x)(h + (1-2h)x)\,\phi\Big]
+   - \frac{\partial}{\partial x}\Big[2\gamma \, x(1-x)(h + (1-2h)x)\,\phi\Big]
 
 where :math:`t` is measured in units of :math:`2N_{\text{ref}}` generations
 and :math:`\nu` may change with time (modeling population size changes).
@@ -109,10 +109,13 @@ frequency grid ``xx`` for time ``T``.
 Boundary Conditions and Mutation
 =================================
 
-The diffusion equation needs boundary conditions at :math:`x = 0` (allele
-lost) and :math:`x = 1` (allele fixed). In ``dadi``, these are **absorbing
-boundaries**: once an allele is lost or fixed, it leaves the segregating pool.
-The density :math:`\phi(x, t)` is defined only for :math:`x \in (0, 1)`.
+The diffusion equation needs flux conditions at :math:`x = 0` (allele lost)
+and :math:`x = 1` (allele fixed). Lost and fixed alleles leave the segregating
+pool, but this does **not** mean that dadi stores zero in the endpoint array
+cells. For example, ``PhiManip.phi_1D_snm`` sets ``phi[0] = phi[1]`` as a
+finite numerical representative of the :math:`1/x` divergence and stores the
+finite limit at :math:`x=1`. The endpoint rows of the implicit operator encode
+the outgoing flux; the corner entries of the sampled SFS are normally masked.
 
 **Mutation injection:**
 
@@ -122,10 +125,13 @@ the integration function ``_inject_mutations_1D`` adds:
 
 .. math::
 
-   \phi(x_1, t + dt) \mathrel{+}= \frac{\theta_0 \cdot dt}{2} \cdot \frac{2}{\Delta x}
+   \phi(x_1, t + dt) \mathrel{+}=
+   \frac{\theta_0 \cdot dt}{2x_1} \cdot \frac{2}{x_2-x_0}
 
-where :math:`x_1` is the first interior grid point and :math:`\Delta x` is the
-local grid spacing.
+where :math:`x_1` is the first interior grid point. The factor
+:math:`2/(x_2-x_0)` is its reciprocal trapezoid weight. The additional
+:math:`1/x_1` is essential: it represents mutations entering at vanishing
+frequency and is present in ``Integration._inject_mutations_1D``.
 
 **Where does this formula come from?** In the infinite-sites model, new
 mutations arise at rate :math:`\theta_0/2 = 2N_{\text{ref}}\mu` per site per
@@ -139,8 +145,8 @@ timestep :math:`dt`, the total injection is:
 
 .. math::
 
-   \frac{\theta_0}{2} \cdot dt \cdot \frac{1}{\Delta x / 2}
-   = \frac{\theta_0 \cdot dt}{2} \cdot \frac{2}{\Delta x}
+   \frac{\theta_0}{2x_1} \cdot dt \cdot
+   \frac{1}{(x_2-x_0)/2}
 
 The extra factor of :math:`2/\Delta x` (rather than :math:`1/\Delta x`) arises
 from the trapezoidal integration scheme: the first grid point is at the boundary
@@ -160,7 +166,7 @@ the equilibrium solution:
 
 .. math::
 
-   \phi_{\text{eq}}(x) = \frac{\theta}{x(1-x)}
+   \phi_{\text{eq}}(x) = \frac{\nu\theta_0}{x}
 
 This is the classical result: rare alleles (small :math:`x`) are much more
 common than common alleles, because drift hasn't had time to push them to high
@@ -185,12 +191,12 @@ frequency.
 With genic selection (:math:`h = 0.5`, :math:`\gamma \neq 0`), the
 equilibrium density can be derived from the stationary Fokker-Planck equation.
 Setting :math:`\partial\phi/\partial t = 0` with :math:`V(x) = x(1-x)` and
-:math:`M(x) = (\gamma/2) x(1-x)` gives:
+:math:`M(x) = \gamma x(1-x)` gives:
 
 .. math::
 
    0 = \frac{1}{2}\frac{d^2}{dx^2}[x(1-x)\phi]
-   - \frac{d}{dx}\left[\frac{\gamma}{2}x(1-x)\phi\right]
+   - \frac{d}{dx}\left[\gamma x(1-x)\phi\right]
 
 The general stationary solution of the Fokker-Planck equation with drift
 :math:`M(x)` and diffusion :math:`V(x) = x(1-x)` is:
@@ -198,9 +204,9 @@ The general stationary solution of the Fokker-Planck equation with drift
 .. math::
 
    \phi_{\text{eq}}(x) = \frac{C}{V(x)} \exp\left(2\int_0^x \frac{M(y)}{V(y)} dy\right)
-   = \frac{C}{x(1-x)} e^{\gamma x}
+   = \frac{C}{x(1-x)} e^{2\gamma x}
 
-since :math:`2 \int_0^x \frac{\gamma y(1-y)/2}{y(1-y)} dy = \gamma x`. This is
+since :math:`2 \int_0^x \frac{\gamma y(1-y)}{y(1-y)} dy = 2\gamma x`. This is
 the standard result from the :ref:`diffusion prerequisite <diffusion_approximation>`.
 In the infinite-sites framework (mutations entering at :math:`x \approx 0` and
 leaving at :math:`x = 0` or :math:`x = 1`), the constant :math:`C` is determined
@@ -211,8 +217,8 @@ by matching the mutation injection rate, giving:
    \phi_{\text{eq}}(x) \propto \frac{1 - e^{-2\gamma(1-x)}}{x(1-x)(1 - e^{-2\gamma})}
 
 The numerator :math:`1 - e^{-2\gamma(1-x)}` arises from the boundary condition
-at :math:`x = 1` (fixation probability under selection). When :math:`\gamma = 0`,
-this simplifies to :math:`1/x(1-x)` -- the neutral equilibrium.
+at :math:`x = 1` (fixation probability under selection). Taking the
+:math:`\gamma \to 0` limit gives :math:`1/x`, the neutral equilibrium.
 
 This is computed by ``PhiManip.phi_1D_genic(xx, nu, theta0, gamma)``.
 

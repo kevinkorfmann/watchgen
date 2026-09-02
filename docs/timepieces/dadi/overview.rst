@@ -48,7 +48,7 @@ selection, and migration:
 
    \frac{\partial \phi}{\partial t} =
    \underbrace{\frac{1}{2\nu}\frac{\partial^2}{\partial x^2}[x(1-x)\phi]}_{\text{drift}}
-   - \underbrace{\frac{\partial}{\partial x}[\gamma x(1-x)(h + (1-2h)x)\phi]}_{\text{selection}}
+   - \underbrace{\frac{\partial}{\partial x}[2\gamma x(1-x)(h + (1-2h)x)\phi]}_{\text{selection}}
    + \underbrace{\text{mutation and migration terms}}_{\text{boundary/coupling}}
 
 If you can solve this equation for a given demographic model, you can compute
@@ -102,11 +102,11 @@ Before diving into the gears, let's nail down the terminology.
      - Site Frequency Spectrum: histogram of derived allele counts in the
        sample, obtained from :math:`\phi` by binomial sampling
    * - **Grid**
-     - The set of frequency points :math:`0 < x_1 < x_2 < \cdots < x_n < 1`
+     - The set of frequency points :math:`0=x_0 < x_1 < \cdots < x_{n-1}=1`
        on which :math:`\phi` is discretized
    * - **Extrapolation**
-     - Richardson extrapolation: running at multiple grid sizes and
-       extrapolating to the :math:`n \to \infty` limit
+     - Running at multiple grid sizes and extrapolating in the recorded first
+       interior coordinate ``xx[1]`` to zero
    * - :math:`n`
      - Haploid sample size (number of chromosomes)
    * - :math:`\theta`
@@ -144,7 +144,8 @@ and admixture events remap frequencies via Dirac delta operations.
 
 This multi-dimensional approach made ``dadi`` the first tool capable of fitting
 complex demographic models (isolation-with-migration, secondary contact,
-admixture) to the joint SFS from two or three populations.
+admixture) to joint multi-population spectra. Current integration APIs extend
+through five simultaneous populations, although memory grows as :math:`n^P`.
 
 dadi vs. moments: Two Paths to the Same Dial
 ==============================================

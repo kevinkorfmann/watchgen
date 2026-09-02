@@ -7,10 +7,9 @@ which infers demographic history by solving the Wright-Fisher diffusion equation
 frequency density phi(x, t).
 
 The approach:
-1. Start from the equilibrium frequency density phi(x) ~ 1/x (neutral) or
-   phi(x) ~ exp(gamma*x) / [x(1-x)] (with selection).
-2. Solve the 1D diffusion PDE on a nonuniform frequency grid using finite
-   differences (Crank-Nicolson / forward Euler time-stepping).
+1. Start from the neutral equilibrium frequency density phi(x) ~ 1/x.
+2. Solve the neutral 1D diffusion PDE on dadi's default exponential grid
+   using the same flux discretisation and backward-Euler update as dadi.
 3. Extract the discrete site frequency spectrum (SFS) from the continuous
    density via binomial projection (trapezoidal integration).
 4. Compare the model SFS to observed data using Poisson or multinomial
@@ -19,7 +18,7 @@ The approach:
 Key concepts:
 - The Wright-Fisher diffusion PDE:
     dphi/dt = (1/2) d^2/dx^2 [x(1-x)/nu * phi]
-              - d/dx [gamma * x(1-x) * (h + (1-2h)x) * phi]
+              - d/dx [2*gamma * x(1-x) * (h + (1-2h)x) * phi]
   where nu is the relative population size, gamma is the scaled selection
   coefficient, and h is the dominance coefficient.
 
@@ -38,14 +37,13 @@ Reference:
 """
 
 import numpy as np
-from scipy.special import comb
-
+from scipy.special import comb, gammaln
 
 # ---------------------------------------------------------------------------
 # Gear 1: The Frequency Spectrum -- equilibrium densities
 # ---------------------------------------------------------------------------
 
-def equilibrium_sfs_density(xx):
+def equilibrium_sfs_density(xx, nu=1.0, theta=1.0):
     """Equilibrium frequency density under the standard neutral model.
 
     Under the coalescent with constant population size, the equilibrium
@@ -62,9 +60,23 @@ def equilibrium_sfs_density(xx):
     phi : ndarray
         Equilibrium frequency density on the grid.
     """
-    phi = np.zeros_like(xx)
-    interior = (xx > 0) & (xx < 1)
-    phi[interior] = 1.0 / xx[interior]
+    xx = np.asarray(xx, dtype=float)
+    if xx.ndim != 1 or len(xx) < 3:
+        raise ValueError("xx must be a one-dimensional grid with at least 3 points")
+    if xx[0] < 0 or xx[-1] > 1 or np.any(np.diff(xx) <= 0):
+        raise ValueError("xx must increase strictly within [0, 1]")
+    if nu <= 0 or theta < 0:
+        raise ValueError("nu must be positive and theta must be non-negative")
+
+    # dadi.PhiManip.phi_1D_snm stores finite endpoint representatives. The
+    # mathematical density diverges at zero, so dadi copies the first interior
+    # value there; the value at one is the finite 1/x limit.
+    phi = np.empty_like(xx)
+    if xx[0] == 0:
+        phi[1:] = nu * theta / xx[1:]
+        phi[0] = phi[1]
+    else:
+        phi[:] = nu * theta / xx
     return phi
 
 
@@ -72,12 +84,11 @@ def equilibrium_sfs_density(xx):
 # Gear 2: The Diffusion Equation -- grid construction and population splits
 # ---------------------------------------------------------------------------
 
-def make_nonuniform_grid(pts):
+def make_nonuniform_grid(pts, crowding=8.0):
     """Build a non-uniform grid with denser spacing near boundaries.
 
-    dadi uses a grid that concentrates points near x=0 and x=1 where
-    the frequency density has steep gradients. This implementation
-    uses a cosine transformation that achieves the same effect.
+    This is the formula used by ``dadi.Numerics.default_grid`` (currently
+    ``exponential_grid``), including its default crowding parameter.
 
     Parameters
     ----------
@@ -89,13 +100,13 @@ def make_nonuniform_grid(pts):
     xx : ndarray
         Frequency grid points in [0, 1] with denser spacing at boundaries.
     """
-    # Uniform grid in a transformed space
-    zz = np.linspace(0, 1, pts)
-    # Apply a transformation that concentrates points at boundaries
-    xx = 0.5 * (1 - np.cos(np.pi * zz))
-    xx[0] = 0.0
-    xx[-1] = 1.0
-    return xx
+    if not isinstance(pts, (int, np.integer)) or pts < 3:
+        raise ValueError("pts must be an integer of at least 3")
+    if crowding <= 0:
+        raise ValueError("crowding must be positive")
+    uniform = np.linspace(-1.0, 1.0, pts)
+    grid = 1.0 / (1.0 + np.exp(-crowding * uniform))
+    return (grid - grid[0]) / (grid[-1] - grid[0])
 
 
 def phi_1d_to_2d(phi_1d, xx):
@@ -117,12 +128,17 @@ def phi_1d_to_2d(phi_1d, xx):
     phi_2d : ndarray, shape (n, n)
         2D joint density concentrated on the diagonal.
     """
+    phi_1d = np.asarray(phi_1d, dtype=float)
+    xx = np.asarray(xx, dtype=float)
+    if phi_1d.shape != xx.shape:
+        raise ValueError("phi_1d and xx must have the same shape")
     n = len(xx)
     phi_2d = np.zeros((n, n))
-    # At the moment of split, both populations have identical frequencies
-    # so the 2D density is concentrated on the diagonal
-    for i in range(n):
-        phi_2d[i, i] = phi_1d[i]
+    # The split is phi(x) delta(x-y). A sampled delta needs the reciprocal
+    # trapezoid weight; copying phi directly onto the diagonal loses mass as
+    # the grid is refined. This is dadi.PhiManip.phi_1D_to_2D's convention.
+    for i in range(1, n - 1):
+        phi_2d[i, i] = phi_1d[i] * 2.0 / (xx[i + 1] - xx[i - 1])
     return phi_2d
 
 
@@ -169,22 +185,19 @@ def _thomas_solve(lower, diag, upper, rhs):
     return x
 
 
-def crank_nicolson_1d(phi, xx, T, nu=1.0, theta=0.0, n_steps=100):
-    """Integrate the 1D diffusion equation using Crank-Nicolson.
+def implicit_1d(phi, xx, T, nu=1.0, theta=1.0, n_steps=100):
+    """Integrate dadi's neutral 1D diffusion discretisation.
 
     The diffusion equation for the frequency density is:
         dphi/dt = (1/(2*nu)) * d^2/dx^2 [x(1-x) phi]
 
     with mutation injection at x -> 0.
 
-    Crank-Nicolson averages the spatial operator between the current and
-    next time step, yielding an implicit scheme that is unconditionally
-    stable and second-order accurate in both time and space:
-
-        (I - 0.5*dt*L) phi^{n+1} = (I + 0.5*dt*L) phi^n + dt*source
-
-    The resulting tridiagonal system is solved at each step using the
-    Thomas algorithm.
+    The update is *backward Euler*, matching ``dadi.Integration.one_pop`` for a
+    neutral population with constant parameters. dadi discretises the
+    derivative of probability flux on the nonuniform grid, injects mutations
+    into the first interior point with trapezoid normalization, and solves a
+    tridiagonal implicit system. This is not Crank-Nicolson.
 
     Parameters
     ----------
@@ -206,79 +219,55 @@ def crank_nicolson_1d(phi, xx, T, nu=1.0, theta=0.0, n_steps=100):
     phi_new : ndarray
         Evolved frequency density.
     """
-    phi = phi.copy()
+    phi = np.asarray(phi, dtype=float).copy()
+    xx = np.asarray(xx, dtype=float)
     n = len(xx)
+    if phi.shape != xx.shape or n < 3 or np.any(np.diff(xx) <= 0):
+        raise ValueError("phi and xx must be matching one-dimensional grids")
+    if T < 0 or nu <= 0 or theta < 0:
+        raise ValueError("T and theta must be non-negative and nu must be positive")
+    if not isinstance(n_steps, (int, np.integer)) or n_steps <= 0:
+        raise ValueError("n_steps must be a positive integer")
+    if T == 0:
+        return phi
 
-    # Precompute tridiagonal coefficients of spatial operator L
-    # L[phi]_i = a_i * phi[i-1] + b_i * phi[i] + c_i * phi[i+1]
-    a = np.zeros(n)
-    b = np.zeros(n)
-    c = np.zeros(n)
+    dx = np.diff(xx)
+    dfactor = np.empty(n)
+    dfactor[1:-1] = 2.0 / (dx[:-1] + dx[1:])
+    dfactor[0] = 2.0 / dx[0]
+    dfactor[-1] = 2.0 / dx[-1]
+    variance = xx * (1.0 - xx) / nu
 
-    for i in range(1, n - 1):
-        dx_l = xx[i] - xx[i - 1]
-        dx_r = xx[i + 1] - xx[i]
-        dx_avg = 0.5 * (dx_l + dx_r)
+    # dadi's neutral M=0 coefficients (_one_pop_const_params), with the
+    # default centered flux (delj=1/2).
+    lower = np.zeros(n)
+    upper = np.zeros(n)
+    diag = np.zeros(n)
+    lower[1:] = -dfactor[1:] * variance[:-1] / (2.0 * dx)
+    upper[:-1] = -dfactor[:-1] * variance[1:] / (2.0 * dx)
+    diag[:-1] = dfactor[:-1] * variance[:-1] / (2.0 * dx)
+    diag[1:] += dfactor[1:] * variance[1:] / (2.0 * dx)
+    diag[0] += (0.5 / nu) * 2.0 / dx[0]
+    diag[-1] += (0.5 / nu) * 2.0 / dx[-1]
 
-        # The Fokker-Planck operator is d^2/dx^2[V(x)*phi], where V = x(1-x)/(2*nu).
-        # Expanding: V*phi'' + 2*V'*phi' + V''*phi
-        # V(x) = x(1-x)/(2*nu), V'(x) = (1-2x)/(2*nu), V''(x) = -1/nu
-
-        # Diffusion term: d/dx[V * dphi/dx] contributes V*phi'' + V'*phi'
-        x_r = 0.5 * (xx[i] + xx[i + 1])
-        x_l = 0.5 * (xx[i] + xx[i - 1])
-        V_r = x_r * (1 - x_r) / (2.0 * nu)
-        V_l = x_l * (1 - x_l) / (2.0 * nu)
-
-        a[i] = V_l / (dx_l * dx_avg)
-        c[i] = V_r / (dx_r * dx_avg)
-        b[i] = -(a[i] + c[i])
-
-        # Additional advection term: V'(x) * dphi/dx (central difference)
-        Vp = (1.0 - 2.0 * xx[i]) / (2.0 * nu)
-        a[i] += -Vp / (dx_l + dx_r)
-        c[i] += Vp / (dx_l + dx_r)
-
-        # Zeroth-order term: V''(x) * phi = -1/nu * phi
-        b[i] += -1.0 / nu
-
-    # Auto-adjust n_steps to avoid Crank-Nicolson oscillations.
-    # Require 1 + 0.5*dt*min(b) > 0, i.e. dt < 2/|min(b)|.
-    b_min = np.min(b[1:-1])
-    if b_min < 0:
-        min_steps = int(np.ceil(T * abs(b_min) / 2.0)) + 1
-        n_steps = max(n_steps, min_steps)
     dt = T / n_steps
-
-    # Precompute LHS tridiagonal bands: (I - 0.5*dt*L)
-    lhs_lower = np.zeros(n)
-    lhs_diag = np.ones(n)
-    lhs_upper = np.zeros(n)
-    for i in range(1, n - 1):
-        lhs_lower[i] = -0.5 * dt * a[i]
-        lhs_diag[i] = 1.0 - 0.5 * dt * b[i]
-        lhs_upper[i] = -0.5 * dt * c[i]
-
+    system_diag = diag + 1.0 / dt
     for _ in range(n_steps):
-        # RHS: (I + 0.5*dt*L) phi
-        rhs = np.zeros(n)
-        for i in range(1, n - 1):
-            rhs[i] = (0.5 * dt * a[i] * phi[i - 1]
-                      + (1.0 + 0.5 * dt * b[i]) * phi[i]
-                      + 0.5 * dt * c[i] * phi[i + 1])
-
-        # Mutation injection at the singleton bin
-        if theta > 0 and n > 2:
-            rhs[1] += theta / (2.0 * xx[1]) * dt
-
-        # Solve tridiagonal system
-        phi = _thomas_solve(lhs_lower, lhs_diag, lhs_upper, rhs)
-
-        # Boundary conditions: phi = 0 at x=0 and x=1
-        phi[0] = 0.0
-        phi[-1] = 0.0
+        # dadi normalizes the point injection so its trapezoid integral is
+        # theta*dt/(2*x1), not merely its stored array height.
+        phi[1] += dt / xx[1] * theta / (xx[2] - xx[0])
+        phi = _thomas_solve(lower, system_diag, upper, phi / dt)
 
     return phi
+
+
+def crank_nicolson_1d(phi, xx, T, nu=1.0, theta=1.0, n_steps=100):
+    """Compatibility wrapper for the old, inaccurate teaching API name.
+
+    New code should call :func:`implicit_1d`; dadi uses backward Euler, not
+    Crank-Nicolson.
+    """
+    return implicit_1d(phi, xx, T, nu=nu, theta=theta, n_steps=n_steps)
 
 
 def sfs_from_phi(phi, xx, n_samples):
@@ -334,12 +323,16 @@ def poisson_log_likelihood(model, data):
     ll : float
         Poisson composite log-likelihood.
     """
-    mask = data > 0
-    model_safe = np.maximum(model, 1e-300)
-    ll = np.sum(data[mask] * np.log(model_safe[mask]) - model_safe[mask])
-    # Subtract contribution from zero-observed entries
-    ll -= np.sum(model_safe[~mask])
-    return ll
+    model = np.asarray(model, dtype=float)
+    data = np.asarray(data, dtype=float)
+    if model.shape != data.shape or np.any(model < 0) or np.any(data < 0):
+        raise ValueError("model and data must be matching non-negative arrays")
+    positive = model > 0
+    if np.any((data > 0) & ~positive):
+        return -np.inf
+    terms = -model - gammaln(data + 1.0)
+    terms[positive] += data[positive] * np.log(model[positive])
+    return float(np.sum(terms))
 
 
 def multinomial_log_likelihood(model, data):
@@ -360,10 +353,8 @@ def multinomial_log_likelihood(model, data):
     ll : float
         Multinomial composite log-likelihood.
     """
-    model_probs = model / model.sum()
-    model_probs = np.maximum(model_probs, 1e-300)
-    mask = data > 0
-    return np.sum(data[mask] * np.log(model_probs[mask]))
+    scale = optimal_sfs_scaling(model, data)
+    return poisson_log_likelihood(scale * np.asarray(model, dtype=float), data)
 
 
 def optimal_sfs_scaling(model, data):
@@ -384,7 +375,14 @@ def optimal_sfs_scaling(model, data):
     theta_opt : float
         Optimal scaling factor.
     """
-    return data.sum() / max(model.sum(), 1e-300)
+    model = np.asarray(model, dtype=float)
+    data = np.asarray(data, dtype=float)
+    if model.shape != data.shape or np.any(model < 0) or np.any(data < 0):
+        raise ValueError("model and data must be matching non-negative arrays")
+    model_sum = model.sum()
+    if model_sum == 0:
+        raise ValueError("model must have positive total mass")
+    return float(data.sum() / model_sum)
 
 
 def two_epoch_sfs(nu, T, n_samples, pts=60, theta=1.0):
@@ -412,7 +410,7 @@ def two_epoch_sfs(nu, T, n_samples, pts=60, theta=1.0):
     """
     xx = make_nonuniform_grid(pts)
     phi = equilibrium_sfs_density(xx) * theta
-    phi = crank_nicolson_1d(phi, xx, T, nu=nu, theta=theta)
+    phi = implicit_1d(phi, xx, T, nu=nu, theta=theta)
     sfs = sfs_from_phi(phi, xx, n_samples)
     return sfs
 
@@ -429,7 +427,7 @@ def demo():
     - Computing the equilibrium frequency density
     - Verifying the 1/x shape of the neutral SFS density
     - Population splits (1D -> 2D density)
-    - Solving the diffusion PDE (Crank-Nicolson)
+    - Solving the neutral diffusion PDE (dadi-style backward Euler)
     - Extracting the discrete SFS via binomial projection
     - Poisson and multinomial likelihoods
     - Optimal SFS scaling
@@ -472,13 +470,13 @@ def demo():
     print("\n--- Gear 3: Solving the Diffusion PDE ---")
 
     # Integrate for T=0.5 with doubled population size
-    phi_evolved = crank_nicolson_1d(phi, xx, T=0.5, nu=2.0, n_steps=200)
+    phi_evolved = implicit_1d(phi, xx, T=0.5, nu=2.0, n_steps=200)
     print(f"Original total density:  {np.trapezoid(phi, xx):.4f}")
     print(f"Evolved total density:   {np.trapezoid(phi_evolved, xx):.4f}")
 
     # Extract SFS for sample size n=20
     sfs = sfs_from_phi(phi, xx, 20)
-    print(f"\nEquilibrium SFS (first 5 entries):")
+    print("\nEquilibrium SFS (first 5 entries):")
     for j in range(1, 6):
         print(f"  sfs[{j}] = {sfs[j]:.4f}  (expected ~ 1/{j} = {1.0/j:.4f})")
 

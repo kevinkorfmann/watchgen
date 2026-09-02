@@ -31,10 +31,10 @@ and Richardson extrapolation.
 The Nonuniform Grid
 =====================
 
-The allele frequency density :math:`\phi(x)` is concentrated near the
-boundaries: under neutrality, :math:`\phi(x) \propto 1/[x(1-x)]`, which
-diverges as :math:`x \to 0` and :math:`x \to 1`. A uniform grid would waste
-points in the interior and lack resolution where it matters most.
+The allele frequency density :math:`\phi(x)` is steep near the boundaries:
+under neutrality, :math:`\phi(x) \propto 1/x`, which diverges as
+:math:`x \to 0`. Selection and multi-population fluxes can also create sharp
+features near fixation. A uniform grid would lack resolution where it matters.
 
 ``dadi`` uses an **exponential grid** (``Numerics.default_grid``) that places
 more points near the boundaries:
@@ -45,8 +45,8 @@ more points near the boundaries:
 
 where :math:`u_i` are uniformly spaced on :math:`[-1, 1]` and :math:`c`
 (the "crowding" parameter, default 8) controls how strongly points cluster
-at the boundaries. The grid is then rescaled so that :math:`x_1 > 0` and
-:math:`x_n < 1`.
+at the boundaries. The grid is then rescaled so that its endpoints are exactly
+:math:`x_0=0` and :math:`x_{n-1}=1`.
 
 .. code-block:: python
 
@@ -79,7 +79,7 @@ Consider the 1D diffusion equation:
 
    \frac{\partial \phi_i}{\partial t} =
    \frac{1}{2}\frac{\partial^2}{\partial x^2}\left[\frac{x(1-x)}{\nu}\phi\right]_i
-   - \frac{\partial}{\partial x}\left[\gamma x(1-x)(h + (1-2h)x)\phi\right]_i
+   - \frac{\partial}{\partial x}\left[2\gamma x(1-x)(h + (1-2h)x)\phi\right]_i
 
 The second derivative term (drift) and first derivative term (selection) are
 approximated using the values at neighboring grid points. On a nonuniform grid
@@ -131,7 +131,8 @@ The timestep :math:`\Delta t` is computed adaptively by
 
 .. math::
 
-   \Delta t = \frac{\texttt{timescale\_factor}}{\max_i |V(x_i)| + |M(x_i)|}
+   \Delta t = \frac{\texttt{timescale\_factor}}
+   {\max\left(0.25/\nu,\ \sum_j m_{ij},\ \text{selection bound}\right)}
 
 where ``timescale_factor`` (default :math:`10^{-3}`) controls accuracy. The
 timestep is small where the drift and selection coefficients are large (near
@@ -147,16 +148,16 @@ Here's the complete sequence for ``Integration.one_pop(phi, xx, T, nu, gamma, h,
 
 2. **Build coefficients:** compute the drift coefficient
    :math:`V(x_i) = x_i(1-x_i)/\nu` and selection coefficient
-   :math:`M(x_i) = \gamma \, x_i(1-x_i)(h + (1-2h)x_i)` at each grid point
+   :math:`M(x_i) = 2\gamma \, x_i(1-x_i)(h + (1-2h)x_i)` at each grid point
 
 3. **Compute timestep:** :math:`\Delta t` from the maximum coefficient value
 
 4. **Time-stepping loop:** for each step :math:`t \to t + \Delta t`:
 
-   a. Build the tridiagonal matrix :math:`I - \Delta t \cdot A`
-   b. Solve the tridiagonal system to get :math:`\phi^{n+1}`
-   c. Inject mutations: add :math:`\theta_0 \cdot \Delta t / (2 \cdot \Delta x_1)`
-      at the first interior grid point
+   a. Inject mutations at the first interior grid point, using its
+      :math:`1/x_1` source and reciprocal trapezoid weight
+   b. Build (or reuse) the tridiagonal backward-Euler system
+   c. Solve the tridiagonal system to get :math:`\phi^{n+1}`
    d. If :math:`\nu` changes with time, update the coefficients
 
 5. **Return:** the density ``phi`` at time :math:`T`
@@ -207,15 +208,16 @@ ADI sweeps are needed per timestep. The cost per timestep scales as
 
    Each additional population in a demographic model adds a new axis to the
    allele frequency density, and the computational cost grows exponentially.
-   This is why ``dadi`` is typically limited to 3 populations (and sometimes
-   up to 5 with heroic effort). For studies involving many populations --
+   Current dadi APIs integrate up to five simultaneous populations, but the
+   :math:`n^P` state makes four- and five-population calculations expensive.
+   For studies involving many populations --
    such as the global human population tree with dozens of branches -- this
    is the fundamental limitation that motivated ``moments`` (which avoids
    the grid altogether by working with moments of the SFS) and ``momi2``
    (which uses tensors that scale more gracefully with the number of
-   populations). The choice among these three tools often comes down to how
-   many populations are in the model: ``dadi`` excels for 1--3 populations,
-   ``moments`` for 3--5, and ``momi2`` for 5 or more.
+   populations). Computational scaling is therefore one consideration when
+   choosing among these tools; fixed population-count cutoffs are not a
+   property of their statistical models.
 
 .. list-table::
    :header-rows: 1
@@ -237,20 +239,28 @@ ADI sweeps are needed per timestep. The cost per timestep scales as
      - :math:`n^3`
      - ``three_pops``
      - :math:`O(n^3)`
+   * - 4
+     - :math:`n^4`
+     - ``four_pops``
+     - :math:`O(n^4)`
+   * - 5
+     - :math:`n^5`
+     - ``five_pops``
+     - :math:`O(n^5)`
 
 Richardson Extrapolation
 ==========================
 
 The finite-difference scheme introduces **discretization error** that decreases
-as the grid becomes finer. For a grid with :math:`n` points, the error in the
-SFS is approximately :math:`O(1/n^2)` (for a second-order scheme). Rather than
-using a very fine grid (expensive), ``dadi`` uses **Richardson extrapolation**
-to cancel the leading-order error.
+as the grid becomes finer. Rather than relying on a single very fine grid,
+``dadi`` extrapolates results from several grids toward the zero-spacing limit.
 
-The idea: run the computation at multiple grid sizes (e.g., :math:`n_1 = 40`,
-:math:`n_2 = 50`, :math:`n_3 = 60`), then extrapolate to the
-:math:`n \to \infty` limit. If the error is polynomial in :math:`1/n`, a
-polynomial fit through the results eliminates the leading error terms.
+The idea is to run the computation at multiple grid sizes (for example 40,
+50, and 60), then extrapolate to zero first-interior-grid coordinate. A
+``Spectrum.from_phi`` result records ``extrap_x = xx[1]``; dadi fits the
+results as a polynomial in those recorded coordinates and evaluates it at
+zero. This matters because the default grid is exponential, so the actual
+extrapolation coordinate is not simply :math:`1/n`.
 
 ``dadi`` provides this via ``Numerics.make_extrap_func``:
 
@@ -273,7 +283,7 @@ polynomial fit through the results eliminates the leading error terms.
 
 Internally, ``make_extrap_func`` runs the model function at each grid size in
 ``pts``, then applies polynomial extrapolation (linear, quadratic, or higher)
-in the variable :math:`1/n` to estimate the :math:`n \to \infty` limit. The
+in each result's ``extrap_x`` coordinate to estimate its zero limit. The
 ``make_extrap_log_func`` variant extrapolates in log-space, which is more
 robust when SFS entries span many orders of magnitude.
 
@@ -285,30 +295,29 @@ The extrapolation functions available are:
 
    * - Function
      - Points needed
-     - Error eliminated
+     - Polynomial fitted in ``extrap_x``
    * - ``linear_extrap``
      - 2
-     - :math:`O(1/n^2)`
+     - Linear
    * - ``quadratic_extrap``
      - 3
-     - :math:`O(1/n^2)` and :math:`O(1/n^4)`
+     - Quadratic
    * - ``cubic_extrap``
      - 4
-     - Up to :math:`O(1/n^6)`
+     - Cubic
 
-The default ``make_extrap_func`` uses ``quadratic_extrap`` with three grid
-sizes -- the standard recommendation for ``dadi`` analyses.
+``make_extrap_func`` chooses the polynomial degree from the number of supplied
+grid sizes: two values give linear extrapolation, three give quadratic, and so
+on. Three grid sizes are a common choice, not a hidden default supplied by the
+wrapper.
 
-.. admonition:: Numerical Analysis Aside -- Richardson extrapolation
+.. admonition:: Numerical Analysis Aside -- extrapolation
 
-   Richardson extrapolation is a general technique: if a quantity :math:`f(h)`
-   has an error expansion :math:`f(h) = f_0 + a h^2 + b h^4 + \cdots`, then
-   evaluating at two step sizes :math:`h_1, h_2` and taking the appropriate
-   linear combination eliminates the :math:`h^2` term. With three evaluations,
-   both the :math:`h^2` and :math:`h^4` terms can be eliminated. ``dadi``
-   applies this with :math:`h = 1/n` (the grid spacing), effectively
-   canceling the finite-difference bias without requiring an impractically
-   fine grid.
+   If a computed quantity has a smooth error expansion in a resolution
+   coordinate, values at several resolutions can be fit and evaluated at the
+   zero-error limit. In dadi the coordinate attached by ``Spectrum.from_phi``
+   is ``xx[1]``. The procedure is polynomial extrapolation; it should not be
+   interpreted as proof of a particular even-power error series.
 
 From :math:`\phi` to SFS
 ===========================
@@ -327,9 +336,12 @@ This is a weighted integral of the frequency density against the **binomial
 sampling probability** -- the probability that a site with population
 frequency :math:`x` would show count :math:`j` in a sample of :math:`n`.
 
-``dadi`` evaluates this integral numerically using the trapezoidal rule on the
-grid points. For each SFS entry :math:`j`, the integrand is the product of the
-density ``phi`` and the binomial coefficient evaluated at each grid point.
+For a one-population density, ``Spectrum.from_phi`` normally integrates a
+piecewise-linear approximation analytically using incomplete beta functions.
+Its ``force_direct=True`` path, and the direct multi-dimensional projections,
+use numerical quadrature. Thus the binomial-projection equation is the stable
+conceptual contract, while a plain trapezoidal loop is only the mini
+implementation's pedagogical approximation.
 
 .. code-block:: python
 

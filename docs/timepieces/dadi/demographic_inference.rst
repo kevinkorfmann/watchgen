@@ -116,7 +116,7 @@ corresponds to a ~10% change in the parameter).
      - When to use
    * - ``optimize_log``
      - BFGS (log-space)
-     - Default; fast, uses gradients
+     - Common local optimizer; derivatives are estimated numerically
    * - ``optimize``
      - BFGS (linear)
      - When log transform is inappropriate

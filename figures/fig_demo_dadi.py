@@ -2,18 +2,18 @@
 Demo: dadi diffusion approximation on msprime-simulated SFS.
 
 Simulates populations with known demography using msprime, computes
-the SFS, and runs dadi's Crank-Nicolson PDE solver to predict the
+the SFS, and runs the mini implementation's dadi-style implicit solver to predict the
 expected spectrum under different demographic models.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
 import msprime
+import numpy as np
 
 from watchgen.mini_dadi import (
-    make_nonuniform_grid,
     equilibrium_sfs_density,
-    crank_nicolson_1d,
+    implicit_1d,
+    make_nonuniform_grid,
     sfs_from_phi,
 )
 
@@ -49,19 +49,19 @@ theta_unit = 1.0
 phi_eq = equilibrium_sfs_density(xx)
 
 # Constant population
-phi_const = crank_nicolson_1d(phi_eq.copy(), xx, T=1.0, nu=1.0,
+phi_const = implicit_1d(phi_eq.copy(), xx, T=1.0, nu=1.0,
                               theta=theta_unit, n_steps=500)
-sfs_const = sfs_from_phi(phi_const, xx, n_samples - 1)
+sfs_const = sfs_from_phi(phi_const, xx, n_samples)[1:-1]
 
 # 5x expansion
-phi_expand = crank_nicolson_1d(phi_eq.copy(), xx, T=0.5, nu=5.0,
+phi_expand = implicit_1d(phi_eq.copy(), xx, T=0.5, nu=5.0,
                                theta=theta_unit, n_steps=500)
-sfs_expand = sfs_from_phi(phi_expand, xx, n_samples - 1)
+sfs_expand = sfs_from_phi(phi_expand, xx, n_samples)[1:-1]
 
 # 5x contraction
-phi_contract = crank_nicolson_1d(phi_eq.copy(), xx, T=0.5, nu=0.2,
+phi_contract = implicit_1d(phi_eq.copy(), xx, T=0.5, nu=0.2,
                                  theta=theta_unit, n_steps=500)
-sfs_contract = sfs_from_phi(phi_contract, xx, n_samples - 1)
+sfs_contract = sfs_from_phi(phi_contract, xx, n_samples)[1:-1]
 
 # Scale to match theta
 sfs_const_scaled = sfs_const * theta
@@ -71,7 +71,7 @@ sfs_contract_scaled = sfs_contract * theta
 # ── Figure ──────────────────────────────────────────────────────
 fig, axes = plt.subplots(2, 2, figsize=(11, 8.5))
 fig.suptitle(
-    f"Demo: dadi Diffusion Solver on msprime-simulated SFS ({n_samples} haplotypes, 1 Mb)",
+    f"Demo: mini-dadi on msprime-simulated SFS ({n_samples} haplotypes, 1 Mb)",
     fontsize=13, fontweight="bold", y=0.98,
 )
 
@@ -81,10 +81,10 @@ k_vals = np.arange(1, n_samples)
 ax.bar(k_vals[:20] - 0.2, observed_sfs[:20], width=0.4, color="#2166AC", alpha=0.7,
        label="Observed (msprime)")
 ax.bar(k_vals[:20] + 0.2, sfs_const_scaled[:20], width=0.4, color="#B2182B", alpha=0.7,
-       label="dadi constant $N_e$")
+       label="mini-dadi constant $N_e$")
 ax.set_xlabel("Derived allele count $i$")
 ax.set_ylabel("Number of sites")
-ax.set_title("A. Observed vs dadi predicted SFS")
+ax.set_title("A. Observed vs mini-dadi predicted SFS")
 ax.set_xlim(0.5, 20.5)
 ax.legend(fontsize=8)
 
@@ -128,7 +128,7 @@ ax.plot(k_show, observed_sfs[:len(k_show)], "s", color="#636363", ms=5,
         alpha=0.6, label="Observed")
 ax.set_xlabel("Derived allele count $i$")
 ax.set_ylabel("Expected sites")
-ax.set_title("D. dadi SFS predictions vs data")
+ax.set_title("D. mini-dadi SFS predictions vs data")
 ax.legend(fontsize=8)
 
 plt.tight_layout(rect=[0, 0, 1, 0.96])

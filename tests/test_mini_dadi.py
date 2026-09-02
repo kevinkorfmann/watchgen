@@ -8,7 +8,7 @@ Covers:
 - equilibrium_sfs_density: neutral equilibrium density proportional to 1/x
 - make_nonuniform_grid: boundary-concentrated frequency grid
 - phi_1d_to_2d: population split (1D -> 2D diagonal density)
-- crank_nicolson_1d: PDE integration with drift and mutation
+- implicit_1d: dadi-style backward-Euler integration with drift and mutation
 - sfs_from_phi: binomial projection from density to discrete SFS
 - poisson_log_likelihood: Poisson composite log-likelihood
 - multinomial_log_likelihood: multinomial composite log-likelihood
@@ -18,19 +18,20 @@ Covers:
 
 import numpy as np
 import pytest
+from scipy.special import gammaln
 
 from watchgen.mini_dadi import (
-    equilibrium_sfs_density,
-    make_nonuniform_grid,
-    phi_1d_to_2d,
     crank_nicolson_1d,
-    sfs_from_phi,
-    poisson_log_likelihood,
+    equilibrium_sfs_density,
+    implicit_1d,
+    make_nonuniform_grid,
     multinomial_log_likelihood,
     optimal_sfs_scaling,
+    phi_1d_to_2d,
+    poisson_log_likelihood,
+    sfs_from_phi,
     two_epoch_sfs,
 )
-
 
 # ===========================================================================
 # Tests for equilibrium_sfs_density
@@ -45,12 +46,12 @@ class TestEquilibriumSfsDensity:
         ratios = phi * xx
         assert np.allclose(ratios, ratios[0], rtol=1e-10)
 
-    def test_zero_at_boundaries(self):
-        """Density at x=0 and x=1 should be zero."""
+    def test_dadi_endpoint_representatives(self):
+        """Match dadi.PhiManip.phi_1D_snm's finite endpoint convention."""
         xx = np.array([0.0, 0.1, 0.5, 0.9, 1.0])
         phi = equilibrium_sfs_density(xx)
-        assert phi[0] == 0.0
-        assert phi[-1] == 0.0
+        assert phi[0] == phi[1] == 10.0
+        assert phi[-1] == 1.0
 
     def test_decreasing_for_small_x(self):
         """For x in (0, 0.5), density should be decreasing."""
@@ -112,6 +113,13 @@ class TestMakeNonuniformGrid:
         assert np.all(xx >= 0.0)
         assert np.all(xx <= 1.0)
 
+    def test_matches_dadi_default_grid_formula(self):
+        """The default is dadi.Numerics.exponential_grid with crwd=8."""
+        uniform = np.linspace(-1, 1, 31)
+        expected = 1 / (1 + np.exp(-8 * uniform))
+        expected = (expected - expected[0]) / (expected[-1] - expected[0])
+        assert np.array_equal(make_nonuniform_grid(31), expected)
+
 
 # ===========================================================================
 # Tests for phi_1d_to_2d
@@ -123,9 +131,9 @@ class TestPhi1dTo2d:
         xx = np.linspace(0, 1, 10)
         phi_1d = equilibrium_sfs_density(xx)
         phi_2d = phi_1d_to_2d(phi_1d, xx)
-        # Check that diagonal matches 1D
-        for i in range(len(xx)):
-            assert phi_2d[i, i] == phi_1d[i]
+        expected = np.zeros_like(phi_1d)
+        expected[1:-1] = phi_1d[1:-1] * 2 / (xx[2:] - xx[:-2])
+        assert np.allclose(np.diag(phi_2d), expected)
 
     def test_off_diagonal_zero(self):
         """Off-diagonal entries should be zero immediately after split."""
@@ -137,12 +145,14 @@ class TestPhi1dTo2d:
                 if i != j:
                     assert phi_2d[i, j] == 0.0
 
-    def test_total_mass_conserved(self):
-        """Total mass should be preserved in the split."""
-        xx = np.linspace(0.01, 0.99, 20)
+    def test_trapezoid_mass_conserved_away_from_boundaries(self):
+        """The sampled delta preserves the interior trapezoid integral."""
+        xx = make_nonuniform_grid(40)
         phi_1d = equilibrium_sfs_density(xx)
         phi_2d = phi_1d_to_2d(phi_1d, xx)
-        assert np.isclose(phi_2d.sum(), phi_1d.sum())
+        mass_1d = np.sum(phi_1d[1:-1] * (xx[2:] - xx[:-2]) / 2)
+        mass_2d = np.trapezoid(np.trapezoid(phi_2d, xx, axis=1), xx)
+        assert np.isclose(mass_2d, mass_1d)
 
     def test_output_shape(self):
         """Output should be n x n where n is the grid size."""
@@ -156,48 +166,46 @@ class TestPhi1dTo2d:
 # Tests for crank_nicolson_1d
 # ===========================================================================
 
-class TestCrankNicolson1d:
-    def test_boundary_conditions(self):
-        """Boundary values should remain zero after integration."""
+class TestImplicit1d:
+    def test_equilibrium_is_stationary_at_interior_points(self):
+        """Mutation balances drift for dadi's neutral equilibrium density."""
         xx = make_nonuniform_grid(40)
         phi = equilibrium_sfs_density(xx)
-        phi_evolved = crank_nicolson_1d(phi, xx, T=0.1, nu=1.0)
-        assert phi_evolved[0] == 0.0
-        assert phi_evolved[-1] == 0.0
+        phi_evolved = implicit_1d(phi, xx, T=0.1, nu=1.0)
+        assert np.allclose(phi_evolved[1:], phi[1:], rtol=2e-10, atol=2e-10)
 
     def test_nonnegative(self):
         """Density should remain non-negative after integration."""
         xx = make_nonuniform_grid(60)
         phi = equilibrium_sfs_density(xx)
-        phi_evolved = crank_nicolson_1d(phi, xx, T=0.1, nu=1.0, n_steps=200)
+        phi_evolved = implicit_1d(phi, xx, T=0.1, nu=1.0, n_steps=200)
         assert np.all(phi_evolved >= -1e-6)
 
     def test_zero_time_unchanged(self):
         """Integrating for T=0 should return the original density."""
         xx = make_nonuniform_grid(40)
         phi = equilibrium_sfs_density(xx)
-        phi_evolved = crank_nicolson_1d(phi, xx, T=0.0, nu=1.0)
+        phi_evolved = implicit_1d(phi, xx, T=0.0, nu=1.0)
         assert np.allclose(phi_evolved, phi)
 
-    def test_expansion_spreads_density(self):
-        """A population expansion (large nu) should spread the density."""
+    def test_expansion_creates_excess_rare_variants(self):
+        """An expansion produces a larger singleton/doubleton ratio."""
         xx = make_nonuniform_grid(60)
         phi = equilibrium_sfs_density(xx)
-        phi_expanded = crank_nicolson_1d(phi, xx, T=0.5, nu=5.0, n_steps=500)
-        # After expansion, drift is weaker, so the density should be
-        # more spread out (less concentrated near boundaries)
-        interior = (xx > 0.2) & (xx < 0.8)
-        ratio_orig = np.sum(phi[interior]) / max(np.sum(phi), 1e-300)
-        ratio_expanded = np.sum(phi_expanded[interior]) / max(np.sum(phi_expanded), 1e-300)
-        assert ratio_expanded > ratio_orig * 0.5  # relaxed check
+        phi_expanded = implicit_1d(phi, xx, T=0.5, nu=5.0, n_steps=500)
+        equilibrium_sfs = sfs_from_phi(phi, xx, 20)
+        expansion_sfs = sfs_from_phi(phi_expanded, xx, 20)
+        assert expansion_sfs[1] / expansion_sfs[2] > (
+            equilibrium_sfs[1] / equilibrium_sfs[2]
+        )
 
     def test_bottleneck_concentrates_density(self):
         """A bottleneck (small nu) should accelerate drift relative to
         constant size, causing faster loss of total density."""
         xx = make_nonuniform_grid(60)
         phi = equilibrium_sfs_density(xx)
-        phi_const = crank_nicolson_1d(phi, xx, T=0.05, nu=1.0, n_steps=500)
-        phi_bottle = crank_nicolson_1d(phi, xx, T=0.05, nu=0.2, n_steps=500)
+        phi_const = implicit_1d(phi, xx, T=0.05, nu=1.0, n_steps=500)
+        phi_bottle = implicit_1d(phi, xx, T=0.05, nu=0.2, n_steps=500)
         # Bottleneck should lose more mass than constant size
         assert np.sum(phi_bottle) < np.sum(phi_const)
 
@@ -205,8 +213,15 @@ class TestCrankNicolson1d:
         """Output should have the same shape as input."""
         xx = make_nonuniform_grid(40)
         phi = equilibrium_sfs_density(xx)
-        phi_evolved = crank_nicolson_1d(phi, xx, T=0.1, nu=1.0)
+        phi_evolved = implicit_1d(phi, xx, T=0.1, nu=1.0)
         assert phi_evolved.shape == phi.shape
+
+    def test_legacy_name_is_only_a_compatibility_wrapper(self):
+        xx = make_nonuniform_grid(20)
+        phi = equilibrium_sfs_density(xx)
+        expected = implicit_1d(phi, xx, T=0.01, n_steps=4)
+        actual = crank_nicolson_1d(phi, xx, T=0.01, n_steps=4)
+        assert np.array_equal(actual, expected)
 
 
 # ===========================================================================
@@ -260,6 +275,14 @@ class TestSfsFromPhi:
 # ===========================================================================
 
 class TestPoissonLogLikelihood:
+    def test_matches_scipy_poisson_logpmf(self):
+        model = np.array([0.0, 1.5, 10.0])
+        data = np.array([0, 2, 7])
+        expected = np.sum(-model - gammaln(data + 1))
+        positive = model > 0
+        expected += np.sum(data[positive] * np.log(model[positive]))
+        assert poisson_log_likelihood(model, data) == pytest.approx(expected)
+
     def test_finite(self):
         """Poisson LL should be finite for valid inputs."""
         model = np.array([5.0, 10.0, 15.0])

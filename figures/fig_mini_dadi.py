@@ -5,15 +5,16 @@ Shows the frequency grid, equilibrium SFS density, diffusion PDE evolution
 under different population sizes, and the resulting discrete SFS.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 from watchgen.mini_dadi import (
     equilibrium_sfs_density,
+    implicit_1d,
     make_nonuniform_grid,
-    crank_nicolson_1d,
+    poisson_log_likelihood,
     sfs_from_phi,
     two_epoch_sfs,
-    poisson_log_likelihood,
 )
 
 plt.rcParams.update({
@@ -24,7 +25,7 @@ plt.rcParams.update({
 })
 
 fig, axes = plt.subplots(2, 2, figsize=(10, 8))
-fig.suptitle("dadi: Diffusion Approximation for Demographic Inference",
+fig.suptitle("mini-dadi: Neutral Diffusion Teaching Subset",
              fontsize=14, fontweight="bold")
 
 # --- Panel A: Nonuniform grid and equilibrium density ---
@@ -49,9 +50,9 @@ ax.legend(fontsize=8, loc="upper right")
 ax = axes[0, 1]
 phi_eq = equilibrium_sfs_density(xx) * 1.0  # theta = 1
 
-phi_expand = crank_nicolson_1d(phi_eq, xx, T=0.5, nu=5.0, n_steps=300)
-phi_contract = crank_nicolson_1d(phi_eq, xx, T=0.5, nu=0.2, n_steps=300)
-phi_const = crank_nicolson_1d(phi_eq, xx, T=0.5, nu=1.0, n_steps=300)
+phi_expand = implicit_1d(phi_eq, xx, T=0.5, nu=5.0, n_steps=300)
+phi_contract = implicit_1d(phi_eq, xx, T=0.5, nu=0.2, n_steps=300)
+phi_const = implicit_1d(phi_eq, xx, T=0.5, nu=1.0, n_steps=300)
 
 ax.plot(xx[1:-1], phi_eq[1:-1], color="#757575", lw=1.5, ls="--", label="Equilibrium")
 ax.plot(xx[1:-1], phi_const[1:-1], color="#4CAF50", lw=2, label=r"Constant ($\nu$=1)")
