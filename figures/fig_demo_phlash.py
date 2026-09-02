@@ -1,134 +1,146 @@
-"""
-Demo: PHLASH composite likelihood inference on msprime-simulated data.
+"""Demo: source-aligned PHLASH ingredients on msprime-simulated data.
 
-Simulates multiple diploid genomes with msprime under a bottleneck model,
-computes the composite likelihood over random time grids, and shows the
-debiased gradient estimation approach.
+This is an explanatory figure, not a PHLASH fit. It shows the observed AFS,
+the normalized AFS shape score, endpoint-randomised geometric grids, and the
+coalescent-time masses induced by those grids.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
 import msprime
+import numpy as np
 
 from watchgen.mini_phlash import (
-    sfs_log_likelihood,
-    sample_random_grid,
+    afs_log_score,
+    coalescence_probabilities,
+    logarithmic_grid,
 )
-from watchgen.mini_psmc import (
-    simulate_psmc_input,
-    compute_time_intervals,
-    build_psmc_hmm,
+
+plt.rcParams.update(
+    {
+        "font.size": 10,
+        "axes.titlesize": 11,
+        "axes.labelsize": 10,
+        "figure.dpi": 150,
+        "font.family": "sans-serif",
+    }
 )
-from watchgen.mini_moments import expected_sfs_neutral
 
-plt.rcParams.update({
-    "font.size": 10, "axes.titlesize": 11, "axes.labelsize": 10,
-    "figure.dpi": 150, "font.family": "sans-serif",
-})
+rng = np.random.default_rng(2024)
 
-np.random.seed(2024)
-
-# ── Simulate with msprime ───────────────────────────────────────
-Ne = 10_000
-mu = 1.25e-8
-n_samples = 30
-L = 500_000
+# Simulate an unfolded AFS from a constant-size population.
+population_size = 10_000
+mutation_rate = 1.25e-8
+n_haplotypes = 30
+sequence_length = 500_000
 
 ts = msprime.simulate(
-    sample_size=n_samples, Ne=Ne, length=L,
-    mutation_rate=mu, random_seed=2024,
+    sample_size=n_haplotypes,
+    Ne=population_size,
+    length=sequence_length,
+    mutation_rate=mutation_rate,
+    random_seed=2024,
+)
+genotypes = ts.genotype_matrix()
+derived_counts = genotypes.sum(axis=1)
+observed_afs = np.bincount(
+    derived_counts, minlength=n_haplotypes + 1
+)[1:n_haplotypes]
+
+# PHLASH normalizes the expected AFS before scoring it. A one-parameter shape
+# family makes that distinction visible without pretending the AFS term alone
+# identifies an overall population-size scale.
+frequency = np.arange(1, n_haplotypes)
+shape_exponents = np.linspace(0.55, 1.45, 100)
+afs_scores = np.array(
+    [afs_log_score(observed_afs, frequency ** (-power)) for power in shape_exponents]
 )
 
-G = ts.genotype_matrix()
-freq_counts = G.sum(axis=1)
-observed_sfs = np.bincount(freq_counts, minlength=n_samples + 1)[1:n_samples]
-
-# ── Compute likelihoods across different demographic models ─────
-theta = 4 * Ne * mu * L
-Ne_test = np.linspace(2_000, 30_000, 50)
-
-lls_sfs = []
-for Ne_val in Ne_test:
-    theta_val = 4 * Ne_val * mu * L
-    expected = expected_sfs_neutral(n_samples, theta=theta_val)[1:n_samples]
-    ll = sfs_log_likelihood(observed_sfs, expected)
-    lls_sfs.append(ll)
-
-# ── Random grid sampling (PHLASH approach) ──────────────────────
-n_grids = 20
-M = 15
-t_max_grid = 200_000
-t_min_grid = 100.0
-
+# Draw endpoint parameters, then geometrically space the interior points exactly
+# as the released model does. PHLASH uses 16 intervals in its optimized kernel.
+n_grids = 12
 grids = []
 for _ in range(n_grids):
-    grid = sample_random_grid(M, t_max_grid, t_min_grid)
-    grids.append(np.sort(grid))
+    log_t1 = rng.normal(np.log(1e-4), 0.45)
+    log_tM = rng.normal(np.log(15.0), 0.25)
+    grids.append(logarithmic_grid(log_t1, log_tM, intervals=16))
 
-# ── Figure ──────────────────────────────────────────────────────
+# A shared constant coalescent rate isolates the effect of the different grids on
+# interval probability masses. The last mass is the open-ended tail.
+grid_masses = [coalescence_probabilities(grid, np.ones(16)) for grid in grids]
+
 fig, axes = plt.subplots(2, 2, figsize=(11, 8.5))
 fig.suptitle(
-    f"Demo: PHLASH Composite Likelihood on msprime Data ({n_samples} haplotypes, {L/1e3:.0f} kb)",
-    fontsize=13, fontweight="bold", y=0.98,
+    "PHLASH ingredients on simulated sequence data "
+    f"({n_haplotypes} haplotypes, {sequence_length / 1e3:.0f} kb)",
+    fontsize=13,
+    fontweight="bold",
+    y=0.98,
 )
 
-# Panel A: Observed SFS
+# Panel A: observed AFS.
 ax = axes[0, 0]
-k_vals = np.arange(1, n_samples)[:20]
-ax.bar(k_vals, observed_sfs[:20], color="#2166AC", alpha=0.8,
-       edgecolor="white", linewidth=0.5)
-ax.set_xlabel("Derived allele count $i$")
+show = min(20, len(observed_afs))
+ax.bar(
+    frequency[:show],
+    observed_afs[:show],
+    color="#2166AC",
+    alpha=0.8,
+    edgecolor="white",
+    linewidth=0.5,
+)
+ax.set_xlabel("Derived allele count $k$")
 ax.set_ylabel("Number of sites")
-ax.set_title(f"A. Observed SFS from simulated VCF ({ts.num_sites} sites)")
+ax.set_title(f"A. Observed AFS ({ts.num_sites} segregating sites)")
 
-# Panel B: SFS log-likelihood surface
+# Panel B: normalized AFS shape score.
 ax = axes[0, 1]
-ax.plot(Ne_test, lls_sfs, color="#2166AC", lw=2)
-best_idx = np.argmax(lls_sfs)
-ax.axvline(Ne_test[best_idx], color="#B2182B", ls="--", lw=1.5,
-           label=f"MLE $\\hat{{N}}_e$ = {Ne_test[best_idx]:,.0f}")
-ax.axvline(Ne, color="#1B7837", ls=":", lw=1.5,
-           label=f"True $N_e$ = {Ne:,}")
-ax.set_xlabel("Effective population size $N_e$")
-ax.set_ylabel("SFS log-likelihood")
-ax.set_title("B. Likelihood surface")
+relative_scores = afs_scores - afs_scores.max()
+best = int(np.argmax(afs_scores))
+ax.plot(shape_exponents, relative_scores, color="#2166AC", lw=2)
+ax.axvline(
+    shape_exponents[best],
+    color="#B2182B",
+    ls="--",
+    lw=1.5,
+    label=rf"Best shape $p={shape_exponents[best]:.2f}$",
+)
+ax.axvline(1.0, color="#1B7837", ls=":", lw=1.5, label=r"Neutral $1/k$")
+ax.set_xlabel(r"Shape exponent $p$ in $e_k \propto k^{-p}$")
+ax.set_ylabel("AFS log score relative to maximum")
+ax.set_title("B. Normalized AFS term compares shape")
 ax.legend(fontsize=8)
 
-# Panel C: Random time grids
+# Panel C: endpoint-randomised geometric grids.
 ax = axes[1, 0]
-for i, grid in enumerate(grids[:10]):
-    ax.scatter(grid, np.full_like(grid, i), s=10, alpha=0.7,
-               color=plt.cm.Set2(i / 10))
-    ax.plot(grid, np.full_like(grid, i), lw=0.5, alpha=0.3,
-            color=plt.cm.Set2(i / 10))
-
-ax.set_xlabel("Time (generations)")
-ax.set_ylabel("Grid sample")
+for index, grid in enumerate(grids):
+    color = plt.cm.viridis(index / (n_grids - 1))
+    ax.hlines(index, grid[1], grid[-1], color=color, lw=0.6, alpha=0.55)
+    ax.scatter(grid[1:], np.full(15, index), marker="|", s=45, color=color)
+ax.set_xlabel("Time (coalescent units)")
+ax.set_ylabel("Particle grid")
 ax.set_xscale("log")
-ax.set_title(f"C. Random time grids ({n_grids} samples, $M$={M})")
+ax.set_title("C. Random endpoints; geometric interior ($M=16$)")
 
-# Panel D: Gradient variance reduction
+# Panel D: exact interval masses on the sampled grids.
 ax = axes[1, 1]
-# Show how averaging over grids reduces variance
-n_avg_range = range(1, n_grids + 1)
-variances = []
-for n_avg in n_avg_range:
-    grid_lls = []
-    for grid in grids[:n_avg]:
-        # Compute SFS likelihood on this grid
-        ll = sfs_log_likelihood(observed_sfs,
-                                expected_sfs_neutral(n_samples, theta=theta)[1:n_samples])
-        # Add small noise to simulate grid-dependent variation
-        ll += np.random.normal(0, 5)
-        grid_lls.append(ll)
-    variances.append(np.var(grid_lls) if len(grid_lls) > 1 else 0)
-
-ax.plot(list(n_avg_range), variances, "o-", color="#2166AC", lw=2, ms=5)
-ax.set_xlabel("Number of grid samples averaged")
-ax.set_ylabel("Variance of log-likelihood estimate")
-ax.set_title("D. Variance reduction by grid averaging")
+for index, (grid, masses) in enumerate(zip(grids[:6], grid_masses[:6])):
+    color = plt.cm.Set2(index / 6)
+    ax.step(
+        grid[1:],
+        np.cumsum(masses[:-1]),
+        where="post",
+        color=color,
+        lw=1.6,
+        label=f"Grid {index + 1}",
+    )
+ax.set_xlabel("Time (coalescent units)")
+ax.set_ylabel("Cumulative finite-interval mass")
+ax.set_xscale("log")
+ax.set_ylim(0, 1.02)
+ax.set_title("D. Integrated-hazard mass on each grid")
+ax.legend(fontsize=7, ncol=2)
 
 plt.tight_layout(rect=[0, 0, 1, 0.96])
 plt.savefig("figures/fig_demo_phlash.png", dpi=150, bbox_inches="tight")
 plt.savefig("figures/fig_demo_phlash.pdf", bbox_inches="tight")
-print("Saved figures/fig_demo_phlash.png")
+print("Saved figures/fig_demo_phlash.png and figures/fig_demo_phlash.pdf")
