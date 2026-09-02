@@ -6,15 +6,17 @@ Simulates a genomic region with msprime, extracts the genotype matrix
 the inferred tree sequence to the truth.
 """
 
-import numpy as np
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import msprime
+import numpy as np
 
 from watchgen.mini_tsinfer import (
-    select_inference_sites,
+    compute_mismatch_probs,
+    compute_recombination_probs,
     generate_ancestors,
-    add_ultimate_ancestor,
-    tsinfer_pipeline,
+    path_to_edges,
+    viterbi_ls,
 )
 
 plt.rcParams.update({
@@ -23,6 +25,46 @@ plt.rcParams.update({
 })
 
 np.random.seed(2024)
+
+
+def teaching_edge_projection(
+    genotypes,
+    positions,
+    ancestral_known,
+    sequence_length,
+    recombination_rate,
+    mismatch_ratio,
+):
+    """Build the plotted mini projection from the verified public kernels."""
+
+    ancestors, inference_sites = generate_ancestors(genotypes, ancestral_known)
+    site_positions = positions[inference_sites]
+    panel = np.zeros((len(inference_sites), len(ancestors)), dtype=np.int8)
+    for ancestor_id, ancestor in enumerate(ancestors):
+        panel[ancestor.start : ancestor.end, ancestor_id] = ancestor.haplotype
+
+    rho = compute_recombination_probs(site_positions, recombination_rate)
+    mu = compute_mismatch_probs(site_positions, recombination_rate, mismatch_ratio)
+    ancestor_ids = np.arange(len(ancestors))
+    nodes = [
+        {"id": j, "time": ancestor.time, "is_sample": False}
+        for j, ancestor in enumerate(ancestors)
+    ]
+    edges = []
+    for sample, query in enumerate(genotypes[:, inference_sites]):
+        child_id = len(ancestors) + sample
+        path, _ = viterbi_ls(query, panel, rho, mu)
+        edges.extend(
+            path_to_edges(
+                path,
+                site_positions,
+                child_id,
+                ancestor_ids,
+                sequence_length,
+            )
+        )
+        nodes.append({"id": child_id, "time": 0.0, "is_sample": True})
+    return nodes, edges
 
 # ── Simulate with msprime ───────────────────────────────────────
 ts = msprime.simulate(
@@ -40,9 +82,12 @@ positions = np.array([v.position for v in ts.variants()])
 n_samples, n_sites = G.shape
 ancestral_known = np.ones(n_sites, dtype=bool)
 
-# ── Run tsinfer pipeline ────────────────────────────────────────
-builder = tsinfer_pipeline(
-    G, positions, ancestral_known,
+# ── Run the verified mini mechanisms used by the plot ──────────
+nodes, edges = teaching_edge_projection(
+    G,
+    positions,
+    ancestral_known,
+    sequence_length=ts.sequence_length,
     recombination_rate=1e-3,
     mismatch_ratio=1.0,
 )
@@ -72,9 +117,8 @@ n_inf = len(inf_sites)
 n_anc = len(ancestors)
 anc_matrix = np.full((min(n_anc, 30), n_inf), np.nan)
 for i, anc in enumerate(ancestors[:30]):
-    anc_matrix[i, anc["start"]:anc["end"]] = anc["haplotype"]
+    anc_matrix[i, anc.start : anc.end] = anc.haplotype
 
-import matplotlib.colors as mcolors
 cmap_anc = mcolors.ListedColormap(["#1565C0", "#FF8F00"])
 cmap_anc.set_bad(color="#ECEFF1")
 im = ax.imshow(anc_matrix, aspect="auto", cmap=cmap_anc,
@@ -85,27 +129,25 @@ ax.set_title(f"B. Generated ancestors ({n_anc} total)")
 
 # Panel C: Inferred tree sequence edges
 ax = axes[1, 0]
-time_map = {node["id"]: node["time"] for node in builder.nodes}
-sorted_nodes = sorted(builder.nodes, key=lambda nd: -nd["time"])
+sorted_nodes = sorted(nodes, key=lambda nd: -nd["time"])
 node_y = {nd["id"]: i for i, nd in enumerate(sorted_nodes)}
 
-parent_ids = sorted(set(p for _, _, p, _ in builder.edges))
+parent_ids = sorted({p for _, _, p, _ in edges})
 n_parents = len(parent_ids)
 cmap_edge = plt.cm.Set2
 parent_color = {pid: cmap_edge(i / max(n_parents - 1, 1))
                 for i, pid in enumerate(parent_ids)}
 
-for left, right, parent, child in builder.edges:
+for left, right, parent, child in edges:
     y = node_y[child]
     color = parent_color[parent]
     ax.barh(y, right - left, left=left, height=0.6, color=color,
             edgecolor="white", linewidth=0.2, alpha=0.85)
 
-n_samp = sum(1 for nd in builder.nodes if nd["is_sample"])
-n_edges = len(builder.edges)
+n_edges = len(edges)
 ax.set_xlabel("Genomic position (bp)")
 ax.set_ylabel("Node (sorted by time)")
-ax.set_title(f"C. Inferred edges ({n_edges} edges, {len(builder.nodes)} nodes)")
+ax.set_title(f"C. Inferred edges ({n_edges} edges, {len(nodes)} nodes)")
 ax.set_yticks([])
 ax.invert_yaxis()
 
