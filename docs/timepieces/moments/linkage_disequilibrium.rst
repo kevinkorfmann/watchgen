@@ -6,6 +6,12 @@ Linkage Disequilibrium
 
    *A second pendulum: reading demographic history from correlations between loci.*
 
+The LD extension is a separate moment system from the 2017 SFS method. For
+quantitative use and citation, see Ragsdale and Gravel's `multi-population LD
+method <https://doi.org/10.1371/journal.pgen.1008204>`_ and their `unphased-data
+estimator <https://doi.org/10.1093/molbev/msz265>`_, alongside the current
+``moments.LD`` documentation.
+
 The SFS captures how often alleles appear at each frequency, but it ignores the
 **relationships between loci**. Two sites that are physically close on a chromosome
 tend to be inherited together -- they are in **linkage disequilibrium** (LD). The
@@ -415,10 +421,9 @@ same moment-closure techniques (the jackknife approximation from
 .. code-block:: python
 
    def ld_equilibrium(theta, rho, n_pops=1):
-       """Compute equilibrium LD statistics for one population.
+       """Return the qualitative teaching curve 1 / (1 + rho).
 
-       At equilibrium, the rate of LD creation by drift equals the rate
-       of LD decay by recombination.
+       This is not the equilibrium computed by moments.LD.
 
        Parameters
        ----------
@@ -432,17 +437,7 @@ same moment-closure techniques (the jackknife approximation from
        sigma_d2 : float
            Equilibrium sigma_d^2 = E[D^2] / pi_2.
        """
-       # Under the neutral model with constant population size,
-       # sigma_d^2 at equilibrium is approximately:
-       #
-       #   sigma_d^2 ~ 1 / (1 + rho)  (for large n, low theta)
-       #
-       # This is because:
-       # - Drift creates D^2 at a rate proportional to pi_2
-       #   (roughly 1/(2N) per generation, or 1 in diffusion time)
-       # - Recombination destroys D^2 at rate 2*rho
-       # - At equilibrium: creation = destruction
-       # - D^2 ~ pi_2 / (1 + rho) [simplified]
+       # A monotone one-parameter heuristic for visual comparison only.
        return 1.0 / (1.0 + rho)
 
    # Compare with moments
@@ -455,9 +450,8 @@ same moment-closure techniques (the jackknife approximation from
    print("-" * 46)
    for rho in rho_values:
        # Compute with moments.LD: solve the two-locus moment equations at equilibrium
-       y = moments.LD.LDstats(
-           moments.LD.Numerics.steady_state([rho], theta=theta),
-           num_pops=1, pop_ids=["pop0"]
+       y = moments.LD.Demographics1D.snm(
+           rho=[rho], theta=theta, pop_ids=["pop0"]
        )
        # sigma_d2 = E[D^2] / pi_2
        sigma_d2_moments = y.D2() / y.pi2()
@@ -467,12 +461,12 @@ same moment-closure techniques (the jackknife approximation from
 
 .. admonition:: The recombination-LD tradeoff
 
-   :math:`\sigma_d^2 \approx 1/(1 + \rho)` is a profound result. It says that
-   the equilibrium level of LD between two loci is determined solely by the
-   **ratio of drift to recombination**. Closer loci (lower :math:`\rho`) have
-   more LD. This is why LD decay curves -- plots of :math:`\sigma_d^2` vs.
-   recombination distance -- encode demographic information: the shape of the
-   decay depends on population history.
+   The heuristic :math:`1/(1 + \rho)` captures only the qualitative decline of
+   LD with recombination.  ``moments.LD`` instead evolves a coupled collection
+   of two-locus moments; its equilibrium depends on the requested statistics,
+   mutation model, and normalization. LD decay curves encode demographic
+   information, but the heuristic must not be substituted for that system in
+   inference.
 
 With the equilibrium baseline established, we now examine how specific
 demographic events distort the LD decay curve.
@@ -549,9 +543,8 @@ hallmark of admixture.
        sigma_d2 = []
        for rho in rho_values:
            # Start from equilibrium (steady-state two-locus statistics)
-           y = moments.LD.LDstats(
-               moments.LD.Numerics.steady_state([rho], theta=theta),
-               num_pops=1, pop_ids=["pop0"]
+           y = moments.LD.Demographics1D.snm(
+               rho=[rho], theta=theta, pop_ids=["pop0"]
            )
            # Bottleneck: strong drift creates excess LD
            y.integrate([nu_B], T_B, rho=[rho], theta=theta)
@@ -713,9 +706,8 @@ Over time, independent drift in each population decorrelates their LD:
 
        for rho in rho_values:
            # Equilibrium for one population
-           y = moments.LD.LDstats(
-               moments.LD.Numerics.steady_state([rho], theta=theta),
-               num_pops=1, pop_ids=["anc"]
+           y = moments.LD.Demographics1D.snm(
+               rho=[rho], theta=theta, pop_ids=["anc"]
            )
 
            # Split into two populations
@@ -895,9 +887,8 @@ The complete LD inference workflow mirrors the SFS workflow from
            """Two-epoch model for LD statistics."""
            nu, T = params
            # Start from equilibrium (two-locus steady state)
-           y = moments.LD.LDstats(
-               moments.LD.Numerics.steady_state(rho, theta=theta),
-               num_pops=1, pop_ids=["pop0"]
+           y = moments.LD.Demographics1D.snm(
+               rho=rho, theta=theta, pop_ids=["pop0"]
            )
            # Integrate the two-locus moment equations through the size change
            y.integrate([nu], T, rho=rho, theta=theta)
@@ -1010,9 +1001,8 @@ Solutions
       # (a) Constant size -- equilibrium
       sigma_d2_const = []
       for rho in rho_values:
-          y = moments.LD.LDstats(
-              moments.LD.Numerics.steady_state([rho], theta=theta),
-              num_pops=1, pop_ids=["pop0"]
+          y = moments.LD.Demographics1D.snm(
+              rho=[rho], theta=theta, pop_ids=["pop0"]
           )
           sigma_d2_const.append(y.D2() / y.pi2())
       results['constant'] = sigma_d2_const
@@ -1020,9 +1010,8 @@ Solutions
       # (b) 10x expansion, 0.1 time units ago
       sigma_d2_exp = []
       for rho in rho_values:
-          y = moments.LD.LDstats(
-              moments.LD.Numerics.steady_state([rho], theta=theta),
-              num_pops=1, pop_ids=["pop0"]
+          y = moments.LD.Demographics1D.snm(
+              rho=[rho], theta=theta, pop_ids=["pop0"]
           )
           y.integrate([10.0], 0.1, rho=[rho], theta=theta)
           sigma_d2_exp.append(y.D2() / y.pi2())
@@ -1031,9 +1020,8 @@ Solutions
       # (c) 10x bottleneck, 0.05 time units, then recovery
       sigma_d2_bn = []
       for rho in rho_values:
-          y = moments.LD.LDstats(
-              moments.LD.Numerics.steady_state([rho], theta=theta),
-              num_pops=1, pop_ids=["pop0"]
+          y = moments.LD.Demographics1D.snm(
+              rho=[rho], theta=theta, pop_ids=["pop0"]
           )
           y.integrate([0.1], 0.05, rho=[rho], theta=theta)   # bottleneck
           y.integrate([1.0], 0.05, rho=[rho], theta=theta)   # recovery
@@ -1079,9 +1067,8 @@ Solutions
 
       for rho in rho_values:
           # --- Divergence phase (shared for both scenarios) ---
-          y = moments.LD.LDstats(
-              moments.LD.Numerics.steady_state([rho], theta=theta),
-              num_pops=1, pop_ids=["anc"]
+          y = moments.LD.Demographics1D.snm(
+              rho=[rho], theta=theta, pop_ids=["anc"]
           )
           y_div = y.split(0, new_ids=["pop0", "pop1"])
           y_div.integrate([1.0, 1.0], T_split - T_admix,
@@ -1156,9 +1143,8 @@ Solutions
 
       ld_data = []
       for rho in rho_bins_true:
-          y = moments.LD.LDstats(
-              moments.LD.Numerics.steady_state([rho], theta=mu),
-              num_pops=1, pop_ids=["pop0"]
+          y = moments.LD.Demographics1D.snm(
+              rho=[rho], theta=mu, pop_ids=["pop0"]
           )
           y.integrate([nu_true], T_true, rho=[rho], theta=mu)
           ld_data.append(y.D2() / y.pi2())
@@ -1192,9 +1178,8 @@ Solutions
               rho_bins_model = 4 * Ne * r_bin_centers
               ll_l = 0.0
               for b, rho in enumerate(rho_bins_model):
-                  y = moments.LD.LDstats(
-                      moments.LD.Numerics.steady_state([rho], theta=mu),
-                      num_pops=1, pop_ids=["pop0"]
+                  y = moments.LD.Demographics1D.snm(
+                      rho=[rho], theta=mu, pop_ids=["pop0"]
                   )
                   y.integrate([nu], T_true, rho=[rho], theta=mu)
                   pred = y.D2() / y.pi2()
@@ -1250,9 +1235,8 @@ Solutions
           print(f"{rho:6.1f}", end="")
           for T in T_values:
               # Equilibrium -> split -> diverge
-              y = moments.LD.LDstats(
-                  moments.LD.Numerics.steady_state([rho], theta=theta),
-                  num_pops=1, pop_ids=["anc"]
+              y = moments.LD.Demographics1D.snm(
+                  rho=[rho], theta=theta, pop_ids=["anc"]
               )
               y = y.split(0, new_ids=["pop0", "pop1"])
               y.integrate([1.0, 1.0], T, rho=[rho], theta=theta)

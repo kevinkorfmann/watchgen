@@ -2,13 +2,14 @@
 Demo: moments demographic inference on msprime-simulated SFS.
 
 Simulates a population with known demographic history using msprime,
-computes the observed SFS from the VCF-like genotype data, and runs
-moments' ODE-based inference to recover the demographic parameters.
+computes observed spectra, and compares them with analytic neutral and
+mini-implementation demographic expectations. It does not run upstream
+``moments`` or recover parameters.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
 import msprime
+import numpy as np
 
 from watchgen.mini_moments import (
     expected_sfs_neutral,
@@ -105,7 +106,7 @@ ax.plot(k_all[:20], sfs_neutral_pred[1:n_samples][:20], "s-", color="#B2182B",
 
 ax.set_xlabel("Derived allele count $i$")
 ax.set_ylabel("Expected / observed count")
-ax.set_title("B. moments prediction vs observation")
+ax.set_title("B. Neutral expectation vs observation")
 ax.legend(fontsize=8)
 
 # Panel C: SFS distortion signatures (theoretical, using integrate_sfs)

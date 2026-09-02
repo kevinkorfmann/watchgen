@@ -403,11 +403,12 @@ Step 5: Uncertainty Quantification
 Finding the best-fit parameters is only half the job. We also need to know
 **how confident** we are in those estimates. ``moments`` provides two approaches.
 
-Fisher Information Matrix (FIM)
---------------------------------
+Observed information and the Fisher approximation
+--------------------------------------------------
 
-The FIM measures the curvature of the likelihood surface at the optimum. Steeper
-curvature = tighter constraint = smaller uncertainty.
+The observed-information Hessian measures curvature of the realized likelihood
+surface at the optimum. Its expectation over repeated data sets is the Fisher
+information. Steeper curvature usually implies a tighter local constraint.
 
 .. math::
 
@@ -438,13 +439,13 @@ And the 95% confidence interval:
    * A broad, flat peak (small second derivative) means the data provide
      little information about that parameter.  The standard error is large.
 
-   Inverting the FIM gives the variance-covariance matrix of the parameter
-   estimates, from which confidence intervals follow.
+   Under standard asymptotic conditions, inverting a positive-definite observed
+   information matrix gives a model-based covariance approximation.
 
 .. code-block:: python
 
    def fisher_information_numerical(params, data_sfs, model_func, ns, eps=0.01):
-       """Compute the Fisher Information Matrix by numerical differentiation.
+       """Compute the observed-information Hessian numerically.
 
        Parameters
        ----------
@@ -464,6 +465,7 @@ And the 95% confidence interval:
        FIM : ndarray of shape (k, k)
            Fisher Information Matrix.
        """
+       params = np.asarray(params, dtype=float)
        k = len(params)
        FIM = np.zeros((k, k))
 
@@ -473,18 +475,25 @@ And the 95% confidence interval:
            model_scaled = model * theta_opt
            return -poisson_log_likelihood(data_sfs, model_scaled)
 
+       if eps <= 0 or np.any(params == 0):
+           raise ValueError("eps must be positive and parameters nonzero")
+       f0 = neg_ll(params)
+
        # Central differences for second derivatives
        for i in range(k):
            for j in range(i, k):
-               # Evaluate neg_ll at four perturbed points (++, +-, -+, --)
-               p_pp = params.copy(); p_pp[i] *= (1 + eps); p_pp[j] *= (1 + eps)
-               p_pm = params.copy(); p_pm[i] *= (1 + eps); p_pm[j] *= (1 - eps)
-               p_mp = params.copy(); p_mp[i] *= (1 - eps); p_mp[j] *= (1 + eps)
-               p_mm = params.copy(); p_mm[i] *= (1 - eps); p_mm[j] *= (1 - eps)
-
-               # Finite-difference approximation to the second derivative
-               d2 = (neg_ll(p_pp) - neg_ll(p_pm) - neg_ll(p_mp) + neg_ll(p_mm))
-               d2 /= (params[i] * eps * 2) * (params[j] * eps * 2)
+               hi, hj = abs(params[i]) * eps, abs(params[j]) * eps
+               if i == j:
+                   p_plus = params.copy(); p_plus[i] += hi
+                   p_minus = params.copy(); p_minus[i] -= hi
+                   d2 = (neg_ll(p_plus) - 2*f0 + neg_ll(p_minus)) / hi**2
+               else:
+                   p_pp = params.copy(); p_pp[i] += hi; p_pp[j] += hj
+                   p_pm = params.copy(); p_pm[i] += hi; p_pm[j] -= hj
+                   p_mp = params.copy(); p_mp[i] -= hi; p_mp[j] += hj
+                   p_mm = params.copy(); p_mm[i] -= hi; p_mm[j] -= hj
+                   d2 = (neg_ll(p_pp) - neg_ll(p_pm)
+                         - neg_ll(p_mp) + neg_ll(p_mm)) / (4*hi*hj)
 
                FIM[i, j] = d2
                FIM[j, i] = d2  # symmetric
@@ -517,16 +526,17 @@ score function across bootstraps captures the correlation structure.
 
 .. math::
 
-   \text{GIM} = H^{-1} J H^{-1}
+   \operatorname{Cov}(\hat\Theta) \approx H^{-1} J H^{-1},
+   \qquad G = H J^{-1} H
 
 where:
 
 - :math:`H` = Hessian of the log-likelihood (same as FIM)
-- :math:`J` = empirical variance of the score across bootstraps
+- :math:`J` = mean outer product of bootstrap score vectors
 
-The GIM-based standard errors are always **larger** than FIM-based ones (because
-linkage makes sites non-independent, so there's less information than the Poisson
-model assumes).
+Block-bootstrap sandwich errors often exceed Poisson/FIM errors when linkage
+reduces the effective number of observations, but this is not a mathematical
+guarantee for every finite data set.
 
 .. admonition:: Probability Aside -- Why linkage inflates uncertainty
 
@@ -539,8 +549,8 @@ model assumes).
    data and underestimates the standard errors.  The GIM corrects for this
    by measuring the *actual* variance of the score (gradient of the
    log-likelihood) across bootstrap replicates of genomic blocks.  The
-   resulting standard errors are always at least as large as the FIM ones,
-   and often 2-5 times larger for whole-genome data.
+   resulting standard errors account for the observed block-to-block score
+   variability rather than assuming independent sites.
 
 .. code-block:: python
 
@@ -566,7 +576,10 @@ model assumes).
        se_godambe : ndarray
            Standard errors from GIM.
        """
+       params_opt = np.asarray(params_opt, dtype=float)
        k = len(params_opt)
+       if len(bootstrap_sfss) == 0:
+           raise ValueError("bootstrap_sfss must not be empty")
 
        # H: Hessian (= FIM) from the full data
        H = fisher_information_numerical(params_opt, data_sfs, model_func, ns, eps)
@@ -590,9 +603,9 @@ model assumes).
                grad[i] = (ll_p - ll_m) / (p[i] * 2 * eps)
            return grad
 
-       # J: empirical variance of the score across bootstraps
+       # J: mean outer product of bootstrap score vectors
        scores = np.array([score(params_opt, bs) for bs in bootstrap_sfss])
-       J = np.cov(scores, rowvar=False) * len(bootstrap_sfss)
+       J = np.mean([np.outer(value, value) for value in scores], axis=0)
 
        # GIM = H^{-1} J H^{-1}  (sandwich estimator)
        H_inv = np.linalg.inv(H)
@@ -602,11 +615,9 @@ model assumes).
 
 .. admonition:: When to use GIM vs FIM
 
-   **Always prefer GIM** when you have real data. The FIM is appropriate only
-   when sites are truly independent (e.g., simulation studies where you simulated
-   unlinked loci). For real genomic data, linkage between nearby sites inflates
-   the variance, and the FIM will underestimate your uncertainty -- sometimes
-   dramatically.
+   Prefer block-bootstrap sandwich uncertainty when genomic linkage is material
+   and enough independent blocks are available. FIM uncertainty remains useful
+   as a model-based diagnostic and for genuinely unlinked simulations.
 
 With parameter estimates and confidence intervals in hand, we often want to
 compare *models* -- not just parameters.
@@ -643,6 +654,11 @@ freedom, where :math:`k` is the number of free parameters.
    complex model, because each extra parameter "uses up" one dimension of
    the likelihood surface.
 
+   Wilks' theorem requires regular, identifiable interior parameters. Split
+   times, migration rates, and mixture proportions can put null values on a
+   boundary; in those cases a plain chi-squared reference may be wrong and a
+   Godambe adjustment, mixture distribution, or parametric bootstrap is needed.
+
 .. code-block:: python
 
    from scipy.stats import chi2
@@ -663,8 +679,10 @@ freedom, where :math:`k` is the number of free parameters.
        -------
        p_value : float
        """
-       lr = 2 * (ll_complex - ll_simple)  # likelihood ratio statistic
-       p_value = 1 - chi2.cdf(lr, df)      # p-value from chi-squared distribution
+       if df <= 0:
+           raise ValueError("df must be positive")
+       lr = max(0.0, 2 * (ll_complex - ll_simple))
+       p_value = chi2.sf(lr, df)
        return p_value
 
    # Example: constant size (0 params) vs two-epoch (2 params: nu, T)

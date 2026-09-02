@@ -27,6 +27,11 @@ Key concepts:
 - Population splits use hypergeometric sampling to distribute alleles across
   daughter populations.
 
+This is a small teaching implementation, not a replacement for ``moments``.
+In particular, the one-population neutral drift and mutation terms below use
+the same scaling as moments 1.6.1, while the selection and two-population
+migration helpers are deliberately marked as pedagogical approximations.
+
 Reference:
     Jouganous J, Long W, Ragsdale AP, Gravel S (2017).
     Inferring the joint demographic history of multiple populations from
@@ -35,10 +40,8 @@ Reference:
 
 import numpy as np
 from scipy.integrate import solve_ivp
-from scipy.optimize import minimize
 from scipy.special import comb
 from scipy.stats import chi2
-
 
 # ===========================================================================
 # Chapter: The Site Frequency Spectrum
@@ -157,7 +160,7 @@ def project_sfs(sfs, n_new):
     n = len(sfs) - 1
     projected = np.zeros(n_new + 1)
 
-    for j in range(0, n + 1):
+    for j in range(n + 1):
         if sfs[j] == 0:
             continue
         for j_new in range(max(0, j - (n - n_new)), min(j, n_new) + 1):
@@ -241,12 +244,15 @@ def drift_operator(phi, n):
     dphi : ndarray of shape (n+1,)
         Change in SFS due to drift.
     """
+    # moments writes dPhi/dtau = (D / 2) Phi when tau is measured in
+    # 2*N_ref generations.  LinearSystem.calcD supplies the tridiagonal
+    # coefficients below.  There is no extra division by sample size n.
     dphi = np.zeros(n + 1)
     for j in range(1, n):
         term_down = (j - 1) * (n - j + 1) * phi[j - 1] if j >= 1 else 0.0
         term_stay = -2 * j * (n - j) * phi[j]
         term_up = (j + 1) * (n - j - 1) * phi[j + 1] if j < n else 0.0
-        dphi[j] = (term_down + term_stay + term_up) / (2.0 * n)
+        dphi[j] = (term_down + term_stay + term_up) / 2.0
     return dphi
 
 
@@ -268,13 +274,20 @@ def mutation_operator(phi, n, theta):
     -------
     dphi : ndarray of shape (n+1,)
     """
+    # With theta = 4*N_ref*mu and time in 2*N_ref generations, the
+    # infinite-sites source in the singleton bin is n*theta/2.
     dphi = np.zeros(n + 1)
-    dphi[1] = theta / 2.0
+    dphi[1] = n * theta / 2.0
     return dphi
 
 
 def selection_operator(phi, n, gamma, h=0.5):
-    """Compute the selection contribution to d(phi)/dt.
+    """Approximate the selection contribution to d(phi)/dt.
+
+    This compact first-order closure is useful for visual intuition, but it is
+    not numerically equivalent to moments, which uses first- and second-jump
+    jackknife matrices (and additional machinery for dominance).  Use the
+    upstream package for quantitative work.
 
     Parameters
     ----------
@@ -322,7 +335,12 @@ def selection_operator(phi, n, gamma, h=0.5):
 
 
 def migration_operator_2pop(phi_2d, n1, n2, M12, M21):
-    """Compute migration contribution for a 2D SFS.
+    """Pedagogical migration-flow approximation for a 2D SFS.
+
+    This is not the migration operator used by moments.  The production
+    implementation closes higher-order moments with jackknife matrices; this
+    helper only illustrates directional flow and must not be used for
+    demographic inference.
 
     Parameters
     ----------
@@ -504,7 +522,11 @@ def optimal_theta_scaling(data_sfs, model_sfs_unit):
 
 
 def fisher_information_numerical(params, data_sfs, model_func, ns, eps=0.01):
-    """Compute the Fisher Information Matrix by numerical differentiation.
+    """Compute an observed-information Hessian by numerical differentiation.
+
+    The historical function name is retained, but this evaluates curvature at
+    ``data_sfs`` rather than taking the expectation that defines the Fisher
+    information.
 
     Parameters
     ----------
@@ -534,16 +556,30 @@ def fisher_information_numerical(params, data_sfs, model_func, ns, eps=0.01):
         model_scaled = model * theta_opt
         return -poisson_log_likelihood(data_sfs, model_scaled)
 
-    # Central differences for second derivatives
+    if eps <= 0:
+        raise ValueError("eps must be positive")
+    if np.any(params == 0):
+        raise ValueError("multiplicative finite differences require nonzero parameters")
+
+    f0 = neg_ll(params)
+
+    # Central differences for second derivatives. Treat diagonal entries
+    # separately: assigning p[i] twice does not create a +/-2h displacement.
     for i in range(k):
         for j in range(i, k):
-            p_pp = params.copy(); p_pp[i] *= (1 + eps); p_pp[j] *= (1 + eps)
-            p_pm = params.copy(); p_pm[i] *= (1 + eps); p_pm[j] *= (1 - eps)
-            p_mp = params.copy(); p_mp[i] *= (1 - eps); p_mp[j] *= (1 + eps)
-            p_mm = params.copy(); p_mm[i] *= (1 - eps); p_mm[j] *= (1 - eps)
-
-            d2 = (neg_ll(p_pp) - neg_ll(p_pm) - neg_ll(p_mp) + neg_ll(p_mm))
-            d2 /= (params[i] * eps * 2) * (params[j] * eps * 2)
+            hi = abs(params[i]) * eps
+            hj = abs(params[j]) * eps
+            if i == j:
+                p_plus = params.copy(); p_plus[i] += hi
+                p_minus = params.copy(); p_minus[i] -= hi
+                d2 = (neg_ll(p_plus) - 2 * f0 + neg_ll(p_minus)) / hi**2
+            else:
+                p_pp = params.copy(); p_pp[i] += hi; p_pp[j] += hj
+                p_pm = params.copy(); p_pm[i] += hi; p_pm[j] -= hj
+                p_mp = params.copy(); p_mp[i] -= hi; p_mp[j] += hj
+                p_mm = params.copy(); p_mm[i] -= hi; p_mm[j] -= hj
+                d2 = (neg_ll(p_pp) - neg_ll(p_pm) - neg_ll(p_mp) + neg_ll(p_mm))
+                d2 /= 4 * hi * hj
 
             FIM[i, j] = d2
             FIM[j, i] = d2  # symmetric
@@ -575,6 +611,8 @@ def godambe_uncertainty(params_opt, data_sfs, model_func, ns,
     """
     params_opt = np.array(params_opt, dtype=float)
     k = len(params_opt)
+    if len(bootstrap_sfss) == 0:
+        raise ValueError("bootstrap_sfss must contain at least one spectrum")
 
     # H: Hessian (= FIM) from the full data
     H = fisher_information_numerical(params_opt, data_sfs, model_func, ns, eps)
@@ -597,9 +635,10 @@ def godambe_uncertainty(params_opt, data_sfs, model_func, ns,
             grad[i] = (ll_p - ll_m) / (p[i] * 2 * eps)
         return grad
 
-    # J: empirical variance of the score across bootstraps
+    # J: mean outer product of bootstrap score vectors, matching the sandwich
+    # construction used by moments.Godambe._get_godambe.
     scores = np.array([score(params_opt, bs) for bs in bootstrap_sfss])
-    J = np.cov(scores, rowvar=False) * len(bootstrap_sfss)
+    J = np.mean([np.outer(value, value) for value in scores], axis=0)
 
     # GIM = H^{-1} J H^{-1}  (sandwich estimator)
     H_inv = np.linalg.inv(H)
@@ -624,8 +663,10 @@ def likelihood_ratio_test(ll_simple, ll_complex, df):
     -------
     p_value : float
     """
-    lr = 2 * (ll_complex - ll_simple)  # likelihood ratio statistic
-    p_value = 1 - chi2.cdf(lr, df)      # p-value from chi-squared distribution
+    if df <= 0:
+        raise ValueError("df must be positive")
+    lr = max(0.0, 2 * (ll_complex - ll_simple))
+    p_value = chi2.sf(lr, df)
     return p_value
 
 
@@ -665,7 +706,6 @@ def compute_D(haplotypes):
     -------
     D : float
     """
-    n = len(haplotypes)
     p = haplotypes[:, 0].mean()  # frequency of allele 1 at locus A
     q = haplotypes[:, 1].mean()  # frequency of allele 1 at locus B
     x11 = ((haplotypes[:, 0] == 1) & (haplotypes[:, 1] == 1)).mean()
@@ -705,7 +745,7 @@ def compute_ld_statistics(haplotype_matrix):
     D2_mean, Dz_mean, pi2_mean : float
         Average D^2, Dz, and pi_2 over all pairs of loci.
     """
-    n_haps, n_loci = haplotype_matrix.shape
+    _, n_loci = haplotype_matrix.shape
     D2_sum, Dz_sum, pi2_sum = 0.0, 0.0, 0.0
     n_pairs = 0
 
@@ -735,10 +775,11 @@ def compute_ld_statistics(haplotype_matrix):
 
 
 def ld_equilibrium(theta, rho, n_pops=1):
-    """Compute equilibrium LD statistics for one population.
+    """Return a simple LD-decay heuristic, ``1 / (1 + rho)``.
 
-    At equilibrium, the rate of LD creation by drift equals the rate
-    of LD decay by recombination.
+    This curve is only a qualitative teaching aid.  It is *not* the
+    equilibrium ``sigma_d^2`` calculated by ``moments.LD``, whose coupled
+    moment system depends on mutation, sampling, and the requested statistics.
 
     Parameters
     ----------

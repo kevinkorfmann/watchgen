@@ -29,18 +29,17 @@ the site is monomorphic -- not segregating).
 The SFS is a histogram: :math:`\text{SFS}[j]` = number of segregating sites with
 derived allele count :math:`j`.
 
-.. admonition:: Probability Aside -- Why a histogram captures everything
+.. admonition:: Probability Aside -- What the histogram captures
 
    Under the infinite-sites mutation model, every mutation occurs at a fresh
    genomic position, so each segregating site is the product of exactly one
    mutation event.  Because mutations at different sites are independent, the
-   *joint* probability of the whole data set factors into a product of
-   per-site terms, each depending only on the allele count :math:`j` at that
-   site.  Summing the per-site log-likelihoods groups sites by their count,
-   producing the SFS.  Formally, the SFS is a **sufficient statistic** for
-   the demographic parameters under the Poisson Random Field model (see
-   :ref:`demographic_inference`).  No information is lost by collapsing the
-   full data into this histogram.
+   Poisson Random Field approximation groups per-site contributions by allele
+   count, producing the SFS likelihood used here.  Collapsing the sequence to
+   this histogram does discard positions and linkage, so the SFS is not a
+   sufficient statistic for the complete genomic data.  It is the statistic
+   intentionally modeled by SFS-based inference (see
+   :ref:`demographic_inference`).
 
 .. code-block:: python
 

@@ -257,39 +257,15 @@ Now we need to compute the second derivative of :math:`\binom{n}{j}x^j(1-x)^{n-j
 with respect to :math:`x`, then multiply by :math:`x(1-x)`, and recognize the
 result in terms of binomial sampling probabilities with shifted indices.
 
-After careful algebra (which we spell out in detail below), the drift contribution
-to :math:`d\phi_j/dt` is:
+The neutral drift term closes exactly at the same sample size.  In time units
+of :math:`2N_{\rm ref}` generations and at reference size :math:`\nu=1`, the
+tridiagonal operator used by ``moments`` is:
 
 .. math::
 
-   \left.\frac{d\phi_j}{dt}\right|_{\text{drift}} =
-   \frac{1}{2}\Big[
-   (j+1)(j+2) \cdot \frac{\phi_{j+2}}{\binom{n}{j+2}/\binom{n}{j}}
-   - 2j(n-j) \cdot \phi_j
-   + (n-j+1)(n-j+2) \cdot \frac{\phi_{j-2}}{\binom{n}{j-2}/\binom{n}{j}}
-   \Big]
-
-This simplifies to the **tridiagonal** recurrence (using the convention from
-Jouganous et al. 2017):
-
-.. math::
-
-   \left.\frac{d\phi_j}{dt}\right|_{\text{drift}} =
-   \binom{n}{j}^{-1} \left[
-   \binom{n}{j-1}\frac{(n-j+1)j}{2}\phi_{j-1}
-   - \binom{n}{j}\frac{j(n-j)}{1}\phi_j
-   + \binom{n}{j+1}\frac{(j+1)(n-j)}{2}\phi_{j+1}
-   \right]
-
-Wait -- let's be more careful. The drift operator on the SFS can be written
-compactly using the **jackknife approximation** (a central trick in ``moments``):
-
-.. math::
-
-   \left.\frac{d\phi_j}{dt}\right|_{\text{drift}} \approx
-   \frac{n+1}{2}\left[
-   -2j(n-j)\phi_j + j(j-1)\phi_{j-1} + (n-j)(n-j-1)\phi_{j+1}
-   \right] \cdot \frac{1}{n(n-1)}
+   \left.\frac{d\phi_j}{dt}\right|_{\text{drift}} = \frac{1}{2}\left[
+   (j-1)(n-j+1)\phi_{j-1} -2j(n-j)\phi_j
+   +(j+1)(n-j-1)\phi_{j+1}\right].
 
 Let's implement this step by step and verify it against simulation.
 
@@ -317,12 +293,10 @@ Let's implement this step by step and verify it against simulation.
            # Drift: second-order finite difference in frequency space.
            # The three terms correspond to probability flowing into bin j
            # from the bin below (j-1), out of bin j, and into j from above (j+1).
-           term_down = j * (j - 1) * phi[j - 1] if j >= 1 else 0.0   # flow from j-1 -> j
-           term_stay = -2 * j * (n - j) * phi[j]                      # flow out of j
-           term_up = (n - j) * (n - j - 1) * phi[j + 1] if j < n else 0.0  # flow from j+1 -> j
-
-           # Scale by 1/(2n): converts discrete WF variance to diffusion-time units
-           dphi[j] = (term_down + term_stay + term_up) / (2.0 * n)
+           term_down = (j - 1) * (n - j + 1) * phi[j - 1]
+           term_stay = -2 * j * (n - j) * phi[j]
+           term_up = (j + 1) * (n - j - 1) * phi[j + 1]
+           dphi[j] = (term_down + term_stay + term_up) / 2.0
 
        return dphi
 
@@ -370,25 +344,16 @@ The mutation contribution to the SFS is:
 
    \left.\frac{d\phi_j}{dt}\right|_{\text{mutation}} =
    \begin{cases}
-   \frac{\theta}{2} & \text{if } j = 1 \\
+   \frac{n\theta}{2} & \text{if } j = 1 \\
    0 & \text{if } j > 1
    \end{cases}
 
-**Why** :math:`\theta/2` **?** The mutation rate per site per generation is
-:math:`\mu`. In a population of :math:`2N` chromosomes, the rate of new mutations
-per site is :math:`2N\mu`. In diffusion time units (:math:`2N` generations per
-unit), this becomes :math:`2N\mu \cdot 2N = 4N^2\mu`... wait, that's not right.
-
-Let's be more careful. The rate of new derived alleles appearing per site per
-**diffusion time unit** is:
-
-.. math::
-
-   \text{rate} = 2N\mu \cdot 2N \text{ gen/time unit} = 4N^2\mu \text{ per time unit}
-
-But we're tracking the SFS as :math:`\phi_j = \theta \cdot (\text{density at } j)`,
-where :math:`\theta = 4N\mu`. In the normalized units used by ``moments``, the
-mutation input is simply :math:`\theta/2` into the :math:`j = 1` bin.
+The factor :math:`n` comes from binomial sampling: mutation enters the
+population-frequency boundary and its contribution to the sample singleton
+moment is proportional to the number of sampled chromosomes.  In the upstream
+implementation the source vector is constructed with :math:`n\theta/4` and the
+internal integration clock runs over twice the user-supplied
+:math:`2N_{\rm ref}` time, giving :math:`n\theta/2` in the convention above.
 
 .. admonition:: Probability Aside -- Why mutations only enter at :math:`j=1`
 
@@ -436,7 +401,7 @@ For now, we'll stick with the infinite-sites model.
        dphi : ndarray of shape (n+1,)
        """
        dphi = np.zeros(n + 1)
-       dphi[1] = theta / 2.0  # new mutations enter only as singletons (j=1)
+       dphi[1] = n * theta / 2.0  # new mutations enter only as singletons
        return dphi
 
 With drift and mutation in place, the watch can keep neutral time.  The next
@@ -508,12 +473,15 @@ by parts) is:
    + (1-2h)\cdot \frac{j(j-1)}{n}\phi_{j-1}
    \right] \cdot \frac{1}{n}
 
-Let's implement this more carefully using the jackknife approach:
+The production package constructs first- and second-jump jackknife matrices for
+these higher-order terms.  The compact function below is only a first-order
+teaching approximation; it is not numerically equivalent to
+``moments.Spectrum.integrate`` when selection is nonzero.
 
 .. code-block:: python
 
    def selection_operator(phi, n, gamma, h=0.5):
-       """Compute the selection contribution to d(phi)/dt.
+       """Approximate the selection contribution to d(phi)/dt.
 
        Parameters
        ----------
@@ -548,7 +516,7 @@ Let's implement this more carefully using the jackknife approach:
            flux_dom = gamma * dom * j * (j - 1) * (n - j) / n**3 * phi[j]
 
            # Combined (simplified version for clarity):
-           # The exact form from Jouganous et al. (2017):
+           # Compact teaching closure (not the upstream jackknife matrices):
            if j > 0 and j < n:
                # h-weighted linear selection term
                term1 = gamma * h * ((j - 1) * (n - j + 1) * phi[j - 1] -
@@ -655,9 +623,12 @@ a randomly chosen migrant carries the derived allele is :math:`j_2/n_2`.
 
        return dphi
 
-The migration operator couples the two populations' SFS bins to each other --
-like a differential gear connecting two halves of the watch movement.  The next
-step is even simpler: scaling drift by population size.
+This replacement-event picture is useful intuition, but the compact function is
+not the operator used by ``moments``: migration changes the recipient frequency
+while the source frequency supplies a higher-order moment, and the production
+code closes that term with jackknife matrices.  Use the upstream package for
+quantitative migration models.  The next step is simpler: scaling drift by
+population size.
 
 
 Step 8: The Population Size Effect
@@ -818,17 +789,16 @@ integrators.
 
 .. admonition:: The Jackknife Approximation
 
-   The derivation above hides a subtlety. The drift operator involves moments
-   of order :math:`n+2` (because multiplying the sampling probability by
-   :math:`x(1-x)` increases the polynomial degree by 2). To close the system
-   -- express everything in terms of the :math:`n+1` SFS entries -- ``moments``
-   uses the **jackknife approximation**: it approximates higher-order moments
-   as combinations of the known :math:`n+1` moments.
+   The neutral drift term closes at order :math:`n`. Selection and migration
+   introduce moments of order :math:`n+1` and :math:`n+2`. To express those
+   terms in the stored SFS, ``moments`` uses a **jackknife approximation** that
+   writes higher-order moments as combinations of known moments.
 
    The jackknife works by noting that :math:`E[x^{n+1}(1-x)^{m}]` can be
    approximated from :math:`E[x^k(1-x)^{n-k}]` for :math:`k = 0, \ldots, n`
-   using interpolation. This approximation becomes exact in the limit
-   :math:`n \to \infty` and is highly accurate for practical sample sizes.
+   using interpolation. The primary paper measures the resulting error against
+   diffusion calculations; accuracy depends on model and sample size rather
+   than following a universal exactness guarantee.
 
 .. admonition:: Probability Aside -- Moment closure and why it works
 
@@ -839,9 +809,8 @@ integrators.
    :math:`(n+1)`-th and :math:`(n+2)`-th moments in terms of the first
    :math:`n` moments.  The approximation is accurate because, for the
    beta-like distributions that arise in population genetics, low-order
-   moments strongly constrain higher-order ones.  Empirically, the jackknife
-   closure introduces errors on the order of :math:`1/n^2`, which is
-   negligible for the sample sizes (:math:`n \geq 20`) used in practice.
+   moments constrain higher-order ones.  Its error should be checked for the
+   demographic and selective regime being analyzed.
 
 With the ODE system in hand, we turn to the discrete events -- population
 splits and admixture -- that punctuate the smooth integration.

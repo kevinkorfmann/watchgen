@@ -24,14 +24,23 @@ see the gears. The mechanism is different, but the information comes from the sa
 source: the coalescent process shaped by population history.
 
 The key innovation: while its predecessor ``dadi`` solves a partial differential
-equation (the Wright-Fisher diffusion) on a frequency grid, ``moments`` bypasses
-this entirely. It derives **ordinary differential equations** that govern the SFS
-entries directly. No grid, no PDE, no numerical diffusion artifacts. Just a clean
-system of ODEs that you can solve with standard numerical methods.
+equation (the Wright-Fisher diffusion) on a frequency grid, ``moments`` evolves
+the sampled frequency-spectrum moments directly. The resulting ODE system avoids
+a separate frequency grid, but selection and migration require a numerical
+jackknife closure for higher-order moments.
 
 .. admonition:: Primary Reference
 
    :cite:`moments`
+
+.. admonition:: Implementation reference
+
+   This chapter was checked against ``moments-popgen`` 1.6.1 (tag ``v1.6.1``)
+   and the official `moments documentation
+   <https://momentsld.github.io/moments/>`_. The functions in
+   ``watchgen.mini_moments`` are teaching code: neutral one-population
+   integration and splitting track the upstream conventions, while explicitly
+   labeled selection, migration, and LD helpers are qualitative approximations.
 
 The four gears of ``moments``:
 

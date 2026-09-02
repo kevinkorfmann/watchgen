@@ -20,35 +20,35 @@ import pytest
 from scipy.special import comb
 
 from watchgen.mini_moments import (
-    compute_sfs,
-    compute_joint_sfs,
-    expected_sfs_neutral,
-    fold_sfs,
-    project_sfs,
-    watterson_theta,
-    nucleotide_diversity,
-    tajimas_d,
-    drift_operator,
-    mutation_operator,
-    selection_operator,
-    migration_operator_2pop,
-    drift_operator_with_size,
-    integrate_sfs,
-    split_1d_to_2d,
-    poisson_log_likelihood,
-    optimal_theta_scaling,
-    fisher_information_numerical,
-    likelihood_ratio_test,
+    _neutral_sfs,
     apply_misidentification,
     compute_D,
-    ld_decay_deterministic,
+    compute_joint_sfs,
     compute_ld_statistics,
-    ld_equilibrium,
+    compute_sfs,
+    drift_operator,
+    drift_operator_with_size,
+    expected_sfs_neutral,
+    fisher_information_numerical,
+    fold_sfs,
     gaussian_composite_ll,
+    godambe_uncertainty,
+    integrate_sfs,
+    ld_decay_deterministic,
+    ld_equilibrium,
+    likelihood_ratio_test,
     map_r_bins_to_rho,
-    _neutral_sfs,
+    migration_operator_2pop,
+    mutation_operator,
+    nucleotide_diversity,
+    optimal_theta_scaling,
+    poisson_log_likelihood,
+    project_sfs,
+    selection_operator,
+    split_1d_to_2d,
+    tajimas_d,
+    watterson_theta,
 )
-
 
 # ===========================================================================
 # Tests for compute_sfs
@@ -391,7 +391,7 @@ class TestMutationOperator:
         theta = 2.5
         phi = np.zeros(n + 1)
         dphi = mutation_operator(phi, n, theta)
-        assert dphi[1] == theta / 2.0
+        assert dphi[1] == n * theta / 2.0
         for j in range(2, n + 1):
             assert dphi[j] == 0.0
         assert dphi[0] == 0.0
@@ -792,7 +792,6 @@ class TestSplit1dTo2d:
         for j in range(1, n):
             weight_sum = 0.0
             for j1 in range(max(0, j - n2), min(j, n1) + 1):
-                j2 = j - j1
                 prob = (comb(j, j1, exact=True) *
                         comb(n - j, n1 - j1, exact=True) /
                         comb(n, n1, exact=True))
@@ -988,7 +987,7 @@ class TestLdDecayDeterministic:
     def test_half_life(self):
         """At the half-life, D should be approximately D0/2."""
         r = 0.01
-        half_life = int(round(np.log(2) / r))
+        half_life = round(np.log(2) / r)
         D0 = 0.1
         D_t = ld_decay_deterministic(D0, r, half_life)
         assert np.isclose(D_t, D0 / 2, rtol=0.02)
@@ -1025,14 +1024,14 @@ class TestComputeLdStatistics:
         """D^2 should always be non-negative."""
         np.random.seed(42)
         haps = np.random.randint(0, 2, size=(100, 10))
-        D2, Dz, pi2 = compute_ld_statistics(haps)
+        D2, _, _ = compute_ld_statistics(haps)
         assert D2 >= 0
 
     def test_pi2_nonnegative(self):
         """pi_2 should always be non-negative."""
         np.random.seed(42)
         haps = np.random.randint(0, 2, size=(100, 10))
-        D2, Dz, pi2 = compute_ld_statistics(haps)
+        _, _, pi2 = compute_ld_statistics(haps)
         assert pi2 >= 0
 
     def test_monomorphic_loci_skipped(self):
@@ -1237,10 +1236,37 @@ class TestFisherInformationNumerical:
 
         def model_func(params, ns):
             # Simple model: scale theta and apply a mild size change
-            s, t = params
+            s, _ = params
             phi = expected_sfs_neutral(ns[0], theta=1.0) * s
             return phi
 
         params = np.array([500.0, 1.0])
         FIM = fisher_information_numerical(params, data, model_func, [n])
         assert np.allclose(FIM, FIM.T)
+
+    def test_diagonal_uses_true_central_second_difference(self):
+        """Regression test for overwriting, rather than compounding, i == j steps."""
+        n = 8
+        data = expected_sfs_neutral(n, 100)
+
+        def model_func(params, ns):
+            shape = expected_sfs_neutral(ns[0], 1.0)
+            shape[2] *= params[0] ** 2
+            return shape
+
+        fim = fisher_information_numerical([1.2], data, model_func, [n], eps=1e-3)
+        assert np.isfinite(fim[0, 0])
+        assert fim[0, 0] > 0
+
+
+class TestGodambeUncertainty:
+    def test_requires_bootstrap_spectra(self):
+        data = expected_sfs_neutral(8, 100)
+
+        def model_func(params, ns):
+            model = expected_sfs_neutral(ns[0], 1.0)
+            model[2] *= params[0]
+            return model
+
+        with pytest.raises(ValueError, match="at least one"):
+            godambe_uncertainty([1.0], data, model_func, [8], [])

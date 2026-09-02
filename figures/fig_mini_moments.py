@@ -4,12 +4,12 @@ Figure: moments algorithm -- four-panel overview.
 Panel A: Neutral SFS for different sample sizes, showing the classic theta/k pattern.
 Panel B: SFS evolution under drift -- neutral SFS evolved forward under expansion
          vs contraction using integrate_sfs.
-Panel C: Selection effect on SFS -- positive and negative selection compared to neutral.
+Panel C: Pedagogical selection approximation compared to neutral (not upstream parity).
 Panel D: Tajima's D under expansion, constant, and contraction scenarios.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from watchgen.mini_moments import (
     expected_sfs_neutral,
@@ -162,7 +162,7 @@ ax.bar(k_c + 2 * w, phi_pos_strong[1:n_c], width=w, color=C_BLUE, alpha=0.85,
 
 ax.set_xlabel("Derived allele count $k$")
 ax.set_ylabel("Expected SFS count")
-ax.set_title(f"C.  Selection distorts the SFS ($n={n_c}$)")
+ax.set_title(f"C.  Teaching selection approximation ($n={n_c}$)")
 ax.set_xlim(0.3, 15)
 ax.set_ylim(0, None)
 ax.legend(fontsize=6.5, loc="upper right", framealpha=0.9, ncol=1)

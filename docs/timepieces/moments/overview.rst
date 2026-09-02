@@ -13,9 +13,9 @@ Overview of moments
    **moments at a glance.** Panel A: The neutral site frequency spectrum for
    different sample sizes, showing the classic :math:`\theta/k` pattern. Panel B:
    SFS evolution under drift -- how the neutral spectrum deforms under population
-   expansion vs contraction. Panel C: Selection's effect on the SFS -- positive
-   selection shifts mass toward high frequencies, negative selection toward low
-   frequencies. Panel D: Tajima's D under expansion, constant size, and contraction,
+   expansion vs contraction. Panel C: the mini implementation's pedagogical
+   selection approximation (not a parity result for upstream ``moments``).
+   Panel D: Tajima's D under expansion, constant size, and contraction,
    illustrating how summary statistics capture demographic signals.
 
 What Does moments Do?
@@ -68,17 +68,16 @@ history:
 - **Migration** between populations creates shared variation at similar frequencies
 - **Selection** distorts the spectrum in predictable ways
 
-.. admonition:: Probability Aside -- Why a histogram is enough
+.. admonition:: Probability Aside -- What the histogram retains
 
    At first it seems wasteful to throw away the genomic *positions* of
    variants and keep only their counts.  The justification comes from the
-   theory of **sufficient statistics**.  Under the Poisson Random Field model
-   (see :ref:`demographic_inference`), each segregating site contributes
-   independently to the likelihood.  The SFS captures *all* the information
-   those independent sites carry about the demographic parameters -- no
-   additional power is gained by recording which site has which count.  In the
-   language of the watch metaphor, the dial face shows you everything you
-   need; you do not also have to listen to the ticking.
+   Poisson Random Field likelihood used for SFS inference (see
+   :ref:`demographic_inference`) deliberately groups sites by allele count and
+   treats the resulting bins as Poisson counts.  The SFS is therefore the data
+   used by that likelihood, but it is not sufficient for the full sequence:
+   genomic positions and linkage contain additional information.  That is why
+   ``moments.LD`` provides a complementary two-locus analysis.
 
 The challenge is going from the observed spectrum to the history that produced it.
 That's what ``moments`` does.
@@ -194,21 +193,23 @@ The SFS entry :math:`\phi_j` (expected number of sites with derived allele count
 
    \frac{d\phi_j}{dt} = \text{drift} + \text{mutation} + \text{selection} + \text{migration}
 
-This is a system of coupled ODEs -- one equation per SFS entry. No frequency grid,
-no PDE, no numerical diffusion. The SFS entries *are* the moments of the frequency
-distribution, and they can be evolved directly.
+This is a system of coupled ODEs -- one equation per SFS entry. The SFS entries
+are binomial moments of the frequency distribution and can be evolved without a
+separate frequency grid. Some evolutionary terms introduce higher-order moments;
+``moments`` closes those terms with numerical jackknife matrices.
 
 Returning to the watch metaphor: ``dadi`` tries to model the full shape of every
 gear tooth (the continuous density :math:`\phi(x,t)`).  ``moments`` skips the
 tooth-level detail and instead writes down the **equations governing the gear
-train** -- the ODEs that describe how each hand on the dial advances.  The result
-is the same predicted dial reading, but the calculation is simpler and scales
-better to multi-hand (multi-population) watches.
+train** -- the ODEs that describe how each hand on the dial advances.  The method
+was validated against diffusion calculations in the primary paper and often
+scales better to multi-population spectra; it is not an algebraically identical
+solver.
 
 **Why this matters:**
 
-1. **No grid artifacts.** PDE solvers introduce numerical diffusion from the grid.
-   Moment equations are exact (to the order of the moment closure).
+1. **No separate frequency grid.** This avoids grid-extrapolation error, while
+   introducing a different, explicitly tested jackknife-closure approximation.
 2. **Better scaling.** The system size is the number of SFS entries, not
    :math:`n^p` grid points.
 3. **Cleaner math.** Each ODE term has a clear biological interpretation.
