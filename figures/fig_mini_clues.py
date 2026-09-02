@@ -6,21 +6,19 @@ probabilities, importance sampling weights, and selection coefficient
 posterior / likelihood ratio surface.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 from watchgen.mini_clues import (
     backward_mean,
-    backward_std,
     build_frequency_bins,
-    build_transition_matrix,
     build_normal_cdf_lookup,
-    build_transition_matrix_fast,
-    log_coalescent_density,
+    build_transition_matrix,
+    compute_trajectory_summary,
+    forward_log_hmm,
     genotype_likelihood_emission,
-    logsumexp,
     likelihood_ratio_test,
-    backward_algorithm,
-    estimate_selection_single,
+    log_coalescent_density,
 )
 
 plt.rcParams.update({
@@ -39,14 +37,13 @@ ax = axes[0, 0]
 
 # Build a small model and scan the log-likelihood over s values
 K = 80
-freqs, logfreqs, log1minusfreqs = build_frequency_bins(K)
+freqs, _, _ = build_frequency_bins(K)
 z_bins, z_cdf = build_normal_cdf_lookup()
 N_diploid = 10_000.0
 N_haploid = 2 * N_diploid
 t_cutoff = 50  # generations to look back
 
 epochs = np.arange(0.0, t_cutoff)
-N_vec = N_diploid * np.ones(int(t_cutoff))
 h = 0.5
 
 # Simulate coalescence times consistent with positive selection
@@ -58,18 +55,65 @@ coal_times_der = np.sort(np.random.exponential(8, size=n_der - 1))
 coal_times_anc = np.sort(np.random.exponential(15, size=n_anc - 1))
 curr_freq = 0.7
 
+
+def coalescent_emissions():
+    """Build one CLUES-style log emission vector per backward epoch."""
+    emissions = np.zeros((len(epochs), K))
+    derived_lineages = n_der
+    ancestral_lineages = n_anc
+    for epoch_index, epoch_start in enumerate(epochs):
+        epoch_end = epoch_start + 1.0
+        derived_events = coal_times_der[
+            (coal_times_der >= epoch_start) & (coal_times_der < epoch_end)
+        ]
+        ancestral_events = coal_times_anc[
+            (coal_times_anc >= epoch_start) & (coal_times_anc < epoch_end)
+        ]
+        for frequency_index, frequency in enumerate(freqs):
+            emissions[epoch_index, frequency_index] = log_coalescent_density(
+                derived_events,
+                derived_lineages,
+                epoch_start,
+                epoch_end,
+                frequency,
+                N_haploid,
+            ) + log_coalescent_density(
+                ancestral_events,
+                ancestral_lineages,
+                epoch_start,
+                epoch_end,
+                frequency,
+                N_haploid,
+                ancestral=True,
+            )
+        derived_lineages -= len(derived_events)
+        ancestral_lineages -= len(ancestral_events)
+    return emissions
+
+
+log_emissions = coalescent_emissions()
+log_initial = np.full(K, -np.inf)
+log_initial[np.argmin(np.abs(freqs - curr_freq))] = 0.0
+
+
+def clues_log_likelihood(s_val):
+    """Evaluate the teaching HMM assembled from the verified mini API."""
+    log_transition = build_transition_matrix(
+        freqs,
+        N_haploid,
+        s_val,
+        h,
+        z_bins=z_bins,
+        z_cdf=z_cdf,
+    )
+    return forward_log_hmm(log_initial, log_transition, log_emissions)
+
 # Scan log-likelihood
 s_grid = np.linspace(-0.05, 0.10, 80)
 log_liks = np.zeros_like(s_grid)
 
 for i, s_val in enumerate(s_grid):
-    sel = np.array([s_val])
-    alpha_mat = backward_algorithm(
-        sel, freqs, logfreqs, log1minusfreqs,
-        z_bins, z_cdf, epochs, N_vec, h,
-        coal_times_der, coal_times_anc,
-        n_der, n_anc, curr_freq)
-    log_liks[i] = logsumexp(alpha_mat[-2, :])
+    log_liks[i], _ = clues_log_likelihood(s_val)
 
 # Normalize for visualization
 log_liks_norm = log_liks - log_liks.max()
@@ -99,7 +143,7 @@ ax.text(0.97, 0.95,
         f"LR = {log_lr_val:.1f}\np = {p_value:.4f}\n"
         f"-log$_{{10}}$p = {neg_log10_p:.1f}",
         transform=ax.transAxes, fontsize=8, va="top", ha="right",
-        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8))
+        bbox={"boxstyle": "round,pad=0.3", "fc": "white", "ec": "gray", "alpha": 0.8})
 
 ax.set_xlabel("Selection coefficient s")
 ax.set_ylabel("Posterior density")
@@ -116,21 +160,9 @@ colors_traj = ["#757575", "#D32F2F", "#1565C0"]
 labels_traj = ["Neutral (s=0)", f"MLE (s={s_hat:.3f})", "Strong (s=0.05)"]
 
 for s_val, color, label in zip(s_vals_traj, colors_traj, labels_traj):
-    sel = np.array([s_val])
-    alpha_mat = backward_algorithm(
-        sel, freqs, logfreqs, log1minusfreqs,
-        z_bins, z_cdf, epochs, N_vec, h,
-        coal_times_der, coal_times_anc,
-        n_der, n_anc, curr_freq)
-
-    # Compute posterior mean frequency at each time step
-    mean_freq = np.zeros(len(epochs) - 1)
-    for t in range(len(epochs) - 1):
-        row = alpha_mat[t, :]
-        row_norm = row - logsumexp(row)
-        probs = np.exp(row_norm)
-        probs /= probs.sum()
-        mean_freq[t] = np.sum(freqs * probs)
+    _, log_filtering = clues_log_likelihood(s_val)
+    filtering = np.exp(log_filtering).T
+    mean_freq, _, _ = compute_trajectory_summary(filtering, freqs)
 
     ax.plot(np.arange(len(mean_freq)), mean_freq, color=color, lw=2,
             label=label, alpha=0.9)
@@ -167,7 +199,7 @@ colors_c = ["#757575", "#2196F3", "#D32F2F", "#4CAF50"]
 labels_c = ["Neutral", "s = 0.02", "s = 0.05", "s = -0.02"]
 
 for s_val, color, label in zip(s_vals, colors_c, labels_c):
-    logP = build_transition_matrix(freqs_small, 2 * N_diploid, s_val)
+    logP = build_transition_matrix(freqs_small, N_haploid, s_val)
     P_row = np.exp(logP[i_row, :])
     ax.plot(freqs_small, P_row, color=color, lw=1.8, label=label, alpha=0.9)
 
@@ -180,7 +212,7 @@ for s_val, color in zip([0.02, 0.05, -0.02],
                         ["#2196F3", "#D32F2F", "#4CAF50"]):
     mu_back = backward_mean(target_freq, s_val)
     ax.annotate("", xy=(mu_back, 0.001), xytext=(target_freq, 0.001),
-                arrowprops=dict(arrowstyle="->", color=color, lw=1.5))
+                arrowprops={"arrowstyle": "->", "color": color, "lw": 1.5})
 
 ax.set_xlabel("Frequency one generation into the past")
 ax.set_ylabel("Transition probability")
@@ -204,7 +236,7 @@ for n_lin, color, ls in [
 ]:
     log_probs = np.array([
         log_coalescent_density(coal_time, n_lin, 0.0, 1.0,
-                               freq, N_dip, ancestral=False)
+                               freq, 2 * N_dip, ancestral=False)
         for freq in freq_grid
     ])
     # Normalize to show relative shape

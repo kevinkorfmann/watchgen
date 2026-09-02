@@ -6,14 +6,10 @@ visualize how selection distorts allele frequency dynamics and how
 the likelihood surface changes with selection coefficient.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from watchgen.mini_clues import (
-    build_frequency_bins,
-    build_transition_matrix,
-    forward_algorithm,
-)
+from watchgen.mini_clues import build_frequency_bins, build_transition_matrix
 
 plt.rcParams.update({
     "font.size": 10, "axes.titlesize": 11, "axes.labelsize": 10,
@@ -24,6 +20,7 @@ np.random.seed(2024)
 
 # ── Setup ───────────────────────────────────────────────────────
 Ne = 10_000
+N_haploid = 2 * Ne
 K = 100
 freqs = np.asarray(build_frequency_bins(K)[0])
 
@@ -48,26 +45,23 @@ trajs = {
 
 # Build transition matrices for different s values
 # Note: build_transition_matrix returns LOG-probability matrices
-logA_neutral = build_transition_matrix(freqs, Ne, s=0.0, h=0.5)
-logA_pos = build_transition_matrix(freqs, Ne, s=0.005, h=0.5)
+logA_neutral = build_transition_matrix(freqs, N_haploid, s=0.0, h=0.5)
+logA_pos = build_transition_matrix(freqs, N_haploid, s=0.005, h=0.5)
 
 # Convert to probability space for power iteration and visualization
 A_neutral = np.exp(logA_neutral)
 A_pos = np.exp(logA_pos)
 
-# Compute stationary-like likelihood for a range of s values
+# Score a one-generation backward transition for a range of s values.
+# The chain has absorbing boundaries, so it has no nondegenerate stationary
+# frequency distribution to use as a likelihood.
 s_test_vals = np.linspace(-0.015, 0.015, 61)
 ll_surface = []
+current_idx = np.argmin(np.abs(freqs - 0.3))
+past_idx = current_idx - 1
 for s_val in s_test_vals:
-    logA = build_transition_matrix(freqs, Ne, s_val, h=0.5)
-    A = np.exp(logA)
-    # Compute steady state via power iteration
-    pi = np.ones(K) / K
-    for _ in range(200):
-        pi = pi @ A
-        pi = pi / (pi.sum() + 1e-30)
-    freq_idx = np.argmin(np.abs(freqs - 0.3))
-    ll_surface.append(np.log(pi[freq_idx] + 1e-30))
+    logA = build_transition_matrix(freqs, N_haploid, s_val, h=0.5)
+    ll_surface.append(logA[current_idx, past_idx])
 
 ll_surface = np.array(ll_surface)
 
@@ -104,7 +98,7 @@ ax.set_ylabel("Source frequency bin")
 ax.set_title("B. Transition: $s$=0.005 minus neutral")
 plt.colorbar(im, ax=ax, label="$\\Delta P$", shrink=0.8)
 
-# Panel C: Likelihood surface
+# Panel C: one-step transition likelihood surface
 ax = axes[1, 0]
 valid = ~np.isnan(ll_surface) & ~np.isinf(ll_surface)
 if valid.any():
@@ -115,8 +109,11 @@ if valid.any():
                label=f"MLE $\\hat{{s}}$ = {valid_s[best_idx]:.4f}")
 ax.axvline(0, color="#636363", ls=":", lw=1, alpha=0.5, label="Neutral")
 ax.set_xlabel("Selection coefficient $s$")
-ax.set_ylabel("Log stationary probability")
-ax.set_title("C. Likelihood surface at $x$=0.3")
+ax.set_ylabel("Log transition probability")
+ax.set_title(
+    f"C. One-step score: $x$={freqs[current_idx]:.3f} to "
+    f"{freqs[past_idx]:.3f}"
+)
 ax.legend(fontsize=8)
 
 # Panel D: Frequency bin discretization
