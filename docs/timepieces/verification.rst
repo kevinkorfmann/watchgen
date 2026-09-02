@@ -76,9 +76,11 @@ The Timepieces are grouped by what they do, with verification status for each.
        Gamma-SMC source (``61a4d046``).
    * - XIV
      - :ref:`PHLASH <phlash_timepiece>`
-     - 130
-     - --
-     - GPU-accelerated Bayesian inference of population size history via SVGD.
+     - 15
+     - 2026-09-01
+     - Source-aligned coalescent-rate, endpoint-grid, transformed-AFS,
+       structured-transition, linear-memory Fisher-score, and SVGD kernels checked
+       against the published paper and official PHLASH 1.0.6 source (``96a6e3f``).
 
 **SFS-based demographic inference** -- using the site frequency spectrum
 
